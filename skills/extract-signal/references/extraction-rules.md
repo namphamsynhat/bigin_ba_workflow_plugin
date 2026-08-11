@@ -56,6 +56,15 @@ The `Why` cell is blank for every type except `requirement`/`feedback`. Writing 
 
 ### Typing a signal correctly
 
+Two broad shapes cover most of what a client raises — recognizing which one before typing the row speeds up both this step and anchoring:
+
+| Category | What it sounds like | Maps to |
+|---|---|---|
+| Requirement signal | The client talks about the process of the feature, or a business process — how something should work, who does what, when, under what condition | Usually `Type: requirement` (or `decision` if it's a settled process fact — see below) |
+| Design signal | The client comments on what look they want, or hints at the UI — layout, tone, visual style, interaction feel, what something should look like | Usually `Type: requirement`, scoped to the feature it describes; if it's durable and cross-cutting rather than scoped to one feature, it also mirrors into `{design_principles_file}` (§ Registers a signal also writes to) |
+
+This is a gut-check for scanning raw text, not a third `Type` value — a design signal is still filed as `requirement` (or whatever type its content actually is, e.g. `feedback` on an existing look). Plenty of signals are neither shape (`constraint`, `feedback`, `pain-point`, etc.) — the checks below cover those.
+
 - **A settled process fact is a `decision`, not a `requirement`** — e.g. "a missed deadline rolls to the next batch." The client is confirming how things work, not asking for new behavior — and a `decision` row's blank `Why` is what keeps a misfile from manufacturing a why-shaped hole that then gets filled with a guess.
 - **Narrative context or a named frustration that isn't a testable ask** is a `problem`/`pain-point`, not a stretched `requirement`.
 - **A question the source itself never resolves always gets its own `question` row**, even when the surrounding discussion produced a `decision`/`requirement` on the general topic — a resolved decision about the topic isn't the same as a specific sub-point left hanging.
