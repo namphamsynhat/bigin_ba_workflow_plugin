@@ -7,31 +7,35 @@ disable-model-invocation: true
 
 # Bigin Transform Signal
 
-**Transform**, in extract → transform → load: `extract-signal` already anchored raw signals to a
-feature and filed them on that Feature Hub's `## Signal Log` with `Status: new`. This skill turns
-those into the feature's actual requirements — a drafted or updated FR, a drafted or updated BR
-(its own file, citing the FR(s) it constrains), or both — and keeps any cross-feature Entity/
-Business Scenario the signal touches in sync. It implements `references/conventions.md` §§
-Feedback handling, Feature Hub, and Resumable unattended apply — **read that file before working a
-signal**; this SKILL.md is the run procedure, `conventions.md` is the rulebook it follows.
+Transforms raw signals (`Status: new`/`held`) on a Feature Hub’s `## Signal Log` into drafted/updated Functional Requirements (FRs) and Business Rules (BRs), while synchronizing cross-feature Entities (ENs) and Business Scenarios (SCNs). Every change goes through a written, resumable human-review gate before integration.
 
-**The gate is written, not conversational, by default.** This can run one feature or every
-pending feature in one pass, and doesn't require a human watching the whole time:
+> **Rulebook Reference:** Read `{conventions_reference}` (`references/conventions.md`) before running. This skill provides the execution procedure; `conventions.md` defines the underlying standards (Feedback handling, Feature Hub, and Resumable unattended apply).
 
-- **Pass 1** (§ below) drafts/updates the affected FR(s)/BR(s), staging every change into the
-  artifact's own `## Discussion` and, when it needs a human decision, raising a written
-  `- [ ] Q: ... A:` line in its `## Open Questions` — the same mechanic `extract-signal` already
-  uses on intake notes. It never blocks; it moves to the next signal.
-- **If a human is actually present in this run** and answers a staged proposal or a question right
-  there in the conversation, fold it in immediately (`conventions.md` § Feedback handling calls
-  this the "interactive" path) — don't manufacture a written round-trip for an answer already given.
-- **Pass 2** (§ below) is what a rerun does first: check every FR/BR this skill has previously
-  staged for an answer that's since landed — either a ticked box a human edited into the file
-  directly, or a fresh reply that arrived through `/bigin-intake` — and fold in whatever's now
-  resolved. Nothing here ever sets `status: approved`; a resolved FR goes back to `in-review`,
-  which is what makes it ready for `/enrich-feature` → `/approve-fr` next (hard rule 4: `approved`
-  is human-only, set by `/approve-fr`, never by this skill).
+---
 
+## Operating Modes & Gates
+
+* **Written Gate (Default/Unattended):** Stages proposals into `## Discussion` and adds `- [ ] Q: ... A:` items to `## Open Questions`. Runs asynchronously across single or multiple features without blocking.
+* **Interactive Path:** If a human answers a question inline during conversation, fold it in immediately without creating a written round-trip.
+* **Execution Sequence:** On any run/rerun, **Pass 2 (Fold-In)** executes *first* to process newly answered items, followed by **Pass 1 (Stage/Raise)** for new or held signals.
+
+---
+
+## File & Directory Paths
+
+| Variable | Target Path | Description |
+| :--- | :--- | :--- |
+| `{conventions_reference}` | `references/conventions.md` | Core rulebook & standards |
+| `{hub_dir}` | `01-Requirements/_features/<slug>.md` | Feature Hub directory |
+| `{requirements_file}` | `01-Requirements/FEATURES.md` | Feature slug registry |
+| `{fr_dir}` | `01-Requirements/_frs/FR-<NNN> <Title>.md` | Functional Requirements |
+| `{br_dir}` | `01-Requirements/_brs/BR-<NNN> <Title>.md` | Business Rules (defines `fr: []` citations) |
+| `{entities_file}` | `01-Requirements/ENTITIES.md` | Proposed entities register |
+| `{entity_dir}` | `01-Requirements/_entities/EN-<NNN> <Entity>.md` | Promoted entity specs |
+| `{scenarios_file}` | `01-Requirements/SCENARIOS.md` | Cross-feature scenario register (`SCN-###`) |
+| `{template_*}` | `skills/bigin-transform-signal/template/*` | Scaffolds (`fr`, `br`, `entity`, `scenario-register`) |
+
+---
 ## Paths
 
 - `{conventions_reference}`: `references/conventions.md` (plugin root) — the ID scheme, frontmatter
