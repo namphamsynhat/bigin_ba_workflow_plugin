@@ -153,10 +153,31 @@ valid chains applies:
 - **Lightweight CR** — feature already `built` (a change/fix/improvement on something shipped):
   `INT → FR/BR → US → UX`, skipping PRD and EP. The US cites the FR directly in `sources` instead
   of an EP, and the FR's `links` points at the US id(s) instead of a PRD id.
+- **Design** — a presentation-only signal, at any feature status: `INT → design directive → UX`,
+  skipping FR, PRD, EP, and US entirely. A statement about look, layout, tone, copy voice,
+  interaction feel, or an accessibility affordance produces **no functional scope**, so there is
+  nothing for a PRD section to carry and nothing for a story to decompose. It becomes a directive
+  in one of two places — a `DESIGN-PRINCIPLES.md` row when it's durable and cross-cutting, or a row
+  in its feature hub's own `## Design Directives` section when it's scoped to one feature — and
+  `/prototype-design` reads both directly. The directive carries no id of its own; its
+  traceability runs through the originating Signal Log row's `Destination` cell.
 
-**Planned** — this plugin doesn't yet distinguish the two chains; every feature runs the same
-fixed pipeline (`/enrich-feature → /approve-fr → /prototype-design → /consolidate-prd`) regardless
-of whether it's new scope or a CR against something shipped. See § Reconciliation notes.
+  The chain is chosen by a strict test, not by the client's phrasing: **if a tester could write a
+  pass/fail assertion for it that never mentions appearance, it is FR or BR, not a design
+  directive** — "ask for confirmation before deleting" adds a step to a flow and takes the Full or
+  CR chain, however visual the request sounded. An ambiguous signal takes the FR chain, because an
+  over-routed FR is caught at the human gate while an under-routed directive skips the gate.
+  `/bigin-transform-signal`'s `references/lane-design.md` and `references/routing.md` hold the
+  boundary test and the destination rules.
+
+**Planned** — this plugin doesn't yet distinguish the Full and CR chains; every feature with an FR
+runs the same fixed pipeline (`/enrich-feature → /approve-fr → /prototype-design →
+`/consolidate-prd`) regardless of whether it's new scope or a CR against something shipped. The
+Design chain is **half-built**: `/bigin-transform-signal` files directives to both destinations
+today, and `/prototype-design` already reads `DESIGN-PRINCIPLES.md` directly, but it doesn't yet
+read a hub's `## Design Directives` and still keys on an FR id — so a design-only feature (no FR
+at all) has its directives filed correctly but cannot yet be handed to `/prototype-design`. See
+§ Reconciliation notes.
 
 Every link in the chosen chain must resolve; if one can't be established, add an Open Question
 instead of guessing.
@@ -343,7 +364,15 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
 - `## PRD` — link + status, or "not started."
 - `## Epics & Stories` — table of epic/story ids with status, or a pointer into `epics.md` until
   `EP-###`/`US-###` exist as their own ids.
-- `## Prototype` — link + status, or "not started."
+- `## Design Directives` — feature-scoped presentation directives on the Design chain (§
+  Traceability chain): `# | Directive | Source | Status | Notes`, `#` permanent and append-only
+  like the Signal Log, `Status` one of `open` / `reflected` / `superseded` / `conflict`. Written by
+  `/bigin-transform-signal`'s design lane; read by `/prototype-design` as the feature's
+  presentation brief (**Planned** — that skill doesn't read it yet, § Reconciliation notes). Empty
+  for most features. Durable, cross-cutting preferences go to `DESIGN-PRINCIPLES.md` instead, or as
+  well (§ Design Principles Register).
+- `## Prototype` — link + status, or "not started." (The hub template calls this section
+  `## UX Spec`; treat the two names as the same section until one of them is renamed.)
 - `## Open Questions / Gates` — every Signal Log row with `Status: question` or `Status: conflict`,
   plus every open FR's own Open Questions — what's actually blocking progress right now. An
   `approved` FR normally contributes nothing here — its questions were resolved before approval —
@@ -363,7 +392,11 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   after each confirmed human-gate fold-in flips the affected Signal Log row from `staged` to
   `applied`, and refreshes `## Requirement Readiness`, `fr:`/`br:` frontmatter, and — for the
   cross-feature cases it catches (§ Entity Data Model, § Business Scenarios) — `## Entities`,
-  `## Business Scenarios`, and `entities:` frontmatter.
+  `## Business Scenarios`, and `entities:` frontmatter. Also appends to `## Design Directives` for
+  every presentation-only signal it routes down the Design chain, and fills each processed Signal
+  Log row's `Destination` cell (the column `/extract-signal` leaves blank) with where the signal
+  actually landed. It never sets a hub's own `status:` — that mirrors the `FEATURES.md` row's scope
+  state, not a workflow state, and there is no "ready for PRD" feature status.
 - `/enrich-feature`: refreshes `## Requirement Readiness`/`## Related Documents`/
   `## Open Questions / Gates`, and **`## Pain Points`** whenever it folds a pain-point signal into
   the FR's own `## Problem & Pain Points` table.
@@ -536,7 +569,7 @@ answer that still needs a client round-trip stays unchecked, and `status` stays
 ## Resumable unattended apply (checkpoint + idempotent writes)
 
 An unattended fold-in — matching a human's already-written inline answer to its FR and folding it
-in, whether that's `/bigin-transform-signal`'s Pass 2, `/extract-signal`'s per-note batch
+in, whether that's `/bigin-transform-signal`'s Stage 1 fold-in, `/extract-signal`'s per-note batch
 processing, or a future `--auto` mode — is a multi-file write: the FR itself, the feature hub,
 sometimes `FEATURES.md`, sometimes the source INT note. Nothing here runs inside a database
 transaction — the process can be killed between any two of those writes by an external timeout or
@@ -685,6 +718,7 @@ Every `[requirement]`/`[feedback]` signal `/bigin-transform-signal` folds in lan
 |---|---|
 | A testable, actionable statement | a new/updated `FR-###` (§ ID scheme) |
 | A conditional/policy constraint, feature-level or anchored to one FR | a new/updated `BR-###`, `fr: []` citing the FR(s) it constrains (§ ID scheme, § Entity Data Model) |
+| A presentation-only statement — look, layout, tone, copy voice, interaction feel, accessibility affordance — that changes no behaviour | a **design directive**, never an FR line: a `DESIGN-PRINCIPLES.md` row when durable/cross-cutting, a row in its feature hub's `## Design Directives` when feature-scoped, or both (§ Traceability chain's Design chain, § Design Principles Register) |
 | A data field/entity described — a thing the business tracks and its attributes | a `proposed` row in `ENTITIES.md`, later promoted to `EN-###` `## Fields` (§ Entity Data Model) — new or existing entity |
 | Narrative context — the client's stated why, not yet actionable on its own | `## Problem & Pain Points` as `[problem]` |
 | A concrete frustration/cost the client named, with no requirement attached yet | a new `PP-###` in `01-Requirements/PAIN-POINTS.md` (§ Pain Point Register), mirrored on the FR once one exists |
@@ -795,12 +829,20 @@ signal reads as a durable, cross-cutting preference rather than a one-off constr
 single feature:
 
 - **Feature-specific** visual/interaction constraints ("this donor dashboard should feel warm,
-  less corporate") still anchor to that feature's FR as normal (§ Signal → artifact mapping) —
-  nothing changes there.
+  less corporate") go to that feature hub's own `## Design Directives` section, on the Design chain
+  (§ Traceability chain) — **not** onto its FR. An earlier draft of this document routed them to
+  the FR; that put untestable presentation language inside approved functional scope and made a
+  purely visual note wait behind `/approve-fr` before `/prototype-design` could ever see it. A
+  feature-scoped directive that turns out to change behaviour was misrouted and belongs back on the
+  FR — see `/bigin-transform-signal`'s `references/routing.md` § The design boundary test.
 - **Cross-cutting** preferences (brand, tone, accessibility, interaction, layout, content,
-  platform) append a row to `DESIGN-PRINCIPLES.md`: `# | Principle / Preference | Category |
-  Source | Status | Notes`, citing the INT id like any other signal. A signal can land in both
-  places at once if it's stated about one feature but clearly generalizes.
+  platform) append a row to `DESIGN-PRINCIPLES.md`: `# | Principle | Why | Category | Source |
+  Status | Notes`, citing the INT id like any other signal. A signal can land in both places at
+  once if it's stated about one feature but clearly generalizes. An earlier draft of this document
+  specified the columns without `Why`, and the register template shipped without `Category` or
+  `Status`; the seven-column form above is canonical, and a register file already created with the
+  older header keeps it — append rows matching whatever header is on disk rather than migrating a
+  live register mid-run.
 - Same append-only discipline as `FEATURES.md`/the Signal Log: `#` is permanent, never delete a
   row — a later statement that contradicts an earlier one is a new row, with the old row's
   `Status` flipped to `superseded` (or `rejected` if the client/team explicitly walked it back)
@@ -1036,14 +1078,11 @@ scattered inline caveats — resolve and delete each line as the corresponding s
   the two yet. Until these four are migrated, most of § Feature Hub's "Maintenance contract" past
   `/bigin-transform-signal` and all of § Absorbed describe the target, not the current read/write
   paths.
-- **FR/BR status vocabulary is now decided (§ Status vocabularies:
-  `draft → enriched → approved → consolidated`, plus `needs-clarification`/`removed`) but not yet
-  applied everywhere it's written down.** `skills/bigin-transform-signal/template/fr.md` and
-  `template/br.md` still comment `raw | draft | in-review | needs-clarification | approved |
-  superseded | removed`, and `bigin-transform-signal/SKILL.md` still narrates results landing on
-  `in-review` (Pass 1 step 5, Pass 2 step 4, its Report block). Update those three to `draft` per
-  § Status vocabularies once you're not mid-edit on that skill — this document is the decided
-  target, those files haven't caught up yet.
+- ~~**FR/BR status vocabulary decided but not yet applied where it's written down.**~~ **Resolved.**
+  `skills/bigin-transform-signal/template/fr.md`, `template/br.md`, and that skill's `SKILL.md` now
+  all use § Status vocabularies' list (`draft → enriched → approved → consolidated`, plus
+  `needs-clarification`/`removed`) and land results on `draft`, never the retired `in-review`.
+  Anything still writing `in-review` or `superseded` onto an FR/BR is a bug.
 - **Command order mismatch**: this document's Full chain is `PRD → EP → US → UX`, but this
   plugin's actual command order is `/approve-fr` (PRD) → `/prototype-design` (UX) →
   `/consolidate-prd` (Epics/Stories) — UX before Epics/Stories. Decide which order is right for

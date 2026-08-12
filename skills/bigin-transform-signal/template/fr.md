@@ -2,10 +2,11 @@
 id: FR-
 type: requirement
 title:
-status: draft   # raw | draft | in-review | needs-clarification | approved | superseded | removed
-                # (references/conventions.md § Frontmatter schema). This skill only ever writes
-                # draft/in-review/needs-clarification — approved/removed are human-only (hard
-                # rule 4), set by /approve-fr and a human respectively, never by this skill.
+status: draft   # draft | needs-clarification | enriched | approved | consolidated | removed
+                # (references/conventions.md § Status vocabularies — in-review and superseded are
+                # retired for FR/BR). /bigin-transform-signal only ever writes
+                # draft/needs-clarification; enriched belongs to /enrich-feature, consolidated to
+                # /consolidate-prd, and approved/removed are human-only (hard rule 4).
 version: 1.0
 feature:         # the FEATURES.md slug this FR belongs to
 sources: []      # INT-### id(s) this FR traces to
@@ -36,13 +37,14 @@ Register): PP-### | Statement | Status | Proposed solution | Resolved by. Empty 
 ## Functional requirements
 <!-- Numbered FR-<NNN>.1, FR-<NNN>.2, ... one testable, actionable statement per line
 (conventions.md § Signal → artifact mapping). Never written straight here — draft into
-## Discussion first, fold in only after the human gate (§ SKILL.md Pass 1/Pass 2). A
+## Discussion first, fold in only after the human gate (§ SKILL.md Stage 3 stages it, Stage 1
+folds it in on a later run). A
 policy/conditional constraint on this FR is its own BR-### file (01-Requirements/_brs/), not a
 line here — see template/br.md. -->
 
 ## Discussion
 <!-- Staged, not-yet-applied change proposals, one per pending signal, cleared into
-## Functional requirements above only once the human gate (SKILL.md Pass 1 raises it / Pass 2
+## Functional requirements above only once the human gate (SKILL.md Stage 3 raises it / Stage 1
 folds it in) confirms it. Format:
 
 - **<INT-###>** (staged <YYYY-MM-DD>): <quoted/tightly paraphrased signal> → proposed: <the FR

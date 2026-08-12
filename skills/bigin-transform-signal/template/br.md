@@ -2,9 +2,10 @@
 id: BR-
 type: business-rule
 title:
-status: draft   # raw | draft | in-review | needs-clarification | approved | superseded | removed
-                # (references/conventions.md § Frontmatter schema) — same discipline as an FR;
-                # this skill only ever writes draft/in-review/needs-clarification.
+status: draft   # draft | needs-clarification | enriched | approved | consolidated | removed
+                # (references/conventions.md § Status vocabularies — in-review and superseded are
+                # retired for FR/BR) — same discipline as an FR; /bigin-transform-signal only ever
+                # writes draft/needs-clarification.
 version: 1.0
 feature:         # the FEATURES.md slug this BR belongs to
 fr: []           # FR-### id(s) this rule constrains — [] if it's a feature-level rule not yet
@@ -22,7 +23,7 @@ not>..." Not a restatement of the FR it constrains; a rule narrows or governs ho
 
 ## Discussion
 <!-- Staged, not-yet-applied change proposals, cleared into the rule statement above once the
-human gate (SKILL.md Pass 1 raises it / Pass 2 folds it in) confirms it. Same format as
+human gate (SKILL.md Stage 3 raises it / Stage 1 folds it in) confirms it. Same format as
 template/fr.md's ## Discussion. -->
 
 ## Open Questions

@@ -87,6 +87,22 @@ EP-###/US-### exist). -->
 ## Epics & Stories
 <!-- table: id | title | status -->
 
+## Design Directives
+<!-- Feature-scoped presentation directives — look, layout, tone, interaction feel — routed here by
+/bigin-transform-signal's design lane (skills/bigin-transform-signal/references/lane-design.md).
+These reach /prototype-design WITHOUT passing through an FR, a PRD, or an approval gate
+(conventions.md § Traceability chain, the Design chain), because a presentation-only statement has
+no functional scope for a PRD to carry. A directive that changes what the system DOES is a
+misroute — it belongs in an FR.
+Durable, cross-cutting preferences go to 01-Requirements/DESIGN-PRINCIPLES.md instead (or as well);
+this section is only for what is scoped to this feature.
+# is permanent, never renumbered or deleted — same discipline as the Signal Log. Status: open (not
+yet in a prototype) · reflected (set by /prototype-design) · superseded (Notes points at the row
+that replaced it) · conflict (contradicts an earlier directive, awaiting a human). -->
+
+| # | Directive | Source | Status | Notes |
+|---|-----------|--------|--------|-------|
+
 ## UX Spec
 <!-- link + status, or "not started." -->
 

@@ -19,18 +19,31 @@ full ID scheme and artifact conventions.
 /extract-signal           [Extract] drain the intake queue: extract signals, anchor each to a
                            feature, file it onto that feature's Signal Log
         |
-/bigin-transform-signal   [Transform] turn filed signals into drafted/updated FRs and BRs, keep
-                           cross-feature Entities and Business Scenarios in sync, human-gate every
-                           FR/BR change before it's folded in
+/bigin-transform-signal   [Transform] qualify each filed signal, route it to a lane, turn it into
+                           drafted/updated FRs and BRs, keep cross-feature Entities and Business
+                           Scenarios in sync, human-gate every FR/BR change before it's folded in
         |
-/enrich-feature           [Load] domain research + entity mapping, surface concerns
-        |
-/approve-fr               [Load] approve the FRs, generate/update the PRD
-        |
+        |------------------------------------------.
+        |                                          |
+/enrich-feature           [Load] domain research    |  presentation-only signals take the Design
+        |                  + entity mapping         |  chain — a directive on the feature hub or
+        |                                           |  in DESIGN-PRINCIPLES.md, no FR, no PRD
+/approve-fr               [Load] approve the FRs,   |
+        |                  generate/update the PRD  |
+        |                                           |
 /prototype-design         [Load] produce a text-level prototype design (flows, screens, states)
         |
 /consolidate-prd          [Load] merge design decisions into the PRD, generate Epics & User Stories
 ```
+
+`/bigin-transform-signal` runs five stages per invocation: **fold-in** (apply staged changes a human
+has since answered — first, so a rerun is always useful), **qualify** (four gates: blocked on an
+answer, source materialized, fidelity, dedup), **route and draft** (one subagent per feature, never
+per lane — a feature's hub and FR/BR files are one ownership domain), **sync** (shared registers,
+written sequentially, plus an in-feature conflict check), and **status and report**. Signals it
+can't safely act on are parked `held` with the remedy named, never repaired by re-reading raw
+material — extraction owns that, and its own fidelity pass is where a signal is checked
+quote-by-quote against the source it claims to come from.
 
 All state is written into the current repo — `_bigin/` for engagement config, `00-Inbox`/`01-Requirements` for the requirements vault:
 

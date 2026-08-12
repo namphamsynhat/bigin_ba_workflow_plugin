@@ -71,6 +71,64 @@ For each note:
 Report one line per note: clean, or exactly what's missing (which hub, which row).
 ```
 
+## Fidelity subagent (Step 3b) — is each signal actually supported by the source?
+
+The verification subagent above checks that the *filing* is complete. This one checks that the
+*content* is real: that every extracted signal traces to something the client actually said, rather
+than to an inference the extracting model made and then wrote down as a claim. A fabricated signal
+that clears filing verification is worse than a missed one — it becomes an FR nobody asked for, and
+by then the transcript is three stages upstream.
+
+This runs **here, not in `/bigin-transform-signal`**, because it is only cheap next to the raw
+material. One `Agent` per note (never per batch — a per-batch agent would hold several transcripts
+at once, which is the under-reading failure `extraction-rules.md` § Reading long sources warns
+about). `model: sonnet`, `general-purpose`, foreground.
+
+Sonnet rather than `haiku` is deliberate and is the one place in this skill worth the cost:
+detecting a plausible-sounding claim that the source does not support is exactly the judgment a
+smaller model is weakest at, and it is the last checkpoint before the raw source stops being read
+by anything downstream.
+
+```text
+Check whether every signal extracted from <INT-###> (00-Inbox/<filename>.md) is actually
+supported by its source. Do not re-extract, re-anchor, or rewrite anything.
+
+Read the note's ## Extracted signals table and its ## Raw section (plus any attachment the
+table cites). If ## Raw is long, work through it in sections rather than in one pass.
+
+For EVERY row whose Type is requirement, constraint, decision, or feedback — the types that
+become requirement content downstream — find the exact supporting text in the source and
+quote it. Sample at least half the remaining rows the same way.
+
+A row is SUPPORTED only if you can quote source text that states it. Judge these as NOT
+supported:
+- No locatable quote — the claim reads as a reasonable inference from the discussion rather
+  than something said.
+- The only support is a meeting tool's AI-generated summary. That is derived text, not the
+  client's words (extraction-rules.md § The Why field) — it can never support a signal.
+- The quote is real but says less than the row claims: a hedge turned into a commitment, a
+  single example turned into a general rule, an unstated number, unit, threshold, or
+  timezone.
+- The row's Why cites a reason the quote does not give, including a Why written as
+  "not stated beyond <paraphrase>".
+
+Report one line per row: <#> supported "<the quote, trimmed>" | <#> UNSUPPORTED <which of
+the four cases, in a few words>. Then one summary line: <N> rows checked, <N> unsupported.
+```
+
+**On any unsupported row**, the orchestrator repairs the note before finalizing it — never leaves
+it filed:
+
+- **Overreach** (the quote says less than the row claims): correct the row in place down to what
+  the source supports, `Notes: corrected: narrowed to source`, and mirror the correction onto every
+  hub row already filed from it.
+- **No support at all**: leave the row (hard rule 1 — nothing is deleted), set its `Status` to
+  `question`, `Notes: unsupported by source — needs confirmation`, raise a `- [ ] Q:` on the note
+  asking the client to confirm or correct the claim in plain language, and set the note's
+  `status: needs-clarification`. If a hub row was already filed from it, set that row to `question`
+  too, with the same note.
+- Report the count in the batch summary. A run with unsupported rows is not a clean run.
+
 ## Repair, on a mismatch
 
 A note that reports success but is missing its hub row is stranded, not done — a finalized note (`status: in-review`) drops out of every future scan of `{inbox_dir}`, so nothing else will ever catch this. Treat any verification mismatch as blocking.

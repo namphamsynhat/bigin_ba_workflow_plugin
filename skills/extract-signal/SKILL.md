@@ -64,6 +64,8 @@ After each batch, spawn one more `Agent` (`haiku`, `general-purpose`, foreground
 
 Treat any mismatch as blocking: dispatch one small, targeted repair subagent that copies the missing row(s) from the note's own already-extracted table onto the correct hub (it doesn't re-extract), then re-check that one note before moving on.
 
+Then run the **fidelity check** — one `Agent` per note (`sonnet`, `general-purpose`, foreground), the only place in this plugin where a signal is checked against the raw source it claims to come from. It quotes the supporting text for every `requirement`/`constraint`/`decision`/`feedback` row and samples the rest; a row with no locatable quote, or one whose quote says less than the row claims, is corrected down to the source or turned into a `question` before the note is finalized. The prompt and the repair rules are in `references/agent-dispatch.md` § Fidelity subagent. Downstream stages rely on this: `/bigin-transform-signal` deliberately never re-reads `## Raw`, so a fabricated signal that survives here survives all the way into an FR.
+
 ## Step 4 — Report
 
 Print a short summary of the batch (or the whole run, once the queue is drained):
@@ -85,7 +87,9 @@ A signal that doesn't match any `{requirements_file}` slug is never guessed onto
 
 ## Model
 
-This is extraction, matching, and filing — not judgment calls that need a stronger model. Every subagent this skill spawns, extraction and verification alike, defaults to `haiku`. Only fall back to the session's default model for a single subagent if it explicitly reports being stuck on something a written question can't cover — that should be rare, and worth a line in the report.
+This is extraction, matching, and filing — not judgment calls that need a stronger model. Every subagent this skill spawns defaults to `haiku`, extraction and filing-verification alike. Only fall back to the session's default model for a single subagent if it explicitly reports being stuck on something a written question can't cover — that should be rare, and worth a line in the report.
+
+The one deliberate exception is the **fidelity subagent** (§ Step 3), which runs on `sonnet`. Judging whether a plausible-sounding signal is actually supported by the source is the weakest thing a small model does, and it's the last point in the pipeline where the raw material is still being read — `/bigin-transform-signal` never re-opens `## Raw`, so anything fabricated that survives this check survives into an FR. That one check is worth the cost; nothing else here is.
 
 ## Additional resources
 
