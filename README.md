@@ -7,8 +7,9 @@ A Claude Code plugin that guides a Business Analyst through turning raw communic
 Structured as ETL: `extract-signal` **extracts** raw intake into per-feature signals,
 `bigin-transform-signal` **transforms** those signals into FRs and BRs (each its own file, with
 Entities/Business Scenarios kept in sync across features), and the remaining stages **load**
-approved requirements into the PRD, prototype, and epics. See `references/conventions.md` for the
-full ID scheme and artifact conventions.
+approved requirements into the PRD, prototype, and epics. The full ID scheme and artifact conventions
+live in the rulebook, which `/bigin-new-project` materializes into the project at
+`_bigin/rules/conventions.md` (it ships in the plugin at `workspace-template/rules/conventions.md`).
 
 ```
 /bigin-new-project        initiate the project in this repo: scaffold the workspace, capture the
@@ -45,11 +46,16 @@ can't safely act on are parked `held` with the remedy named, never repaired by r
 material — extraction owns that, and its own fidelity pass is where a signal is checked
 quote-by-quote against the source it claims to come from.
 
-All state is written into the current repo — `_bigin/` for engagement config, `00-Inbox`/`01-Requirements` for the requirements vault:
+All state is written into the current repo — `_bigin/` for engagement config plus the materialized
+rulebook, `00-Inbox`/`01-Requirements` for the requirements vault:
 
 ```
-_bigin/system/project.md         engagement config: client, approver, contacts,
+_bigin/system/project.md         engagement config: client, approver, contacts, providers,
                                   new vs. ongoing product, codebase map
+_bigin/rules/                     the rulebook, copied in by /bigin-new-project — conventions.md
+                                  plus extraction-rules, qualification, routing, and the four
+                                  lane-*.md drafting guides. Plugin-owned: refreshed on re-run
+_bigin/templates/                 blank scaffolds for every artifact type, same ownership
 00-Inbox/
 └── INT-<NNN>.md                 raw captures, one file per intake, verbatim
 01-Requirements/
@@ -70,15 +76,42 @@ prototypes/FR-<NNN>-prototype.md flows/screens for an approved feature
 epics.md                          generated Epics & User Stories
 ```
 
-`/bigin-new-project` runs once per repo and is re-runnable: it shows the existing config and only rewrites what you confirm, never touching captured intake, features, or the PRD. For `project_mode: ongoing` it also records a **codebase map** — stack, entry points, and code-area slugs — so later stages can anchor requirements to real directories. Code areas name places in the code, not features; feature names still come from client signals via `/extract-signal`.
+### Why the rulebook is copied into the project
+
+Every stage after intake does its real work inside dispatched subagents — one per intake note in
+`/extract-signal`, one per feature in `/bigin-transform-signal`. A subagent gets no plugin context of
+its own, so it cannot resolve a path into wherever the plugin happens to be installed. Copying the
+rulebook and templates into `_bigin/` at init gives skills, subagents, and the `bigin-ba` agent one
+path convention that all three can actually read. It also makes the rules inspectable: a BA can open
+`_bigin/rules/lane-fr.md` and see exactly what governed an FR.
+
+The tradeoff is that a project pins the rulebook it was initiated with. `_bigin/system/project.md`
+records `workspace_version`; re-running `/bigin-new-project` after a plugin upgrade refreshes
+`_bigin/rules/` and `_bigin/templates/` to the new version. Those two directories are plugin-owned and
+overwritten on refresh — per-project overrides belong in
+`.claude/bigin-ba-workflow-plugin.local.md`, never in the materialized rules.
+
+`/bigin-new-project` is re-runnable by design: it re-materializes the workspace every run, shows the
+existing config and only rewrites what you confirm, and never touches captured intake, features, or
+the PRD. It can also import a `proposed` feature list from a project proposal or SOW. For
+`project_mode: ongoing` it records `codebase_path`, but the **codebase map is currently deferred** —
+that section stays empty in both modes until the repo-mapping approach is settled.
 
 Every FR's own frontmatter `status` (`draft` → `in-review` ⇄ `needs-clarification` → `approved`, human-only per `/approve-fr`) is the authoritative gate — a feature can have more than one FR at different stages at once, though normally a feature carries just one FR across its life (an update edits it in place rather than forking). Each Feature Hub's `## Requirement Readiness` table is a refreshed snapshot for orientation, not the gate itself. Features are matched by slug across stages, so `/extract-signal` and `/bigin-transform-signal` update an existing hub/FR rather than duplicating one when new signals map to the same feature.
 
-> **Migration note:** `/enrich-feature`, `/approve-fr`, `/prototype-design`, and `/consolidate-prd` still read the older `.bigin/features/FR-<id>-*.md` single-file model. They haven't been moved onto the `01-Requirements/` layout yet — that's the next stage of this migration, not yet done. See `references/conventions.md` § Reconciliation notes for the full list of gaps.
+> **Migration note:** `/enrich-feature`, `/approve-fr`, `/prototype-design`, and `/consolidate-prd` still read the older `.bigin/features/FR-<id>-*.md` single-file model. They haven't been moved onto the `01-Requirements/` layout yet — that's the next stage of this migration, not yet done. See `_bigin/rules/conventions.md` § Reconciliation notes for the full list of gaps.
 
 ## Configuration
 
 `/extract-signal` and `/bigin-intake` read `.claude/bigin-ba-workflow-plugin.local.md` if present — a plugin settings file (not project data, so it belongs in `.claude/`, not `_bigin/`) for project-specific overrides such as a house style for `Why` phrasing or a standing list of features that always map to one obvious slug without raising a question. It's optional; omit it to use the built-in defaults. Add `.claude/*.local.md` to the project's `.gitignore` since it's user/local config.
+
+## Invocation
+
+Every stage is available two ways: type `/<stage>` yourself, or let the `bigin-ba` agent drive the
+pipeline stage by stage. The agent reads the vault to decide what runs next, continues automatically
+where the next stage needs no decision, and stops at the ones that do — `/approve-fr`, and
+`/bigin-transform-signal`'s FR/BR review gate. The human-confirmation requirements live inside those
+skills, so they hold whether a person or the agent invoked them.
 
 ## Install (local development)
 
@@ -86,7 +119,11 @@ Every FR's own frontmatter `status` (`draft` → `in-review` ⇄ `needs-clarific
 claude --plugin-dir /path/to/bigin_ba_workflow_plugin
 ```
 
-Then run `/bigin-new-project` to initiate the project, and `/bigin-intake` to capture the first input. Use `/reload-plugins` after editing any `SKILL.md` to pick up changes without restarting.
+Then run `/bigin-new-project` to initiate the project — this is what materializes `_bigin/rules/` and
+`_bigin/templates/`, so nothing else works until it has run — and `/bigin-intake` to capture the first
+input. Use `/reload-plugins` after editing any `SKILL.md` to pick up changes without restarting; after
+editing anything under `workspace-template/`, re-run `/bigin-new-project` in the test project to
+re-materialize it.
 
 ## Install (from a marketplace)
 

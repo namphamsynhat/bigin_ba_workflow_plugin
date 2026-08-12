@@ -27,15 +27,18 @@ Qualified signals (hub row # → lane), decided in Stage 2/3 — do not re-quali
 <row #>: <signal text> | lane: FR|BR|design|entity|context | new-or-update: <FR-### | new>
 <...>
 
-Read, in full, before writing anything:
-- references/conventions.md — the ID scheme, frontmatter schema, status vocabularies, Feature
-  Hub schema, Open Questions wording, and the hard rules
-- skills/bigin-transform-signal/SKILL.md § Paths — this resolves the {fr_dir}, {br_dir},
-  {entity_dir}, {template_fr}, {template_br} and other variables the lane guides refer to
-- skills/bigin-transform-signal/references/lane-<x>.md for each lane in the list above, and
-  routing.md § New vs. update if any row says "new"
+Read before writing anything:
+- _bigin/rules/conventions.md — these sections ONLY, not the whole file: § ID scheme,
+  § Frontmatter schema, § Status vocabularies, § Feature Hub, § Open Questions wording,
+  § Open Questions ↔ status consistency, § Feedback handling. Add § Entity Data Model or
+  § Business Scenarios only if this run has an entity or scenario candidate. Skip the rest —
+  it governs stages this task never touches.
+- skills/bigin-transform-signal/SKILL.md § Paths — resolves {fr_dir}, {br_dir}, {entity_dir},
+  {template_fr}, {template_br} and the other variables the lane guides refer to
+- _bigin/rules/lane-<x>.md for each lane listed above, and _bigin/rules/routing.md
+  § New vs. update if any row says "new"
 - 01-Requirements/_features/<slug>.md — the hub
-- every FR/BR already listed in that hub's fr: / br: frontmatter, in full
+- every FR/BR listed in that hub's fr: / br: frontmatter, in full
 
 Then, one signal at a time, in hub row order:
 1. Follow that signal's lane guide exactly. Stage FR/BR content into ## Discussion — never
@@ -98,7 +101,7 @@ Repair 01-Requirements/_features/<slug>.md ↔ 01-Requirements/_frs/FR-<NNN> <Ti
 The hub's Signal Log row #<n> says Status: staged, Destination: FR-<NNN>, but that FR's
 ## Discussion has no entry citing <INT-###>. The signal text is in the hub row.
 
-Write the missing ## Discussion entry in the format skills/bigin-transform-signal/template/fr.md
+Write the missing ## Discussion entry in the format _bigin/templates/fr.md
 defines, citing <INT-###>. Do not re-route the signal, do not create a new FR, do not change
 any Status. Report the entry you added.
 ```

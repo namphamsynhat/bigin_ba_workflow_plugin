@@ -2,7 +2,6 @@
 name: bigin-intake
 description: Capture raw requirement intake (a meeting transcript, email thread, or direct note) into the workspace, unmodified, for later signal extraction. Use when a BA has new raw communication to log before processing.
 argument-hint: "[auto|direct] <pasted text, file path, or note>"
-disable-model-invocation: true
 model: haiku
 ---
 
@@ -24,16 +23,15 @@ Read the first token of `$ARGUMENTS`:
 
 ## Conventions & Workspace Environment
 
-- Bare paths resolve from workspace root; `{project-root}` is the working dir.
-- Dynamic environment paths:
-  - `{inbox_dir}`: `00-Inbox`
-  - `{requirements_file}`: `01-Requirements/FEATURES.md`
-  - `{system_config}`: `_bigin/system/project.md`
-  - `{conventions_reference}`: `references/conventions.md` — the plugin-wide ID scheme, frontmatter schema, and artifact conventions this skill follows. Not project-specific; contrast with `{conventions_file}` below.
-  - `{conventions_file}`: `.claude/bigin-ba-workflow-plugin.local.md` — plugin settings, not project data; lives in `.claude/`, not `_bigin/`
-  - `{template_intake}`: `_bigin/templates/intake.md`
-  - `{intake_log}`: `{inbox_dir}/.intake_log`
-- **File roles.** `{intake_log}` is the execution audit trail and idempotency index. Every ingest, append, and skipped source logs as an atomic append-only line. All writes go through the log script/append protocol.
+Bare paths resolve from the workspace root (the working dir).
+
+- `{inbox_dir}`: `00-Inbox`
+- `{requirements_file}`: `01-Requirements/FEATURES.md`
+- `{system_config}`: `_bigin/system/project.md`
+- `{conventions_reference}`: `_bigin/rules/conventions.md` — the rulebook: ID scheme, frontmatter schema, artifact conventions.
+- `{conventions_file}`: `.claude/bigin-ba-workflow-plugin.local.md` — plugin settings, not project data.
+- `{template_intake}`: `_bigin/templates/intake.md`
+- `{intake_log}`: `{inbox_dir}/.intake_log` — audit trail and idempotency index. Every ingest, append, and skipped source logs as one atomic append-only line.
 
 ---
 ## Pre-Flight & On Activation
@@ -48,8 +46,16 @@ Read the first token of `$ARGUMENTS`:
      - `email_provider` → `outlook` | `spark` (default `outlook`).
      - `meeting_provider` → `fathom` | `spark` | `firefly` (default `fathom`).
 2. **Validation Gates**:
-   - Verify `client_emails` is non-empty. If empty, **halt with error**: *"Cannot run intake with empty client_emails in project config."*
-   - Verify provider availability (MCP servers / CLI binaries). If a provider is missing or unauthenticated, warn once and flag that source as disabled for this run. **Never silently fall back to an unconfigured provider.**
+   - **Workspace gate (both modes).** Verify `{template_intake}` exists. If not, **halt**:
+     *"`_bigin/templates/intake.md` is missing — run `/bigin-new-project`, then re-run this."* This is
+     the one thing that blocks capture, deliberately: without the template the frontmatter schema is
+     guesswork, and `/extract-signal` skips any note whose `kind:`/`status:` it can't read — so an
+     improvised note is captured, then silently never processed.
+   - **Config gate (Mode B only).** Verify `client_emails` is non-empty. If empty, **halt Mode B**:
+     *"Cannot sweep with empty client_emails — fill it in `_bigin/system/project.md`, or use
+     `/bigin-intake direct …`."* Without client addresses the correspondence filter can't tell client
+     mail from internal. Never applies to Mode A: content the human handed over needs no address list.
+   - Verify provider availability (MCP servers / CLI binaries). Missing or unauthenticated: warn once and flag that source disabled for this run. **Never silently fall back to an unconfigured provider.**
 3. **Determine Timeframe**:
    - Calculate timeframe from newest `INT` note's `updated` date; if none exists, set to `today - intake_lookback_days`.
 4. **Detect Execution Mode**:
@@ -60,7 +66,7 @@ Read the first token of `$ARGUMENTS`:
 
 ## What to do
 
-1. Create `00-Inbox/` if they don't already exist. If `_bigin/system/project.md` is missing, mention once that `/bigin-new-project` sets up the engagement config (client, approver, new vs. ongoing product) — then capture the intake anyway; a missing config never blocks capture.
+1. Create `00-Inbox/` if it doesn't already exist. If `_bigin/system/project.md` is missing, mention once that `/bigin-new-project` sets up the engagement config (client, approver, new vs. ongoing product) — then capture the intake anyway; a missing **config** never blocks Mode A capture. A missing **template** does (§ Validation Gates) — the config describes the engagement, the template defines the file `/extract-signal` has to be able to parse.
 
 ### Intent Modes
 

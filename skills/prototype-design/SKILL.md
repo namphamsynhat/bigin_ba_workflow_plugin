@@ -1,14 +1,25 @@
 ---
+name: prototype-design
 description: Produce a text-level prototype design (flows, screens, states) for an approved feature, traceable back to its FRs. Use after a feature is approved.
 argument-hint: "<feature-id, e.g. FR-003>"
-disable-model-invocation: true
 ---
 
 # Prototype Design
 
-See `references/conventions.md` for the plugin-wide ID scheme and artifact conventions (§
+See `_bigin/rules/conventions.md` for the plugin-wide ID scheme and artifact conventions (§
 Reconciliation notes there flags that this skill still reads the pre-migration `.bigin/` layout
 below — treat that as the known gap, not a new one to fix here).
+
+## Precondition — check this first
+
+This skill still reads the pre-migration `.bigin/` layout. `/bigin-transform-signal` writes the
+current one (`01-Requirements/_frs/`, `_brs/`), and nothing bridges them yet.
+
+**If `.bigin/features/` is absent while `01-Requirements/_frs/` has files, halt.** Say that this stage
+hasn't been migrated onto the `01-Requirements/` layout, name the FR files that are waiting, and stop.
+Do not fall back to reading `01-Requirements/` — the sections and status vocabulary differ, so a
+best-effort read produces a plausible artifact built on the wrong contract. Reporting "nothing found"
+is the worse failure: it reads as an empty backlog rather than a missing bridge.
 
 ## Input
 

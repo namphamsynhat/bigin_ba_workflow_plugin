@@ -9,10 +9,13 @@ Extract and file the signals in <INT-###> (full path: 00-Inbox/<filename>.md).
 
 This is <"a fresh run" | "a fold-in — every previously-open question is now answered">.
 
-Read, in full, before doing anything:
-- references/conventions.md (the plugin-wide ID scheme, frontmatter schema, and Signal Log status vocabulary)
-- skills/extract-signal/references/extraction-rules.md (the signal catalog, anchoring rules, hub schema)
-- .claude/bigin-ba-workflow-plugin.local.md, if it exists (plugin settings — project-specific overrides)
+Read before doing anything:
+- _bigin/rules/extraction-rules.md — in full (the signal catalog, anchoring rules, hub schema)
+- _bigin/rules/conventions.md — these sections ONLY, not the whole file: § ID scheme,
+  § Feature Hub, § Signal → feature mapping, § Open Questions wording, § Pain Point Register,
+  § Design Principles Register, § Entity Data Model. The rest governs FR/BR drafting and later
+  stages, which this task never touches.
+- .claude/bigin-ba-workflow-plugin.local.md, if it exists (project-specific overrides)
 - 01-Requirements/FEATURES.md (the slug registry)
 - the note itself
 
@@ -25,11 +28,11 @@ Then, following extraction-rules.md exactly:
 3. For each anchored signal, append a row to 01-Requirements/_features/<slug>.md's
    ## Signal Log (columns: # | Signal | Type | Source | Status | Destination | Notes;
    Status is new, question, conflict, or rejected — never anything else; Destination
-   blank) — create the hub from skills/extract-signal/template/feature-hub.md first if it
+   blank) — create the hub from _bigin/templates/feature-hub.md first if it
    doesn't exist yet, and update only its Signal Log, Pain Points, sources, and updated
    fields, nothing else in the hub.
 4. For any pain-point signal, also mirror it into 01-Requirements/PAIN-POINTS.md (create
-   from skills/extract-signal/template/pain-points-register.md if missing) and the hub's
+   from _bigin/templates/pain-points-register.md if missing) and the hub's
    own ## Pain Points table, both copies identical. For an entity/field signal, add a
    proposed row to 01-Requirements/ENTITIES.md (template: entities-register.md). For a
    durable, cross-cutting design constraint, add a row to
@@ -141,7 +144,7 @@ Repair 00-Inbox/<INT-###>.md → 01-Requirements/_features/<slug>.md.
 Its ## Extracted signals table already has the correct row(s) for this feature — do not
 re-extract or re-anchor anything. Copy the missing row(s) (# <n>) onto the hub's
 ## Signal Log (Status: new, Destination blank), in the format
-skills/extract-signal/template/feature-hub.md defines — and mirror any pain-point row(s)
+_bigin/templates/feature-hub.md defines — and mirror any pain-point row(s)
 into 01-Requirements/PAIN-POINTS.md and the hub's ## Pain Points table too. Report the
 row(s) you added.
 ```

@@ -14,6 +14,8 @@ email_provider: outlook   # outlook | spark — which tool /intake pulls client 
 meeting_provider: fathom  # fathom | spark | firefly — which tool /intake pulls meeting transcripts from
 project_mode: new        # new | ongoing
 codebase_path:            # absolute path to the product repo — required when project_mode: ongoing
+repo:                     # git remote or repo name — blank if this isn't a git repo
+workspace_version:        # the plugin version that last materialized _bigin/rules and _bigin/templates
 updated: <YYYY-MM-DD>
 ---
 
@@ -34,6 +36,11 @@ updated: <YYYY-MM-DD>
 >   if one is connected to this session — none ships with this vault by default).
 > - `project_mode` — `new` (greenfield) or `ongoing` (existing product).
 > - `codebase_path` — absolute path to the product repo (only relevant when `project_mode: ongoing`).
+> - `workspace_version` — written by `/bigin-new-project`; the plugin version whose rulebook and
+>   templates are currently materialized under `_bigin/`. Re-run `/bigin-new-project` after a plugin
+>   upgrade to refresh them.
+
+Any field the human didn't supply stays `<unknown>` — never inferred.
 
 Client: **<Client Name>** · Approver: **<Approver Name>** (<approver email>)
 
@@ -46,6 +53,13 @@ Client: **<Client Name>** · Approver: **<Approver Name>** (<approver email>)
 | Name | Role | Notes |
 |------|------|-------|
 | <name> | <role> | |
+
+## Codebase map
+<!-- project_mode: ongoing only — written by /bigin-new-project § 5, refreshed on re-run. -->
+
+## Notes
+<!-- Anything about the engagement that doesn't fit a field above — e.g. whether `_bigin/` is
+committed to git. -->
 
 ## Changelog
 - Initialized for <Client Name> (<YYYY-MM-DD>)

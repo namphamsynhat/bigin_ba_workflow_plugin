@@ -53,7 +53,7 @@ second row for the same preference is the failure this check prevents.
 | Row already exists, unchanged | Cite it. Signal Log: `Status: applied`, `Destination: DESIGN-PRINCIPLES #<n>`, `Notes: already registered` |
 | Row exists, this signal refines it | Append a **new** row; flip the old row to `Status: superseded`, `Notes: superseded by #<n>`. Never edit the old row's text — the register is append-only, same discipline as the Signal Log |
 | Row exists, this signal contradicts it | Append the new row with `Status: conflict` and raise one question naming both. Never pick a winner |
-| No row | Append one, creating the file from `skills/extract-signal/template/design-principles-register.md` if it does not exist |
+| No row | Append one, creating the file from `_bigin/templates/design-principles-register.md` if it does not exist |
 
 Bump the register's `version` and append a `## Changelog` line on every write, so its own history
 stays auditable.
@@ -73,7 +73,7 @@ A signal stated about one feature that clearly generalizes lands here **and** in
 This screen, this flow, this component. Destination: the hub's `## Design Directives` section,
 which `/prototype-design` reads as the feature's presentation brief.
 
-Create the section from `skills/extract-signal/template/feature-hub.md` if the hub predates it —
+Create the section from `_bigin/templates/feature-hub.md` if the hub predates it —
 place it immediately before `## UX Spec`, since directives are the input and the UX spec is the
 output.
 

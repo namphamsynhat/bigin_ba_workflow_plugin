@@ -89,7 +89,7 @@ EP-###/US-### exist). -->
 
 ## Design Directives
 <!-- Feature-scoped presentation directives — look, layout, tone, interaction feel — routed here by
-/bigin-transform-signal's design lane (skills/bigin-transform-signal/references/lane-design.md).
+/bigin-transform-signal's design lane (_bigin/rules/lane-design.md).
 These reach /prototype-design WITHOUT passing through an FR, a PRD, or an approval gate
 (conventions.md § Traceability chain, the Design chain), because a presentation-only statement has
 no functional scope for a PRD to carry. A directive that changes what the system DOES is a

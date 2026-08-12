@@ -84,7 +84,7 @@ Write it on the FR's own `## Open Questions`, following `conventions.md` § Open
 Two destinations, both on the FR, neither gated — they add provenance, not requirement content.
 
 **`## Business goal`** — the client's stated why, in the client's own terms. Write only what was
-actually said. A `decision`-type signal has no `Why` by design (`skills/extract-signal/references/extraction-rules.md` § The `Why`
+actually said. A `decision`-type signal has no `Why` by design (`_bigin/rules/extraction-rules.md` § The `Why`
 field); routing one here and inventing a rationale for it launders a guess into the record.
 
 **`## Problem & Pain Points`** — a mirror of this FR's rows from

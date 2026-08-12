@@ -7,7 +7,7 @@ updated: <YYYY-MM-DD>
 
 Optional project-specific overrides for `/bigin-intake` and `/extract-signal`. Anything written
 here takes precedence over the plugin's built-in defaults in
-`skills/extract-signal/references/extraction-rules.md`. Leave a section empty to fall back to
+`_bigin/rules/extraction-rules.md`. Leave a section empty to fall back to
 those defaults.
 
 ## Why phrasing

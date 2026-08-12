@@ -3,7 +3,7 @@ id: BR-
 type: business-rule
 title:
 status: draft   # draft | needs-clarification | enriched | approved | consolidated | removed
-                # (references/conventions.md § Status vocabularies — in-review and superseded are
+                # (_bigin/rules/conventions.md § Status vocabularies — in-review and superseded are
                 # retired for FR/BR) — same discipline as an FR; /bigin-transform-signal only ever
                 # writes draft/needs-clarification.
 version: 1.0
@@ -24,7 +24,7 @@ not>..." Not a restatement of the FR it constrains; a rule narrows or governs ho
 ## Discussion
 <!-- Staged, not-yet-applied change proposals, cleared into the rule statement above once the
 human gate (SKILL.md Stage 3 raises it / Stage 1 folds it in) confirms it. Same format as
-template/fr.md's ## Discussion. -->
+_bigin/templates/fr.md's ## Discussion. -->
 
 ## Open Questions
 <!-- Same format and invariant as an FR's Open Questions (conventions.md § Open Questions

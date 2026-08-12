@@ -1,28 +1,74 @@
 ---
 name: bigin-new-project
-description: Initiate a new BA project in the current repo — scaffold `_bigin/`, capture the engagement config (client, approver, contacts, new vs. ongoing product), and map the existing codebase when there is one. Use once per repo, before the first /bigin-intake.
+description: Initiate a new BA project in the current repo — materialize the rulebook and templates into `_bigin/`, capture the engagement config (client, approver, contacts, new vs. ongoing product), and map the existing codebase when there is one. Use once per repo before the first /bigin-intake, and again after a plugin upgrade to refresh the materialized rulebook.
 argument-hint: "[client name]"
-disable-model-invocation: true
 ---
 
 # Bigin New Project
 
-Step 0 of the workflow. Sets up `_bigin/` in the repo Claude Code is running from and writes `_bigin/system/project.md` — the config every later stage reads for who the client is, who approves, and whether this is greenfield or an existing product.
+Step 0. Sets up `_bigin/` in the current repo and writes `_bigin/system/project.md` — the config every
+later stage reads for the client, the approver, and greenfield vs. existing product.
 
-Like `/bigin-intake`, this stage **records what the human tells you** — never guess a client name, an approver, or an email address. Anything unknown stays as `<unknown>` and gets asked, not inferred. The one thing you may derive on your own is the codebase map (§ 4), because that's read from the repo itself, not from anyone's intent.
+This stage is what makes every other stage work. The plugin ships its rulebook and templates inside
+itself; this skill **copies them into the project** so every later skill and dispatched subagent can
+reach them project-relatively. Subagents carry no plugin context, so a path into the install directory
+is unreachable to them; `_bigin/rules/…` and `_bigin/templates/…` are reachable to everything.
 
-See `references/conventions.md` for the plugin-wide ID scheme and artifact conventions every later stage follows.
+Like `/bigin-intake`, the config half **records what the human states** — never guess a client name,
+approver, or email address. Unknowns stay `<unknown>` and get asked, not inferred. Only two things may
+be derived: the git remote (§ 3) and the codebase map (§ 6), both read from the repo rather than from
+intent.
 
 ## 1. Check what's already there
 
-Read `_bigin/system/project.md` if it exists.
+Read `_bigin/system/project.md` if it exists, and note whether `01-Requirements/FEATURES.md` does.
 
-- **It exists** — this repo is already initiated. Show the current config and ask whether to (a) update specific fields, (b) leave it alone, or (c) re-initiate from scratch. Only (c) rewrites the file, and only after the user explicitly confirms; even then, keep the existing `## Changelog` and append to it rather than starting a new one.
-- **It doesn't exist** — writes `01-Requirements/FEATURES.md` using `skills/bigin-new-project/template/feature-map.md` template and continue.
+- **Neither exists** — fresh initiation. Continue through every section.
+- **`project.md` exists** — already initiated. Materialize the workspace anyway (§ 2 is safe to repeat,
+  and is how a plugin upgrade reaches an existing project), then show the current config and ask
+  whether to (a) update specific fields, (b) leave it alone, or (c) re-initiate from scratch. Only (c)
+  rewrites `project.md`, only on explicit confirmation, and it still appends to the existing
+  `## Changelog` rather than starting a new one.
+- **`project.md` exists but `FEATURES.md` is missing** — create it from
+  `_bigin/templates/feature-map.md` in either branch. A config with no feature registry is broken:
+  `/extract-signal` has nothing to anchor to.
 
-## 2. Gather the engagement config
+## 2. Materialize the workspace
 
-Take the client name from `$ARGUMENTS` if given. Ask for the rest — use `AskUserQuestion` for the closed choices, plain questions for the free-text ones:
+Copy the workspace template into the repo, then **verify every file landed**. Read the plugin version
+from `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` (`version`) to stamp in § 4.
+
+```
+${CLAUDE_PLUGIN_ROOT}/workspace-template/rules/      →  _bigin/rules/
+${CLAUDE_PLUGIN_ROOT}/workspace-template/templates/  →  _bigin/templates/
+```
+
+Rules for this copy:
+
+- **`_bigin/rules/` and `_bigin/templates/` are plugin-owned.** Overwrite both every run. They're the
+  shipped rulebook and blank scaffolds, not project data — a project that edited one edited the wrong
+  file (overrides belong in `.claude/bigin-ba-workflow-plugin.local.md`, § 4.2). Report the refresh
+  (§ 7) so anyone who did edit one finds out.
+- **Never touch project data.** `_bigin/system/project.md`, `00-Inbox/`, `01-Requirements/`, `PRD.md`,
+  `prototypes/`, `epics.md`. This step writes only the two directories above.
+- **Verify, don't assume.** List both directories and confirm the file count matches the source. A
+  partial copy surfaces later as a subagent silently unable to read its lane guide — reported as a
+  clean run. Anything missing: stop and report rather than continue to § 3.
+
+What lands, and who reads it:
+
+| Path | Read by |
+|---|---|
+| `_bigin/rules/conventions.md` | every skill and every dispatched subagent — the rulebook |
+| `_bigin/rules/extraction-rules.md` | `/extract-signal`'s extraction subagents |
+| `_bigin/rules/qualification.md`, `routing.md` | `/bigin-transform-signal` Stages 2–3 |
+| `_bigin/rules/lane-fr.md`, `lane-br.md`, `lane-design.md`, `lane-entity.md` | `/bigin-transform-signal`'s per-feature subagents |
+| `_bigin/templates/*.md` | whichever skill creates that artifact type, the first time it's needed |
+
+## 3. Gather the engagement config
+
+Take the client name from `$ARGUMENTS` if given. Ask for the rest — use `AskUserQuestion` for the
+closed choices, plain questions for the free-text ones:
 
 | Field | How to get it |
 |---|---|
@@ -30,96 +76,102 @@ Take the client name from `$ARGUMENTS` if given. Ask for the rest — use `AskUs
 | `approver` / `approver_email` | Ask — the one human who signs off FRs (`/approve-fr` gates on this person) |
 | `client_emails` | Ask — every address on the client side that might appear on an intake |
 | `team_emails` | Ask — your own team's addresses for this engagement |
+| `email_provider` | `AskUserQuestion`: **outlook** (default) or **spark** — which tool `/bigin-intake` pulls client email from |
+| `outlook_folder` | `email_provider: outlook` only. Default `["Inbox"]`; ask if client mail lands in a specific folder |
+| `meeting_provider` | `AskUserQuestion`: **fathom** (default), **spark**, or **firefly** — which tool `/bigin-intake` pulls transcripts from |
 | `project_mode` | `AskUserQuestion`: **new** (greenfield — nothing built yet) or **ongoing** (an existing product this repo contains or accompanies) |
 | `codebase_path` | `ongoing` only. Default to the repo root (absolute path); ask if the product lives elsewhere |
 | `intake_lookback_days` | Default `14`, no need to ask unless the user raises it |
 
-Also detect, don't ask: the repo's remote/name via `git remote -v` and the current branch. Record them in frontmatter as `repo:` and leave blank if the directory isn't a git repo.
+`client_emails` matters more than it looks: `/bigin-intake`'s sweep **halts** on an empty list, having
+no way to tell client correspondence from internal mail. If the addresses aren't to hand, say plainly
+that `/bigin-intake direct …` still works and the sweep stays unavailable until the list is filled.
 
-One question worth asking explicitly: **should `_bigin/` be committed?** Intake files hold verbatim client emails and transcripts, so this is the user's call, not a default to assume. If they say no, add `_bigin/` to the repo's `.gitignore` (create it if missing); if yes, do nothing — the files are tracked like any other. Record the answer in the config's `## Notes`.
+Ask the two provider fields rather than defaulting silently: `/bigin-intake` is forbidden from falling
+back to an unconfigured provider, so an unasked field there becomes a run that skips a source without
+saying so.
 
-## 3. Scaffold and write the config
+Detect, don't ask: the repo's remote via `git remote -v`. Record as `repo:`, blank if not a git repo.
 
-1. Write `_bigin/system/project.md`:
+Ask explicitly: **should `_bigin/` be committed?** Intake files hold verbatim client emails and
+transcripts, so it's the user's call. On no, add `_bigin/` to `.gitignore` (create if missing); on yes,
+do nothing. Record the answer in `## Notes`. Either way add `.claude/*.local.md` to `.gitignore` —
+user-local config, not project data.
 
-   ```
-   ---
-   type: config
-   client: <client name>
-   approver: <approver name>
-   approver_email: <approver email>
-   client_emails: [<client contact emails>]
-   team_emails: [<your team's emails>]
-   project_mode: new|ongoing
-   codebase_path: <absolute path to the product repo — ongoing only, else blank>
-   repo: <git remote or repo name, blank if not a git repo>
-   intake_lookback_days: 14
-   updated: <YYYY-MM-DD>
-   ---
+## 4. Write the config
 
-   # Project — <Client Name>
+1. Instantiate `_bigin/templates/project.md` into `_bigin/system/project.md`, filling frontmatter from
+   § 3 plus:
 
-   Client: **<Client Name>** · Approver: **<Approver Name>** (<approver email>)
+   - `workspace_version` — the plugin version from § 2. A later run compares against it to tell whether
+     `_bigin/rules/` is stale.
+   - `updated` — today's date.
+   - Unsupplied fields stay `<unknown>`; list them in § 7.
 
-   ## Client contacts
-   | Name | Email | Role |
-   |------|-------|------|
-   | <name> | <email> | <role> |
+   Use the template, don't compose from memory — the template *is* the schema `/bigin-intake` parses,
+   and a hand-written variant is how a field it reads goes missing.
 
-   ## Team contacts
-   | Name | Role | Notes |
-   |------|------|-------|
-   | <name> | <role> | |
+2. Scaffold `.claude/bigin-ba-workflow-plugin.local.md` from
+   `skills/bigin-new-project/template/settings.local.md`, **only if absent** — never overwrite one a
+   project wrote. This is the one place a project may legitimately override plugin behavior (a `Why`
+   house style, a standing feature-slug shortcut). It lives in `.claude/` because it configures how
+   `/bigin-intake` and `/extract-signal` behave rather than describing the engagement, and ships empty
+   — both fall back to built-in defaults per blank section. Don't ask the user to fill it in; just
+   mention it in § 7.
 
-   ## Codebase map
-   <!-- project_mode: ongoing only — written by /bigin-new-project § 4, refreshed on re-run. -->
+## 5. Import a project proposal, if there is one
 
-   ## Notes
-   - <anything the user said about the engagement that doesn't fit a field above, e.g. whether `_bigin/` is committed>
+Ask whether a proposal, scope document, or SOW exists.
 
-   ## Changelog
-   - Initiated for <Client Name> (<YYYY-MM-DD>)
-   ```
+- **Yes, with a path** — `Read` it, then add one `proposed` row to `01-Requirements/FEATURES.md` per
+  feature it names. Take slugs and names from the document's own wording; don't invent a feature it
+  doesn't name, don't merge two it lists separately. Cite the document in each `Sources` cell. Report
+  the rows added so wrong slugs get corrected before signals anchor to them — a slug is permanent once
+  artifacts reference it.
+- **No, or unreadable** — leave `FEATURES.md` as the empty scaffold. `/extract-signal` raises a
+  feature-mapping question for the first unanchorable signal and the human mints the row then. This is
+  the normal path, not a degraded one.
 
-   Every field the user didn't give stays `<unknown>` — list them back at the end (§ 5) so they can be filled in later.
+Only `proposed` rows come from a proposal. `committed`/`built`/`out-of-scope` are human-set
+(`_bigin/rules/conventions.md` § Feature map).
 
-2. Scaffold `.claude/bigin-ba-workflow-plugin.local.md` from `skills/bigin-new-project/template/conventions.md`, only if it doesn't already exist — never overwrite one a project already wrote. This is the plugin's settings file (lives in `.claude/`, not `_bigin/`, since it configures how `/bigin-intake` and `/extract-signal` behave, not project data), and it ships empty: `/extract-signal` and `/bigin-intake` fall back to their built-in defaults for any section left blank. Don't ask the user to fill it in now — just create the scaffold and mention it in the report (§ 5) so they know it's there to edit later.
+## 6. Map the codebase (`project_mode: ongoing` only)
 
-## 4. Ask for project proposal is exist
+**Deferred — leave `## Codebase map` empty with its comment, in both modes.** The repo-mapping approach
+isn't finalized, so `ongoing` behaves like `new` apart from recording `codebase_path`. Say so in § 7
+rather than let the user believe a map was written.
 
-ask user for the project proposal file. if exists, tool `Read` then import the feature list to `01-Requirements/FEATURES.md` if not keep the feature file as placeholder.
+<!-- Planned shape, once the mapping approach is settled:
 
-## 5. Map the codebase (`project_mode: ongoing` only)
+Read the repo to establish where features will land, so `/bigin-transform-signal` and
+`/enrich-feature` can anchor requirements to real code areas instead of inventing them. Look at the
+manifest/build files, the top-level source layout, entry points, and the test setup. Then write into
+`## Codebase map`:
 
-Skip this entirely as will be enhance later when finalizing the code repo mapping approach. Currently only support new mode
-
-<!-- Skip this entirely when the mode is `new` — leave `## Codebase map` empty with its comment.
-
-Read the repo to establish where features will land, so `/bigin-transform-signal` and `/enrich-feature` can anchor requirements to real code areas instead of inventing them. Look at the manifest/build files, the top-level source layout, entry points, and the test setup. Then write into `## Codebase map`:
-
-```
 - **Stack**: <languages, frameworks, notable libraries — as evidenced by manifests, not assumed>
 - **Entry points**: <path> — <what it starts>
-- **Code areas**:
-  | Slug | Path(s) | What lives here |
-  |------|---------|-----------------|
-  | <kebab-slug> | <dir> | <one line> |
+- **Code areas**: a table of | Slug | Path(s) | What lives here |
 - **Tests**: <framework + how to run, if discoverable>
 - **Not covered**: <parts of the repo you didn't map, if any>
-```
 
-Rules for this section:
+Rules for that section: code areas are directories, not features — a slug there names a place in the
+code (`billing-api`, `web-checkout`) and asserts nothing about what a feature should do; feature
+names come from client signals via `/extract-signal`, never from reading code. Only record what you
+actually verified; an unclear directory goes under "Not covered" rather than getting a plausible
+guess. Keep it to roughly a screen. -->
 
-- **Code areas are directories, not features.** A slug here names a place in the code (`billing-api`, `web-checkout`); it does **not** assert that a feature exists or what it should do. Feature names come from client signals via `/extract-signal`, never from reading code.
-- **Only record what you actually verified.** If you can't tell what a directory does, say so under "Not covered" rather than writing a plausible guess.
-- Keep it to roughly a screen — this is an orientation map, not documentation of the codebase. -->
-
-## 5. Report
+## 7. Report
 
 Tell the user:
 
-1. What was created (paths), and whether `_bigin/` is tracked or ignored.
-2. The fields still `<unknown>`, if any, and that they can edit `_bigin/system/project.md` directly.
-3. That `.claude/bigin-ba-workflow-plugin.local.md` was scaffolded (or already existed, and was left alone) — an optional settings file they can edit for house-style overrides.
-4. For `ongoing`: the code-area slugs you recorded, so they can correct any that are wrong.
-5. Next step: `/bigin-intake` to capture the first meeting, email, or note.
+1. **Workspace** — `_bigin/rules/` and `_bigin/templates/` materialized (or refreshed) at version
+   `<version>`, with file count. On a refresh, state that local edits to those two directories were
+   overwritten and that `.claude/bigin-ba-workflow-plugin.local.md` is where overrides belong.
+2. **Config** — paths created or updated, and whether `_bigin/` is tracked or ignored.
+3. **Unknowns** — fields still `<unknown>`, editable directly in `_bigin/system/project.md`. Call out an
+   empty `client_emails` specifically, with its consequence for the sweep.
+4. **Settings** — `.claude/bigin-ba-workflow-plugin.local.md` scaffolded, or already existed and left
+   alone.
+5. **Features** — `proposed` rows imported from a proposal, if any, so wrong slugs get corrected now.
+6. **Codebase map** — for `ongoing`, that mapping is deferred and the section is intentionally empty.
+7. **Next step** — `/bigin-intake` to capture the first meeting, email, or note.

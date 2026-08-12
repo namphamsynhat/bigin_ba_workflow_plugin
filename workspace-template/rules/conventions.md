@@ -2,12 +2,26 @@
 
 The vault-wide rulebook: ID scheme, frontmatter schema, artifact lifecycle, and the conventions
 every skill in this plugin follows so artifacts stay consistent and machine-readable across
-engagements. This is **plugin-level**, not project-level — a project's own
-`.claude/bigin-ba-workflow-plugin.local.md` (scaffolded by `/bigin-new-project`, see
-`skills/bigin-new-project/template/conventions.md`) may layer optional house-style overrides on
-top (a `Why`-phrasing preference, a standing feature-slug shortcut), but it never contradicts the
-schema defined here — the schema is what every skill's parsing/writing logic is built against,
-not a per-client preference.
+engagements.
+
+**Read only the sections your stage needs.** This file is ~12k words; no stage uses all of it. Grep
+for `^## ` to list sections, then read the ones named below. Reading it whole costs more than the work.
+
+| Stage | Sections |
+|---|---|
+| `/bigin-intake` | ID scheme · Intake sources · Intake capture & the question loop |
+| `/extract-signal` | ID scheme · Feature Hub · Signal → feature mapping · Open Questions wording · Pain Point / Design Principles / Entity registers |
+| `/bigin-transform-signal` | ID scheme · Frontmatter schema · Status vocabularies · Feature Hub · Open Questions wording · Open Questions ↔ status consistency · Feedback handling · Resumable unattended apply |
+| `/enrich-feature` → `/consolidate-prd` | Traceability chain · Summary block · Feature material |
+
+**This file is a materialized copy, not project data.** `/bigin-new-project` writes it to
+`_bigin/rules/conventions.md` so that every skill and every dispatched subagent can reach it at a
+project-relative path, and overwrites it on each re-run to pick up a plugin upgrade. Edits made here
+are lost on the next run. Project-level overrides go in `.claude/bigin-ba-workflow-plugin.local.md`
+(also scaffolded by `/bigin-new-project`), which may layer optional house-style preferences on top —
+a `Why`-phrasing convention, a standing feature-slug shortcut — but never contradicts the schema
+defined here. The schema is what every skill's parsing and writing logic is built against, not a
+per-client preference.
 
 **A note on scope, since this plugin is still under active development.** This document was
 adapted from a further-along, related vault system's conventions file, which assumes a richer
@@ -167,7 +181,7 @@ valid chains applies:
   directive** — "ask for confirmation before deleting" adds a step to a flow and takes the Full or
   CR chain, however visual the request sounded. An ambiguous signal takes the FR chain, because an
   over-routed FR is caught at the human gate while an under-routed directive skips the gate.
-  `/bigin-transform-signal`'s `references/lane-design.md` and `references/routing.md` hold the
+  `_bigin/rules/lane-design.md` and `_bigin/rules/routing.md` hold the
   boundary test and the destination rules.
 
 **Planned** — this plugin doesn't yet distinguish the Full and CR chains; every feature with an FR
@@ -292,7 +306,7 @@ life of the project, some processed immediately, some held for months, some late
 a follow-up call. **There is no single feature-wide "done" state** — progress is tracked
 signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
 
-**Body sections** (instantiate from `skills/extract-signal/template/feature-hub.md`):
+**Body sections** (instantiate from `_bigin/templates/feature-hub.md`):
 - `## Notes / History` — the readable, append-only, dated-bullet narrative of the feature (§
   Feature Map format) — placed right after the one-line description, before `## Signal Log`. This
   is where `/extract-signal`/`/bigin-transform-signal` write the "story" (why it exists, what each
@@ -489,7 +503,7 @@ signals in `/extract-signal`. Semantics: § Signal → feature mapping → Decla
 `/bigin-intake` is **capture-only**: it writes frontmatter, verbatim `## Raw`, and attachments —
 nothing else. The only judgement it makes is the `kind:` filing label. All interpretation belongs
 to `/extract-signal`, which fills the note's `## Extracted signals` table
-(`skills/bigin-intake/template/intake.md`): one row per signal —
+(`_bigin/templates/intake.md`): one row per signal —
 `# | Type | Signal | Why | Source | Feature | Status | Notes` — each traced to a message,
 timestamp, or attachment, and every `requirement`/`feedback` row carrying a `Why` (the client's
 stated reason). A requirement without a stated why is not ready — the missing why becomes a
@@ -744,7 +758,7 @@ so a per-FR field list duplicates and drifts.
 document per business entity, promoted by `/bigin-transform-signal` (Stage 4) from a `proposed`
 row in `01-Requirements/ENTITIES.md` the first time an FR/BR actually references it.
 
-**Frontmatter (`skills/bigin-transform-signal/template/entity.md`):**
+**Frontmatter (`_bigin/templates/entity.md`):**
 ```yaml
 ---
 type: entity
@@ -773,7 +787,7 @@ fields it governs in its own body. An earlier draft of this document described a
 (§ ID scheme's Next-ID rule), and there is no per-entity BR subsection.
 
 **Registry:** `01-Requirements/ENTITIES.md` (`type: entities-register`, singleton,
-`skills/extract-signal/template/entities-register.md`) —
+`_bigin/templates/entities-register.md`) —
 `EN-### | Entity | Status | Fields (so far) | Features | Notes`, created by `/extract-signal` the
 moment a signal describes a data field or entity attribute, with a `proposed` row per entity.
 Cluster aggressively — one row per real-world business object, not per field.
@@ -787,7 +801,7 @@ Every `[pain-point]` signal gets a **`PP-###` id the moment it's extracted** —
 numbered like `BR-###` (scan `01-Requirements/PAIN-POINTS.md`, not any FR, since a pain point can
 predate its feature's FR) — tracked in `01-Requirements/PAIN-POINTS.md`
 (`type: pain-point-register`, singleton, instantiate from
-`skills/extract-signal/template/pain-points-register.md`):
+`_bigin/templates/pain-points-register.md`):
 
 | PP-### | Statement | Feature | Source | Status | Proposed solution | Resolved by |
 |--------|-----------|---------|--------|--------|--------------------|--------------|
@@ -834,7 +848,7 @@ single feature:
   the FR; that put untestable presentation language inside approved functional scope and made a
   purely visual note wait behind `/approve-fr` before `/prototype-design` could ever see it. A
   feature-scoped directive that turns out to change behaviour was misrouted and belongs back on the
-  FR — see `/bigin-transform-signal`'s `references/routing.md` § The design boundary test.
+  FR — see `_bigin/rules/routing.md` § The design boundary test.
 - **Cross-cutting** preferences (brand, tone, accessibility, interaction, layout, content,
   platform) append a row to `DESIGN-PRINCIPLES.md`: `# | Principle | Why | Category | Source |
   Status | Notes`, citing the INT id like any other signal. A signal can land in both places at
@@ -866,7 +880,7 @@ would narrate as one story). Left to the normal signal→feature anchor (one slu
 feature involved gets its own correct slice, but the end-to-end flow itself has no home.
 
 `01-Requirements/SCENARIOS.md` (`type: scenario-register`, singleton,
-`skills/bigin-transform-signal/template/scenario-register.md`) is the artifact for this — **one
+`_bigin/templates/scenario-register.md`) is the artifact for this — **one
 register file**, not one document per scenario:
 
 | SCN-### | Name | Steps (feature: what happens) | Status | Notes |
@@ -1067,6 +1081,12 @@ to other artifact types only if the same scan-cost problem shows up there.
 Concrete gaps between this document and the plugin's actual skills, collected here instead of as
 scattered inline caveats — resolve and delete each line as the corresponding skill is migrated.
 
+- ~~**Plugin-internal paths were unreachable at runtime.**~~ **Resolved (plugin 1.2.0).** The rulebook
+  and templates are now materialized into the project by `/bigin-new-project` (`_bigin/rules/`,
+  `_bigin/templates/`), and every skill, dispatch prompt, and template refers to them
+  project-relatively. Anything still pointing at `references/…` or `skills/*/template/…` for a file a
+  subagent has to read is a bug. `${CLAUDE_PLUGIN_ROOT}` has exactly one legitimate use in this
+  plugin: `/bigin-new-project` § 2, resolving the copy source.
 - **`enrich-feature`, `approve-fr`, `prototype-design`, `consolidate-prd` still use the old
   `.bigin/` flat-file layout** (`.bigin/features/FR-<id>-*.md`, `.bigin/PRD.md`,
   `.bigin/prototypes/`, `.bigin/epics.md`, inline `Status:` headings) — not the
@@ -1079,7 +1099,7 @@ scattered inline caveats — resolve and delete each line as the corresponding s
   `/bigin-transform-signal` and all of § Absorbed describe the target, not the current read/write
   paths.
 - ~~**FR/BR status vocabulary decided but not yet applied where it's written down.**~~ **Resolved.**
-  `skills/bigin-transform-signal/template/fr.md`, `template/br.md`, and that skill's `SKILL.md` now
+  `_bigin/templates/fr.md`, `_bigin/templates/br.md`, and that skill's `SKILL.md` now
   all use § Status vocabularies' list (`draft → enriched → approved → consolidated`, plus
   `needs-clarification`/`removed`) and land results on `draft`, never the retired `in-review`.
   Anything still writing `in-review` or `superseded` onto an FR/BR is a bug.

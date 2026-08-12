@@ -14,7 +14,7 @@ the next run re-checks it, which is why `held` rows are always re-collected.
 Per signal row, open only the intake note's **frontmatter**, **`## Extracted signals`**, and
 **`## Open Questions`**. Never open `## Raw`, a transcript, or an attachment here — that material
 belongs to extraction, and re-reading it at transform time both explodes context and duplicates a
-rule that `skills/extract-signal/references/extraction-rules.md` already owns.
+rule that `_bigin/rules/extraction-rules.md` already owns.
 
 ## Gate 1 — Blocked on an answer
 
@@ -34,7 +34,7 @@ Open the note's `## Open Questions`. The row fails this gate if:
 **Never re-raise the question.** It already exists on the note, owned by a human, and
 `conventions.md` § One question, two places is explicit that a second copy of the same ask is a
 bug. **Never re-derive the missing `Why` from the raw source** either — a `Why` reconstructed at
-transform time is a guess wearing a citation, which is the exact failure `skills/extract-signal/references/extraction-rules.md`
+transform time is a guess wearing a citation, which is the exact failure `_bigin/rules/extraction-rules.md`
 § The `Why` field is written to prevent.
 
 A `requirement`/`feedback` signal that is genuinely fine without a stated reason does not exist:
@@ -72,7 +72,7 @@ signal on the next run — there is no reply-handling logic in this skill.
 The hub's Signal Log row is a **copy** of the note's `## Extracted signals` row. This gate checks
 that the copy is faithful and the trail is followable. It does not re-verify the note against the
 raw source — that is `extract-signal`'s verification pass, which runs next to the raw material and
-checks it quote-anchored (`skills/extract-signal/references/agent-dispatch.md` § Fidelity subagent).
+checks it quote-anchored (`/extract-signal` § Step 3, its fidelity subagent).
 
 Check two things, both cheap:
 

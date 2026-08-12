@@ -3,7 +3,7 @@ id: FR-
 type: requirement
 title:
 status: draft   # draft | needs-clarification | enriched | approved | consolidated | removed
-                # (references/conventions.md § Status vocabularies — in-review and superseded are
+                # (_bigin/rules/conventions.md § Status vocabularies — in-review and superseded are
                 # retired for FR/BR). /bigin-transform-signal only ever writes
                 # draft/needs-clarification; enriched belongs to /enrich-feature, consolidated to
                 # /consolidate-prd, and approved/removed are human-only (hard rule 4).
@@ -40,7 +40,7 @@ Register): PP-### | Statement | Status | Proposed solution | Resolved by. Empty 
 ## Discussion first, fold in only after the human gate (§ SKILL.md Stage 3 stages it, Stage 1
 folds it in on a later run). A
 policy/conditional constraint on this FR is its own BR-### file (01-Requirements/_brs/), not a
-line here — see template/br.md. -->
+line here — see _bigin/templates/br.md. -->
 
 ## Discussion
 <!-- Staged, not-yet-applied change proposals, one per pending signal, cleared into
