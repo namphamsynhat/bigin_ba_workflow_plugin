@@ -45,7 +45,7 @@ Each of these five is a real failure that otherwise reports as success. Check al
 | :--- | :--- | :--- |
 | 1 | Every `staged` row has a matching `## Discussion` entry citing its `INT-###` | A `staged` row with nothing staged is stranded — it no longer reads as pending, so no future run collects it |
 | 2 | Every `applied` row shows its content in the artifact, or carries a `Notes` pointer explaining why no change was needed | `2-qualification.md` § Gate 4 |
-| 3 | No Signal Log row was renumbered, deleted, or had its `Signal`/`Source` text rewritten | Row `#`s are permanent; other artifacts cite them |
+| 3 | No Signal Log row was renumbered, deleted, un-merged into one row per signal, or had its `Signal`/`Source` text rewritten — except a Gate 3 clause refresh, which carries `Notes: refreshed from <INT-###>` | Row `#`s are permanent; other artifacts cite them, and a themed row's `Source` cite is the only trail back to the note rows it covers |
 | 4 | Every question raised exists as an unchecked `- [ ] Q:` on the artifact named, and duplicates no question already open on the source `INT` note | One question, two places — never two questions |
 | 5 | Each touched artifact's `status` matches its live unchecked-question count | The invariant Part 1 exists to hold |
 

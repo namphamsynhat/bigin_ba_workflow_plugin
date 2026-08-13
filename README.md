@@ -15,12 +15,14 @@ what governs a stage is findable from the stage, and a run loads only the files 
 
 ```
 /bigin-new-project        initiate the project in this repo: scaffold the workspace, capture the
-                           engagement config, map the codebase if it's an existing product
+                           engagement config, map the codebase if it's an existing product, and
+                           check the configured email/meeting providers are reachable
         |
 /bigin-intake             capture raw intake, unmodified (auto: email/meeting, or direct: freeform note)
         |
-/extract-signal           [Extract] drain the intake queue: extract signals, anchor each to a
-                           feature, file it onto that feature's Signal Log
+/extract-signal           [Extract] drain the intake queue: extract signals into a flat raw record
+                           on the note, anchor each to a feature, file them onto that feature's
+                           Signal Log grouped by functional theme
         |
 /bigin-transform-signal   [Transform] qualify each filed signal, route it to a lane, turn it into
                            drafted/updated FRs and BRs, keep cross-feature Entities and Business
@@ -53,7 +55,7 @@ rulebook, `00-Inbox`/`01-Requirements` for the requirements vault:
 
 ```
 _bigin/system/project.md         engagement config: client, approver, contacts, providers,
-                                  new vs. ongoing product, codebase map
+                                  new vs. ongoing product, codebase map, provider readiness
 _bigin/conventions/               the shared standard, copied in by /bigin-new-project —
                                   conventions.md (ID scheme, schemas, status vocabularies) and
                                   paths.md ({variable} → path). Plugin-owned: refreshed on re-run
@@ -102,10 +104,18 @@ plugin-owned and overwritten on refresh — per-project overrides belong in
 `.claude/bigin-ba-workflow-plugin.local.md`, never in the materialized rules.
 
 `/bigin-new-project` is re-runnable by design: it re-materializes the workspace every run, shows the
-existing config and only rewrites what you confirm, and never touches captured intake, features, or
-the PRD. It can also import a `proposed` feature list from a project proposal or SOW. For
+existing config and only rewrites what you confirm, re-checks provider access, and never touches
+captured intake, features, or the PRD. It can also import a `proposed` feature list from a project proposal or SOW. For
 `project_mode: ongoing` it records `codebase_path`, but the **codebase map is currently deferred** —
 that section stays empty in both modes until the repo-mapping approach is settled.
+
+Its last step probes the two providers the config names (§ 7) and records the result in
+`## Provider readiness`. Reachability has four states, not two, and only one of them is fixed by
+installing: **not configured** gets an automatic `claude mcp add` where the plugin has a pinned command
+for it; **needs authentication** cannot be fixed here at all, since OAuth needs a browser and a human;
+**failed to connect** is retried once and then reported verbatim; **connected but missing the expected
+tools** is a name collision, reported rather than reinstalled over. The step never blocks initiation —
+`/bigin-intake direct …` works with no provider at all, and only Mode B's sweep depends on one.
 
 Every FR's own frontmatter `status` (`draft` → `in-review` ⇄ `needs-clarification` → `approved`, human-only per `/approve-fr`) is the authoritative gate — a feature can have more than one FR at different stages at once, though normally a feature carries just one FR across its life (an update edits it in place rather than forking). Each Feature Hub's `## Requirement Readiness` table is a refreshed snapshot for orientation, not the gate itself. Features are matched by slug across stages, so `/extract-signal` and `/bigin-transform-signal` update an existing hub/FR rather than duplicating one when new signals map to the same feature.
 

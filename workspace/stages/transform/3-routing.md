@@ -4,6 +4,14 @@ Every signal that clears Stage 2 goes down exactly one lane. A signal that genui
 places was two signals and should have been split at extraction — file the second half back as a
 question rather than routing one row twice.
 
+**A Signal Log row is a theme, and can carry more than one signal** (`conventions.md` § Feature
+Hub) — a `Type` cell reading `requirement + constraint` says so outright. Route **per clause**, not
+per row: the behaviour clause goes down the FR lane, the policy clause down the BR lane, and the
+row's `Destination` cell lists both (`FR-012 · BR-004`). That is not the same as routing one signal
+twice — each clause is its own signal, filed together because a drafter writes them together. What a
+themed row must never do is get routed once on its dominant type, silently dropping its other
+clauses; if a clause has no lane, say so in the report rather than letting it disappear.
+
 Routing is a decision about the **artifact the signal becomes**, which is the axis
 `conventions.md` § Signal → artifact mapping already defines. It is deliberately *not* a
 four-way "new requirement / requirement update / design / feedback" split: `new` vs `update` is a
@@ -107,7 +115,8 @@ not to add a second one.
 ## Recording the routing decision
 
 Whatever lane a signal takes, the hub's Signal Log row records where it went in the `Destination`
-cell — the column extraction deliberately leaves blank:
+cell — the column extraction deliberately leaves blank. A themed row lists every destination its
+clauses reached, ` · `-joined, and only reaches a terminal `Status` once all of them are recorded:
 
 | Lane | `Destination` cell | Resulting `Status` |
 |---|---|---|

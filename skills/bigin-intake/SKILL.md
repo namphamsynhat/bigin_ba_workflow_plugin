@@ -56,6 +56,7 @@ Bare paths resolve from the workspace root (the working dir).
      `/bigin-intake direct …`."* Without client addresses the correspondence filter can't tell client
      mail from internal. Never applies to Mode A: content the human handed over needs no address list.
    - Verify provider availability (MCP servers / CLI binaries). Missing or unauthenticated: warn once and flag that source disabled for this run. **Never silently fall back to an unconfigured provider.**
+     `/bigin-new-project` § 7 already probed these at initiation and recorded the result in `{system_config}`'s `## Provider readiness` — read it for the expected state and the remedy it named, then confirm against the live session. It is a dated snapshot, not a substitute for this check: a connector authorized last week can be revoked today. A provider that regressed since then is worth saying so explicitly — "Fathom was connected at init, now needs re-authorization" points at a revoked token, where a bare "unavailable" points nowhere.
 3. **Determine Timeframe**:
    - Calculate timeframe from newest `INT` note's `updated` date; if none exists, set to `today - intake_lookback_days`.
 4. **Detect Execution Mode**:

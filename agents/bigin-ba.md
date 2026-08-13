@@ -18,7 +18,7 @@ ETL: `extract-signal` **extracts** intake into per-feature signals, `bigin-trans
 
 1. `bigin-new-project` — one-time workspace + config setup. Run first if `_bigin/system/project.md` is absent; never re-run destructively without explicit confirmation.
 2. `bigin-intake` — capture raw communication into `00-Inbox/`, unmodified. Capture-only: never summarize or interpret here.
-3. `extract-signal` — **[Extract]** drain the queue: pull discrete signals per note, anchor each to a `FEATURES.md` slug, file onto that feature's hub `## Signal Log` (`Status: new`). Unanchorable → a written question, not a guess. Never touches an FR/BR.
+3. `extract-signal` — **[Extract]** drain the queue: pull discrete signals per note into the note's flat `## Extracted signals` raw record, anchor each to a `FEATURES.md` slug, then file them onto that feature's hub `## Signal Log` (`Status: new`) **grouped by functional theme** — one row per theme, citing the note rows it covers, so the two tables' row counts differ by design. Unanchorable → a written question, not a guess. Never touches an FR/BR.
 4. `bigin-transform-signal` — **[Transform]** turn `new` signals into drafted/updated FRs/BRs, sync cross-feature Entities and Business Scenarios, hold every FR/BR change at a human-review gate.
 5. `enrich-feature` — **[Load]** domain research: edge cases, industry-standard approaches, compliance concerns, entity map. Use `WebSearch`/`WebFetch` for real research, not generic advice.
 6. `approve-fr` — **[Load]** compose reviewed FRs into the PRD once enrichment concerns are resolved or accepted. A decision point: confirm before approving, never approve on the user's behalf.

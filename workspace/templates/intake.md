@@ -29,6 +29,7 @@ updated:
 
 ## Extracted signals
 <!-- populated by /extract-signal (step 3), NOT at intake. One ROW per signal, each traced to a message (sender + date), transcript timestamp, or attachment — never prose bullets. -->
+<!-- This is the RAW RECORD and it stays flat: arrival order, never merged, never grouped, however many rows describe the same thing. It's what the fidelity check quotes against and what every later stage re-reads to see what was actually said. Grouping happens only on the feature hub, where these rows file as themed Signal Log rows citing their # back here (conventions.md § Feature Hub) — so the two tables' row counts are not meant to match. -->
 
 | # | Type | Signal | Why | Source | Feature | Status | Notes |
 |---|------|--------|-----|--------|---------|--------|-------|

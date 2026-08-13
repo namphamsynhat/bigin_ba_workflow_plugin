@@ -46,6 +46,8 @@ Pull out anything in `## Raw` that is a discrete, attributable claim — not a p
 
 Don't invent a signal that isn't in the text, and don't merge two distinct claims into one row just because they're adjacent — a requirement and the constraint on it are two rows, not one.
 
+**This table is the raw record and it is never grouped.** One row per discrete signal, in arrival order, no matter how many of them turn out to describe the same thing. It is what the fidelity check quotes against and what every later stage re-reads to see what was actually said, so a merge here destroys evidence. Grouping happens once, downstream of this table, when the signals are filed onto a hub (§ Consolidating into themed hub rows) — and it reads *from* these rows rather than replacing them.
+
 ### The `Why` field — four checks, each a real failure mode
 
 1. **Quote the source, never a meeting tool's AI-generated summary.** A summary's "rationale" bullets are the tool's inference, not the client's words — quoting one launders a guess into the record as if it were a real quote. If the reason only exists in a summary, the reason is `not stated`.
@@ -86,20 +88,59 @@ Never hold a long transcript and a dense attachment in the same read — one sit
 
 ## Filing to the Feature Hub
 
-Once a signal has a resolved slug, append it to `{hub_dir}/<slug>.md`'s `## Signal Log` — creating the hub from `{template_hub}` first if the slug has no hub yet, and only touching that section plus the frontmatter/register handling below. Everything else in the hub (`## Notes / History`, `## Requirement Readiness`, `## Domain Research`, `## Business Scenarios`, `## Entities`, `## PRD`, `## Epics & Stories`, `## UX Spec`) belongs to later steps — never write to them here.
+Once a signal has a resolved slug it files onto `{hub_dir}/<slug>.md`'s `## Signal Log` — grouped by functional theme (§ below), creating the hub from `{template_hub}` first if the slug has no hub yet, and only touching that section plus the frontmatter/register handling below. Everything else in the hub (`## Notes / History`, `## Requirement Readiness`, `## Domain Research`, `## Business Scenarios`, `## Entities`, `## PRD`, `## Epics & Stories`, `## UX Spec`) belongs to later steps — never write to them here.
+
+Filing is additive only — never edit or remove another signal's existing row while filing a new one.
+
+### Consolidating into themed hub rows
+
+The hub's Signal Log is the working register, not a second copy of the note's table, and it is **grouped by functional theme**: this note's signals that describe the same functional theme file as **one row carrying all of their detail**, not as one row each.
+
+Why: three note rows reading "age is computed from date of birth", "the cut-off is 1 September", and "under-18s need guardian consent" are one requirement conversation — *age eligibility*. Filed as three rows they get qualified three times, routed three times, and drafted into three overlapping FR lines. Filed as one row they are one unit of work with nothing dropped.
+
+**What counts as one theme.** The test: *would a drafter write these into one requirement statement?* If the answer is two independent requirements, they are two themes. Adjacency in the note is not a theme, and sharing a feature slug is not a theme.
+
+| Merge | Don't merge |
+|---|---|
+| Rows describing one rule, flow, or decision from different angles — the calculation, its cut-off date, the legal constraint on it | Rows a drafter would write as two independent requirements, however adjacent in the transcript |
+| A requirement and the constraint that qualifies *that same* requirement | A constraint that governs the whole feature rather than this one rule |
+| Several field-level details of the same form, screen, or record | Two different screens that happened to come up in the same breath |
+
+**Never merge across:**
+
+- **Notes or runs.** A themed row covers one `INT-###`, filed in one run. An earlier row is never reopened, rewritten, or extended — history is append-only. When this note's theme continues one already on the hub, the new row cites it: `Notes: extends #<n>`.
+- **`Status`.** Only `new` rows consolidate. A `question`, `conflict`, or `rejected` signal always files as its own row, so its status, its `## Open Questions` mirror, and its rejection reason stay one-to-one.
+- **The design boundary.** A presentation-only signal never merges with a behavioural one — they route down different lanes, and the design lane skips the approval gate (`_bigin/stages/transform/3-routing.md` § The design boundary test).
+- **A contradiction.** Two signals that disagree are a `conflict`, not a theme.
+
+**A theme of one is normal** — most notes produce a mix of themed rows and single-signal rows. Never stretch two unrelated signals into a theme to make the table shorter; an over-merged row is worse than a long log, because the detail a drafter needs is now buried in a row that reads like one ask.
 
 The Signal Log's columns are `# | Signal | Type | Source | Status | Destination | Notes`:
 
 | Column | Rule |
 |---|---|
-| `#` | Hub-local, permanent — never renumbered or deleted. A signal that conflicts with or supersedes an earlier row gets its own new row; go back and update the OLD row's `Status` + `Notes` to point at it, never rewrite history in place. |
-| `Signal` / `Type` | Copied from the note's row. |
-| `Source` | `<INT-###> — <the note's own Source cite>`, e.g. `INT-014 — Jane Doe 2026-08-05` — this is what a later verification pass confirms the row traces back to. |
-| `Status` | `new` / `question` / `conflict` / `rejected` — never anything else (§ Scope). |
+| `#` | One hub-local `#` per row — so one per theme, not one per signal. Permanent, never renumbered or deleted. A signal that conflicts with or supersedes an earlier row gets its own new row; go back and update the OLD row's `Status` + `Notes` to point at it, never rewrite history in place. |
+| `Signal` | `**<Theme>** — <detail>; <detail>; <detail>`. A short theme name, then every member's claim as its own clause, in the note's row order. **Consolidation is grouping, not summarizing**: no clause is compressed away, and no clause says more than its own note row did. A theme of one is just that row's `Signal` text, no theme prefix needed. |
+| `Type` | The member types, in catalog order, joined with ` + ` — e.g. `requirement + constraint`. A theme of one keeps its plain single value. |
+| `Source` | `<INT-###> #<n>, #<n>, #<n> — <the note's own Source cite>`, e.g. `INT-014 #3, #5, #7 — Jane Doe 2026-08-05`. The `#`s are the note's row numbers. This cite is the traceability that replaces one-row-per-signal, and it is what a later verification pass confirms the row traces back to — a themed row without it is unfollowable. |
+| `Status` | `new` / `question` / `conflict` / `rejected` — never anything else (§ Scope). A themed row is always `new`, since nothing else consolidates. |
 | `Destination` | Leave blank. This skill never stages a signal into an FR's discussion. |
-| `Notes` | Blank unless worth carrying over. |
+| `Notes` | `extends #<n>` when this theme continues an existing hub row; the `PP-###`/entity/design-principle ids its members minted; otherwise blank. |
 
-Filing is additive only — never edit or remove another signal's existing row while filing a new one.
+Worked through, the three age-eligibility rows above land as one:
+
+```text
+note INT-014 ## Extracted signals (raw record — unchanged, three rows)
+  #3 requirement  age is computed from date of birth
+  #5 decision     the cut-off is 1 September
+  #7 constraint   under-18s need guardian consent
+
+hub  enrolment-eligibility ## Signal Log (one themed row)
+| # | Signal | Type | Source | Status | Destination | Notes |
+| 7 | **Age eligibility** — age is computed from date of birth; the cut-off is 1 September; under-18s need guardian consent | requirement + constraint + decision | INT-014 #3, #5, #7 — Jane Doe 2026-08-05 | new | | |
+```
+
+**Registers are unaffected.** Consolidation is a Signal Log shape only. Each `pain-point` member still mints its own `PP-###` in `{pain_points_file}` and its own mirrored row in the hub's `## Pain Points`; each entity/field member still gets its own `{entities_file}` row; each durable design constraint still gets its own `{design_principles_file}` row. The themed row cites those ids in `Notes`.
 
 **Hub frontmatter.** Creating a hub for the first time: `feature: <slug>`, `name: <Feature column from {requirements_file}>`, `status: <that row's Status, mirrored once>`, `sources: [<INT-###>]`, `updated: <today>`; leave `fr`, `code_areas`, `prd`, `epics`, `stories`, `uiux`, `entities` at their template defaults. Filing to an existing hub: add this `INT-###` to `sources` if not already listed, bump `updated`, and touch nothing else — a human or later run may have already advanced those fields past what this skill knows.
 
@@ -140,6 +181,8 @@ Run these self-checks before finalizing, every time:
 - No `decision`/`constraint`/`question`/`answer`/`concern`/`problem`/`pain-point` row carries a `Why`.
 - Every `question`/`concern` row has a mirror line in `## Open Questions`.
 - Every extracted row is filed to exactly one hub, or marked `unresolved`/`rejected` with a reason.
+- **Every anchored row's `#` appears in exactly one hub row's `Source` cite** — none missing, none cited twice. This is the check that catches a signal lost inside a consolidation, and it replaces counting hub rows against note rows (the two counts no longer match by design).
+- No themed row's `Signal` cell drops a member's claim, and no clause in it says more than its own note row does.
 
 ## Fold-in runs
 

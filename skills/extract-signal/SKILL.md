@@ -1,6 +1,6 @@
 ---
 name: extract-signal
-description: Drain the raw intake queue in 00-Inbox — extract each INT-### note's signals, anchor every signal to a FEATURES.md slug, and file it onto that feature's Signal Log. A signal that can't be anchored raises a written question on the note instead of a guess, parking it needs-clarification until a human supplies the slug. Never drafts or edits an FR — that's a later step. Use when the ask is to extract signals, process the intake queue, drain 00-Inbox, or map intake to features.
+description: Drain the raw intake queue in 00-Inbox — extract each INT-### note's signals into a flat raw record on the note, anchor every signal to a FEATURES.md slug, and file them onto that feature's Signal Log grouped by functional theme. A signal that can't be anchored raises a written question on the note instead of a guess, parking it needs-clarification until a human supplies the slug. Never drafts or edits an FR — that's a later step. Use when the ask is to extract signals, process the intake queue, drain 00-Inbox, or map intake to features.
 argument-hint: "[resume]"
 disallowed-tools: AskUserQuestion
 ---
@@ -10,6 +10,11 @@ disallowed-tools: AskUserQuestion
 `/bigin-intake` fills `00-Inbox` with verbatim `INT-###` notes. This skill drains that queue: per
 eligible note, extract signals into its `## Extracted signals` table, then anchor each to a feature and
 file it onto that feature's hub. An unanchorable signal becomes a written question, never a guess.
+
+The two tables it writes are deliberately different shapes. The note's `## Extracted signals` is the
+**raw record** — one flat row per signal, arrival order, never grouped. The hub's `## Signal Log` is the
+**working register** — the same signals grouped by functional theme, one row per theme (§ Themed hub
+rows). Row counts between the two won't match, and shouldn't.
 
 Never touches an FR — only a hub's Signal Log, plus the vault-wide registers a signal populates
 directly (§ Step 2). Folding a filed signal into a requirement is a later step.
@@ -61,10 +66,10 @@ Use the prompt in `references/agent-dispatch.md` verbatim rather than re-derivin
 
 In brief, each subagent:
 
-1. Extracts every discrete signal from `## Raw` into `## Extracted signals`, one row each. `{extraction_rules}` has the `Type`/`Why`/`Status` vocabulary and the rules keeping each field honest.
+1. Extracts every discrete signal from `## Raw` into `## Extracted signals`, one row each. This table is the **raw record and stays flat** — arrival order, never merged, never grouped, however many rows describe the same thing. It's what the fidelity check quotes against and what every later stage re-reads. `{extraction_rules}` has the `Type`/`Why`/`Status` vocabulary and the rules keeping each field honest.
 2. Anchors each signal to a `{requirements_file}` slug — `declared_features` first (a floor, not a ceiling: still scan for features beyond it), then matching signal content against the feature list.
-3. Groups signals by anchored feature before writing — a filing order, not an output. One feature's rows append in a single edit, so a note touching three features makes three hub writes, not a dozen.
-4. Appends each anchored signal to `{hub_dir}/<slug>.md`'s `## Signal Log` (`Status`: `new`, `question`, `conflict`, or `rejected` — nothing else), creating the hub from `{template_hub}` if absent. A `pain-point` also mirrors into `{pain_points_file}` and the hub's `## Pain Points`; an entity/field signal or durable cross-cutting constraint gets a row in `{entities_file}`/`{design_principles_file}`. Touch only the hub's Signal Log, Pain Points, and the `sources`/`updated` frontmatter — every other section belongs to a later step.
+3. Groups the anchored signals by feature, then **by functional theme within each feature**. Grouping by feature is a filing order: one feature's rows append in a single edit, so a note touching three features makes three hub writes, not a dozen. Grouping by theme is an output: signals describing the same rule, flow, or decision file as **one hub row carrying all of their detail**, not one row each (§ Themed hub rows).
+4. Appends each themed group to `{hub_dir}/<slug>.md`'s `## Signal Log` (`Status`: `new`, `question`, `conflict`, or `rejected` — nothing else), creating the hub from `{template_hub}` if absent. A `pain-point` also mirrors into `{pain_points_file}` and the hub's `## Pain Points`; an entity/field signal or durable cross-cutting constraint gets a row in `{entities_file}`/`{design_principles_file}` — **per signal, not per theme**; consolidation never collapses a register row. Touch only the hub's Signal Log, Pain Points, and the `sources`/`updated` frontmatter — every other section belongs to a later step.
 5. Writes a question to `## Open Questions` for any signal matching no slug (§ The feature-mapping loop) — never files it to a hub.
 6. Confirms every touched hub shows its new row(s) on disk *before* setting the note's `status` — a flip to `in-review` drops the note from every future scan, so an unwritten row would vanish silently. Then sets `in-review` if every question is resolved, `needs-clarification` if any remain. If a hub write didn't land, leaves `status` untouched and reports what's pending.
 
@@ -78,12 +83,16 @@ question, or up front from a proposal via `/bigin-new-project` § 5.
 
 After each batch, spawn one `Agent` (`haiku`, `general-purpose`, foreground) to check the batch's own
 claims, not repeat the extraction. Per note and per slug it reported touching, confirm
-`{hub_dir}/<slug>.md`'s `## Signal Log` cites that `INT-###` with a row count matching the note's
-`## Extracted signals`, and that the note's `status` matches its `## Open Questions` state. Checklist
-and repair procedure: `references/agent-dispatch.md`. A note reporting success while missing its hub
-row is stranded, not done — a finalized note drops out of every future scan.
+`{hub_dir}/<slug>.md`'s `## Signal Log` cites that `INT-###`, that **every anchored row number in the
+note's `## Extracted signals` appears in exactly one hub row's `Source` cite** — none missing, none
+cited twice — and that the note's `status` matches its `## Open Questions` state. Row counts are *not*
+the check: a themed row covers several note rows by design, so counting hub rows against note rows
+would flag every correct consolidation and miss the one thing that actually goes wrong, a signal
+dropped inside a merge. Checklist and repair procedure: `references/agent-dispatch.md`. A note
+reporting success while missing its hub row is stranded, not done — a finalized note drops out of
+every future scan.
 
-Any mismatch is blocking: dispatch one targeted repair subagent to copy the missing row(s) from the
+Any mismatch is blocking: dispatch one targeted repair subagent to file the uncited row(s) from the
 note's already-extracted table onto the correct hub (no re-extraction), then re-check that note.
 
 Then the **fidelity check** — one `Agent` per note (`sonnet`, `general-purpose`, foreground). This is
@@ -100,7 +109,7 @@ Print a short summary of the batch (or the whole run, once the queue is drained)
 
 ```text
 processed: N notes
-signals filed: total — per feature, e.g. <slug>: N new (Signal Log rows #a-#b)
+signals filed: total — per feature, e.g. <slug>: N signals in M themed rows (Signal Log rows #a-#b)
 parked — awaiting an answer: INT-### (N question(s) unanswered)
 parked — awaiting a feature mapping: INT-### (signal(s) unresolved — human writes the slug into the A: line)
 verification: clean | repaired (list what)
@@ -108,6 +117,43 @@ remaining in queue: N — re-run this skill to continue
 ```
 
 No separate state to update — the next run derives the queue fresh from the vault.
+
+## Themed hub rows
+
+A hub row answers "what did this note tell us about this feature?", not "what was signal #4?". So the
+signals a note contributes to one feature are filed **grouped by functional theme** — one row per theme,
+carrying every member's detail as its own clause.
+
+The test for a theme is *would a drafter write these into one requirement statement?* Three signals
+reading "age is computed from date of birth", "the cut-off is 1 September", and "under-18s need guardian
+consent" are one theme — *age eligibility* — and become one row. Two signals about two different screens
+are two themes, however adjacent they were in the transcript. Adjacency isn't a theme; sharing a slug
+isn't a theme; a theme of one is normal and needs no forcing.
+
+```text
+note INT-014 ## Extracted signals — the raw record, still three flat rows:
+  #3 requirement  age is computed from date of birth
+  #5 decision     the cut-off is 1 September
+  #7 constraint   under-18s need guardian consent
+
+hub enrolment-eligibility ## Signal Log — one themed row:
+| # | Signal | Type | Source | Status | Destination | Notes |
+| 7 | **Age eligibility** — age is computed from date of birth; the cut-off is 1 September; under-18s need guardian consent | requirement + constraint + decision | INT-014 #3, #5, #7 — Jane Doe 2026-08-05 | new | | |
+```
+
+The `Source` cite's row numbers are what makes this followable — they're the traceability that replaces
+one-row-per-signal, and Step 3 verifies every anchored note row appears in exactly one of them.
+
+Four things never merge: signals from **different notes or runs** (the log is append-only — a
+continuing theme cites the older row as `Notes: extends #<n>` rather than reopening it), signals with
+**different `Status`** (only `new` consolidates, so a `question`/`conflict`/`rejected` row stays 1:1 with
+its Open Questions mirror), a presentation-only signal with a **behavioural** one (different lanes, and
+the design lane skips the approval gate), and two signals that **contradict** each other (that's a
+`conflict`). Full rules, including the row format and why registers stay per-signal:
+`{extraction_rules}` § Consolidating into themed hub rows.
+
+Over-merging is the failure mode to watch. A row that reads like one ask but hides four is worse than a
+long log — the detail a drafter needs is still on the page but no longer legible as separate obligations.
 
 ## The feature-mapping loop
 

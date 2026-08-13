@@ -57,6 +57,13 @@ Client: **<Client Name>** · Approver: **<Approver Name>** (<approver email>)
 ## Codebase map
 <!-- project_mode: ongoing only — written by /bigin-new-project § 5, refreshed on re-run. -->
 
+## Provider readiness
+<!-- Written by /bigin-new-project § 7 — one line per configured provider, dated. A snapshot for
+orientation, never a gate: /bigin-intake re-checks at sweep time, and a connector can be revoked the
+day after this was written. Only the two providers this project selected appear here. -->
+- email_provider: <outlook|spark> — <✔ connected | ! needs authentication: <what to do> | ✘ failed to connect: <error> | not installed: <what to install>> (<YYYY-MM-DD>)
+- meeting_provider: <fathom|spark|firefly> — <same states> (<YYYY-MM-DD>)
+
 ## Notes
 <!-- Anything about the engagement that doesn't fit a field above — e.g. whether `_bigin/` is
 committed to git. -->

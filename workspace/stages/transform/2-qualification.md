@@ -69,22 +69,28 @@ signal on the next run — there is no reply-handling logic in this skill.
 
 ## Gate 3 — Fidelity
 
-The hub's Signal Log row is a **copy** of the note's `## Extracted signals` row. This gate checks
-that the copy is faithful and the trail is followable. It does not re-verify the note against the
-raw source — that is `extract-signal`'s verification pass, which runs next to the raw material and
-checks it quote-anchored (`/extract-signal` § Step 3, its fidelity subagent).
+The hub's Signal Log row is a **themed consolidation** of one or more of the note's
+`## Extracted signals` rows — its `Source` cite names exactly which (`INT-014 #3, #5, #7 — Jane Doe
+2026-08-05`), and its `Signal` cell carries one clause per cited row (`conventions.md` § Feature
+Hub). This gate checks that the consolidation is faithful and the trail is followable. It does not
+re-verify the note against the raw source — that is `extract-signal`'s verification pass, which runs
+next to the raw material and checks it quote-anchored (`/extract-signal` § Step 3, its fidelity
+subagent).
 
 Check two things, both cheap:
 
-1. **The copy matches.** The hub row's `Signal` and `Type` still agree with the note's own row for
-   that signal. Extraction may have corrected a row in place after filing it (`Notes: corrected:
-   …`), which leaves the hub stale.
+1. **The consolidation matches.** Every note row `#` the hub row cites still exists, and its claim
+   is still represented in the hub row's `Signal` clauses and covered by the hub row's `Type`.
+   Extraction may have corrected a row in place after filing it (`Notes: corrected: …`), which
+   leaves the hub stale. **Row counts between the two tables are not a check** — one hub row
+   covering several note rows is the design, not drift.
 2. **The `Source` cite is specific.** It resolves to a real place — a transcript timestamp, a
-   `<sender> <date>`, or an attachment filename — not "somewhere in the note."
+   `<sender> <date>`, or an attachment filename — and names the note row numbers it consolidates,
+   not "somewhere in the note."
 
 | Case | Outcome |
 |---|---|
-| Copy is stale | Repair the hub row from the note (**the note is the source of truth**), keep the row `#`, `Notes: refreshed from <INT-###>`. Continue to Gate 4 — this is a repair, not a block. |
+| A cited clause is stale | Repair that clause from the note (**the note is the source of truth**), keep the row `#` and its other clauses untouched, `Notes: refreshed from <INT-###>`. Continue to Gate 4 — this is a repair, not a block. **Never un-merge a themed row into one row per signal** — that renumbers history and breaks every `#` cited elsewhere. |
 | `Source` cite is missing or unspecific, and the signal would create **new** FR/BR content | `Status: held`, `Notes: unverifiable source cite — re-run /extract-signal verification`. Report it. |
 | `Source` cite is weak but the signal only adds context to an existing FR | Continue, and note the weak cite in the FR's `## Discussion` entry. |
 

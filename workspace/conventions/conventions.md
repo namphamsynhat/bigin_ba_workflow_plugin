@@ -313,12 +313,22 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   is where `/extract-signal`/`/bigin-transform-signal` write the "story" (why it exists, what each
   meeting/CR round added, what got resolved); `FEATURES.md`'s own Notes cell is a one-line pointer
   here, never inline prose.
-- `## Signal Log` — the append-only register every downstream process reads. One row per signal,
-  in landing order:
+- `## Signal Log` — the append-only register every downstream process reads. One row per
+  **functional theme**, in landing order:
 
   | # | Signal | Type | Source | Status | Destination | Notes |
   |---|--------|------|--------|--------|--------------|-------|
 
+  - **A row is a theme, not a signal.** Signals from one `INT-###` describing the same rule, flow,
+    or decision file as a single row — `Signal` reads `**<Theme>** — <detail>; <detail>; <detail>`
+    with every claim kept as its own clause, `Type` joins the member types with ` + `, and `Source`
+    cites the note row numbers it covers: `INT-014 #3, #5, #7 — Jane Doe 2026-08-05`. Those numbers
+    are the trail back to the note's `## Extracted signals`, which stays a flat one-row-per-signal
+    raw record — **the two tables' row counts are not meant to match**, and anything comparing them
+    is checking the wrong thing. Signals never merge across notes, across `Status` (only `new`
+    consolidates), across the design/behaviour boundary, or when they contradict each other. A
+    theme of one is normal. Full rules: `/extract-signal`'s `2-extraction.md` § Consolidating into
+    themed hub rows.
   - **`#` is permanent** once assigned, like a `BR-###` number — never renumbered or deleted. A
     conflicting or superseding signal is always a **new row**; the old row's `Status`/`Notes` gets
     updated to point at the row that superseded it. History is never rewritten in place.
@@ -396,9 +406,10 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
 - `## Changelog` — one line per refresh: date, what changed, which run touched it.
 
 **Maintenance contract — who refreshes it, and when:**
-- `/extract-signal`: for every signal a run extracts, **append** a `## Signal Log` row (never
-  overwrite a prior row's `#`/`Signal`/`Source` — only its `Status`/`Notes` when a later signal
-  supersedes or conflicts with it). Create the hub from the template if it doesn't exist yet.
+- `/extract-signal`: for the signals a run extracts, **append** one `## Signal Log` row per
+  functional theme, each citing the note row numbers it covers (never overwrite a prior row's
+  `#`/`Signal`/`Source` — only its `Status`/`Notes` when a later signal supersedes or conflicts
+  with it). Create the hub from the template if it doesn't exist yet.
   Refresh `## Requirement Readiness` and `## Open Questions / Gates` to match. **Refresh
   `## Pain Points`** to mirror any `PP-###` row this run minted or updated in
   `01-Requirements/PAIN-POINTS.md` for this feature — a pain point can land here even before any
@@ -511,6 +522,12 @@ stated reason). A requirement without a stated why is not ready — the missing 
 `question` row, never a guessed rationale. `Feature` and `Status` make the row's anchor and
 progress machine-readable — `Status` reuses the same vocabulary as the Feature Hub's
 `## Signal Log` (§ Feature Hub) so a signal reads the same state at both levels.
+
+This table is the vault's **raw signal record**, and it stays flat: one row per signal in arrival
+order, never merged or grouped, however many rows describe the same thing. It's what the fidelity
+check quotes against and what every later stage re-reads to see what was actually said, so a merge
+here destroys evidence. Grouping is the *hub's* job — these rows file onto the Feature Hub as
+themed Signal Log rows citing their `#` back here (§ Feature Hub).
 
 Questions raised by `/extract-signal` are written **into the source INT note's `## Open
 Questions`** — `- [ ] Q: … (owner: client|team) ↦ FR-###` with an `A:` answer line — mirrored on

@@ -22,23 +22,38 @@ Read before doing anything:
 
 Then, following 2-extraction.md exactly:
 1. Extract every discrete signal from ## Raw into ## Extracted signals (or, on a fold-in,
-   only the rows still blocked on an answer). Run the four self-checks in
-   2-extraction.md § Before finalizing a note before you consider this step done.
+   only the rows still blocked on an answer). This table is the RAW RECORD: one flat row
+   per signal, in arrival order, never merged and never grouped, however many rows describe
+   the same thing. Run the self-checks in 2-extraction.md § Before finalizing a note before
+   you consider this step done.
 2. Anchor each signal to a FEATURES.md slug. Never guess — an unresolved signal gets a
    question in ## Open Questions instead.
-3. For each anchored signal, append a row to 01-Requirements/_features/<slug>.md's
-   ## Signal Log (columns: # | Signal | Type | Source | Status | Destination | Notes;
-   Status is new, question, conflict, or rejected — never anything else; Destination
-   blank) — create the hub from _bigin/templates/feature-hub.md first if it
-   doesn't exist yet, and update only its Signal Log, Pain Points, sources, and updated
-   fields, nothing else in the hub.
-4. For any pain-point signal, also mirror it into 01-Requirements/PAIN-POINTS.md (create
-   from _bigin/templates/pain-points-register.md if missing) and the hub's
-   own ## Pain Points table, both copies identical. For an entity/field signal, add a
-   proposed row to 01-Requirements/ENTITIES.md (template: entities-register.md). For a
-   durable, cross-cutting design constraint, add a row to
-   01-Requirements/DESIGN-PRINCIPLES.md (template: design-principles-register.md) in
-   addition to its normal Signal Log filing.
+3. Group this note's anchored signals for each slug BY FUNCTIONAL THEME, then append ONE
+   row per theme to 01-Requirements/_features/<slug>.md's ## Signal Log — not one row per
+   signal. Follow 2-extraction.md § Consolidating into themed hub rows exactly for the
+   theme test, the four never-merge cases, and the row format. In short (columns:
+   # | Signal | Type | Source | Status | Destination | Notes):
+     - Signal: **<Theme>** — <detail>; <detail>; <detail> — every member's claim kept as
+       its own clause, nothing compressed away, nothing claiming more than its note row did
+     - Type: member types in catalog order joined with " + ", e.g. requirement + constraint
+     - Source: <INT-###> #<n>, #<n> — <the note's own Source cite>, citing the note row
+       numbers this row consolidates. Every anchored note row must appear in exactly one
+       hub row's Source cite — this is the traceability, and it is verified afterwards.
+     - Status: new, question, conflict, or rejected — never anything else. Only `new` rows
+       consolidate; a question/conflict/rejected signal files as its own row.
+     - Destination: blank.
+   A theme of one is normal — don't stretch unrelated signals together to shorten the
+   table. Create the hub from _bigin/templates/feature-hub.md first if it doesn't exist
+   yet, and update only its Signal Log, Pain Points, sources, and updated fields, nothing
+   else in the hub.
+4. Registers stay PER SIGNAL — consolidation never collapses a register row. For any
+   pain-point signal, mirror it into 01-Requirements/PAIN-POINTS.md (create from
+   _bigin/templates/pain-points-register.md if missing) and the hub's own ## Pain Points
+   table, both copies identical. For an entity/field signal, add a proposed row to
+   01-Requirements/ENTITIES.md (template: entities-register.md). For a durable,
+   cross-cutting design constraint, add a row to 01-Requirements/DESIGN-PRINCIPLES.md
+   (template: design-principles-register.md) in addition to its normal Signal Log filing.
+   Cite the ids you minted in the themed row's Notes.
 5. Before touching the note's status, re-open every hub you just wrote to and confirm the
    new row(s) are actually there. Only then set the note's frontmatter status: in-review
    if every question is resolved, needs-clarification if any remain. If a hub write didn't
@@ -46,7 +61,8 @@ Then, following 2-extraction.md exactly:
 
 Report back: int (the note id), note_status (the status you set, or "unchanged — hub write
 pending" if step 5 blocked), signals (count extracted this run), features_touched (every
-slug you filed to, as a list).
+slug you filed to, as a list), and rows_filed — per slug, the hub row #s you added and the
+note row #s each one cites, e.g. "vendor-payouts: #7 cites #3,#5,#7 · #8 cites #4".
 ```
 
 ## Verification subagent (Step 3)
@@ -56,15 +72,24 @@ One `Agent` call per batch, `model: haiku`, `general-purpose`, foreground. It ch
 ```text
 Verify the extract-signal batch below without re-extracting anything.
 
-Batch (int, note_status, signals, features_touched):
+Batch (int, note_status, signals, features_touched, rows_filed):
 <paste each note's reported verdict from Step 2>
+
+Hub Signal Log rows are grouped by functional theme: ONE row can legitimately cover several
+of the note's signals, citing their row numbers in its Source cell (e.g.
+"INT-014 #3, #5, #7 — Jane Doe 2026-08-05"). Do not compare row counts between the note and
+the hub — they are not meant to match. Check the citations instead.
 
 For each note:
 1. Open 00-Inbox/<INT-###>.md. Confirm its frontmatter status matches note_status, and
    that status is in-review only if every ## Open Questions box is checked.
 2. For every slug in features_touched, open 01-Requirements/_features/<slug>.md and
-   confirm its ## Signal Log has a row whose Source cell cites this INT id, and that the
-   row count filed from this note is consistent with its own ## Extracted signals table.
+   confirm its ## Signal Log has row(s) whose Source cell cites this INT id, then collect
+   every note row number cited across those rows. Every row in the note's
+   ## Extracted signals with a resolved Feature must appear in exactly one of them —
+   report any that appears in none (a signal dropped inside a merge) or in more than one.
+   Also confirm each themed row's Signal cell visibly carries a clause for each number it
+   cites, rather than one summary sentence standing in for several signals.
 3. For every pain-point-type signal in that note, confirm a matching row exists in both
    01-Requirements/PAIN-POINTS.md and the hub's own ## Pain Points table.
 4. Spot-check one entity/field or design-constraint signal per note, if the note reported
@@ -123,14 +148,21 @@ the four cases, in a few words>. Then one summary line: <N> rows checked, <N> un
 **On any unsupported row**, the orchestrator repairs the note before finalizing it — never leaves
 it filed:
 
+A note row's hub counterpart is the themed Signal Log row whose `Source` cite includes that row's
+`#` — one themed row can cover several note rows, so read the cite rather than assuming a 1:1 row.
+Both repairs below edit a row this same run filed, before the note finalizes; that's the
+`Notes: corrected: …` path the extraction rules already allow, not a rewrite of settled history.
+
 - **Overreach** (the quote says less than the row claims): correct the row in place down to what
-  the source supports, `Notes: corrected: narrowed to source`, and mirror the correction onto every
-  hub row already filed from it.
+  the source supports, `Notes: corrected: narrowed to source`, and narrow the matching clause in
+  every hub row citing it — the clause only, leaving that row's other clauses untouched.
 - **No support at all**: leave the row (hard rule 1 — nothing is deleted), set its `Status` to
   `question`, `Notes: unsupported by source — needs confirmation`, raise a `- [ ] Q:` on the note
   asking the client to confirm or correct the claim in plain language, and set the note's
-  `status: needs-clarification`. If a hub row was already filed from it, set that row to `question`
-  too, with the same note.
+  `status: needs-clarification`. On the hub, this row can no longer travel with its theme —
+  `question` rows never consolidate. Drop its clause from the themed row and its `#` from that
+  row's `Source` cite, then append it as its own new row, `Status: question`, with the same note.
+  If it was the themed row's only member, flip that row to `question` in place instead.
 - Report the count in the batch summary. A run with unsupported rows is not a clean run.
 
 ## Repair, on a mismatch
@@ -143,11 +175,17 @@ Dispatch one more small subagent (same model, same type) scoped to exactly the g
 Repair 00-Inbox/<INT-###>.md → 01-Requirements/_features/<slug>.md.
 
 Its ## Extracted signals table already has the correct row(s) for this feature — do not
-re-extract or re-anchor anything. Copy the missing row(s) (# <n>) onto the hub's
-## Signal Log (Status: new, Destination blank), in the format
-_bigin/templates/feature-hub.md defines — and mirror any pain-point row(s)
-into 01-Requirements/PAIN-POINTS.md and the hub's ## Pain Points table too. Report the
-row(s) you added.
+re-extract or re-anchor anything. Note row(s) # <n> are anchored to this slug but cited by
+no hub Signal Log row. File them now, following _bigin/stages/extract/2-extraction.md
+§ Consolidating into themed hub rows: group them by functional theme and append one row per
+theme (Status: new, Destination blank), Source citing the note row numbers each row covers.
+
+Do NOT edit an existing hub row to absorb them — the log is append-only. If they continue a
+theme already on the hub, the new row cites it as "Notes: extends #<n>".
+
+Mirror any pain-point row(s) into 01-Requirements/PAIN-POINTS.md and the hub's ## Pain
+Points table too, one row per pain point. Report the hub row(s) you added and which note
+row #s each cites.
 ```
 
 Re-run the relevant part of the verification check for that one note afterward. Only move on to the next batch once it comes back clean.
