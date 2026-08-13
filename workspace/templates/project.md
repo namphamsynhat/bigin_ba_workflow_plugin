@@ -15,7 +15,7 @@ meeting_provider: fathom  # fathom | spark | firefly — which tool /intake pull
 project_mode: new        # new | ongoing
 codebase_path:            # absolute path to the product repo — required when project_mode: ongoing
 repo:                     # git remote or repo name — blank if this isn't a git repo
-workspace_version:        # the plugin version that last materialized _bigin/rules and _bigin/templates
+workspace_version:        # the plugin version that last materialized _bigin/{conventions,stages,templates}
 updated: <YYYY-MM-DD>
 ---
 

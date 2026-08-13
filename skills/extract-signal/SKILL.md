@@ -22,8 +22,8 @@ fresh.
 - `{inbox_dir}`: `00-Inbox` — skip `_attachments/` when scanning.
 - `{requirements_file}`: `01-Requirements/FEATURES.md` — the slug registry; a signal can only anchor to a slug listed here.
 - `{hub_dir}`: `01-Requirements/_features` — one hub file per slug, `{hub_dir}/<slug>.md`.
-- `{conventions_reference}`: `_bigin/rules/conventions.md` — the rulebook: ID scheme, frontmatter schema, artifact conventions.
-- `{extraction_rules}`: `_bigin/rules/extraction-rules.md` — signal catalog, anchoring rules, hub schema. Every subagent reads this.
+- `{conventions_reference}`: `_bigin/conventions/conventions.md` — the rulebook: ID scheme, frontmatter schema, artifact conventions.
+- `{extraction_rules}`: `_bigin/stages/extract/2-extraction.md` — signal catalog, anchoring rules, hub schema. Every subagent reads this.
 - `{conventions_file}`: `.claude/bigin-ba-workflow-plugin.local.md` — optional project anchoring overrides. A plugin setting, not project data, hence `.claude/`.
 - `{pain_points_file}`: `01-Requirements/PAIN-POINTS.md` — canonical `PP-###` register; each hub mirrors its own rows from here.
 - `{entities_file}`: `01-Requirements/ENTITIES.md` — candidate `EN-###` rows; no hub mirror.

@@ -10,8 +10,9 @@ Extract and file the signals in <INT-###> (full path: 00-Inbox/<filename>.md).
 This is <"a fresh run" | "a fold-in — every previously-open question is now answered">.
 
 Read before doing anything:
-- _bigin/rules/extraction-rules.md — in full (the signal catalog, anchoring rules, hub schema)
-- _bigin/rules/conventions.md — these sections ONLY, not the whole file: § ID scheme,
+- _bigin/stages/extract/2-extraction.md — in full (the signal catalog, anchoring rules, hub schema)
+- _bigin/conventions/paths.md — resolves every {variable} that file refers to
+- _bigin/conventions/conventions.md — these sections ONLY, not the whole file: § ID scheme,
   § Feature Hub, § Signal → feature mapping, § Open Questions wording, § Pain Point Register,
   § Design Principles Register, § Entity Data Model. The rest governs FR/BR drafting and later
   stages, which this task never touches.
@@ -19,10 +20,10 @@ Read before doing anything:
 - 01-Requirements/FEATURES.md (the slug registry)
 - the note itself
 
-Then, following extraction-rules.md exactly:
+Then, following 2-extraction.md exactly:
 1. Extract every discrete signal from ## Raw into ## Extracted signals (or, on a fold-in,
    only the rows still blocked on an answer). Run the four self-checks in
-   extraction-rules.md § Before finalizing a note before you consider this step done.
+   2-extraction.md § Before finalizing a note before you consider this step done.
 2. Anchor each signal to a FEATURES.md slug. Never guess — an unresolved signal gets a
    question in ## Open Questions instead.
 3. For each anchored signal, append a row to 01-Requirements/_features/<slug>.md's
@@ -84,7 +85,7 @@ by then the transcript is three stages upstream.
 
 This runs **here, not in `/bigin-transform-signal`**, because it is only cheap next to the raw
 material. One `Agent` per note (never per batch — a per-batch agent would hold several transcripts
-at once, which is the under-reading failure `extraction-rules.md` § Reading long sources warns
+at once, which is the under-reading failure `2-extraction.md` § Reading long sources warns
 about). `model: sonnet`, `general-purpose`, foreground.
 
 Sonnet rather than `haiku` is deliberate and is the one place in this skill worth the cost:
@@ -108,7 +109,7 @@ supported:
 - No locatable quote — the claim reads as a reasonable inference from the discussion rather
   than something said.
 - The only support is a meeting tool's AI-generated summary. That is derived text, not the
-  client's words (extraction-rules.md § The Why field) — it can never support a signal.
+  client's words (2-extraction.md § The Why field) — it can never support a signal.
 - The quote is real but says less than the row claims: a hedge turned into a commitment, a
   single example turned into a general rule, an unstated number, unit, threshold, or
   timezone.

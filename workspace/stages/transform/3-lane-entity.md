@@ -54,7 +54,7 @@ question, not an overwrite.
 A rule about a field — uniqueness, a range, a format, an immutability constraint — is its own
 `BR-###` file citing the entity's fields, never a subsection or an extra column here
 (`conventions.md` § Entity Data Model). The `## Fields` table records what a field *is*; the BR
-records what must hold of it. `lane-br.md` § Field-level rules covers the BR side.
+records what must hold of it. `3-lane-br.md` § Field-level rules covers the BR side.
 
 The same entity appearing on several features' hubs is expected and is not duplication to fix — it
 is the point of a shared entity id.

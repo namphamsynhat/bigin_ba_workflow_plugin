@@ -15,8 +15,9 @@ for `^## ` to list sections, then read the ones named below. Reading it whole co
 | `/enrich-feature` → `/consolidate-prd` | Traceability chain · Summary block · Feature material |
 
 **This file is a materialized copy, not project data.** `/bigin-new-project` writes it to
-`_bigin/rules/conventions.md` so that every skill and every dispatched subagent can reach it at a
-project-relative path, and overwrites it on each re-run to pick up a plugin upgrade. Edits made here
+`_bigin/conventions/conventions.md` so that every skill and every dispatched subagent can reach it at a
+project-relative path (alongside `paths.md`, which resolves the `{variable}` names the stage guides in
+`_bigin/stages/` use), and overwrites it on each re-run to pick up a plugin upgrade. Edits made here
 are lost on the next run. Project-level overrides go in `.claude/bigin-ba-workflow-plugin.local.md`
 (also scaffolded by `/bigin-new-project`), which may layer optional house-style preferences on top —
 a `Why`-phrasing convention, a standing feature-slug shortcut — but never contradicts the schema
@@ -181,7 +182,7 @@ valid chains applies:
   directive** — "ask for confirmation before deleting" adds a step to a flow and takes the Full or
   CR chain, however visual the request sounded. An ambiguous signal takes the FR chain, because an
   over-routed FR is caught at the human gate while an under-routed directive skips the gate.
-  `_bigin/rules/lane-design.md` and `_bigin/rules/routing.md` hold the
+  `_bigin/stages/transform/3-lane-design.md` and `_bigin/stages/transform/3-routing.md` hold the
   boundary test and the destination rules.
 
 **Planned** — this plugin doesn't yet distinguish the Full and CR chains; every feature with an FR
@@ -330,7 +331,7 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
     an earlier row — needs human resolution before either can be applied) · `superseded` (an older
     row a resolved conflict/newer decision overrode) · `rejected` (explicitly out of scope). This
     plugin's `extract-signal` skill only ever writes `new`/`question`/`conflict`/`rejected` when
-    filing a fresh signal (§ its own `extraction-rules.md`) — `held`/`staged`/`applied`/
+    filing a fresh signal (§ its own `2-extraction.md`) — `held`/`staged`/`applied`/
     `superseded` describe a signal's relationship to an FR, which is `/bigin-transform-signal`'s
     job to set, not extraction's.
   - **"Processed" = `applied` \| `superseded` \| `rejected`. "Not yet processed" = everything
@@ -848,7 +849,7 @@ single feature:
   the FR; that put untestable presentation language inside approved functional scope and made a
   purely visual note wait behind `/approve-fr` before `/prototype-design` could ever see it. A
   feature-scoped directive that turns out to change behaviour was misrouted and belongs back on the
-  FR — see `_bigin/rules/routing.md` § The design boundary test.
+  FR — see `_bigin/stages/transform/3-routing.md` § The design boundary test.
 - **Cross-cutting** preferences (brand, tone, accessibility, interaction, layout, content,
   platform) append a row to `DESIGN-PRINCIPLES.md`: `# | Principle | Why | Category | Source |
   Status | Notes`, citing the INT id like any other signal. A signal can land in both places at
@@ -1082,10 +1083,10 @@ Concrete gaps between this document and the plugin's actual skills, collected he
 scattered inline caveats — resolve and delete each line as the corresponding skill is migrated.
 
 - ~~**Plugin-internal paths were unreachable at runtime.**~~ **Resolved (plugin 1.2.0).** The rulebook
-  and templates are now materialized into the project by `/bigin-new-project` (`_bigin/rules/`,
-  `_bigin/templates/`), and every skill, dispatch prompt, and template refers to them
-  project-relatively. Anything still pointing at `references/…` or `skills/*/template/…` for a file a
-  subagent has to read is a bug. `${CLAUDE_PLUGIN_ROOT}` has exactly one legitimate use in this
+  and templates are now materialized into the project by `/bigin-new-project`
+  (`_bigin/conventions/`, `_bigin/stages/`, `_bigin/templates/`), and every skill, dispatch prompt, and
+  template refers to them project-relatively. Anything still pointing at `references/…`,
+  `skills/*/SKILL.md`, or `skills/*/template/…` for a file a subagent has to read is a bug. `${CLAUDE_PLUGIN_ROOT}` has exactly one legitimate use in this
   plugin: `/bigin-new-project` § 2, resolving the copy source.
 - **`enrich-feature`, `approve-fr`, `prototype-design`, `consolidate-prd` still use the old
   `.bigin/` flat-file layout** (`.bigin/features/FR-<id>-*.md`, `.bigin/PRD.md`,

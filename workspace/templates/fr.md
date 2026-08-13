@@ -3,7 +3,7 @@ id: FR-
 type: requirement
 title:
 status: draft   # draft | needs-clarification | enriched | approved | consolidated | removed
-                # (_bigin/rules/conventions.md § Status vocabularies — in-review and superseded are
+                # (_bigin/conventions/conventions.md § Status vocabularies — in-review and superseded are
                 # retired for FR/BR). /bigin-transform-signal only ever writes
                 # draft/needs-clarification; enriched belongs to /enrich-feature, consolidated to
                 # /consolidate-prd, and approved/removed are human-only (hard rule 4).

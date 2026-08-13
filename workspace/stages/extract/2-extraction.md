@@ -1,10 +1,11 @@
 # Extraction rules
 
 The full rule set every `extract-signal` subagent follows, on top of the vault-wide ID scheme,
-frontmatter schema, and Signal Log status vocabulary in `_bigin/rules/conventions.md` (the
+frontmatter schema, and Signal Log status vocabulary in `_bigin/conventions/conventions.md` (the
 plugin's shared conventions — read that first for anything not covered here). Beyond that,
-`.claude/bigin-ba-workflow-plugin.local.md` (the plugin's settings file — see `{conventions_file}`
-in `SKILL.md`), if the project has written one, takes precedence over anything here for
+`.claude/bigin-ba-workflow-plugin.local.md` (the plugin's settings file — `{conventions_file}` in
+`_bigin/conventions/paths.md`, where every other `{variable}` below resolves too), if the project has
+written one, takes precedence over anything here for
 project-specific calls (e.g. a house style for `Why` phrasing, or a standing list of features that
 never get an `unresolved` question because they map to one obvious slug).
 

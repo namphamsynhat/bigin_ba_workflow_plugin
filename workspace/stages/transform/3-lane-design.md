@@ -1,6 +1,6 @@
 # Design lane — directives that reach the design workflow without a PRD
 
-Handles signals routed to **Design** (`routing.md` § The design boundary test). This lane exists
+Handles signals routed to **Design** (`3-routing.md` § The design boundary test). This lane exists
 because a presentation-only signal has nothing for a PRD to consume: a PRD section states
 functional scope, and "make it feel warmer" adds none. Routed through the FR lane it would either
 sit in an FR as an untestable line or wait behind an approval gate it does not need, while the
@@ -28,7 +28,7 @@ contract the client signed off. A design directive enters no contract. It is rea
 `/prototype-design`, whose entire output is a proposal a human reviews before anything is built —
 so gating the input as well adds a round-trip in front of a review that already happens.
 
-The asymmetry is deliberate and bounded. It holds only because the boundary test in `routing.md` is
+The asymmetry is deliberate and bounded. It holds only because the boundary test in `3-routing.md` is
 strict: anything testable without reference to appearance is FR or BR, and an ambiguous signal
 routes to FR. **A design directive that turns out to change behaviour is a routing bug, not a
 gating exception** — when one is found, re-route it to the FR lane, leave the directive row with
@@ -120,5 +120,5 @@ the feature's material set and would reach `/approve-fr` as if it were scope.
 - Set a hub's `uiux:` field, or write into `## UX Spec` itself.
 - Set `Status: reflected` on a directive — that is the prototype's claim to make, not this skill's.
 - Delete or rewrite an existing directive or design-principle row. Both registers are append-only.
-- Route a behaviour change. Re-read `routing.md` § The design boundary test whenever a directive
+- Route a behaviour change. Re-read `3-routing.md` § The design boundary test whenever a directive
   starts describing what happens rather than how it looks.

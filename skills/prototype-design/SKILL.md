@@ -6,7 +6,7 @@ argument-hint: "<feature-id, e.g. FR-003>"
 
 # Prototype Design
 
-See `_bigin/rules/conventions.md` for the plugin-wide ID scheme and artifact conventions (§
+See `_bigin/conventions/conventions.md` for the plugin-wide ID scheme and artifact conventions (§
 Reconciliation notes there flags that this skill still reads the pre-migration `.bigin/` layout
 below — treat that as the known gap, not a new one to fix here).
 

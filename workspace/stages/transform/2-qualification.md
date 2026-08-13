@@ -14,7 +14,7 @@ the next run re-checks it, which is why `held` rows are always re-collected.
 Per signal row, open only the intake note's **frontmatter**, **`## Extracted signals`**, and
 **`## Open Questions`**. Never open `## Raw`, a transcript, or an attachment here — that material
 belongs to extraction, and re-reading it at transform time both explodes context and duplicates a
-rule that `_bigin/rules/extraction-rules.md` already owns.
+rule that `_bigin/stages/extract/2-extraction.md` already owns.
 
 ## Gate 1 — Blocked on an answer
 
@@ -34,7 +34,7 @@ Open the note's `## Open Questions`. The row fails this gate if:
 **Never re-raise the question.** It already exists on the note, owned by a human, and
 `conventions.md` § One question, two places is explicit that a second copy of the same ask is a
 bug. **Never re-derive the missing `Why` from the raw source** either — a `Why` reconstructed at
-transform time is a guess wearing a citation, which is the exact failure `_bigin/rules/extraction-rules.md`
+transform time is a guess wearing a citation, which is the exact failure `_bigin/stages/extract/2-extraction.md`
 § The `Why` field is written to prevent.
 
 A `requirement`/`feedback` signal that is genuinely fine without a stated reason does not exist:

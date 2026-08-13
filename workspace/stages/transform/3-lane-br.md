@@ -2,7 +2,7 @@
 
 Handles signals routed to **BR**. A BR is always its own file under `{br_dir}`, never a subsection
 of an FR and never a subsection of an entity doc (`conventions.md` § Entity Data Model). Read
-`routing.md` § New vs. update first.
+`3-routing.md` § New vs. update first.
 
 ## What belongs in a BR rather than an FR
 
@@ -80,7 +80,7 @@ It does **not** become a row or a subsection inside `{entity_dir}/EN-<NNN> …md
 this way is what lets one rule govern fields on two entities without either doc owning it.
 
 When this lane produces a field-level BR, report the entity it governs to the orchestrator so
-Stage 4 can promote or extend that entity (`lane-entity.md`) — do not write to `{entities_file}` or
+Stage 4 can promote or extend that entity (`3-lane-entity.md`) — do not write to `{entities_file}` or
 `{entity_dir}` from inside a per-feature subagent.
 
 ## Updating an existing BR
@@ -95,7 +95,7 @@ version bump plus a `## Changelog` line, and a human sets `status: removed` if t
 
 ## Questions and conflicts
 
-Identical to the FR lane (`lane-fr.md` § Raising a question, § Conflict with an existing row),
+Identical to the FR lane (`3-lane-fr.md` § Raising a question, § Conflict with an existing row),
 written on the BR's own `## Open Questions`. Two rules that cannot both hold are a `conflict`,
 raised once, naming both — not a silent narrowing of whichever one this run happened to touch
 second.

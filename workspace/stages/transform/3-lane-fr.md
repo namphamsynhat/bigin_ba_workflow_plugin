@@ -1,12 +1,12 @@
 # FR lane — drafting and updating a Functional Requirement
 
-Handles signals routed to **FR** and to **Context** (`routing.md` § The lane table). Read
-`routing.md` § New vs. update first — this guide assumes that lookup has already been made.
+Handles signals routed to **FR** and to **Context** (`3-routing.md` § The lane table). Read
+`3-routing.md` § New vs. update first — this guide assumes that lookup has already been made.
 
 ## Creating a new FR
 
 Only when nothing on the feature covers the subject. Instantiate `{template_fr}` as
-`{fr_dir}/FR-<NNN> <Title>.md`, with the id from the `Grep` scan (`routing.md` § New vs. update).
+`{fr_dir}/FR-<NNN> <Title>.md`, with the id from the `Grep` scan (`3-routing.md` § New vs. update).
 
 Frontmatter to fill on creation:
 
@@ -76,7 +76,7 @@ Write it on the FR's own `## Open Questions`, following `conventions.md` § Open
   other vault vocabulary. `owner: team` questions may use it.
 - **One question per line.** Three options or more get `(a)/(b)/(c)`.
 - **One question, two places is a bug** (`conventions.md` § One question, two places). If the
-  source INT note already asks this, do not copy it here — Gate 1 in `qualification.md` should have
+  source INT note already asks this, do not copy it here — Gate 1 in `2-qualification.md` should have
   parked the signal `held` before it ever reached this lane.
 
 ## The Context sub-lane
@@ -84,7 +84,7 @@ Write it on the FR's own `## Open Questions`, following `conventions.md` § Open
 Two destinations, both on the FR, neither gated — they add provenance, not requirement content.
 
 **`## Business goal`** — the client's stated why, in the client's own terms. Write only what was
-actually said. A `decision`-type signal has no `Why` by design (`_bigin/rules/extraction-rules.md` § The `Why`
+actually said. A `decision`-type signal has no `Why` by design (`_bigin/stages/extract/2-extraction.md` § The `Why`
 field); routing one here and inventing a rationale for it launders a guess into the record.
 
 **`## Problem & Pain Points`** — a mirror of this FR's rows from
@@ -96,7 +96,7 @@ to fill silently.
 ## Conflict with an existing row
 
 Two statements that cannot both hold. Never pick a winner — recency settles a supersession
-(`qualification.md` § 4c), but it does not settle a disagreement between two stated requirements.
+(`2-qualification.md` § 4c), but it does not settle a disagreement between two stated requirements.
 
 1. Flip the new Signal Log row to `Status: conflict`, `Notes: conflicts with #<n>`.
 2. Raise one question on the FR naming **both** sides in plain language, so the reader can choose

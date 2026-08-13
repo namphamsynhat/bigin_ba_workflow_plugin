@@ -28,7 +28,7 @@ Bare paths resolve from the workspace root (the working dir).
 - `{inbox_dir}`: `00-Inbox`
 - `{requirements_file}`: `01-Requirements/FEATURES.md`
 - `{system_config}`: `_bigin/system/project.md`
-- `{conventions_reference}`: `_bigin/rules/conventions.md` — the rulebook: ID scheme, frontmatter schema, artifact conventions.
+- `{conventions_reference}`: `_bigin/conventions/conventions.md` — the rulebook: ID scheme, frontmatter schema, artifact conventions.
 - `{conventions_file}`: `.claude/bigin-ba-workflow-plugin.local.md` — plugin settings, not project data.
 - `{template_intake}`: `_bigin/templates/intake.md`
 - `{intake_log}`: `{inbox_dir}/.intake_log` — audit trail and idempotency index. Every ingest, append, and skipped source logs as one atomic append-only line.

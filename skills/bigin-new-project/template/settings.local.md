@@ -7,7 +7,7 @@ updated: <YYYY-MM-DD>
 
 Optional project-specific overrides for `/bigin-intake` and `/extract-signal`. Anything written
 here takes precedence over the plugin's built-in defaults in
-`_bigin/rules/extraction-rules.md`. Leave a section empty to fall back to
+`_bigin/stages/extract/2-extraction.md`. Leave a section empty to fall back to
 those defaults.
 
 ## Why phrasing

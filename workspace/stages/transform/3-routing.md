@@ -14,13 +14,13 @@ that can land in any lane depending on what the feedback is about.
 
 | The signal is… | Lane | Guide |
 |---|---|---|
-| A testable, actionable statement about system behaviour | **FR** | `lane-fr.md` |
-| A conditional or policy constraint — feature-level, or governing one FR | **BR** | `lane-br.md` |
-| A statement about presentation only: look, layout, tone, visual style, copy voice, interaction feel, accessibility affordance | **Design** | `lane-design.md` |
-| A thing the business tracks and its attributes — a data field or entity | **Entity** | `lane-entity.md` |
-| An end-to-end flow that genuinely crosses feature boundaries | **Entity** (§ Business Scenario half) | `lane-entity.md` |
-| Narrative context — the client's stated why, not actionable on its own | **Context** → the FR's `## Business goal` | `lane-fr.md` |
-| A concrete named frustration or cost, with no requirement attached | **Context** → `PP-###` mirror on the FR's `## Problem & Pain Points` | `lane-fr.md` |
+| A testable, actionable statement about system behaviour | **FR** | `3-lane-fr.md` |
+| A conditional or policy constraint — feature-level, or governing one FR | **BR** | `3-lane-br.md` |
+| A statement about presentation only: look, layout, tone, visual style, copy voice, interaction feel, accessibility affordance | **Design** | `3-lane-design.md` |
+| A thing the business tracks and its attributes — a data field or entity | **Entity** | `3-lane-entity.md` |
+| An end-to-end flow that genuinely crosses feature boundaries | **Entity** (§ Business Scenario half) | `3-lane-entity.md` |
+| Narrative context — the client's stated why, not actionable on its own | **Context** → the FR's `## Business goal` | `3-lane-fr.md` |
+| A concrete named frustration or cost, with no requirement attached | **Context** → `PP-###` mirror on the FR's `## Problem & Pain Points` | `3-lane-fr.md` |
 
 A `pain-point` with no attached requirement is not a gap to fill. It stays on record until a later
 signal turns it into an FR/BR line or a story resolves it. Never stretch one into a functional
