@@ -47,8 +47,9 @@ answer, source materialized, fidelity, dedup), **route and draft** (one subagent
 per lane — a feature's hub and FR/BR files are one ownership domain), **sync** (shared registers,
 written sequentially, plus an in-feature conflict check), and **status and report**. Signals it
 can't safely act on are parked `held` with the remedy named, never repaired by re-reading raw
-material — extraction owns that, and its own fidelity pass is where a signal is checked
-quote-by-quote against the source it claims to come from.
+material — extraction owns that, and its own source audit is where a signal is checked
+quote-by-quote against the source it claims to come from, and where a claim the source makes with
+no signal to show for it gets found.
 
 All state is written into the current repo — `_bigin/` for engagement config plus the materialized
 rulebook, `00-Inbox`/`01-Requirements` for the requirements vault:
@@ -61,8 +62,10 @@ _bigin/conventions/               the shared standard, copied in by /bigin-new-p
                                   paths.md ({variable} → path). Plugin-owned: refreshed on re-run
 _bigin/stages/                    one file per pipeline stage, same ownership. Grouped by the skill
     extract/2-extraction.md        that runs it and numbered by stage, so what governs a stage is
-    transform/1-foldin.md          findable from the stage alone — and a run loads only the files
-    transform/2-qualification.md   its own signals reach, never the whole rulebook
+    extract/3-filing.md            findable from the stage alone — and a run loads only the files
+    transform/1-foldin.md          its own signals reach, never the whole rulebook. Extraction and
+    transform/2-qualification.md   filing are separate files because they are separate subagents:
+                                   the extractor must not know its rows get grouped downstream
     transform/3-routing.md
     transform/3-lane-{fr,br,design,entity}.md
     transform/4-sync.md

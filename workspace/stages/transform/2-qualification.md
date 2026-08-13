@@ -73,9 +73,8 @@ The hub's Signal Log row is a **themed consolidation** of one or more of the not
 `## Extracted signals` rows — its `Source` cite names exactly which (`INT-014 #3, #5, #7 — Jane Doe
 2026-08-05`), and its `Signal` cell carries one clause per cited row (`conventions.md` § Feature
 Hub). This gate checks that the consolidation is faithful and the trail is followable. It does not
-re-verify the note against the raw source — that is `extract-signal`'s verification pass, which runs
-next to the raw material and checks it quote-anchored (`/extract-signal` § Step 3, its fidelity
-subagent).
+re-verify the note against the raw source — that is `extract-signal`'s source audit, which runs next
+to the raw material and checks it quote-anchored in both directions (`/extract-signal` § Step 2b).
 
 Check two things, both cheap:
 

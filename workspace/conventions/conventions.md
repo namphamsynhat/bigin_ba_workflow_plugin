@@ -327,7 +327,7 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
     raw record — **the two tables' row counts are not meant to match**, and anything comparing them
     is checking the wrong thing. Signals never merge across notes, across `Status` (only `new`
     consolidates), across the design/behaviour boundary, or when they contradict each other. A
-    theme of one is normal. Full rules: `/extract-signal`'s `2-extraction.md` § Consolidating into
+    theme of one is normal. Full rules: `/extract-signal`'s `3-filing.md` § Consolidating into
     themed hub rows.
   - **`#` is permanent** once assigned, like a `BR-###` number — never renumbered or deleted. A
     conflicting or superseding signal is always a **new row**; the old row's `Status`/`Notes` gets
@@ -341,7 +341,7 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
     an earlier row — needs human resolution before either can be applied) · `superseded` (an older
     row a resolved conflict/newer decision overrode) · `rejected` (explicitly out of scope). This
     plugin's `extract-signal` skill only ever writes `new`/`question`/`conflict`/`rejected` when
-    filing a fresh signal (§ its own `2-extraction.md`) — `held`/`staged`/`applied`/
+    filing a fresh signal (§ its own `3-filing.md`) — `held`/`staged`/`applied`/
     `superseded` describe a signal's relationship to an FR, which is `/bigin-transform-signal`'s
     job to set, not extraction's.
   - **"Processed" = `applied` \| `superseded` \| `rejected`. "Not yet processed" = everything
@@ -524,8 +524,8 @@ progress machine-readable — `Status` reuses the same vocabulary as the Feature
 `## Signal Log` (§ Feature Hub) so a signal reads the same state at both levels.
 
 This table is the vault's **raw signal record**, and it stays flat: one row per signal in arrival
-order, never merged or grouped, however many rows describe the same thing. It's what the fidelity
-check quotes against and what every later stage re-reads to see what was actually said, so a merge
+order, never merged or grouped, however many rows describe the same thing. It's what the source
+audit quotes against and what every later stage re-reads to see what was actually said, so a merge
 here destroys evidence. Grouping is the *hub's* job — these rows file onto the Feature Hub as
 themed Signal Log rows citing their `#` back here (§ Feature Hub).
 

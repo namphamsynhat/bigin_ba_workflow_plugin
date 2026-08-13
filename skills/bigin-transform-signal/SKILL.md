@@ -179,7 +179,7 @@ Per-feature subagents run on the **session's default model**, not `haiku`: draft
 (new-vs-update, wording a self-contained question, spotting a cross-feature flow). Contrast
 `extract-signal`, mechanical against a tight rule set, `haiku` throughout.
 
-Deep fidelity checking belongs to **`extract-signal`'s verification pass**, next to the raw material
+Deep fidelity checking belongs to **`extract-signal`'s source audit**, next to the raw material
 where a quote-anchored check is cheap. This skill does the shallow half only (§ Stage 2): the hub row
 matches the note's row and its `Source` cite is specific. Re-reading transcripts here would duplicate
 a rule that already has an owner, then drift from it.

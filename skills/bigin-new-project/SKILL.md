@@ -75,7 +75,8 @@ What lands, and who reads it. Nothing reads all of it — each row names its onl
 |---|---|
 | `_bigin/conventions/conventions.md` | every skill and subagent, **named sections only** — see that file's own stage table |
 | `_bigin/conventions/paths.md` | any subagent resolving a `{variable}` a stage file refers to |
-| `_bigin/stages/extract/2-extraction.md` | `/extract-signal`'s extraction subagents |
+| `_bigin/stages/extract/2-extraction.md` | `/extract-signal`'s extraction subagent — that one only |
+| `_bigin/stages/extract/3-filing.md` | `/extract-signal`'s filing subagent — that one only |
 | `_bigin/stages/transform/1-foldin.md` | `/bigin-transform-signal` Stage 1 (orchestrator) |
 | `_bigin/stages/transform/2-qualification.md`, `3-routing.md` | `/bigin-transform-signal` Stages 2–3 (orchestrator) |
 | `_bigin/stages/transform/3-lane-{fr,br,design,entity}.md` | `/bigin-transform-signal`'s per-feature subagents — only the lanes that run |
