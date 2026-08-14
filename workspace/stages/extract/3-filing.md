@@ -50,18 +50,46 @@ them silently. There is one unprocessed value now — `new`.
    like a near-miss of an existing row (typo, plural, hyphenation) is flagged in the report — never
    silently remapped, never minted as a near-duplicate.
 2. **Match against `{requirements_file}`.** A signal maps to the feature whose scope it actually
-   describes, not the one it happened to be adjacent to.
+   describes, not the one it happened to be adjacent to, and not the one whose name merely shares a
+   keyword. When the `FEATURES.md` row's Feature name alone doesn't settle it, open the candidate slug's
+   hub if one already exists (`{hub_dir}/<slug>.md`) — its `## Notes / History` and existing `## Signal
+   Log` themes show what the feature has actually come to mean across prior runs, which resolves
+   borderline cases the one-line registry row can't.
 3. **A row whose feature is `status: out-of-scope`** gets `Status: rejected`, `Notes: out-of-scope —
    skipped` — filed and closed, not raised as a question.
-4. **Never guess.** More than one plausible slug → `Feature: unresolved — candidates: a | b`. None →
-   `unresolved — none found`, with a suggested new slug in the question. Either way it is a `question`
-   row and a `## Open Questions` line, and **never a new `{requirements_file}` row** — a slug is
-   permanent and everything downstream anchors to it, so minting one is a human's call.
+4. **Never guess — and the two ways a match fails ask different questions.**
+   - **Ambiguous among existing features** — more than one slug's scope plausibly covers the signal:
+     `Feature: unresolved — candidates: a | b`, ranked by how much of the signal's described behavior
+     each candidate's scope actually covers (§ step 2), not by keyword overlap alone.
+   - **No existing feature fits, and the signal reads like new scope**: `Feature: unresolved — none
+     found`, with a drafted slug and one-line scope in the question (§ Drafting a new-feature proposal).
+   Either way it is a `question` row and a `## Open Questions` line, and **never a new
+   `{requirements_file}` row** — a slug is permanent and everything downstream anchors to it, so minting
+   one is a human's call.
 5. **One signal, one feature.** A signal that genuinely spans two features is filed to both hubs, and its
    `Feature` cell names both — the row itself is never split or duplicated, since stage 2 owns the table's
    rows.
 6. **Do not look at whether the matched feature already has an FR.** That check is exactly the judgment
    call § Scope retired.
+
+### Drafting a new-feature proposal (never writing it)
+
+When no `{requirements_file}` slug fits, don't stop at "none found" — draft what the row *would* look
+like, so the human resolving the question is choosing or editing rather than starting from a blank line:
+
+- **Suggested slug**: kebab-case, 2–4 words, built from the signal's own vocabulary — not a paraphrase
+  that invents a name the client never used. Check it against `{requirements_file}` for a near-miss
+  (singular/plural, hyphenation, word order) before offering it; if one exists, that's an existing-feature
+  ambiguity (§ step 4 above), not new scope.
+- **One-line scope**: the boundary a human would need to confirm — "does this include X, or just Y?" —
+  not the row's `Why` restated in different words.
+- Both go into the question (§ Raising a question instead of guessing) so the answer can be as short as
+  confirming the slug, or a one-word edit to it.
+
+This is drafting, not deciding: the suggested slug and scope are never written to `{requirements_file}` or
+anywhere else — a human resolves the question by writing the confirmed slug into the `A:` line and minting
+the `proposed` row themselves, using the draft as a starting point rather than this stage's output
+verbatim. A human is always free to reject the draft entirely and point at an existing feature instead.
 
 ## Filing to the Feature Hub
 
@@ -166,6 +194,18 @@ under the note's `## Open Questions`:
 - [ ] Q: <what's missing — the feature slug, or the stated reason> (owner: client|team) ↦ —
       A:
 ```
+
+An anchoring question uses one of two more specific shapes instead of the generic one above — they ask
+for a different kind of answer, and a human resolving them should be able to tell which at a glance:
+
+- **Ambiguous among existing features:**
+  `- [ ] Q: Which feature does this belong to — `<slug-a>` or `<slug-b>`? (owner: team) ↦ —`
+- **No existing feature fits** (§ Drafting a new-feature proposal):
+  `- [ ] Q: No existing feature covers this — proposed new feature `<suggested-slug>`: "<one-line
+  scope>". Confirm this slug/scope, edit it, or point to an existing feature instead. (owner: team) ↦ —`
+
+Both stay `owner: team` — which feature a signal belongs to, or whether it's new scope, is an internal
+call, not something only the client can answer.
 
 - `↦ —` because no FR exists yet to fold this into; a later stage rewrites it to `↦ FR-###`.
 - `owner: client` when only the client can answer (missing rationale, ambiguous scope). `owner: team` for

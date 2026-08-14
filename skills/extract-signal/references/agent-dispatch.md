@@ -165,9 +165,16 @@ confirmation question: <list, or "none">
 
 Then, following 3-filing.md exactly:
 1. Anchor each row to a FEATURES.md slug and write it in the row's Feature column.
-   declared_features first (a floor, not a ceiling — still match every row independently).
-   Never guess: more than one plausible slug → "unresolved — candidates: a | b"; none →
-   "unresolved — none found". Never add a FEATURES.md row — a new slug is a human's call.
+   declared_features first (a floor, not a ceiling — still match every row independently). Match
+   on described scope, not shared keywords — if a candidate slug's name alone doesn't settle it and
+   that slug already has a hub (01-Requirements/_features/<slug>.md), open it and check its
+   ## Notes / History and ## Signal Log for what the feature has actually meant so far.
+   Never guess — the two failure shapes ask different questions:
+     - More than one plausible existing slug → "unresolved — candidates: a | b".
+     - None fit and it reads like new scope → "unresolved — none found", AND draft a suggested
+       slug (kebab-case, from the signal's own words, checked against FEATURES.md for a near-miss
+       first) plus a one-line scope statement to put in the question (step 5) — never write either
+       into FEATURES.md yourself, a new slug is a human's call.
    Do NOT check whether the matched feature already has an FR.
 2. Set each row's Status: new, question, conflict, or rejected — never anything else.
 3. Group this note's anchored rows for each slug BY FUNCTIONAL THEME and append ONE row per
@@ -195,8 +202,11 @@ Then, following 3-filing.md exactly:
    cross-cutting design constraint → 01-Requirements/DESIGN-PRINCIPLES.md (template:
    design-principles-register.md). Cite the ids you minted in the themed row's Notes.
 5. Raise a - [ ] Q: in the note's ## Open Questions for every unresolved anchor, every
-   requirement/feedback row whose Why is "not stated", and every audit-flagged row. Wording
-   rules in 3-filing.md § Raising a question instead of guessing. Tag the note needs-review.
+   requirement/feedback row whose Why is "not stated", and every audit-flagged row. An unresolved
+   anchor uses one of the two anchoring-specific templates in 3-filing.md § Raising a question
+   instead of guessing — "which of these existing features" for a candidates list, or "proposed new
+   feature <slug>: <scope>" for none-found, using the slug/scope drafted in step 1 — never the
+   generic wording for these two cases. Tag the note needs-review.
 6. Before touching the note's status, re-open every hub you wrote to and confirm the new
    row(s) are there. Only then set status: in-review if every ## Open Questions box is
    checked, needs-clarification if any is not. If a hub write didn't land, leave the status

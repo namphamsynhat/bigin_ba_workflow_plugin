@@ -958,19 +958,31 @@ How `/extract-signal` consumes a non-empty `declared_features:`:
 
 ### When a signal can't map
 
-When no existing row fits and it isn't clearly new scope either, `/extract-signal` never guesses
-the anchor:
+When no existing row fits, `/extract-signal` never guesses the anchor — but it doesn't stop at "no
+match" either. It distinguishes two failure shapes, because they ask a human two different questions
+(full rules: `/extract-signal`'s `3-filing.md` § Anchoring a signal to a feature):
 
-- Record the proposed anchor candidates (or "none found") on the signal line.
-- Add an Open Question (owner: team) — "Which feature does this belong to?" with the candidate
-  slugs listed — on the closest FR, or on the source INT note itself if no FR exists yet.
+- **Ambiguous among existing features** — more than one slug's scope plausibly fits: record the
+  candidates on the signal line (`unresolved — candidates: a | b`) and ask which one.
+- **No existing feature fits, and the signal reads like new scope** — record `unresolved — none
+  found`, and draft a **suggested slug** (kebab-case, from the signal's own vocabulary, checked
+  against the registry for a near-miss first) plus a **one-line scope** statement, so the question
+  gives a human something to confirm or edit rather than a blank line to fill from scratch.
+
+Either way:
+
+- Add an Open Question (owner: team) on the closest FR, or on the source INT note itself if no FR
+  exists yet, worded for whichever shape it is (`3-filing.md` § Raising a question instead of
+  guessing has the exact templates).
 - Park the source INT note `status: needs-clarification` and add `needs-review` to its `tags:` —
   the same surfacing mechanism as any other open question, so it's visible as specifically needing
   a human to map the feature, not just answer a content question.
 - The human closes it by writing the correct slug back — as the `A:` answer on the note's Open
   Questions line, or by setting the note's `feature:` frontmatter directly — and ticking the box.
-  The next `/extract-signal` pass reads that as the resolved mapping and stages the signal against
-  the named feature, creating a new `proposed` row first if the slug doesn't exist yet.
+  For a new-scope question, the human mints the `proposed` `{requirements_file}` row themselves
+  (the drafted slug/scope is a starting point, not something `/extract-signal` ever writes there
+  unattended). The next `/extract-signal` pass reads the answer as the resolved mapping and stages
+  the signal against the named feature.
 
 ## Feedback handling
 

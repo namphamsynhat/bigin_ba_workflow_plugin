@@ -197,10 +197,14 @@ long log — the detail a drafter needs is still on the page but no longer legib
 ## The feature-mapping loop
 
 A signal matching no `{requirements_file}` slug is never guessed onto one. It becomes a question on the
-`INT` note (owner: team), tagged `needs-review`, and the note flips to `needs-clarification`. A human
-resolves it by writing the slug into the question's `A:` line — minting a `proposed` row first if the
-scope is genuinely new — and ticking the box. The next run picks the note up as a fold-in and anchors it
-properly. No separate command, no re-extraction of what was already correct.
+`INT` note (owner: team), tagged `needs-review`, and the note flips to `needs-clarification`. The
+question's wording depends on why the match failed (`{filing_rules}` § Anchoring a signal to a feature):
+ambiguous among two or more existing slugs asks which one; nothing fitting at all comes with a **drafted
+slug and one-line scope** for a possible new feature, so the human is confirming or editing a proposal
+rather than inventing one from a blank line. Either way, a human resolves it by writing the slug into the
+question's `A:` line — minting a `proposed` row first if the scope is genuinely new, using the draft as a
+starting point rather than accepting it verbatim — and ticking the box. The next run picks the note up as
+a fold-in and anchors it properly. No separate command, no re-extraction of what was already correct.
 
 ## Why the pipeline has this shape
 
