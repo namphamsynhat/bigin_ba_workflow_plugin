@@ -40,11 +40,11 @@ updated:
 <!-- Source: transcript timestamp link (meeting) · "<sender> <date>" (email) · attachment filename -->
 <!-- Feature: the FEATURES.md slug this signal anchors to (conventions.md § Signal → feature mapping) — "unresolved — candidates: a | b" or "unresolved — none found" if it can't map yet. Never guessed. -->
 <!-- Status: new · held · staged · applied · question · conflict · superseded · rejected — same vocabulary as the Feature Hub's Signal Log (conventions.md § Feature Hub), so a signal's state reads the same at both levels. -->
-<!-- Notes: staging/destination detail ("staged on FR-001 Discussion"), corrections ("corrected: ..."), cross-refs to other rows, superseded-by, or an open question's ↦ FR-### mirror. -->
+<!-- Notes: staging/destination detail ("staged on UC-001 Discussion"), corrections ("corrected: ..."), cross-refs to other rows, superseded-by, or an open question's ↦ FR-### mirror. -->
 <!-- # is assigned once and never renumbered within this note. Corrections edit the row in place; genuinely new signals append as new rows in arrival order. -->
 
 ## Open Questions
 <!-- written by /extract-signal when a signal needs a human answer (missing rationale, ambiguous feature mapping); the note is parked status: needs-clarification until these are answered. -->
-<!-- ANSWER HERE: fill the A: line and tick the box — the next /extract-signal run folds it in and un-flags this note. ↦ FR-### = the question's canonical copy on the FR, written once /bigin-transform-signal has drafted or updated one for this signal (↦ — when no FR exists yet). -->
-<!-- - [ ] Q: ... (owner: client|team) ↦ FR-###
+<!-- ANSWER HERE: fill the A: line and tick the box — the next /extract-signal run folds it in and un-flags this note. ↦ UC-### = the question's canonical copy on the use case, written once /bigin-transform-signal has drafted or updated one for this signal (↦ — when no UC exists yet). -->
+<!-- - [ ] Q: ... (owner: client|team) ↦ UC-###
        A: -->

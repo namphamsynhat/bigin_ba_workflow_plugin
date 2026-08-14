@@ -11,7 +11,7 @@ for `^## ` to list sections, then read the ones named below. Reading it whole co
 |---|---|
 | `/bigin-intake` | ID scheme · Intake sources · Intake capture & the question loop |
 | `/extract-signal` | ID scheme · Feature Hub · Signal → feature mapping · Open Questions wording · Pain Point / Design Principles / Entity registers |
-| `/bigin-transform-signal` | ID scheme · Frontmatter schema · Status vocabularies · Feature Hub · Open Questions wording · Open Questions ↔ status consistency · Feedback handling · Resumable unattended apply |
+| `/bigin-transform-signal` | ID scheme · Use Case · Frontmatter schema · Status vocabularies · Feature Hub · Open Questions wording · Open Questions ↔ status consistency · Feedback handling · Resumable unattended apply |
 | `/enrich-feature` → `/consolidate-prd` | Traceability chain · Summary block · Feature material |
 
 **This file is a materialized copy, not project data.** `/bigin-new-project` writes it to
@@ -38,22 +38,30 @@ can already run.
 | Prefix | Artifact | Folder | Status |
 |---|---|---|---|
 | INT | Intake note (email / meeting; requirement or feedback) | 00-Inbox | Implemented |
-| FR | Feature requirement | 01-Requirements/_frs | Implemented — its own file, `FR-<NNN> <Title>.md`, drafted/updated by `/bigin-transform-signal`. Status: `draft → enriched → approved → consolidated`, plus `needs-clarification`/`removed` (§ Status vocabularies) |
-| BR | Business rule | 01-Requirements/_brs | Implemented — its own file, `BR-<NNN> <Title>.md`, `fr: []` citing the FR(s) it constrains (feature-level if none apply yet). Same status vocab as FR |
-| PP | Pain point (register row + FR mirror, no separate per-item file, same discipline as BR) | 01-Requirements | Implemented |
+| UC | **Use case** — the requirement artifact: one user goal, its flow, its branches, its rules mirror, its open questions | 01-Requirements/_ucs | Implemented — its own file, `UC-<NNN> <Title>.md`, drafted/updated by `/bigin-transform-signal`. May span features. Status: `draft → enriched → approved → consolidated`, plus `needs-clarification`/`removed` (§ Status vocabularies). See § Use Case |
+| BR | Business rule | 01-Requirements/_brs | Implemented — its own file, `BR-<NNN> <Title>.md`, `uc: []` citing the use case(s) it governs (feature-level if none apply yet). Same status vocab as UC. **The source of the rule** — a UC's `§ 4` is a read-only mirror |
+| PP | Pain point (register row, ids cited from a UC's `pain_points:`, no separate per-item file) | 01-Requirements | Implemented |
 | EN | Entity data model | 01-Requirements/_entities | Implemented — `/bigin-transform-signal` promotes an `ENTITIES.md` `proposed` row into its own file, `EN-<NNN> <Entity>.md` |
-| SCN | Business scenario (cross-feature flow) | 01-Requirements/SCENARIOS.md | Implemented — one **register file** with one row per scenario (`SCN-###`), not one document per scenario |
+| FR | ~~Feature requirement~~ | 01-Requirements/_frs | **Retired**, replaced by `UC-###`. Existing files stay on disk, frozen, carrying `absorbed_by: UC-###`; ids keep resolving and nothing writes there any more (§ Use Case → What it replaced) |
+| SCN | ~~Business scenario (cross-feature flow)~~ | 01-Requirements/SCENARIOS.md | **Retired**, replaced by a `UC-###` whose `features:` lists every slug it touches. Existing rows stay, `superseded`, naming the UC that absorbed them (§ Business Scenarios (retired)) |
 | PRD | Product requirements doc | 02-PRD | **Planned** — `/approve-fr` today writes one consolidated `PRD.md` with a section per approved feature, not a per-`PRD-###` file. Decided status vocab once it exists as its own artifact: `draft → approved` (§ Status vocabularies) |
 | EP | Epic | 03-Epics-Stories | **Planned** — `/consolidate-prd` today writes one flat `epics.md`, not per-`EP-###` files. Same `draft → approved` status vocab once split out |
 | US | User story | 03-Epics-Stories | **Planned** — stories live nested under their epic in `epics.md` today, not as their own `US-###` files. Same `draft → approved` status vocab once split out |
 | UX | UI/UX spec | 04-UIUX | **Planned** — `/prototype-design` today writes one `<feature-id>-prototype.md` per feature, not a `UX-###` id |
 
 Next-ID: scan the relevant folder for the highest existing number and increment —
-`01-Requirements/_frs/`, `_brs/`, `_entities/` for `FR-###`/`BR-###`/`EN-###` respectively. Each is
+`01-Requirements/_ucs/`, `_brs/`, `_entities/` for `UC-###`/`BR-###`/`EN-###` respectively. Each is
 its **own** independent sequence (`/bigin-transform-signal`'s actual numbering rule) — an earlier
 draft of this document specified one shared vault-wide sequence across `BR-###` and `EN-###`; that
 was never built, and the per-directory scan above is what's real. `PP-###` scans
-`01-Requirements/PAIN-POINTS.md`, not any FR, since a pain point can predate its feature's FR.
+`01-Requirements/PAIN-POINTS.md`, not any UC, since a pain point can predate its feature's use case.
+`UC-###` numbering ignores `_frs/` entirely — the two sequences are unrelated, and a UC that absorbs
+`FR-007` does not become `UC-007`.
+
+**Ids inside a use case** — a flow step's `S#`, an alternative flow's `A#`, an exception flow's
+`E#` — are minted per UC, in mint order, and are **permanent**: never reused, renumbered, or deleted
+(§ Use Case → Step ids). They are the citation target that replaced per-statement `FR-###` ids, so a
+rule, a story, a test, or a prototype screen refers to `UC-012 S4`.
 
 **Do that scan with the `Grep` tool, never a Bash `grep`/`awk` pipeline.** Treat any unattended or
 looped run in this plugin (a batch of `extract-signal` subagents, a future `--auto` mode) as
@@ -84,28 +92,33 @@ inline (§ Step 4 of its `SKILL.md`) rather than persisting an agenda file.
 
 ```yaml
 ---
-id: FR-012
-type: requirement        # intake | requirement | prd | epic | story | uiux
+id: UC-012
+type: use-case           # intake | use-case | business-rule | entity | prd | epic | story | uiux
 kind: requirement        # intake only: requirement | feedback | mixed | info (ops/admin — never refined)
-title: Bulk invoice export
+title: Export invoices in bulk    # a use case's title is its GOAL, as a short active verb phrase
 status: draft            # vocabulary is per artifact type, not one shared list — see
-                         # § FR/BR status below for FR/BR, § PRD/Epic/Story status for those,
+                         # § UC/BR status below for UC/BR, § PRD/Epic/Story status for those,
                          # and § Entity Data Model for EN. An intake note's own status vocabulary
                          # (raw | needs-clarification | in-review | consumed) is separate again —
                          # see § Intake capture & the question loop.
 version: 1.0
-feature: invoicing       # stable slug shared across the chain
+level: user-goal         # use-case only: summary | user-goal | subfunction (§ Use Case)
+scope: Bigin Portal      # use-case only: the system under design, black-box
+primary_feature: invoicing        # use-case only: the ONE slug that owns the file — write-ownership
+features: [invoicing]    # use-case only: every slug this UC touches, primary first. A UC may span
+                         # features; `feature:` (singular) is what every OTHER artifact type carries
+feature: invoicing       # every non-use-case artifact: the stable slug shared across the chain
+uc: []                   # business-rule only: the UC-### id(s) this rule governs
+brs: []                  # use-case only: BR-### ids mirrored read-only in its § 4
+entities: []             # use-case only: EN-### ids its steps reference
+pain_points: []          # use-case only: PP-### ids this workflow exists to resolve (ids only)
 sources: [INT-003]       # upstream links
 links: [PRD-002]         # downstream links
-attachments: []          # requirement only: vault-relative paths to source documents
+attachments: []          # use-case only: vault-relative paths to source documents
                          # (e.g. 00-Inbox/_attachments/INT-012/spec.docx) — /bigin-transform-signal
                          # copies these from consumed INT notes so the feature's material is complete
-amends:                  # requirement only: the FR-### id this one changes, if any (hard rule 7) —
-                         # blank for almost every FR, including one folding in a CR against an
-                         # already-approved feature (that's an in-place edit to the same FR, not a
-                         # new one). Set only for the rare case where a feature's scope genuinely
-                         # splits into a second, independent decision that doesn't belong in the
-                         # same document.
+absorbs: []              # use-case only: FR-### / SCN-### ids this UC took over (migration only)
+absorbed_by:             # retired FR only: the UC-### that took this FR's content over
 source_ids: []           # intake only: email provider's conversation+message ids (Outlook, or Spark thread id) /
                          # meeting provider's meeting id (Fathom, Spark, or Firefly) — re-run dedup; see
                          # `email_provider`/`meeting_provider` in `_bigin/system/project.md`
@@ -115,16 +128,94 @@ updated: 2026-07-03
 ---
 ```
 
+**`amends:` is retired along with `FR-###`.** It existed for the rare case where one feature's scope
+split into two independent decisions that couldn't share a document. A feature carrying several
+genuinely distinct user goals now simply carries several use cases, each with its own id — that is
+normal rather than exceptional, so there is nothing left for the field to mark. A pre-migration FR
+that still has it keeps it as history.
+
+## Use Case
+
+`01-Requirements/_ucs/UC-<NNN> <Title>.md` (`type: use-case`, instantiate from
+`_bigin/templates/use-case.md`) is **the** requirement artifact and the unit a human reviews and
+approves. One use case is one user goal: an actor, a trigger, the flow that delivers the goal, the
+branches that can happen instead, the rules that govern it, and the questions still open about it —
+in one document.
+
+It replaced `FR-###`, which was one file per testable statement. That was faithful to the signal and
+unreviewable: a client reading "the system must capture the vendor's tax ID" cannot tell whether the
+workflow they care about holds together. Use-Case 2.0 puts it directly — a use case is *the context
+for a set of related requirements*, and the set of all use cases is the system's functional
+requirements. The requirements didn't go anywhere; they acquired the context that makes them
+approvable.
+
+**Structure** (the numbered sections are the reviewable document; the rest is machinery):
+
+| Section | Holds |
+|---|---|
+| `## 1. Context & Metadata` | Primary/secondary actors, business need, trigger, pre-conditions, success **and failure** post-conditions |
+| `## 2. Main Success Scenario` | The happy path as a step table: `Step` (an `S#` id) · `Actor Action` · `System Response & Validation` |
+| `## 3. Alternative & Exception Flows` | Optional. `A#` alternatives and `E#` exceptions, each with a branch-point `S#`, a condition stated as a detected fact, and an ending |
+| `## 4. Business Rules & Compliance Constraints` | A **read-only mirror** of `BR-###` files: id, short statement, and the enforcement point (which `S#` the rule bites at) |
+| `## 5. Open Questions & Decision Log` | The canonical `- [ ] Q:` list for what is still open, plus a decision-log table of settled items with speaker context |
+| `## 6. Special Requirements & Related Information` | Optional. Workflow-scoped non-functional constraints, priority, frequency, performance target |
+| `## Discussion` · `## Domain Concerns` · `## Changelog` | The staging gate, `/enrich-feature`'s findings, and history |
+
+**Goal level.** `level:` is `user-goal` (the default — real work, one sitting, 3–9 main-flow steps,
+passing Cockburn's *boss test*), `summary` (several user goals composed, only ever to group UCs that
+already exist), or `subfunction` (a step sequence several UCs share, written once). A "use case" that
+is a single validation is a step inside someone else's goal, or a `BR-###`.
+
+**Step ids are permanent.** An `S#`/`A#`/`E#` is minted in mint order and never reused, renumbered, or
+deleted; **row order is the flow order**, so a step inserted between `S4` and `S5` gets the next unused
+id and sits in the third row. Non-sequential ids are correct. Positional numbering was rejected because
+a step number is cited from at least four places — an extension's branch point, a rule's enforcement
+point, a Signal Log `Destination`, and later a story or prototype screen — and renumbering would
+invalidate all of them silently. That is the same failure the retired `SCN-###` register had with
+`(step N of M)`. A removed step keeps its row and id, marked removed with the reason, so every citation
+still resolves.
+
+**A use case may span features.** `features: []` lists every slug it touches, and `primary_feature:`
+names the one that **owns the file** — the feature whose actor holds the goal. Ownership is a
+write-ownership fact, not importance: only that feature's `/bigin-transform-signal` subagent writes the
+file, because Stage 3 fans out per feature and a shared UC would otherwise have concurrent writers. A
+change reported from a participating feature is applied by the orchestrator in Stage 4
+(`_bigin/stages/transform/3-lane-uc.md` § Ownership). Every participating hub carries the same
+`## Use Cases` pointer.
+
+**A feature may carry several use cases** — one per genuinely distinct user goal. This is the deliberate
+break from the retired one-FR-per-feature norm: four goals means four UCs, and that is not
+fragmentation. What a feature must never carry is two use cases for the same goal.
+
+**Rules stay outside.** `## 4` is a mirror; `BR-###` under `01-Requirements/_brs/` is the source, citing
+`uc: []`. BABOK's *Use Cases and Scenarios* technique is explicit that rules are captured separately so
+a rule change does not force a use-case change — and one rule routinely governs several workflows, so
+no single one of them can own it. The one fact the mirror adds is the enforcement point.
+
+**Updated many times, never re-forked.** New signals keep arriving for the life of a feature; each one
+edits the UC in place (version bump + `## Changelog`, hard rule 7 — approval doesn't freeze it), staged
+through `## Discussion` and folded in after the human gate. A use case filled only as far as pass 2 is
+not defective: Cockburn's own template guidance is to fill it in several passes, and Use-Case 2.0 starts
+a narrative as a bulleted outline before it becomes a table.
+
+**What it replaced:** `FR-###` (retired, frozen, `absorbed_by:`) and `SCN-###` (retired — a
+cross-feature UC is a business scenario that also carries actors, branches, rules, and a review gate).
+Unchanged: `BR-###`, `EN-###`, `PP-###`, and design directives, which still bypass the UC entirely.
+
+The reasoning behind each of these choices, with sources, is in this plugin's
+`skills/bigin-transform-signal/references/use-case-standard.md` — read it before changing the template,
+not during a run.
+
 ## Status vocabularies
 
 There is no single shared `status` list across every artifact type — each type has its own, sized
 to what that artifact actually needs to track. All of them share one discipline, though:
 **status can move freely, in either direction.** None of these are a strict forward-only gate —
-hard rule 7 means a later edit can knock a `consolidated` FR back to `draft`, an `approved` PRD
+hard rule 7 means a later edit can knock a `consolidated` UC back to `draft`, an `approved` PRD
 back to `draft`, and so on. Treat every arrow below as "can move to," never "can only move
 forward to."
 
-**FR/BR** (`01-Requirements/_frs/`, `01-Requirements/_brs/`):
+**UC/BR** (`01-Requirements/_ucs/`, `01-Requirements/_brs/`):
 
 `draft → enriched → approved → consolidated`, plus two side-states reachable from any of those
 four:
@@ -132,15 +223,15 @@ four:
 | Status | Meaning |
 |---|---|
 | `draft` | Content exists — created or last folded in by `/bigin-transform-signal` — but hasn't been through `/enrich-feature` yet. The default resting state. |
-| `needs-clarification` | At least one unresolved `- [ ] Q:` line in `## Open Questions` (§ Open Questions ↔ status consistency's invariant — unchanged, just now one value in this list rather than sitting alongside a separate `in-review`). Once every question resolves, status moves to whatever it would otherwise be — `draft` if it hasn't been enriched yet, `enriched`/`approved`/`consolidated` if a later-stage edit is what raised the question. Never a fixed placeholder. |
+| `needs-clarification` | At least one unresolved `- [ ] Q:` line in the artifact's question list — a UC's `## 5` **Still open**, a BR's `## Open Questions` (§ Open Questions ↔ status consistency's invariant — unchanged, just now one value in this list rather than sitting alongside a separate `in-review`). Once every question resolves, status moves to whatever it would otherwise be — `draft` if it hasn't been enriched yet, `enriched`/`approved`/`consolidated` if a later-stage edit is what raised the question. Never a fixed placeholder. |
 | `enriched` | `/enrich-feature` has run: domain research + entity mapping done, concerns resolved or accepted as risk. |
 | `approved` | A human has approved it via `/approve-fr`; it's feature material (§ Feature material) and folded into the PRD. |
-| `consolidated` | `/consolidate-prd` has merged prototype-driven changes back and generated its epic/story. The FR's pipeline is complete — until new feedback lands. |
-| `removed` | A human decided this FR/BR is no longer relevant/wanted (§ Feedback handling's "Removing scope") — human-gated like `approved`, never set by an agent. Not deletion (hard rule 1): the file, id, and history stay intact. |
+| `consolidated` | `/consolidate-prd` has merged prototype-driven changes back and generated its epic/story. The UC's pipeline is complete — until new feedback lands. |
+| `removed` | A human decided this UC/BR is no longer relevant/wanted (§ Feedback handling's "Removing scope") — human-gated like `approved`, never set by an agent. Not deletion (hard rule 1): the file, id, and history stay intact. |
 
 An earlier draft of this document specified `raw | draft | in-review | needs-clarification |
 approved | superseded | removed` as one shared vocabulary for every artifact type; that's
-superseded by the per-type lists here. `in-review` and `superseded` are retired for FR/BR — a
+superseded by the per-type lists here. `in-review` and `superseded` are retired for UC/BR — a
 resolved `needs-clarification` now returns to whatever stage the artifact was already at (no
 placeholder "reviewed" state needed), and there's no separate "old version" state to track since
 hard rule 7 already means every edit lands in place, not as a fork.
@@ -154,22 +245,31 @@ Model. Simpler because an entity doc is a field list assembled from already-appr
 signals, not a thing that itself needs an `enriched`/`consolidated` pipeline pass.
 
 **INT** (intake notes): `raw | needs-clarification | in-review | consumed` — see § Intake capture
-& the question loop and `/bigin-intake`'s own queue logic. Unrelated to the FR/BR list above;
+& the question loop and `/bigin-intake`'s own queue logic. Unrelated to the UC/BR list above;
 don't conflate the two just because both use `needs-clarification`.
 
 ## Traceability chain
 
-`/approve-fr` (PRD) and `/consolidate-prd` (Epics/Stories) branch on the FR's `feature:` slug
+`/approve-fr` (PRD) and `/consolidate-prd` (Epics/Stories) branch on the UC's `primary_feature:` slug
 looked up in `01-Requirements/FEATURES.md` — the feature's `Status` there decides which of two
 valid chains applies:
 
 - **Full** — feature `proposed` / `committed` / `not-built` (new scope):
-  `INT → FR/BR → PRD → EP → US → UX`.
+  `INT → UC/BR → PRD → EP → US → UX`.
 - **Lightweight CR** — feature already `built` (a change/fix/improvement on something shipped):
-  `INT → FR/BR → US → UX`, skipping PRD and EP. The US cites the FR directly in `sources` instead
-  of an EP, and the FR's `links` points at the US id(s) instead of a PRD id.
+  `INT → UC/BR → US → UX`, skipping PRD and EP. The US cites the UC directly in `sources` instead
+  of an EP, and the UC's `links` points at the US id(s) instead of a PRD id.
+
+  A UC spanning several features whose `Status` values disagree takes the chain of its
+  `primary_feature` — the feature that owns the goal — and the disagreement is worth naming in the
+  report rather than resolving silently per participating feature.
+
+  Cutting the epics and stories is where Use-Case 2.0's **slices** belong: a slice is one or more of a
+  UC's flows taken together as a work item of clear value, basic flow first, then the alternative and
+  exception flows. `/bigin-transform-signal` never slices anything — this is guidance for
+  `/consolidate-prd` once it migrates.
 - **Design** — a presentation-only signal, at any feature status: `INT → design directive → UX`,
-  skipping FR, PRD, EP, and US entirely. A statement about look, layout, tone, copy voice,
+  skipping UC, PRD, EP, and US entirely. A statement about look, layout, tone, copy voice,
   interaction feel, or an accessibility affordance produces **no functional scope**, so there is
   nothing for a PRD section to carry and nothing for a story to decompose. It becomes a directive
   in one of two places — a `DESIGN-PRINCIPLES.md` row when it's durable and cross-cutting, or a row
@@ -178,43 +278,42 @@ valid chains applies:
   traceability runs through the originating Signal Log row's `Destination` cell.
 
   The chain is chosen by a strict test, not by the client's phrasing: **if a tester could write a
-  pass/fail assertion for it that never mentions appearance, it is FR or BR, not a design
+  pass/fail assertion for it that never mentions appearance, it is UC or BR, not a design
   directive** — "ask for confirmation before deleting" adds a step to a flow and takes the Full or
-  CR chain, however visual the request sounded. An ambiguous signal takes the FR chain, because an
-  over-routed FR is caught at the human gate while an under-routed directive skips the gate.
+  CR chain, however visual the request sounded. An ambiguous signal takes the UC chain, because an
+  over-routed step is caught at the human gate while an under-routed directive skips the gate.
   `_bigin/stages/transform/3-lane-design.md` and `_bigin/stages/transform/3-routing.md` hold the
   boundary test and the destination rules.
 
-**Planned** — this plugin doesn't yet distinguish the Full and CR chains; every feature with an FR
+**Planned** — this plugin doesn't yet distinguish the Full and CR chains; every feature with a UC
 runs the same fixed pipeline (`/enrich-feature → /approve-fr → /prototype-design →
 `/consolidate-prd`) regardless of whether it's new scope or a CR against something shipped. The
 Design chain is **half-built**: `/bigin-transform-signal` files directives to both destinations
 today, and `/prototype-design` already reads `DESIGN-PRINCIPLES.md` directly, but it doesn't yet
-read a hub's `## Design Directives` and still keys on an FR id — so a design-only feature (no FR
-at all) has its directives filed correctly but cannot yet be handed to `/prototype-design`. See
-§ Reconciliation notes.
+read a hub's `## Design Directives` and still keys on the retired `FR-###` id — so directives are
+filed correctly but cannot yet be handed to `/prototype-design`. See § Reconciliation notes.
 
 Every link in the chosen chain must resolve; if one can't be established, add an Open Question
 instead of guessing.
 
-The `feature:` slug is the horizontal anchor across the chain: it must exist as a row in
-`01-Requirements/FEATURES.md`. New intake about a mapped feature updates its FR **in place, at any
-status** (hard rule 7, § Feedback handling) — approval doesn't freeze it, and neither does the
-feature shipping — never as an unrelated parallel FR for the same slug.
+The feature slug is the horizontal anchor across the chain: every slug in a UC's `features:` must
+exist as a row in `01-Requirements/FEATURES.md`. New intake about a mapped feature updates the
+relevant use case **in place, at any status** (hard rule 7, § Feedback handling) — approval doesn't
+freeze it, and neither does the feature shipping — never as an unrelated parallel UC for the same goal.
 
-A `SCN-###` Business Scenario (§ Business Scenarios) is a cross-cutting **overlay**,
-not a fork of this chain: it annotates which several complete
-`INT→FR→PRD→EP→US→UX` chains — one per participating feature — compose a single real-world
-business flow. Nothing about it changes how any one feature's own chain resolves.
+A cross-feature flow is **not** a fork of this chain and no longer an overlay artifact of its own: it
+is one `UC-###` listing every participating slug in `features:`, running the chain of its
+`primary_feature`. The `SCN-###` register that used to annotate how several per-feature chains
+composed is retired (§ Business Scenarios (retired)).
 
 ## Absorbed — the reprocess trigger (**Planned**)
 
 `sources:` answers *"which upstream artifacts does this one trace to?"* — a permanent,
 never-pruned traceability record (hard rule 3). It cannot answer *"is this artifact still
-current?"*, and since hard rule 7 nothing else could either: a CR edits an approved FR **in
-place** — same id, bumped `version`, no new id anywhere — so a PRD section that cites `FR-007`
-keeps looking covered no matter how far `FR-007`'s content has since moved. The failure mode this
-guards against: new intake updates an FR, the human re-approves it, and the feature's
+current?"*, and since hard rule 7 nothing else could either: a CR edits an approved UC **in
+place** — same id, bumped `version`, no new id anywhere — so a PRD section that cites `UC-007`
+keeps looking covered no matter how far `UC-007`'s content has since moved. The failure mode this
+guards against: new intake updates a UC, the human re-approves it, and the feature's
 PRD/epics/prototype sit stale from the cascade — visually identical to freshly drafted work
 awaiting review, with nothing anywhere saying "the downstream steps need to re-run."
 
@@ -223,9 +322,9 @@ another would carry it:
 
 | Artifact | `absorbed:` entries | Written by |
 |---|---|---|
-| PRD section | `FR-###@version` for each approved FR folded into it | `/approve-fr` |
-| Epic/Story | `PRD-###@version` (or `FR-###@version` on the lightweight path) it decomposes | `/consolidate-prd` |
-| Prototype | `FR-###@version` / PRD section version it designed from | `/prototype-design` |
+| PRD section | `UC-###@version` for each approved UC folded into it | `/approve-fr` |
+| Epic/Story | `PRD-###@version` (or `UC-###@version` on the lightweight path) it decomposes | `/consolidate-prd` |
+| Prototype | `UC-###@version` / PRD section version it designed from | `/prototype-design` |
 
 **The rule, once implemented: an artifact is stale when an upstream it *cites* has a current
 `id@version` that its `absorbed:` doesn't list.** Two states, don't conflate them:
@@ -237,26 +336,27 @@ another would carry it:
 
 Whoever produces an artifact would **re-stamp** its `absorbed:` on every run — that's what makes
 this self-healing rather than another mirror to go stale: there is no separate counter, and a
-re-run cannot leave a false "current" claim behind. Until this is built, treat any FR edited after
+re-run cannot leave a false "current" claim behind. Until this is built, treat any UC edited after
 its feature's PRD/prototype/epics were generated as needing a manual re-check, and note that
 explicitly in the report rather than assuming downstream artifacts are still accurate.
 
 ## Feature material (the approve → process handoff)
 
-Approval converts an FR from *work in progress* into **staged material on its feature**:
+Approval converts a UC from *work in progress* into **staged material on its feature**:
 
-- An FR with `status: approved` **is** feature material — no extra flag. Everything sharing its
-  `feature:` slug aggregates into the feature's material set: the approved FR(s) with their BRs,
-  resolved discussion, and `attachments`, plus the source INT notes.
-- Only `approved` FRs qualify as material. Feedback that touches an FR — at any status, including
+- A UC with `status: approved` **is** feature material — no extra flag. Everything sharing its slug
+  aggregates into the feature's material set: the approved UC(s) with their BRs, resolved discussion,
+  and `attachments`, plus the source INT notes. A cross-feature UC is material on every feature in its
+  `features:` list.
+- Only `approved` UCs qualify as material. Feedback that touches a UC — at any status, including
   already-`approved` material, before or after the feature ships — is applied **in place** and
   sets it back to (or keeps it at) `draft`/`needs-clarification` (hard rule 7: approval
-  doesn't freeze an FR any more). Feedback that touches an already-approved FR therefore **does**
-  un-stage it, the same way it would for any other status: the edit lands in the same FR (version
+  doesn't freeze a UC). Feedback that touches an already-approved UC therefore **does**
+  un-stage it, the same way it would for any other status: the edit lands in the same UC (version
   bump + changelog citing the source), and it drops out of the feature's material set until the
-  human re-approves it. There's no forking to a new `amends:`-linked sibling FR for this case — a
-  feature normally carries just the one FR across its life, staged as material only while it's
-  currently `approved`.
+  human re-approves it. A feature carries as many UCs as it has distinct user goals, each staged as
+  material only while it is currently `approved` — so a feature can be part-approved, and that is a
+  real, useful state rather than a defect.
 - Humans gate `approved` (hard rule 4) — an agent never sets it; `/approve-fr` is the point where
   a human confirms and the status flips.
 - **Planned** — a richer engagement (a front-end dashboard, a workflow picker per feature) may
@@ -270,7 +370,7 @@ Approval converts an FR from *work in progress* into **staged material on its fe
 everything about one feature, and the file to hand an agent when saying "work on `<slug>`".
 `FEATURES.md` stays the canonical index (one row per feature, the anti-fragmentation anchor); the
 hub is the rich per-feature view generated from the same underlying artifacts, so nothing here is
-ever hand-authored content — it's always assembled/refreshed from the FR(s), INT sources, PRD
+ever hand-authored content — it's always assembled/refreshed from the UC(s), INT sources, PRD
 section, epics/stories, and prototype that already exist for that slug.
 
 **Frontmatter:**
@@ -280,23 +380,23 @@ type: feature-hub
 feature: <slug>
 name:           # display name — mirrors the FEATURES.md row's Feature column. This is the source
                 # of truth for any consumer (this plugin's own skills, or a front-end app) reading
-                # Slug/Feature/FR/Code areas/Sources — read from this frontmatter, not by parsing
+                # Slug/Feature/UC/Code areas/Sources — read from this frontmatter, not by parsing
                 # FEATURES.md's table (§ Feature Map format)
 status: <mirrors the FEATURES.md row's Status at last refresh>
-fr: []          # every FR-### id this feature has ever had — normally just one across the
-                # feature's whole life, since a CR edits it in place rather than forking (hard
-                # rule 7); occasionally more than one only when the feature genuinely spans more
-                # than one independent decision. Oldest first; [] before the first FR is drafted.
-                # Written by /bigin-transform-signal
-br: []          # every BR-### id this feature has ever had, same discipline as fr: above —
+uc: []          # every UC-### id this feature owns OR participates in — one per distinct user
+                # goal, so several is normal. A cross-feature UC appears on every participating
+                # hub's list; ## Use Cases says which of them owns it. Oldest first; [] before the
+                # first use case is drafted. Written by /bigin-transform-signal
+br: []          # every BR-### id this feature has ever had, same discipline as uc: above —
                 # written by /bigin-transform-signal
+fr: []          # RETIRED — pre-UC FR-### ids, kept so old ids resolve. Nothing writes here
 code_areas: []  # mirrors the FEATURES.md row's Code areas column (project_mode: ongoing only)
 sources: []     # mirrors the FEATURES.md row's Sources column — INT-###/document ids/paths
 prd:            # PRD-### id, or blank — Planned; today this would point at the PRD.md section anchor
 epics: []       # EP-### id(s) — Planned; today epics.md has no per-epic id to cite
 stories: []     # US-### id(s) — Planned, same as above
 uiux:           # UX-### id, or blank — Planned; today this would point at the prototype file path
-entities: []    # EN-### id(s) this feature's FR(s)/BR(s) reference — [] until one exists.
+entities: []    # EN-### id(s) this feature's UC(s)/BR(s) reference — [] until one exists.
                 # Written by /bigin-transform-signal (§ Entity Data Model)
 updated:
 ---
@@ -333,55 +433,60 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
     conflicting or superseding signal is always a **new row**; the old row's `Status`/`Notes` gets
     updated to point at the row that superseded it. History is never rewritten in place.
   - **`Status` values**: `new` (just landed, not yet triaged) · `held` (anchored to the feature, no
-    FR exists yet — resting state pre-FR, no gate, no urgency; once an FR exists, a new signal
-    against it moves straight to `staged` rather than resting here, regardless of the FR's status
-    — hard rule 7, approval no longer freezes it) · `staged` (a proposed change sitting in an FR's
-    `## Discussion`, not yet applied) · `applied` (folded into FR content) · `question` (the signal
+    UC exists yet — resting state pre-UC, no gate, no urgency; once a UC exists, a new signal
+    against it moves straight to `staged` rather than resting here, regardless of the UC's status
+    — hard rule 7, approval no longer freezes it) · `staged` (a proposed change sitting in a UC's
+    `## Discussion`, not yet applied) · `applied` (folded into UC content) · `question` (the signal
     *is* an open question, not a requirement — tracked until answered) · `conflict` (contradicts
     an earlier row — needs human resolution before either can be applied) · `superseded` (an older
     row a resolved conflict/newer decision overrode) · `rejected` (explicitly out of scope). This
     plugin's `extract-signal` skill only ever writes `new`/`question`/`conflict`/`rejected` when
     filing a fresh signal (§ its own `3-filing.md`) — `held`/`staged`/`applied`/
-    `superseded` describe a signal's relationship to an FR, which is `/bigin-transform-signal`'s
+    `superseded` describe a signal's relationship to a UC, which is `/bigin-transform-signal`'s
     job to set, not extraction's.
   - **"Processed" = `applied` \| `superseded` \| `rejected`. "Not yet processed" = everything
     else** (`new`/`held`/`staged`/`question`/`conflict`) — this is the queue a human or agent works
     from, not a percentage-done bar.
   - **Conflict handling**: when a new signal contradicts a `held`/`staged`/`applied` row, add the
     new signal as its own row with `Status: conflict`, citing the row number(s) it conflicts with
-    in `Notes`. Raise an Open Question (never guess which one wins) on the FR it belongs to (its
-    most recent open one, if any exist; otherwise the closest applicable FR) or on this note if
+    in `Notes`. Raise an Open Question (never guess which one wins) on the UC it belongs to (its
+    most recent open one, if any exist; otherwise the closest applicable UC) or on this note if
     none exists. Once the human answers, the losing row flips to `superseded` (`Notes: "superseded
     by #N, resolved <date>"`), the winning row flips to `staged`/`applied`, and the content updates
-    **in place** (version bump + changelog), regardless of whether that FR is still unapproved or
-    already `approved` (hard rule 7 — an approved FR's fold-in also flips it back to `draft`).
+    **in place** (version bump + changelog), regardless of whether that UC is still unapproved or
+    already `approved` (hard rule 7 — an approved UC's fold-in also flips it back to `draft`).
+- `## Use Cases` — one row per `UC-###` in this hub's `uc:` list: `UC | Goal | Role | Status`, where
+  `Role` is `owns` (this feature is the UC's `primary_feature`) or `participates`. A cross-feature UC
+  appears on every participating hub with the same id — that is the artifact working, not duplication
+  to fix. **No step numbers or ranges**: the UC file is the only place the flow is written out
+  (§ Business Scenarios (retired) for why). Written by `/bigin-transform-signal` Stage 4.
 - `## Requirement Readiness` — a refreshed **snapshot for orientation, not the gate itself**:
 
   | Artifact | Status | Ready for next step? | Blocking |
   |----------|--------|------------------------|----------|
 
-  One row per FR/BR touching this feature — the rare feature with more than one FR (hard rule 7 —
-  only when they're genuinely distinct decisions) gets one row per FR, oldest first. The
-  authoritative gate for `/enrich-feature`/`/approve-fr`/`/prototype-design` is always each FR's
+  One row per UC/BR touching this feature — a feature with four distinct user goals gets four UC rows,
+  oldest first, which is normal rather than fragmentation (§ Use Case). The
+  authoritative gate for `/enrich-feature`/`/approve-fr`/`/prototype-design` is always each UC's
   own live frontmatter `status` (§ Feature material) — this table just saves a human or agent from
-  having to open every FR to see what's ready; a skill still checks the FR directly before
-  proceeding, never trusts a possibly-stale table alone. An `approved` FR can still receive new
+  having to open every UC to see what's ready; a skill still checks the UC directly before
+  proceeding, never trusts a possibly-stale table alone. An `approved` UC can still receive new
   signals later (hard rule 7 — approval doesn't freeze it); when that happens it's applied in
   place via the normal fold-in flow the next time `/bigin-transform-signal` touches this feature,
   not held in a separate backlog — note it here the same way as any other pending change
   ("approved — N new signal(s) since approval, not yet run through `/bigin-transform-signal`").
-- `## Related Documents` — the FR(s)' `attachments:` list.
+- `## Related Documents` — the UC(s)' `attachments:` list.
 - `## Domain Research` (**Planned**) — one entry per domain-research run for this feature,
   appended only by `/enrich-feature` when the feature's enrichment needed external grounding it
   can't get from client signals alone (a regulated/compliance domain, a named third-party
   platform/API's real behavior, industry-standard practice) — most features never populate this.
   Each entry: date, topic, one-line summary of key findings, link to the full report under
   `01-Requirements/_research/<slug>/`. Not built yet — `/enrich-feature` currently appends its
-  findings straight into the FR file's own `## Domain Concerns` section instead of a hub-level log.
-- `## Business Scenarios` — every `SCN-###` this feature participates in, and this feature's step
-  number within it (a one-line pointer; the full step sequence lives in `01-Requirements/
-  SCENARIOS.md`, § Business Scenarios below). Empty for most features.
-- `## Entities` — every `EN-###` this feature's FR(s)/BR(s) reference, with each entity's current
+  findings straight into the UC file's own `## Domain Concerns` section instead of a hub-level log.
+- `## Business Scenarios` (**retired**) — pre-UC `SCN-###` pointers, kept as history. Cross-feature
+  flows are use cases now and live in `## Use Cases` above (§ Business Scenarios (retired)). Never add
+  a row; omit the section entirely on a new hub.
+- `## Entities` — every `EN-###` this feature's UC(s)/BR(s) reference, with each entity's current
   status. See § Entity Data Model.
 - `## Pain Points` — a table mirroring this feature's rows from `01-Requirements/PAIN-POINTS.md`:
   `PP-### | Statement | Status | Proposed solution | Resolved by` (§ Pain Point Register). Empty
@@ -399,10 +504,11 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
 - `## Prototype` — link + status, or "not started." (The hub template calls this section
   `## UX Spec`; treat the two names as the same section until one of them is renamed.)
 - `## Open Questions / Gates` — every Signal Log row with `Status: question` or `Status: conflict`,
-  plus every open FR's own Open Questions — what's actually blocking progress right now. An
-  `approved` FR normally contributes nothing here — its questions were resolved before approval —
+  plus every open UC's `## 5` **Still open** lines and every open BR's `## Open Questions` — what's
+  actually blocking progress right now. A settled decision-log row is not an open item. An
+  `approved` UC normally contributes nothing here — its questions were resolved before approval —
   but a later edit can reopen it (hard rule 7, § Feedback handling) and reintroduce questions the
-  same as any other FR update.
+  same as any other UC update.
 - `## Changelog` — one line per refresh: date, what changed, which run touched it.
 
 **Maintenance contract — who refreshes it, and when:**
@@ -413,24 +519,25 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   Refresh `## Requirement Readiness` and `## Open Questions / Gates` to match. **Refresh
   `## Pain Points`** to mirror any `PP-###` row this run minted or updated in
   `01-Requirements/PAIN-POINTS.md` for this feature — a pain point can land here even before any
-  FR exists.
-- `/bigin-transform-signal`: drafts/updates FR/BR files under `_frs`/`_brs` (§ Feedback handling),
+  UC exists.
+- `/bigin-transform-signal`: drafts/updates UC/BR files under `_ucs`/`_brs` (§ Feedback handling),
   after each confirmed human-gate fold-in flips the affected Signal Log row from `staged` to
-  `applied`, and refreshes `## Requirement Readiness`, `fr:`/`br:` frontmatter, and — for the
-  cross-feature cases it catches (§ Entity Data Model, § Business Scenarios) — `## Entities`,
-  `## Business Scenarios`, and `entities:` frontmatter. Also appends to `## Design Directives` for
+  `applied`, and refreshes `## Use Cases`, `## Requirement Readiness`, `uc:`/`br:` frontmatter, and —
+  for the entity cases it catches (§ Entity Data Model) — `## Entities` and `entities:` frontmatter.
+  For a UC spanning features it writes `## Use Cases` and `uc:` on **every** participating hub, in its
+  sequential Stage 4 pass. Also appends to `## Design Directives` for
   every presentation-only signal it routes down the Design chain, and fills each processed Signal
   Log row's `Destination` cell (the column `/extract-signal` leaves blank) with where the signal
   actually landed. It never sets a hub's own `status:` — that mirrors the `FEATURES.md` row's scope
   state, not a workflow state, and there is no "ready for PRD" feature status.
 - `/enrich-feature`: refreshes `## Requirement Readiness`/`## Related Documents`/
-  `## Open Questions / Gates`, and **`## Pain Points`** whenever it folds a pain-point signal into
-  the FR's own `## Problem & Pain Points` table.
+  `## Open Questions / Gates`, and **`## Pain Points`** whenever it folds a pain-point signal into the
+  UC's `pain_points:` list.
 - `/approve-fr`: refresh `## PRD`, and flip the corresponding Signal Log rows (the ones the PRD
   was drafted from) to `applied` if not already.
-- `/prototype-design`: refresh `## Prototype` with the link/status. If the source FR is still open
+- `/prototype-design`: refresh `## Prototype` with the link/status. If the source UC is still open
   (not yet `approved`), also append a line to its `## Discussion` citing the prototype as
-  supporting evidence — this is never how an already-`approved` FR gets a content change (that's
+  supporting evidence — this is never how an already-`approved` UC gets a content change (that's
   `/bigin-transform-signal`'s feedback loop, § Feedback handling).
 - `/consolidate-prd`: refresh `## Epics & Stories` and the PRD's `## Design` subsection.
 - A human changing the `FEATURES.md` row's `Status` (e.g. `proposed` → `committed`) doesn't
@@ -456,7 +563,7 @@ on (a regex header match + positional `|`-split, not a schema-validated parse):
 | `Slug` | agent (permanent once set) | Never renamed/reordered without also updating any downstream parser |
 | `Feature` | agent | Short display name |
 | `Status` | **human** | `proposed \| committed \| not-built \| built \| out-of-scope` (agents only ever write `proposed`) |
-| `FR` | agent | Every `FR-###` id this feature has ever carried (hard rule 7) |
+| `UC` | agent | Every `UC-###` id this feature owns or participates in |
 | `Code areas` | agent | Optional |
 | `Sources` | agent | INT-###/document ids/paths this row traces to |
 | `Notes` | agent | **A one-line pointer only** — `See _features/<slug>.md § Notes / History`. Never inline prose. |
@@ -471,7 +578,7 @@ per-signal trace table; the Notes/History section is the chronological narrative
 top-to-bottom. Writing here instead of into `FEATURES.md`'s Notes cell is what keeps the index
 thin — do **not** duplicate the same prose in both places.
 
-**Source-of-truth split:** the `Slug`/`Feature`/`FR`/`Code areas`/`Sources` columns above should be
+**Source-of-truth split:** the `Slug`/`Feature`/`UC`/`Code areas`/`Sources` columns above should be
 read from each feature hub's own frontmatter (`name`/`fr`/`code_areas`/`sources`, § Feature Hub),
 not by parsing `FEATURES.md`'s table — point at notes that already exist and read their metadata,
 instead of scanning a markdown table by column position. `FEATURES.md`'s table is still what
@@ -481,7 +588,7 @@ five columns. **`Status` is the one exception, read live from `FEATURES.md`'s ta
 the hub's `status:` mirror — Status is the column a human hand-edits directly (`proposed` →
 `committed`/`built`/`out-of-scope`) and that edit is meant to take effect immediately, not wait for
 the next `/extract-signal`/`/enrich-feature` run to catch the hub's mirror up. Practically, this
-means `/extract-signal` writes every row's `Feature`/`FR`/`Code areas`/`Sources` value onto that
+means `/extract-signal` writes every row's `Feature`/`UC`/`Code areas`/`Sources` value onto that
 feature's hub frontmatter at the same time it writes the `FEATURES.md` row (creating the hub from
 the template first if it doesn't exist yet) — the two copies must never drift, since the hub copy
 is what's actually read.
@@ -530,13 +637,13 @@ here destroys evidence. Grouping is the *hub's* job — these rows file onto the
 themed Signal Log rows citing their `#` back here (§ Feature Hub).
 
 Questions raised by `/extract-signal` are written **into the source INT note's `## Open
-Questions`** — `- [ ] Q: … (owner: client|team) ↦ FR-###` with an `A:` answer line — mirrored on
-the FR when one exists (the FR copy is canonical). A note left with unanswered questions is parked
+Questions`** — `- [ ] Q: … (owner: client|team) ↦ UC-###` with an `A:` answer line — mirrored on
+the UC when one exists (the UC copy is canonical). A note left with unanswered questions is parked
 `status: needs-clarification`: that flag is what surfaces it for the human to jump in. Two ways to
 close a question:
 
 - **Answer inline**: fill the `A:` line, tick the box. The next `/extract-signal` pass folds the
-  answer in, ticks the FR copy, and flips the note to `in-review`.
+  answer in, ticks the UC copy, and flips the note to `in-review`.
 - **Answer arrives from the client**: `/bigin-intake` appends the reply to the note and resets it
   `status: raw`, which re-enters the extraction queue; extraction matches the reply to the open
   question as an `[answer]`.
@@ -549,7 +656,7 @@ found, where, what state it's in); the `## Open Questions` line is the human-fac
 one thing to answer. Three rules keep them one question:
 
 1. **Never re-word the mirror into a second question.** The mirror may add context the human
-   needs to answer (which FR it collides with, what's already decided) — but the *ask itself*
+   needs to answer (which UC it collides with, what's already decided) — but the *ask itself*
    must be recognisably the same sentence as the row's `Signal` cell, not an independently
    composed question. Two separately-drafted phrasings of one ambiguity read as two open items
    to a human, get answered twice, and cannot be paired back up by any tooling: the wordings
@@ -565,30 +672,32 @@ one thing to answer. Three rules keep them one question:
 
 ## Open Questions ↔ status consistency (verification, not just intent)
 
-`status: needs-clarification` and the artifact's own `## Open Questions` section are two mirrors
-of one fact — the same drift risk as a stale Feature Hub Signal Log `Status` column left
-`question` after its FR absorbed the row (§ Feature Hub), just on the `status:`
+`status: needs-clarification` and the artifact's own question list are two mirrors
+of one fact — that list is `## 5`'s **Still open** section on a use case, and `## Open Questions` on an
+INT note or a BR — the same drift risk as a stale Feature Hub Signal Log `Status` column left
+`question` after its UC absorbed the row (§ Feature Hub), just on the `status:`
 frontmatter/body pairing instead. A human reads whichever surfaces first (a queue badge reads
 `status:`; opening the note reads the section body) and both must agree, or the note reads as
 done in one place and stuck in the other.
 
-**The invariant:** zero unchecked `- [ ] Q:` lines in `## Open Questions` (INT note or FR) ⟺
+**The invariant:** zero unchecked `- [ ] Q:` lines in that list (INT note, UC, or BR) ⟺
 `status` is not `needs-clarification`. Any unchecked line ⟺ `status` **is**
-`needs-clarification`. This holds for every artifact that carries an `## Open Questions` section
-— INT notes and FRs alike.
+`needs-clarification`. This holds for every artifact that carries one — INT notes, use cases, and BRs
+alike. **A use case's decision-log rows are not open items**: they are settled history, and counting
+them would park a finished UC at `needs-clarification` forever.
 
-Every skill that writes to `## Open Questions` or sets `status` on such an artifact
+Every skill that writes to a question list or sets `status` on such an artifact
 (`/extract-signal`, `/bigin-transform-signal`, `/enrich-feature`) must make the status line the
 **last** write-back step, derived by re-counting the section **after** every accepted change has
 been applied to it that run — never decided earlier in the run and then left stale by a later
 edit to the same section:
 
-1. Apply every accepted change to `## Open Questions` first (tick resolved boxes with `A:` filled,
-   append genuinely new ones).
-2. Count remaining unchecked `- [ ] Q:` lines in that section.
+1. Apply every accepted change to the question list first (tick resolved boxes with `A:` filled, append
+   genuinely new ones; on a use case, move a genuinely resolved line into the `## 5` decision log).
+2. Count remaining unchecked `- [ ] Q:` lines in that list.
 3. Set `status: needs-clarification` if the count is > 0; otherwise move it to whatever "done"
-   means for that artifact type (`in-review` for an INT note; whatever stage the FR/BR was
-   already at — `draft` if it hasn't been enriched yet — for an FR/BR, § Status vocabularies).
+   means for that artifact type (`in-review` for an INT note; whatever stage the UC/BR was
+   already at — `draft` if it hasn't been enriched yet — for a UC/BR, § Status vocabularies).
    Do this from the count, not from memory of what the run intended to resolve.
 
 **Common ways this drifts** (treat each as the bug it is, not a cosmetic gap): ticking every box
@@ -600,9 +709,9 @@ answer that still needs a client round-trip stays unchecked, and `status` stays
 
 ## Resumable unattended apply (checkpoint + idempotent writes)
 
-An unattended fold-in — matching a human's already-written inline answer to its FR and folding it
+An unattended fold-in — matching a human's already-written inline answer to its UC and folding it
 in, whether that's `/bigin-transform-signal`'s Stage 1 fold-in, `/extract-signal`'s per-note batch
-processing, or a future `--auto` mode — is a multi-file write: the FR itself, the feature hub,
+processing, or a future `--auto` mode — is a multi-file write: the UC itself, the feature hub,
 sometimes `FEATURES.md`, sometimes the source INT note. Nothing here runs inside a database
 transaction — the process can be killed between any two of those writes by an external timeout or
 a session running out of budget, which kills the parent process while an orphaned child keeps
@@ -616,30 +725,30 @@ checkpointed writes, idempotent retries, an append-only decision trail — appli
 existing tools, not a new ledger file:
 
 1. **Dedup-check before writing anything.** Before applying an answer, check whether it's already
-   landed: does the FR's `## Changelog` already cite this INT id's fold-in, or does the
+   landed: does the UC's `## Changelog` already cite this INT id's fold-in, or does the
    `## Open Questions` line already read as resolved (not merely ticked) rather than unticked? If
-   yes, this run is a retry of an already-completed apply — do nothing to that FR, and move
+   yes, this run is a retry of an already-completed apply — do nothing to that UC, and move
    straight to reconciling any mirror that's still behind (step 3). Never re-append a changelog or
    Discussion line just because this run started before checking.
-2. **The FR's own file write is the checkpoint — make it one atomic write, and make it first.**
+2. **The UC's own file write is the checkpoint — make it one atomic write, and make it first.**
    Compose the *entire* change (requirement body wording, `version` bump, `## Changelog` line,
-   re-counted `status`) and write the FR file once. Before that single write lands, nothing has
+   re-counted `status`) and write the UC file once. Before that single write lands, nothing has
    changed on disk — a kill at any point up to here leaves the note exactly as it was, correctly
    still eligible for a future run to pick up (no special "in progress" marker needed; there is
    nothing to distinguish from "not started yet"). After it lands, the fold-in is **done** —
    everything downstream is a re-derivable mirror, never the source of truth.
 3. **Mirrors are always safe to reconcile, never a one-shot append.** The feature hub's Signal Log
-   row, `FEATURES.md`, and the source INT note's own tick/status are all *read from the FR's
-   current state* and corrected to match — flip a Signal Log row to `applied` if the FR it points
-   at now shows the fold-in, tick the INT note's copy if the FR copy is already resolved. Setting
+   row, `FEATURES.md`, and the source INT note's own tick/status are all *read from the UC's
+   current state* and corrected to match — flip a Signal Log row to `applied` if the UC it points
+   at now shows the fold-in, tick the INT note's copy if the UC copy is already resolved. Setting
    an already-correct mirror field again is a no-op, not a duplicate, so this step never needs its
    own resume logic: run it every time, unconditionally, whether this is the first pass or the
    tenth.
-4. **A subsequent run's gate check is therefore a 3-way read, not a 2-way one.** For any FR
+4. **A subsequent run's gate check is therefore a 3-way read, not a 2-way one.** For any UC
    carrying a fold-in candidate: (a) **genuinely unanswered** — the INT note's `A:` line is still
-   blank → wait for a human, not eligible. (b) **already applied** — the FR's
+   blank → wait for a human, not eligible. (b) **already applied** — the UC's
    `## Changelog`/body already reflect it → not eligible for another apply, but still worth a
-   mirror-reconciliation pass (step 3) in case a prior run's kill landed the FR write but not the
+   mirror-reconciliation pass (step 3) in case a prior run's kill landed the UC write but not the
    hub refresh. (c) **neither** → apply it now (steps 1–3). This replaces a bare "is the box
    ticked?" check, which can't tell (b) from a half-applied (c) on a resumed run.
 
@@ -653,11 +762,11 @@ to invoke repeatedly, including from a fresh session with no memory of the inter
 An Open Question gets read cold — by a client, or by whoever picks up the vault days after it was
 drafted — with none of the drafting context loaded. **It must be self-contained.** The failure
 mode: a question that only makes sense to whoever just wrote it, because it references an internal
-number without restating what that number means — e.g. "Does FR4's Organization Experience
-narrative-question set *replace* FR-004 FR23's single" (which "FR4"? a functional requirement
-numbered 4 inside *this* note, or the `FR-###` artifact id? "FR23's single" — single *what*?). This
+number without restating what that number means — e.g. "Does UC4's Organization Experience
+narrative-question set *replace* UC-004 S23's single" (which "UC4"? the fourth item in *this* note,
+or the `UC-###` artifact id? "S23's single" — single *what*?). This
 applies wherever `/extract-signal`, `/bigin-transform-signal`, or `/enrich-feature` write a
-`- [ ] Q: …` line, on an INT note or an FR.
+`- [ ] Q: …` line, on an INT note or a UC.
 
 **Format:**
 
@@ -665,7 +774,7 @@ applies wherever `/extract-signal`, `/bigin-transform-signal`, or `/enrich-featu
 - [ ] Q: <How it works today — plain business language, no ids.> <What the new request changed —
   plain business language.> <The one decision needed, as its own question sentence: yes/no,
   A-or-B, or an (a)/(b)/(c) list when there are three or more options.> (owner: client|team)
-  (ref: FR-###, BR-###, INT-### — traceability only, safe to ignore when answering)
+  (ref: UC-###, BR-###, INT-### — traceability only, safe to ignore when answering)
 ```
 
 **Rules — content:**
@@ -691,7 +800,7 @@ register — dense with ids, in one long sentence, using vocabulary coined while
 - **Write in the register of the question's `owner`.** `owner: client` means this line will be
   read — often pasted verbatim into an email — by someone outside the vault. No ids in the ask
   itself, and none of the vault's own vocabulary: no *signal*, *CR*, *intake*, *staged*,
-  *fold-in*, *bucket*, *FR/BR/INT/PP/EN*. Push every id into the trailing `(ref: …)` parenthetical
+  *fold-in*, *bucket*, *UC/BR/INT/PP/EN*. Push every id into the trailing `(ref: …)` parenthetical
   where a reader can skip it. `owner: team` may use ids inline — still always paired with what
   they say.
 - **Use only the client's own words for the business concepts.** Never invent a term to compress
@@ -706,15 +815,15 @@ register — dense with ids, in one long sentence, using vocabulary coined while
 - **Say what the answer decides** when the consequence isn't obvious from the question — one short
   clause is enough ("this sets which limit the wallet enforces at checkout").
 - **Self-check before writing the line.** Read it once as the `owner` would, cold. If answering it
-  requires opening the FR, knowing what a `BR-###` is, or re-reading the sentence to find the
+  requires opening the UC, knowing what a `BR-###` is, or re-reading the sentence to find the
   actual question, rewrite it. A question the human has to decode is a question that sits
   unanswered.
 
 **Before/after** (the id-reference failure):
 
-> ❌ *Does FR4's Organization Experience narrative-question set *replace* FR-004 FR23's single*
+> ❌ *Does UC4's Organization Experience narrative-question set *replace* UC-004 S23's single*
 
-> ✅ *In FR-004, the existing Organization Experience question is a single free-text field
+> ✅ *In UC-004, the existing Organization Experience question is a single free-text field
 > ("Describe your organization's relevant experience"). The new signal proposes a richer
 > narrative-question set covering scope, past engagements, and references instead. Should the new
 > set **replace** the original field, or should both appear on the form? (owner: client)*
@@ -748,33 +857,33 @@ Every `[requirement]`/`[feedback]` signal `/bigin-transform-signal` folds in lan
 
 | Signal is… | Goes to |
 |---|---|
-| A testable, actionable statement | a new/updated `FR-###` (§ ID scheme) |
-| A conditional/policy constraint, feature-level or anchored to one FR | a new/updated `BR-###`, `fr: []` citing the FR(s) it constrains (§ ID scheme, § Entity Data Model) |
-| A presentation-only statement — look, layout, tone, copy voice, interaction feel, accessibility affordance — that changes no behaviour | a **design directive**, never an FR line: a `DESIGN-PRINCIPLES.md` row when durable/cross-cutting, a row in its feature hub's `## Design Directives` when feature-scoped, or both (§ Traceability chain's Design chain, § Design Principles Register) |
+| A testable, actionable statement about behaviour | a step in a new/updated `UC-###`'s flow (§ Use Case) |
+| A conditional/policy constraint, feature-level or governing one workflow | a new/updated `BR-###`, `uc: []` citing the use case(s) it governs, mirrored read-only in each one's `§ 4` (§ ID scheme, § Use Case) |
+| A presentation-only statement — look, layout, tone, copy voice, interaction feel, accessibility affordance — that changes no behaviour | a **design directive**, never a UC line: a `DESIGN-PRINCIPLES.md` row when durable/cross-cutting, a row in its feature hub's `## Design Directives` when feature-scoped, or both (§ Traceability chain's Design chain, § Design Principles Register) |
 | A data field/entity described — a thing the business tracks and its attributes | a `proposed` row in `ENTITIES.md`, later promoted to `EN-###` `## Fields` (§ Entity Data Model) — new or existing entity |
-| Narrative context — the client's stated why, not yet actionable on its own | `## Problem & Pain Points` as `[problem]` |
-| A concrete frustration/cost the client named, with no requirement attached yet | a new `PP-###` in `01-Requirements/PAIN-POINTS.md` (§ Pain Point Register), mirrored on the FR once one exists |
+| Narrative context — the client's stated why, not yet actionable on its own | the UC's `## 1` Business Need / Goal |
+| A concrete frustration/cost the client named, with no requirement attached yet | a new `PP-###` in `01-Requirements/PAIN-POINTS.md` (§ Pain Point Register), its id added to the UC's `pain_points:` once one exists |
 
 A `[pain-point]` with no attached requirement is not a gap to fill — it's kept on record
-(`PP-###`, `Status: open`) until a later signal turns it into an FR/BR line or an epic/story
+(`PP-###`, `Status: open`) until a later signal turns it into a UC/BR line or an epic/story
 resolves it, or it just stays as context. Never force a pain point into a functional requirement
 it doesn't actually support, and never drop it for lack of a home. A signal can legitimately land
 in more than one row at once — e.g. a field-level rule is both an `EN-###` mapping row and, if the
-client also gave a reason, feeds that entity's or the citing FR's own context.
+client also gave a reason, feeds that entity's or the citing UC's own context.
 
 ## Entity Data Model
 
 A `[requirement]` signal sometimes describes not a behavior but a **thing the business tracks** —
 a Vendor record, an Application, a Wallet — and the concrete data it must carry: field names,
-types, and relationships. Left to plain FR routing, this either gets buried as a clause inside a
+types, and relationships. Left to plain UC routing, this either gets buried as a clause inside a
 Functional requirement sentence ("the system must capture the vendor's tax ID") or repeated with
-drift across every FR that happens to touch the same entity — entities are usually **shared across
+drift across every UC that happens to touch the same entity — entities are usually **shared across
 features** (a Vendor's fields matter to both a Vendor Management feature and a Payments feature),
-so a per-FR field list duplicates and drifts.
+so a per-UC field list duplicates and drifts.
 
 `01-Requirements/_entities/EN-<NNN>-<slug>.md` (`type: entity`) is the artifact for this: one
 document per business entity, promoted by `/bigin-transform-signal` (Stage 4) from a `proposed`
-row in `01-Requirements/ENTITIES.md` the first time an FR/BR actually references it.
+row in `01-Requirements/ENTITIES.md` the first time a UC/BR actually references it.
 
 **Frontmatter (`_bigin/templates/entity.md`):**
 ```yaml
@@ -784,17 +893,17 @@ id: EN-
 name:
 kind:            # actor | data | system
 status: proposed # proposed (row exists in ENTITIES.md, no doc yet) -> draft (this doc exists,
-                 # fields still settling) -> approved (human confirmed at an FR/BR review gate)
-features: []     # every feature slug whose FR(s)/BR(s) reference this entity
+                 # fields still settling) -> approved (human confirmed at a UC/BR review gate)
+features: []     # every feature slug whose UC(s)/BR(s) reference this entity
 updated:
 ---
 ```
 
 **Body:**
 - `## Fields` — `Field | Type | Required? | Source | Notes`. `Source` cites the Signal Log row (or
-  FR/BR) that introduced or last changed the field.
+  UC/BR) that introduced or last changed the field.
 - `## Relationships` — how this entity references others (e.g. "belongs to EN-002 Customer
-  (many-to-one)"), each citing the FR/BR it's drawn from.
+  (many-to-one)"), each citing the UC/BR it's drawn from.
 - `## Changelog` — same convention as every other artifact.
 
 A field-level business rule is **not** a subsection of the entity doc — it's a full `BR-###` file
@@ -816,8 +925,8 @@ exists).
 ## Pain Point Register
 
 Every `[pain-point]` signal gets a **`PP-###` id the moment it's extracted** — vault-wide,
-numbered like `BR-###` (scan `01-Requirements/PAIN-POINTS.md`, not any FR, since a pain point can
-predate its feature's FR) — tracked in `01-Requirements/PAIN-POINTS.md`
+numbered like `BR-###` (scan `01-Requirements/PAIN-POINTS.md`, not any UC, since a pain point can
+predate its feature's UC) — tracked in `01-Requirements/PAIN-POINTS.md`
 (`type: pain-point-register`, singleton, instantiate from
 `_bigin/templates/pain-points-register.md`):
 
@@ -826,34 +935,36 @@ predate its feature's FR) — tracked in `01-Requirements/PAIN-POINTS.md`
 
 - **Status**: `open` (named, nothing addressing it yet) · `addressed` (a `Resolved by` link exists
   and a human confirmed it's sufficient — this is a judgement call, so it never auto-flips the way
-  `needs-clarification` does) · `orphaned` (the feature/FR that would have addressed it went
+  `needs-clarification` does) · `orphaned` (the feature/UC that would have addressed it went
   `out-of-scope`, or the client explicitly walked it back — never silently deleted).
 - **Proposed solution**: a short, plain-language description of the approach addressing it, filled
   in as soon as a requirement/story is drafted with this pain point in mind. Not a separate
   approval-gated artifact — a solution is a fact **about** the row, not a new document.
-- **Resolved by**: starts blank or citing whatever's available first (an FR functional-requirement
+- **Resolved by**: starts blank or citing whatever's available first (a UC functional-requirement
   line, a `BR-###`), then gets **backfilled** once `/consolidate-prd` produces the epic/story that
   actually implements the solution, since that's the concrete unit of work a PO tracks a pain
   point's resolution against.
 - Same append-only discipline as every other register here: `PP-###` is permanent, a row is never
   deleted — a walked-back pain point becomes `orphaned` with an explanation in `Resolved by`.
 
-**Mirrored on the FR** once one exists: the FR's `## Problem & Pain Points` section carries a
-matching table with the same `PP-###`, `Status`, `Resolved by` for every pain point anchored to
-that feature — the register is the vault-wide source of truth (queryable across features), the FR
-section is the same facts for a reader who only has that one FR open.
+**Cited from the use case** once one exists: the UC's `pain_points:` frontmatter lists the `PP-###`
+ids the workflow exists to resolve — **ids only, no fourth copy of the table**. The register is the
+vault-wide source of truth (queryable across features) and each feature hub's `## Pain Points` is the
+per-feature mirror a human reads; a third table on the UC would be a third thing to keep in sync for
+facts that are one grep away. The pre-UC `FR-###` model did carry that table, which is why an absorbed
+FR still shows it.
 
 **Created** by `/extract-signal` the moment a `[pain-point]` signal is extracted. **Solution +
-`Resolved by` backfilled** by `/enrich-feature` (FR-level solution) and `/consolidate-prd`
+`Resolved by` backfilled** by `/enrich-feature` (UC-level solution) and `/consolidate-prd`
 (epic/story backfill). **Status flipped to `addressed`** only by a human.
 
 ## Design Principles Register
 
 A `[constraint]` signal sometimes isn't feature-specific at all — "keep it minimal," "use our
 brand colors," "our users skew older, avoid tiny tap targets" apply to every feature, not just
-whichever FR happens to be open when the client says it. Left to the normal signal→FR routing
+whichever UC happens to be open when the client says it. Left to the normal signal→UC routing
 above, a cross-cutting preference either gets awkwardly bolted onto one feature's
-`## Business Rules` or is lost entirely if no FR exists yet when it's said.
+`## Business Rules` or is lost entirely if no UC exists yet when it's said.
 
 `01-Requirements/DESIGN-PRINCIPLES.md` (`type: design-principles`, singleton, vault-wide) is the
 standing register for these. `/extract-signal` appends a row whenever an extracted `constraint`
@@ -862,11 +973,11 @@ single feature:
 
 - **Feature-specific** visual/interaction constraints ("this donor dashboard should feel warm,
   less corporate") go to that feature hub's own `## Design Directives` section, on the Design chain
-  (§ Traceability chain) — **not** onto its FR. An earlier draft of this document routed them to
-  the FR; that put untestable presentation language inside approved functional scope and made a
+  (§ Traceability chain) — **not** onto its UC. An earlier draft of this document routed them to
+  the UC; that put untestable presentation language inside approved functional scope and made a
   purely visual note wait behind `/approve-fr` before `/prototype-design` could ever see it. A
   feature-scoped directive that turns out to change behaviour was misrouted and belongs back on the
-  FR — see `_bigin/stages/transform/3-routing.md` § The design boundary test.
+  UC — see `_bigin/stages/transform/3-routing.md` § The design boundary test.
 - **Cross-cutting** preferences (brand, tone, accessibility, interaction, layout, content,
   platform) append a row to `DESIGN-PRINCIPLES.md`: `# | Principle | Why | Category | Source |
   Status | Notes`, citing the INT id like any other signal. A signal can land in both places at
@@ -889,30 +1000,31 @@ authoritative even if a given PRD section forgot to transcribe a preference, and
 reaches prototyping before its PRD is finished still produces a prototype consistent with what the
 client has said.
 
-## Business Scenarios
+## Business Scenarios (retired)
 
 A `[requirement]`/`[feedback]` signal sometimes describes a real-world flow that crosses feature
 boundaries — a request submitted in one feature, approved in another, settling as a financial
 adjustment in a third (not just "this feature calls that API" — an end-to-end sequence a human
-would narrate as one story). Left to the normal signal→feature anchor (one slug per signal), each
-feature involved gets its own correct slice, but the end-to-end flow itself has no home.
+would narrate as one story). When the requirement artifact was one `FR-###` per testable statement,
+that flow had no home, and `01-Requirements/SCENARIOS.md` (`SCN-###`, one register row per scenario)
+was built to give it one.
 
-`01-Requirements/SCENARIOS.md` (`type: scenario-register`, singleton,
-`_bigin/templates/scenario-register.md`) is the artifact for this — **one
-register file**, not one document per scenario:
+**A use case is that home, and it is strictly more.** A `UC-###` whose `features:` lists every
+participating slug records the same sequence *plus* the actors, the trigger, the pre- and
+post-conditions, the alternative and exception paths, the rules that govern it, its open questions, and
+a human review gate — none of which a register row could carry. So `SCN-###` is retired:
 
-| SCN-### | Name | Steps (feature: what happens) | Status | Notes |
-|---------|------|-------------------------------|--------|-------|
-
-An earlier draft of this document specified one document per scenario
-(`01-Requirements/_scenarios/SCN-### <title>.md`) with a diagram and a richer `## Steps` table
-citing FR/BR/entity-fields-exchanged per step; what's actually built is the single-register form
-above. `/bigin-transform-signal` (Stage 4) creates/updates a row the moment it identifies a signal
-describing a genuinely cross-feature flow — each participating feature's hub mirrors a one-line
-pointer into its own `## Business Scenarios` section (`- SCN-### <name> (step N of M)`); the
-register is the only place the full step sequence is written out. `/consolidate-prd` and
-`/prototype-design` would cite/backfill and read from it once they're migrated to the
-`01-Requirements/` model (§ Reconciliation notes) — today they don't yet look at it.
+- **Never create or extend a `SCN-###` row.** A cross-feature flow routes down the UC lane like any
+  other flow (`_bigin/stages/transform/3-routing.md` § The lane table).
+- **Existing rows stay** (hard rule 1 — nothing is deleted). Set `Status: superseded` with
+  `Notes: absorbed by UC-###`, and list the `SCN-###` in that UC's `absorbs:` frontmatter, the first
+  time a signal brings the flow back into play.
+- **Existing hub `## Business Scenarios` sections stay** as history. The live pointer is the
+  `## Use Cases` row, on every participating hub, and it deliberately carries **no step number** — the
+  `(step N of M)` on each hub was this register's worst failure mode, going stale silently every time a
+  step was inserted mid-flow. The UC file is the single place the flow is written out.
+- `01-Requirements/SCENARIOS.md` and `_bigin/templates/scenario-register.md` remain readable so old
+  ids resolve; nothing writes to either.
 
 ## Signal → feature mapping (and what happens when it can't map)
 
@@ -971,7 +1083,7 @@ match" either. It distinguishes two failure shapes, because they ask a human two
 
 Either way:
 
-- Add an Open Question (owner: team) on the closest FR, or on the source INT note itself if no FR
+- Add an Open Question (owner: team) on the closest UC, or on the source INT note itself if no UC
   exists yet, worded for whichever shape it is (`3-filing.md` § Raising a question instead of
   guessing has the exact templates).
 - Park the source INT note `status: needs-clarification` and add `needs-review` to its `tags:` —
@@ -986,49 +1098,49 @@ Either way:
 
 ## Feedback handling
 
-Feedback is just intake (`kind: feedback`) — and CR material against an FR can equally well arrive
+Feedback is just intake (`kind: feedback`) — and CR material against a UC can equally well arrive
 as an ordinary `kind: requirement` signal from a meeting/email that happens to touch shipped scope.
-Either way, `/bigin-transform-signal` applies it to the affected FR/BR **the same way, regardless
-of that FR's current status** (hard rule 7 — approval no longer freezes an FR, and neither does
+Either way, `/bigin-transform-signal` applies it to the affected UC/BR **the same way, regardless
+of that UC's current status** (hard rule 7 — approval no longer freezes a UC, and neither does
 the feature shipping):
 
 - **Update in place, always.** Edit content, bump `version`, log the reason + source `INT-###` in
-  `## Changelog`. If the FR was `approved` (or `enriched`/`consolidated`), the same edit also sets
+  `## Changelog`. If the UC was `approved` (or `enriched`/`consolidated`), the same edit also sets
   `status` back to `draft` — un-staging it as feature material (§ Feature material) until the
   human re-approves. Interactively,
-  this runs as a discussion round in the FR's `## Discussion`: present the proposed change (quoted
+  this runs as a discussion round in the UC's `## Discussion`: present the proposed change (quoted
   signal + INT id + proposed edit), the human confirms, the answer folds in. Unattended, the
-  proposed change is written into the FR's `## Discussion` and its Signal Log row flips to
-  `staged` — never auto-applied without a human confirming — and the FR's `status` moves to
-  `needs-clarification` so the pending decision surfaces exactly like any other FR awaiting a
+  proposed change is written into the UC's `## Discussion` and its Signal Log row flips to
+  `staged` — never auto-applied without a human confirming — and the UC's `status` moves to
+  `needs-clarification` so the pending decision surfaces exactly like any other UC awaiting a
   human look.
-- **There is no forking to a new `amends:`-linked sibling FR for this case.** The same FR carries
+- **There is no forking to a new `amends:`-linked sibling UC for this case.** The same UC carries
   its whole history in its own `## Changelog` — whether it's still open, already approved, or the
   feature has since shipped. `amends:` frontmatter is reserved for the rare case where a feature's
   scope genuinely splits into a second, independent decision that doesn't belong in the same
-  document; confirm that split explicitly with the human before minting a second FR for one slug —
-  never reach for it just because the source FR happens to be `approved`.
-- **Removing scope.** If a discussion round concludes the FR's scope — or part of it — should come
+  document; confirm that split explicitly with the human before minting a second UC for one slug —
+  never reach for it just because the source UC happens to be `approved`.
+- **Removing scope.** If a discussion round concludes the UC's scope — or part of it — should come
   out entirely (the client walked it back, it's no longer wanted), a human sets `status: removed`
   with the reason in `## Changelog` (human-gated like `approved`; an agent may raise this as an
   Open Question, never set the status itself). This is not deletion (hard rule 1): the file, its
   id, and its full history stay intact. Cascade the same as any other edit (below) so every
   downstream artifact that traced to it surfaces as needing a human decision, rather than silently
   going stale with no explanation.
-- **Reinstating.** A human can later move a `removed` FR back to `draft` if the scope returns —
+- **Reinstating.** A human can later move a `removed` UC back to `draft` if the scope returns —
   logged in `## Changelog` with why. `/bigin-transform-signal` never does this unattended; a
   signal that looks like "bring this back" is an Open Question for the human, the same as any
   judgement call an agent can't make on its own.
 - Either way — cascade: set the downstream PRD/epic/story/prototype that trace (via
-  `sources`/`links`) to the affected FR back to `draft` too (a changelog entry on each citing
-  the INT id and naming the upstream FR change that triggered it), so stale artifacts surface
+  `sources`/`links`) to the affected UC back to `draft` too (a changelog entry on each citing
+  the INT id and naming the upstream UC change that triggered it), so stale artifacts surface
   until `/approve-fr`/`/prototype-design`/`/consolidate-prd` re-run.
-- Open questions with owner `client` stay listed in the (current) FR's `## Open Questions` for the
+- Open questions with owner `client` stay listed in the (current) UC's `## Open Questions` for the
   human to raise with the client; answers return through `/bigin-intake` as feedback.
 
 ## File naming
 
-`<ID> <short title>.md` — e.g. `FR-012 Bulk invoice export.md`
+`<ID> <short title>.md` — e.g. `UC-012 Export invoices in bulk.md`
 
 ## Changelog section (all non-intake artifacts)
 
@@ -1038,11 +1150,12 @@ the feature shipping):
 - 1.1 (2026-07-05) — INT-009 feedback: export limited to 500 rows
 ```
 
-## Summary block (FR only — scannability)
+## Summary block (use case only — scannability)
 
-Reading a long FR cold means scrolling past open questions, business rules, and prose just to find
-out what the note is about. The FR template carries a collapsed summary right after frontmatter,
-before `## Business goal`, so a reader gets the gist in one glance without opening the whole note:
+Reading a long UC cold means scrolling past open questions, business rules, and prose just to find
+out what the note is about. The UC template carries a collapsed summary right after frontmatter,
+before `## 1. Context & Metadata`, so a reader gets the gist in one glance without opening the whole
+document:
 
 ```md
 > [!summary]- Summary
@@ -1051,49 +1164,49 @@ before `## Business goal`, so a reader gets the gist in one glance without openi
 
 It's a **synthesis, never new content** — same contract as any diagram/visual aid a skill adds: it
 illustrates what the note already states, it doesn't add to it. Drafted by `/enrich-feature` when
-the FR is first enriched, refreshed by any `/bigin-transform-signal` fold-in that changes the FR's
+the UC is first enriched, refreshed by any `/bigin-transform-signal` fold-in that changes the UC's
 content (version bump), so it never goes stale relative to the sections below it.
 
 **Write it for a client/PO skimming the note, not for an auditor tracing artifact lineage.**
 2-3 short sentences, plain business language:
 
 1. **Source + what changed** — where this came from (INT id, or "a change request against
-   FR-XXX") and the concrete thing being added/changed, in business terms (a field, a rule, a
-   capability) — not "N functional requirements and BR-104".
-2. **Why** — the pain point/business reason, in the client's terms (drawn from `## Business
-   goal` + `## Problem & Pain Points`), not a citation of which section it came from.
-3. *(only if it changes how the reader should read the FR)* one short clause on what's still
+   UC-XXX") and the concrete thing being added/changed, in business terms (a field, a rule, a
+   capability) — not "3 new flow steps and BR-104".
+2. **Why** — the pain point/business reason, in the client's terms (drawn from `## 1`'s Business
+   Need / Goal and the `pain_points:` it cites), not a citation of which section it came from.
+3. *(only if it changes how the reader should read the UC)* one short clause on what's still
    open — not a restatement of frontmatter status. Omit entirely if there's nothing unusual to
    flag; `status:` and the Open Questions count already show on the note.
 
-**Avoid:** stacking multiple artifact ids in prose (one incidental `FR-XXX`/`amends:` mention is
-fine; a chain of `FR-004 … BR-104 … FR-022` reads like a diff, not a description). Narrating the
+**Avoid:** stacking multiple artifact ids in prose (one incidental `UC-XXX` mention is fine; a chain
+of `UC-004 … BR-104 … S7` reads like a diff, not a description). Narrating the
 pipeline ("per the extraction step", "pending enrichment") — the reader doesn't need to know which
-skill wrote this. Hedge-y meta phrasing ("leaving the conflicting parts to a separate FR-022") —
-say what *this* FR does; a sibling FR's scope belongs on that FR, not narrated here.
+skill wrote this. Hedge-y meta phrasing ("leaving the conflicting parts to a separate UC-022") —
+say what *this* UC does; a sibling UC's scope belongs on that UC, not narrated here.
 
-**Before/after** (same FR, real case):
+**Before/after** (same UC, real case):
 
-> ❌ *This FR is a change request against the already-approved FR-004 (vendor management),
+> ❌ *This UC is a change request against the already-approved UC-004 (vendor management),
 > expanding the vendor profile/application field set based on the client's `CFEF CRM Flow.pdf`
 > reference document. It exists because that document revealed additional fields (Website,
 > Customer Tags, W-9 flag, Marketable flag, notes fields), a defined 4-value Reimbursement
 > Restrictions dropdown, and a much richer Organization Experience narrative-question set beyond
-> what FR-004 originally captured. It adds 4 functional requirements and BR-104 (fixing the
+> what UC-004 originally captured. It adds 4 flow steps and BR-104 (fixing the
 > Reimbursement Restrictions value set) as additive detail only, leaving the conflicting parts of
-> the same document to a separate FR-022. It still carries 1 open question — whether the new
-> narrative questions replace or supplement FR-004's original educational-value field — and is
+> the same document to a separate UC-022. It still carries 1 open question — whether the new
+> narrative questions replace or supplement UC-004's original educational-value field — and is
 > `needs-clarification`, pending further elicitation.*
 
 > ✅ *Adds the vendor profile fields the client's `CFEF CRM Flow.pdf` calls for — Website,
 > Customer Tags, W-9 and Marketable flags, notes, a 4-value Reimbursement Restrictions list, and
-> richer Organization Experience questions — that FR-004's original vendor form didn't capture.
+> richer Organization Experience questions — that UC-004's original vendor form didn't capture.
 > Open question: whether the new questions replace or add to the existing educational-value
 > field.*
 
-Same content, same traceability (still one `FR-004` mention, still names the source document) —
+Same content, same traceability (still one `UC-004` mention, still names the source document) —
 just business-first instead of artifact-first. If a reader wants the artifact-level trace, that's
-what `sources`/`amends`/the Changelog are for; the summary's job is "what is this, in plain
+what `sources`/`absorbs`/the Changelog are for; the summary's job is "what is this, in plain
 terms," not "how does this fit the pipeline."
 
 **Intentionally not on INT** — an intake note is raw capture only; even a purely descriptive
@@ -1117,22 +1230,39 @@ scattered inline caveats — resolve and delete each line as the corresponding s
   template refers to them project-relatively. Anything still pointing at `references/…`,
   `skills/*/SKILL.md`, or `skills/*/template/…` for a file a subagent has to read is a bug. `${CLAUDE_PLUGIN_ROOT}` has exactly one legitimate use in this
   plugin: `/bigin-new-project` § 2, resolving the copy source.
-- **`enrich-feature`, `approve-fr`, `prototype-design`, `consolidate-prd` still use the old
-  `.bigin/` flat-file layout** (`.bigin/features/FR-<id>-*.md`, `.bigin/PRD.md`,
-  `.bigin/prototypes/`, `.bigin/epics.md`, inline `Status:` headings) — not the
-  `01-Requirements/_frs/`/`_brs/` model with `status:` frontmatter that `bigin-intake`,
-  `bigin-new-project`, `extract-signal`, and now `bigin-transform-signal` already use. This gap
-  got wider, not narrower, once `bigin-transform-signal` was rebuilt against the real
-  `01-Requirements/` paths: `enrich-feature` reads `.bigin/features/FR-<id>-*.md`, but
-  `bigin-transform-signal` now writes `01-Requirements/_frs/FR-<NNN> <Title>.md` — nothing bridges
-  the two yet. Until these four are migrated, most of § Feature Hub's "Maintenance contract" past
-  `/bigin-transform-signal` and all of § Absorbed describe the target, not the current read/write
-  paths.
+- **`enrich-feature`, `approve-fr`, `prototype-design`, `consolidate-prd` are on the old `.bigin/`
+  flat-file layout AND on the retired `FR-###` artifact** (`.bigin/features/FR-<id>-*.md`,
+  `.bigin/PRD.md`, `.bigin/prototypes/`, `.bigin/epics.md`, inline `Status:` headings) — not the
+  `01-Requirements/_ucs/`/`_brs/` model with `status:` frontmatter that `bigin-intake`,
+  `bigin-new-project`, `extract-signal`, and `bigin-transform-signal` use. **This is now a two-axis
+  gap, and it is the largest open item in this plugin:** those four skills need both the path
+  migration *and* the FR→UC migration. Concretely, each of them:
+  - reads `.bigin/features/FR-<id>-*.md` and must read `01-Requirements/_ucs/UC-<NNN> <Title>.md`;
+  - keys its whole run on a single FR id per feature and must accept a feature carrying **several**
+    UCs, plus a UC spanning **several** features (`primary_feature` decides the chain);
+  - expects an FR's `## Functional requirements` list and must read a UC's `## 2`/`## 3` flows, its
+    `## 4` rule mirror, and its `## 5` **Still open** list (not `## Open Questions`);
+  - in `/approve-fr`'s case, gates approval on the artifact that is now the reviewable one — which is
+    the point of the UC migration, so this skill is the highest-value one to move first;
+  - in `/consolidate-prd`'s case, should cut epics/stories as **use-case slices** (§ Traceability
+    chain), flows first, rather than one story per FR line.
+
+  Until then, § Feature Hub's "Maintenance contract" past `/bigin-transform-signal` and all of
+  § Absorbed describe the target, not the current read/write paths, and a feature that finishes
+  `/bigin-transform-signal` cannot proceed further without a human. `/bigin-ba` is instructed to stop
+  at that boundary rather than run a stage against paths that no longer exist.
+- **Vaults created before the UC migration need a first-touch adoption pass.** `FR-###` and `SCN-###`
+  are retired but not deleted (hard rule 1). The adoption path is defined and unattended-safe —
+  `_bigin/stages/transform/3-lane-uc.md` § Adopting an existing FR: the first signal that touches a
+  feature with FRs mints a UC, lists them in `absorbs:`, stages their existing lines as proposed flow
+  steps for the human gate, and stamps each FR `absorbed_by:`. **A feature that receives no new signal
+  is never migrated**, by design: nothing rewrites requirement content unprompted. Expect a vault to
+  hold both models for as long as some features stay quiet.
 - ~~**FR/BR status vocabulary decided but not yet applied where it's written down.**~~ **Resolved.**
-  `_bigin/templates/fr.md`, `_bigin/templates/br.md`, and that skill's `SKILL.md` now
+  `_bigin/templates/use-case.md`, `_bigin/templates/br.md`, and that skill's `SKILL.md` now
   all use § Status vocabularies' list (`draft → enriched → approved → consolidated`, plus
   `needs-clarification`/`removed`) and land results on `draft`, never the retired `in-review`.
-  Anything still writing `in-review` or `superseded` onto an FR/BR is a bug.
+  Anything still writing `in-review` or `superseded` onto a UC/BR is a bug.
 - **Command order mismatch**: this document's Full chain is `PRD → EP → US → UX`, but this
   plugin's actual command order is `/approve-fr` (PRD) → `/prototype-design` (UX) →
   `/consolidate-prd` (Epics/Stories) — UX before Epics/Stories. Decide which order is right for

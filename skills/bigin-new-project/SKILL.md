@@ -1,6 +1,6 @@
 ---
 name: bigin-new-project
-description: Initiate a new BA project in the current repo — materialize the rulebook and templates into `_bigin/`, capture the engagement config (client, approver, contacts, new vs. ongoing product), map the existing codebase when there is one, and verify the configured email/meeting providers are reachable, installing a missing MCP server where an install command is known. Use once per repo before the first /bigin-intake, and again after a plugin upgrade to refresh the materialized rulebook or re-check provider access.
+description: Initiate a new BA project in the current repo — materialize the rulebook and templates into `_bigin/`, capture the engagement config (client, approver, contacts, new vs. ongoing product), import a proposal or, for a greenfield project with none yet, ask what's being built and run domain research on it, map the existing codebase when there is one, and verify the configured email/meeting providers are reachable, installing a missing MCP server where an install command is known. Use once per repo before the first /bigin-intake, and again after a plugin upgrade to refresh the materialized rulebook or re-check provider access.
 argument-hint: "[client name]"
 ---
 
@@ -132,12 +132,14 @@ user-local config, not project data.
 2. Scaffold `.claude/bigin-ba-workflow-plugin.local.md` from
    `skills/bigin-new-project/template/settings.local.md`, **only if absent** — never overwrite one a
    project wrote. This is the one place a project may legitimately override plugin behavior (a `Why`
-   house style, a standing feature-slug shortcut). It lives in `.claude/` because it configures how
-   `/bigin-intake` and `/extract-signal` behave rather than describing the engagement, and ships empty
-   — both fall back to built-in defaults per blank section. Don't ask the user to fill it in; just
-   mention it in § 8.
+   house style, a standing feature-slug shortcut, § 5.3's domain research method). It lives in
+   `.claude/` because it configures how `/bigin-intake`, `/extract-signal`, and this skill's own § 5.3
+   behave rather than describing the engagement, and ships empty — all fall back to built-in defaults
+   per blank section. Don't ask the user to fill it in; just mention it in § 8.
 
-## 5. Import a project proposal, if there is one
+## 5. Import a project proposal, or capture what's being built, then research the domain
+
+### 5.1 Import a proposal, if there is one
 
 Ask whether a proposal, scope document, or SOW exists.
 
@@ -145,13 +147,53 @@ Ask whether a proposal, scope document, or SOW exists.
   feature it names. Take slugs and names from the document's own wording; don't invent a feature it
   doesn't name, don't merge two it lists separately. Cite the document in each `Sources` cell. Report
   the rows added so wrong slugs get corrected before signals anchor to them — a slug is permanent once
-  artifacts reference it.
-- **No, or unreadable** — leave `FEATURES.md` as the empty scaffold. `/extract-signal` raises a
-  feature-mapping question for the first unanchorable signal and the human mints the row then. This is
-  the normal path, not a degraded one.
+  artifacts reference it. For `project_mode: new`, continue straight to § 5.3 — the proposal is also
+  this project's domain-research input, so skip § 5.2's questions rather than asking on top of it. For
+  `project_mode: ongoing`, stop here.
+- **No, or unreadable, `project_mode: ongoing`** — leave `FEATURES.md` as the empty scaffold.
+  `/extract-signal` raises a feature-mapping question for the first unanchorable signal and the human
+  mints the row then. This is the normal path, not a degraded one. Skip § 5.2 and § 5.3 entirely — an
+  ongoing product's domain is the existing codebase and client relationship, not something to research
+  cold from a two-sentence pitch.
+- **No, or unreadable, `project_mode: new`** — continue to § 5.2. A greenfield project with no proposal
+  still needs something on record to research from and, later, to seed `FEATURES.md` from — and
+  nothing on disk says what it is yet.
 
 Only `proposed` rows come from a proposal. `committed`/`built`/`out-of-scope` are human-set
 (`_bigin/conventions/conventions.md` § Feature map).
+
+### 5.2 No proposal on a greenfield project — ask what it does
+
+Ask in plain questions, not a rigid form — this is a short conversation, not an intake:
+
+- What does the product do, in a sentence or two?
+- Who is it for, and what problem does it solve for them?
+- Anything already decided — a platform, a third-party integration it must talk to, a compliance
+  regime it must meet — worth knowing before research starts?
+
+Record the answer under `## Project Brief` in `_bigin/system/project.md`, dated, close to verbatim.
+Same rule as § 3: this **records what the human states**, never a paraphrase — a summarized brief is
+what domain research then goes and researches the wrong thing from.
+
+Don't try to derive `FEATURES.md` rows from this conversation. A two-sentence pitch is thinner than a
+proposal, and guessing feature boundaries from it is worse than leaving the registry empty for
+`/extract-signal` to populate as real signals arrive.
+
+### 5.3 Domain research (`project_mode: new` only)
+
+With either a proposal (§ 5.1) or a project brief (§ 5.2) now on record, ground the engagement in its
+domain before the first signal arrives — so `/extract-signal` and `/enrich-feature` inherit context
+instead of each rediscovering it from scratch per feature.
+
+**How this step actually runs is deliberately kept out of this file: `references/domain-research.md`.**
+Read it before doing anything here — it defines a built-in research method and, separately, how to
+swap that method for a different skill or agent (e.g. one already installed for market/domain
+research) without touching this file. Don't improvise a research procedure inline.
+
+Follow that file through to its own "Writing the findings" step, which specifies the two places the
+output lands: `_bigin/system/domain-research.md` (the full report) and a dated pointer line under
+`_bigin/system/project.md`'s `## Domain Research` section (the summary). Report that summary to the
+user in § 8 as new grounding, not a housekeeping detail.
 
 ## 6. Map the codebase (`project_mode: ongoing` only)
 
@@ -303,10 +345,15 @@ Tell the user:
    alone.
 5. **Features** — `proposed` rows imported from a proposal, if any, so wrong slugs get corrected now.
 6. **Codebase map** — for `ongoing`, that mapping is deferred and the section is intentionally empty.
-7. **Providers** — one line per configured provider, its state, and what happened (§ 7). List every
+7. **Project brief & domain research** — for `project_mode: new`: whether the brief came from a
+   proposal or from § 5.2's questions, which method ran the research (§ 5.3 —
+   `references/domain-research.md`), and the dated summary now in `_bigin/system/project.md`'s
+   `## Domain Research` section, with a pointer to the full report. This is new grounding for the
+   engagement, not a housekeeping line — don't bury it under Features.
+8. **Providers** — one line per configured provider, its state, and what happened (§ 7). List every
    command this run executed, verbatim. For anything still unresolved, give the exact next action —
    "authorize Fathom in claude.ai connector settings", "install the `spark` CLI and re-run this" — not
    "provider unavailable". An unactionable warning gets ignored until the first failed sweep.
-8. **Next step** — `/bigin-intake` to capture the first meeting, email, or note. If a provider is
+9. **Next step** — `/bigin-intake` to capture the first meeting, email, or note. If a provider is
    unresolved, say plainly that `/bigin-intake direct …` works regardless and only Mode B's sweep is
    affected.

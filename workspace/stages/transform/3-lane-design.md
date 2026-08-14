@@ -2,8 +2,8 @@
 
 Handles signals routed to **Design** (`3-routing.md` § The design boundary test). This lane exists
 because a presentation-only signal has nothing for a PRD to consume: a PRD section states
-functional scope, and "make it feel warmer" adds none. Routed through the FR lane it would either
-sit in an FR as an untestable line or wait behind an approval gate it does not need, while the
+functional scope, and "make it feel warmer" adds none. Routed through the UC lane it would either
+sit in a flow as an untestable step or wait behind an approval gate it does not need, while the
 person who could act on it — whoever runs `/prototype-design` — never sees it.
 
 ## The chain this lane serves
@@ -12,27 +12,27 @@ person who could act on it — whoever runs `/prototype-design` — never sees i
 
 | Chain | When |
 |---|---|
-| Full | `INT → FR/BR → PRD → EP → US → UX` — new scope on a `proposed`/`committed`/`not-built` feature |
-| Lightweight CR | `INT → FR/BR → US → UX` — a change against a `built` feature |
+| Full | `INT → UC/BR → PRD → EP → US → UX` — new scope on a `proposed`/`committed`/`not-built` feature |
+| Lightweight CR | `INT → UC/BR → US → UX` — a change against a `built` feature |
 | **Design** | `INT → design directive → UX` — presentation only, no behaviour change |
 
 A design directive is an **input to** the design workflow, not a requirement about it. It never
-becomes an FR line, never enters `PRD.md`, and never carries an `FR-###`/`EP-###`/`US-###` of its
+becomes a UC step, never enters `PRD.md`, and never carries a `UC-###`/`EP-###`/`US-###` of its
 own. Its traceability runs through the hub's Signal Log row, whose `Destination` cell names where
 the directive landed.
 
 ## Why this lane is not behind the human gate
 
-The written gate protects **approved scope**: an FR that folds in a misread signal becomes a
+The written gate protects **approved scope**: a UC that folds in a misread signal becomes a
 contract the client signed off. A design directive enters no contract. It is read by
 `/prototype-design`, whose entire output is a proposal a human reviews before anything is built —
 so gating the input as well adds a round-trip in front of a review that already happens.
 
 The asymmetry is deliberate and bounded. It holds only because the boundary test in `3-routing.md` is
-strict: anything testable without reference to appearance is FR or BR, and an ambiguous signal
-routes to FR. **A design directive that turns out to change behaviour is a routing bug, not a
-gating exception** — when one is found, re-route it to the FR lane, leave the directive row with
-`Status: superseded`, `Notes: re-routed to FR-###`, and name it in the report.
+strict: anything testable without reference to appearance is UC or BR, and an ambiguous signal
+routes to UC. **A design directive that turns out to change behaviour is a routing bug, not a
+gating exception** — when one is found, re-route it to the UC lane, leave the directive row with
+`Status: superseded`, `Notes: re-routed to UC-### S<n>`, and name it in the report.
 
 Ambiguity inside the directive itself still raises a question — on the hub's
 `## Open Questions / Gates`, in plain client language, following `conventions.md` § Open Questions
@@ -99,24 +99,24 @@ until `/prototype-design` runs.
 
 **Planned — the downstream consumer is not migrated.** `/prototype-design` currently keys on an FR
 id and writes `prototypes/FR-<NNN>-prototype.md` from the pre-migration `.bigin/features/` layout
-(README § Migration note, `conventions.md` § Reconciliation notes). Two consequences until it moves
-onto `01-Requirements/`:
+(README § Migration note, `conventions.md` § Reconciliation notes). Since `FR-###` is retired, that
+gap now applies to every feature, not just design-only ones. Two consequences until it moves onto
+`01-Requirements/` and onto `UC-###`:
 
-1. A feature whose hub has design directives but **no FR** cannot reach `/prototype-design` yet,
-   because there is no id to invoke it with. The directives are filed correctly and lose nothing —
-   they are simply queued.
+1. A feature whose hub has design directives cannot reach `/prototype-design` yet, because there is no
+   id it accepts. The directives are filed correctly and lose nothing — they are simply queued.
 2. `/prototype-design` does not yet read `## Design Directives`. It already reads
    `{design_principles_file}` directly, so Destination 1 is live today; Destination 2 becomes live
    when that skill migrates.
 
 Report design-only features explicitly (`next: <slug> ready for /prototype-design (design-only)`)
-so the queue is visible rather than silent. Do not work around the gap by minting a placeholder FR
-just to give `/prototype-design` something to key on — an FR with no functional content pollutes
-the feature's material set and would reach `/approve-fr` as if it were scope.
+so the queue is visible rather than silent. Do not work around the gap by minting a placeholder UC
+just to give `/prototype-design` something to key on — a UC with no flow pollutes the feature's
+material set and would reach `/approve-fr` as if it were scope.
 
 ## What this lane never does
 
-- Write an FR line, a BR, or anything into `PRD.md`.
+- Write a UC step, a BR, or anything into `PRD.md`.
 - Set a hub's `uiux:` field, or write into `## UX Spec` itself.
 - Set `Status: reflected` on a directive — that is the prototype's claim to make, not this skill's.
 - Delete or rewrite an existing directive or design-principle row. Both registers are append-only.

@@ -21,7 +21,7 @@ features that never raise an anchoring question).
 
 | May write | Never writes |
 |---|---|
-| The table's `Feature`, `Status`, `Notes` columns; the note's `## Open Questions` and `status`/`tags` frontmatter | Any `FR-###` content — no `## Discussion`, no FR-side question copy, no FR status change |
+| The table's `Feature`, `Status`, `Notes` columns; the note's `## Open Questions` and `status`/`tags` frontmatter | Any `UC-###`/`BR-###` content — no `## Discussion`, no artifact-side question copy, no status change |
 | A feature hub's `## Signal Log`, `## Pain Points`, and its `sources`/`updated` frontmatter | Any `EN-###` document, or a hub's `## Entities`/`## Requirement Readiness`/`## Business Scenarios` |
 | `{pain_points_file}`, `{entities_file}`, `{design_principles_file}` register rows | A `{requirements_file}` row — a new slug is a human's call (§ Never guess) |
 | | The `#`, `Type`, `Signal`, or `Why` of any table row — stage 2 owns those |
@@ -30,15 +30,15 @@ A Signal Log row's `Status`, on a freshly-filed signal, is one of exactly four v
 
 | Value | When |
 |---|---|
-| `new` | The default, and the overwhelming majority of rows. Anchored to a feature, queued for whatever folds it into an FR next. **Whether that feature already has an FR is irrelevant — don't check.** |
+| `new` | The default, and the overwhelming majority of rows. Anchored to a feature, queued for whatever folds it into a use case next. **Whether that feature already has a UC is irrelevant — don't check.** |
 | `question` | The signal *is* an open question, or a `concern` that needs a call before anything can be built from it, or a row the source audit could not support. |
 | `conflict` | It contradicts an existing Signal Log row on the same hub. Cite the earlier row's `#` in `Notes`; never guess which wins. |
 | `rejected` | Its feature's `{requirements_file}` row is `status: out-of-scope`. `Notes: out-of-scope — skipped`. |
 
-**`held`, `staged`, `applied`, and `superseded` describe a signal's relationship to an FR — this stage
-has no relationship to an FR, so it never writes them.** Retiring that judgment call is deliberate: a
-prior design asked this stage to guess between `held` (anchored, no FR yet) and `staged` (queued against
-an existing FR), and an unattended batch got it wrong across dozens of signals from one call, stranding
+**`held`, `staged`, `applied`, and `superseded` describe a signal's relationship to a use case — this
+stage has no relationship to one, so it never writes them.** Retiring that judgment call is deliberate: a
+prior design asked this stage to guess between `held` (anchored, no UC yet) and `staged` (queued against
+an existing UC), and an unattended batch got it wrong across dozens of signals from one call, stranding
 them silently. There is one unprocessed value now — `new`.
 
 ## Anchoring a signal to a feature
@@ -69,7 +69,7 @@ them silently. There is one unprocessed value now — `new`.
 5. **One signal, one feature.** A signal that genuinely spans two features is filed to both hubs, and its
    `Feature` cell names both — the row itself is never split or duplicated, since stage 2 owns the table's
    rows.
-6. **Do not look at whether the matched feature already has an FR.** That check is exactly the judgment
+6. **Do not look at whether the matched feature already has a use case.** That check is exactly the judgment
    call § Scope retired.
 
 ### Drafting a new-feature proposal (never writing it)
@@ -107,7 +107,7 @@ carrying all of their detail**, not one row each.
 
 Why: three note rows reading "age is computed from date of birth", "the cut-off is 1 September", and
 "under-18s need guardian consent" are one requirement conversation — *age eligibility*. Filed as three
-rows they get qualified three times, routed three times, and drafted into three overlapping FR lines.
+rows they get qualified three times, routed three times, and drafted into three overlapping flow steps.
 Filed as one row they are one unit of work with nothing dropped.
 
 **What counts as one theme.** The test: *would a drafter write these into one requirement statement?* If
@@ -145,7 +145,7 @@ The Signal Log's columns are `# | Signal | Type | Source | Status | Destination 
 | `Type` | The member types, in catalog order, joined with ` + ` — e.g. `requirement + constraint`. A theme of one keeps its plain single value. |
 | `Source` | `<INT-###> #<n>, #<n>, #<n> — <the note row's own Source cite>`, e.g. `INT-014 #3, #5, #7 — Jane Doe 2026-08-05`. The `#`s are the note's row numbers. This cite is the traceability that replaces one-row-per-signal, and it is what verification confirms — a themed row without it is unfollowable. |
 | `Status` | `new` / `question` / `conflict` / `rejected` — never anything else (§ Scope). A themed row is always `new`, since nothing else consolidates. |
-| `Destination` | Leave blank. This stage never stages a signal into an FR's discussion. |
+| `Destination` | Leave blank. This stage never stages a signal into a use case's discussion. |
 | `Notes` | `extends #<n>` when this theme continues an existing hub row; the `PP-###`/entity/design-principle ids its members minted; otherwise blank. |
 
 Worked through, the three age-eligibility rows land as one:
@@ -174,7 +174,7 @@ nothing else — a human or later run may have advanced those fields past what t
 
 ## Registers a signal also writes to
 
-Vault-wide, non-FR registers — a signal shouldn't wait for an FR to be on record.
+Vault-wide registers, independent of any use case — a signal shouldn't wait for a UC to be on record.
 
 | Signal shape | Also write |
 |---|---|
@@ -207,7 +207,7 @@ for a different kind of answer, and a human resolving them should be able to tel
 Both stay `owner: team` — which feature a signal belongs to, or whether it's new scope, is an internal
 call, not something only the client can answer.
 
-- `↦ —` because no FR exists yet to fold this into; a later stage rewrites it to `↦ FR-###`.
+- `↦ —` because no use case exists yet to fold this into; a later stage rewrites it to `↦ UC-###`.
 - `owner: client` when only the client can answer (missing rationale, ambiguous scope). `owner: team` for
   an internal call (which feature, whether it's in scope).
 - Keep the ask recognizably the row's own sentence — don't re-draft it as a second, differently-worded

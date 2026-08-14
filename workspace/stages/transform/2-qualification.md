@@ -90,8 +90,8 @@ Check two things, both cheap:
 | Case | Outcome |
 |---|---|
 | A cited clause is stale | Repair that clause from the note (**the note is the source of truth**), keep the row `#` and its other clauses untouched, `Notes: refreshed from <INT-###>`. Continue to Gate 4 — this is a repair, not a block. **Never un-merge a themed row into one row per signal** — that renumbers history and breaks every `#` cited elsewhere. |
-| `Source` cite is missing or unspecific, and the signal would create **new** FR/BR content | `Status: held`, `Notes: unverifiable source cite — re-run /extract-signal verification`. Report it. |
-| `Source` cite is weak but the signal only adds context to an existing FR | Continue, and note the weak cite in the FR's `## Discussion` entry. |
+| `Source` cite is missing or unspecific, and the signal would create **new** UC/BR content | `Status: held`, `Notes: unverifiable source cite — re-run /extract-signal verification`. Report it. |
+| `Source` cite is weak but the signal only adds context to an existing UC | Continue, and note the weak cite in the UC's `## Discussion` entry. |
 
 Hold the strict version only for signals about to mint new requirement content. A blanket
 re-verification of every row on every run would re-litigate work already verified upstream and
@@ -118,13 +118,16 @@ twice, which is real evidence of priority.
 
 ### 4b — Already covered by the current requirement
 
-No earlier signal matches, but the feature's existing FR or BR text already states this. Common
+No earlier signal matches, but an existing UC's flow or an existing BR already states this. Common
 after a fold-in that generalized several signals at once.
 
 ```
 Status: applied
-Notes: already covered by FR-### v<version> — no change
+Notes: already covered by UC-### S<n> v<version> — no change
 ```
+
+Cite the step (or `BR-###`) that covers it, not just the document. "Somewhere in UC-012" is what a
+future run cannot verify, and check 2 in `5-status.md` is written to catch exactly that.
 
 Read the artifact before writing this. "Covered" means the existing text would already satisfy a
 tester checking this signal — not that the topic is mentioned nearby.
@@ -132,7 +135,7 @@ tester checking this signal — not that the topic is mentioned nearby.
 ### 4c — Supersession
 
 The signal contradicts or refines an earlier row: the client changed their mind, or narrowed an
-ask. This is **not** a duplicate — it is an update, and it routes normally through Stage 3's FR/BR
+ask. This is **not** a duplicate — it is an update, and it routes normally through Stage 3's UC/BR
 lane. Alongside that:
 
 - Flip the **earlier** row to `Status: superseded`, `Notes: superseded by #<n>`.
@@ -151,7 +154,7 @@ between two people's stated requirements.
 `held`, `applied`, `superseded`, `conflict` — plus leaving a row at `new` when it passes all four
 gates and moves on to Stage 3 (which sets `staged`).
 
-`removed` and `duplicated` are **not** Signal Log values. `removed` belongs to the FR/BR
+`removed` and `duplicated` are **not** Signal Log values. `removed` belongs to the UC/BR
 vocabulary and is human-gated only (hard rule 4); `duplicated` does not exist anywhere in the
 vault. A row whose feature is `status: out-of-scope` in `FEATURES.md` is `rejected`,
 `Notes: out-of-scope — skipped`, which extraction normally already wrote.

@@ -1,6 +1,8 @@
 ---
 id: FR-
 type: requirement
+status_of_template: retired
+absorbed_by:    # UC-### that took this FR's content over, once one has
 title:
 status: draft   # draft | needs-clarification | enriched | approved | consolidated | removed
                 # (_bigin/conventions/conventions.md § Status vocabularies — in-review and superseded are
@@ -18,6 +20,15 @@ updated:
 ---
 
 # FR-<NNN> <Title>
+
+<!-- RETIRED TEMPLATE — do not instantiate. FR-### was replaced by UC-### (_bigin/templates/use-case.md):
+a use case carries the same testable content as positioned flow steps, plus the actors, branches, rules
+mirror, and open questions that made a bare requirement list unreviewable. This file is kept only so
+that an FR written before the migration still parses and its id still resolves.
+
+An FR a use case has taken over carries `absorbed_by: UC-###` and is frozen: never edited, never set
+`removed` (human-gated, hard rule 4). See _bigin/stages/transform/3-lane-uc.md § Adopting an existing
+FR. -->
 
 > [!summary]- Summary
 > <2-3 sentences, drafted once /enrich-feature first enriches this FR — leave blank until then.>

@@ -25,7 +25,7 @@ The two error directions are not symmetric, and this stage should not treat them
 
 | Error | What it costs | Who catches it |
 |---|---|---|
-| A row the source doesn't support | an FR line nobody asked for — visible, and reviewed before approval | the source audit, this same run, before anything is filed |
+| A row the source doesn't support | a flow step nobody asked for — visible, and reviewed before approval | the source audit, this same run, before anything is filed |
 | A signal with no row | a requirement silently absent from the build | **nothing, ever** |
 
 So **extract on suspicion, not on certainty.** A claim that might be a signal gets a row. A borderline
@@ -121,7 +121,7 @@ row and move on.
 - **A question the source never resolves always gets its own `question` row**, even when the surrounding
   discussion produced a `decision` on the general topic — a resolved decision about a topic is not the
   same as a specific sub-point left hanging.
-- **An `answer` row must cite the exact question it resolves** (`FR-###`/`INT-###` id) and quote the
+- **An `answer` row must cite the exact question it resolves** (`UC-###`/`INT-###` id) and quote the
   source. A hedged or partial reply is a `concern`, not an `answer`. The dispatch prompt supplies the
   vault's currently-open questions for exactly this match.
 - **On a thread or a re-fetched source, the newest position wins** — extract that as the signal and note

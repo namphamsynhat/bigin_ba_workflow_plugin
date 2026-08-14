@@ -8,8 +8,12 @@ status: draft   # draft | needs-clarification | enriched | approved | consolidat
                 # writes draft/needs-clarification.
 version: 1.0
 feature:         # the FEATURES.md slug this BR belongs to
-fr: []           # FR-### id(s) this rule constrains — [] if it's a feature-level rule not yet
-                 # tied to one FR (conventions.md § Signal → artifact mapping)
+uc: []           # UC-### id(s) this rule governs — [] if it's a feature-level rule not yet tied to
+                 # one workflow (conventions.md § Signal → artifact mapping). This file is the SOURCE
+                 # of the rule; each listed UC's § 4 is a read-only mirror of it (BABOK § 10.47 —
+                 # rules are captured separately so a rule change doesn't force a use-case change).
+fr: []           # RETIRED. Pre-UC FR-### id(s) this rule constrained, kept as traceability so old
+                 # ids still resolve. Nothing writes here any more.
 sources: []      # INT-### id(s) this BR traces to
 links: []
 owner: team
@@ -19,15 +23,16 @@ updated:
 # BR-<NNN> <Title>
 
 <the rule itself, stated as a testable constraint — "If <condition>, then <system must/must
-not>..." Not a restatement of the FR it constrains; a rule narrows or governs how the FR behaves.>
+not>..." Not a restatement of the step it constrains; a rule narrows or governs how the workflow
+behaves. A rule about an entity field also names it: "Governs EN-004 Vendor → tax_code.">
 
 ## Discussion
 <!-- Staged, not-yet-applied change proposals, cleared into the rule statement above once the
 human gate (SKILL.md Stage 3 raises it / Stage 1 folds it in) confirms it. Same format as
-_bigin/templates/fr.md's ## Discussion. -->
+_bigin/templates/use-case.md's ## Discussion. -->
 
 ## Open Questions
-<!-- Same format and invariant as an FR's Open Questions (conventions.md § Open Questions
+<!-- Same format and invariant as a use case's § 5 Still open list (conventions.md § Open Questions
 wording, § Open Questions ↔ status consistency). -->
 
 ## Changelog

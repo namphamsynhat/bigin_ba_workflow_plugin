@@ -33,7 +33,7 @@ The vault is the only state, so `resume` just means running again — every run 
 - `{inbox_dir}`: `00-Inbox` — skip `_attachments/` when scanning.
 - `{requirements_file}`: `01-Requirements/FEATURES.md` — the slug registry; a signal can only anchor to a slug listed here.
 - `{hub_dir}`: `01-Requirements/_features` — one hub file per slug, `{hub_dir}/<slug>.md`.
-- `{fr_dir}`: `01-Requirements/_frs` — read only, to collect open questions (§ Step 1).
+- `{uc_dir}`: `01-Requirements/_ucs` — read only, to collect open questions (§ Step 1).
 - `{conventions_reference}`: `_bigin/conventions/conventions.md` — the rulebook: ID scheme, frontmatter schema, artifact conventions.
 - `{extraction_rules}`: `_bigin/stages/extract/2-extraction.md` — signal catalog, segmentation, `Why` discipline. The **extraction** subagent's only rulebook.
 - `{filing_rules}`: `_bigin/stages/extract/3-filing.md` — anchoring, hub schema, themed consolidation, registers, questions, status. The **filing** subagent's only rulebook.
@@ -64,12 +64,13 @@ Scan `{inbox_dir}` for `INT-###` notes and read each frontmatter:
 
 ### Step 1.2 - Collect open questions
 
-Scan `{fr_dir}` and `{inbox_dir}` once for every unchecked `- [ ] Q:` line, then pass the list to each
+Scan `{uc_dir}` and `{inbox_dir}` once for every unchecked `- [ ] Q:` line — on a use case that list is
+its `## 5` **Still open** section — then pass the list to each
 extraction subagent. This is what lets a statement that resolves someone else's question get typed
 `answer` and cited, instead of landing as a generic requirement or being dropped as restated context.
 
 - **≤ 40 open questions:** pass the full list.
-- **> 40:** scope it down to `{inbox_dir}`'s questions plus `{fr_dir}` questions for features in the
+- **> 40:** scope it down to `{inbox_dir}`'s questions plus `{uc_dir}` questions for features in the
   note's `declared_features` — cuts context noise without dropping anything the batch could resolve.
 
 ### Step 1.3 - Next or Stop

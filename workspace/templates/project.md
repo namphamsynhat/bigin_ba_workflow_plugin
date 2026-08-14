@@ -55,7 +55,16 @@ Client: **<Client Name>** · Approver: **<Approver Name>** (<approver email>)
 | <name> | <role> | |
 
 ## Codebase map
-<!-- project_mode: ongoing only — written by /bigin-new-project § 5, refreshed on re-run. -->
+<!-- project_mode: ongoing only — written by /bigin-new-project § 6, refreshed on re-run. -->
+
+## Project Brief
+<!-- project_mode: new only, no proposal on file — written by /bigin-new-project § 5.2 from what
+the human states in answer to "what does this do / who's it for / what's already decided", close
+to verbatim rather than summarized. Skipped when a proposal exists (§ 5.1) or project_mode: ongoing. -->
+
+## Domain Research
+<!-- project_mode: new only — written by /bigin-new-project § 5.3. One dated line per research run,
+pointing at the full report in _bigin/system/domain-research.md rather than duplicating it here. -->
 
 ## Provider readiness
 <!-- Written by /bigin-new-project § 7 — one line per configured provider, dated. A snapshot for

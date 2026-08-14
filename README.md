@@ -25,15 +25,16 @@ what governs a stage is findable from the stage, and a run loads only the files 
                            Signal Log grouped by functional theme
         |
 /bigin-transform-signal   [Transform] qualify each filed signal, route it to a lane, turn it into
-                           drafted/updated FRs and BRs, keep cross-feature Entities and Business
-                           Scenarios in sync, human-gate every FR/BR change before it's folded in
+                           drafted/updated Use Cases (a user goal with its flow, branches, rules
+                           mirror and open questions) and the BRs governing them, keep
+                           cross-feature Entities in sync, human-gate every UC/BR change first
         |
         |------------------------------------------.
         |                                          |
 /enrich-feature           [Load] domain research    |  presentation-only signals take the Design
         |                  + entity mapping         |  chain — a directive on the feature hub or
-        |                                           |  in DESIGN-PRINCIPLES.md, no FR, no PRD
-/approve-fr               [Load] approve the FRs,   |
+        |                                           |  in DESIGN-PRINCIPLES.md, no UC, no PRD
+/approve-fr               [Load] approve the UCs,   |
         |                  generate/update the PRD  |
         |                                           |
 /prototype-design         [Load] produce a text-level prototype design (flows, screens, states)
@@ -44,7 +45,8 @@ what governs a stage is findable from the stage, and a run loads only the files 
 `/bigin-transform-signal` runs five stages per invocation: **fold-in** (apply staged changes a human
 has since answered — first, so a rerun is always useful), **qualify** (four gates: blocked on an
 answer, source materialized, fidelity, dedup), **route and draft** (one subagent per feature, never
-per lane — a feature's hub and FR/BR files are one ownership domain), **sync** (shared registers,
+per lane — a feature's hub and UC/BR files are one ownership domain), **sync** (shared registers
+and cross-feature use-case changes,
 written sequentially, plus an in-feature conflict check), and **status and report**. Signals it
 can't safely act on are parked `held` with the remedy named, never repaired by re-reading raw
 material — extraction owns that, and its own source audit is where a signal is checked
@@ -67,7 +69,7 @@ _bigin/stages/                    one file per pipeline stage, same ownership. G
     transform/2-qualification.md   filing are separate files because they are separate subagents:
                                    the extractor must not know its rows get grouped downstream
     transform/3-routing.md
-    transform/3-lane-{fr,br,design,entity}.md
+    transform/3-lane-{uc,br,design,entity}.md
     transform/4-sync.md
     transform/5-status.md
 _bigin/templates/                 blank scaffolds for every artifact type, same ownership
@@ -78,16 +80,21 @@ _bigin/templates/                 blank scaffolds for every artifact type, same 
 ├── PAIN-POINTS.md               canonical PP-### register
 ├── ENTITIES.md                  candidate EN-### rows a signal reveals (proposed only)
 ├── DESIGN-PRINCIPLES.md         durable, cross-cutting design constraints
-├── SCENARIOS.md                  single SCN-### register — one row per cross-feature flow
-├── _features/<slug>.md          one Feature Hub per slug — Signal Log, Entities, Business
-│                                 Scenarios, Requirement Readiness, Pain Points
-├── _frs/FR-<NNN> <Title>.md      one Functional Requirement doc per FR
-├── _brs/BR-<NNN> <Title>.md      one Business Rule doc per BR — always its own file, fr: []
-│                                 citing the FR(s) it constrains (or [] if feature-level)
-└── _entities/EN-<NNN> <Title>.md one entity doc per promoted EN-### (domain-modeled, not just
-                                  proposed) — a field-level BR is still its own _brs/ file
+├── _features/<slug>.md          one Feature Hub per slug — Signal Log, Use Cases, Entities,
+│                                 Requirement Readiness, Pain Points
+├── _ucs/UC-<NNN> <Title>.md      one Use Case doc per user goal — THE requirement artifact:
+│                                 actors, flow, branches, rules mirror, open questions. May span
+│                                 features (features: [], owned by primary_feature:)
+├── _brs/BR-<NNN> <Title>.md      one Business Rule doc per BR — always its own file, uc: []
+│                                 citing the use case(s) it governs (or [] if feature-level)
+├── _entities/EN-<NNN> <Title>.md one entity doc per promoted EN-### (domain-modeled, not just
+│                                 proposed) — a field-level BR is still its own _brs/ file
+├── _frs/FR-<NNN> <Title>.md      RETIRED — pre-UC requirement docs, frozen, absorbed_by: UC-###
+└── SCENARIOS.md                  RETIRED — pre-UC SCN-### cross-feature register; a cross-feature
+                                  flow is now one UC
 PRD.md                            consolidated PRD, one section per approved feature
-prototypes/FR-<NNN>-prototype.md flows/screens for an approved feature
+prototypes/FR-<NNN>-prototype.md flows/screens for an approved feature (still FR-keyed — see
+                                  the migration note below)
 epics.md                          generated Epics & User Stories
 ```
 
@@ -98,7 +105,7 @@ Every stage after intake does its real work inside dispatched subagents — one 
 its own, so it cannot resolve a path into wherever the plugin happens to be installed. Copying the
 rulebook and templates into `_bigin/` at init gives skills, subagents, and the `bigin-ba` agent one
 path convention that all three can actually read. It also makes the rules inspectable: a BA can open
-`_bigin/stages/transform/3-lane-fr.md` and see exactly what governed an FR.
+`_bigin/stages/transform/3-lane-uc.md` and see exactly what governed a use case.
 
 The tradeoff is that a project pins the rulebook it was initiated with. `_bigin/system/project.md`
 records `workspace_version`; re-running `/bigin-new-project` after a plugin upgrade refreshes
@@ -120,9 +127,9 @@ for it; **needs authentication** cannot be fixed here at all, since OAuth needs 
 tools** is a name collision, reported rather than reinstalled over. The step never blocks initiation —
 `/bigin-intake direct …` works with no provider at all, and only Mode B's sweep depends on one.
 
-Every FR's own frontmatter `status` (`draft` → `in-review` ⇄ `needs-clarification` → `approved`, human-only per `/approve-fr`) is the authoritative gate — a feature can have more than one FR at different stages at once, though normally a feature carries just one FR across its life (an update edits it in place rather than forking). Each Feature Hub's `## Requirement Readiness` table is a refreshed snapshot for orientation, not the gate itself. Features are matched by slug across stages, so `/extract-signal` and `/bigin-transform-signal` update an existing hub/FR rather than duplicating one when new signals map to the same feature.
+Every UC's own frontmatter `status` (`draft` ⇄ `needs-clarification` → `enriched` → `approved`, human-only per `/approve-fr`, → `consolidated`) is the authoritative gate. A feature carries one use case per distinct user goal, so several at different stages at once is normal, and a use case that spans features is owned by one of them (`primary_feature:`) while appearing on every participating hub. Each Feature Hub's `## Requirement Readiness` table is a refreshed snapshot for orientation, not the gate itself. Features are matched by slug across stages, so `/extract-signal` and `/bigin-transform-signal` update an existing hub/UC rather than duplicating one when new signals map to the same feature — and a new signal about an existing *goal* is a step, branch, or rule inside that UC, not a second one.
 
-> **Migration note:** `/enrich-feature`, `/approve-fr`, `/prototype-design`, and `/consolidate-prd` still read the older `.bigin/features/FR-<id>-*.md` single-file model. They haven't been moved onto the `01-Requirements/` layout yet — that's the next stage of this migration, not yet done. See `_bigin/conventions/conventions.md` § Reconciliation notes for the full list of gaps.
+> **Migration note:** `/enrich-feature`, `/approve-fr`, `/prototype-design`, and `/consolidate-prd` still read the older `.bigin/features/FR-<id>-*.md` single-file model **and still key on the retired `FR-###` artifact**. They haven't been moved onto the `01-Requirements/` layout or onto `UC-###` yet — that's the next stage of this migration, not yet done, and it is now a two-axis gap. A feature that finishes `/bigin-transform-signal` cannot proceed further without a human. See `_bigin/conventions/conventions.md` § Reconciliation notes for the per-skill breakdown.
 
 ## Configuration
 
@@ -133,7 +140,7 @@ Every FR's own frontmatter `status` (`draft` → `in-review` ⇄ `needs-clarific
 Every stage is available two ways: type `/<stage>` yourself, or let the `bigin-ba` agent drive the
 pipeline stage by stage. The agent reads the vault to decide what runs next, continues automatically
 where the next stage needs no decision, and stops at the ones that do — `/approve-fr`, and
-`/bigin-transform-signal`'s FR/BR review gate. The human-confirmation requirements live inside those
+`/bigin-transform-signal`'s UC/BR review gate. The human-confirmation requirements live inside those
 skills, so they hold whether a person or the agent invoked them.
 
 ## Install (local development)
