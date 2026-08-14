@@ -72,11 +72,12 @@ extraction subagent. This is what lets a statement that resolves someone else's 
 - **> 40:** scope it down to `{inbox_dir}`'s questions plus `{fr_dir}` questions for features in the
   note's `declared_features` — cuts context noise without dropping anything the batch could resolve.
 
-Empty queue: say so and stop.
+### Step 1.3 - Next or Stop
+Empty queue: say so and stop. Otherwise, report the full list and continue to `§ Step 2`
 
 ## Step 2 — Process the queue, one note at a time
 
-Batches of **5**, reporting after each (§ Step 5) before the next. Within a batch, process notes
+Batches of **5**, reporting after each (§ Step 4) before the next. Within a batch, process notes
 **sequentially, never in parallel** — two notes can anchor to the same feature, and parallel edits to one
 hub file race.
 
@@ -219,25 +220,6 @@ Either way, a human resolves it by writing the slug into the `A:` line — minti
 the scope is genuinely new, using the draft as a starting point rather than accepting it verbatim — and
 ticking the box. The next run folds the note in and anchors it properly. No separate command, no
 re-extraction of what was already correct.
-
-## Why the pipeline has this shape
-
-Three choices here cost more than the obvious alternative, and each pays for itself in recall:
-
-- **Extraction and filing are separate subagents on different models.** Reasoning over natural language to
-  find every discrete claim is the hardest thing in this skill and goes on the strong model; turning a
-  finished table into themed hub rows is mechanical and goes on `haiku`. Merging them put extraction —
-  the first of seven jobs — on the model least suited to it, under budget pressure from the six after it.
-- **The filing subagent never learns about themes until extraction is done.** Consolidation rules living
-  in the same head as extraction make the flat table the compressible one, whatever it's told. Splitting
-  the rulebook makes that structural instead of exhortative.
-- **The audit reads the whole source a second time on `sonnet`.** Expensive, and the reason the numbers
-  move: two independent passes over one source recover the asides a single pass drops. Judging whether a
-  plausible-sounding row is actually supported is also the weakest thing a small model does, and this is
-  the last point where raw material is still read by anything.
-
-Everything else defaults to `haiku`. Fall back to the session default for a single filing subagent only if
-it reports being stuck on something a written question can't cover — rare, and worth a line in the report.
 
 ## Additional resources
 
