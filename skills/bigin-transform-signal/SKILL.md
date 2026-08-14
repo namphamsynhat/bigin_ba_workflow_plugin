@@ -10,9 +10,9 @@ Turns `new`/`held` signals on a Feature Hub's `## Signal Log` into drafted/updat
 design directives, syncing cross-feature Entities and Business Scenarios. Every FR/BR change passes a
 written, resumable human-review gate before integration.
 
-This skill is the procedure; `{conventions_reference}` is the standard it follows. Read that skill's
-§ Feature Hub, § Status vocabularies, § Feedback handling, and § Resumable unattended apply before
-Stage 1 — not the whole file.
+This skill is the procedure; `{conventions_reference}` is the standard it follows. Before Stage 1, read
+only its § Feature Hub, § Status vocabularies, § Feedback handling, and § Resumable unattended —
+not the whole file.
 
 ## Operating modes
 
@@ -97,10 +97,11 @@ Two rules matter enough to state here:
 
 ## Stage 3 — Route and draft
 
-Route each qualified signal to exactly one lane via the decision table in
-**`{stages_dir}/3-routing.md`**, which also covers the two calls that are lookups rather than properties
-of the signal: new-vs-update (does an existing FR/BR on this feature already cover it?) and
-durable-vs-feature-scoped for a design signal.
+Route each qualified signal to exactly one lane via the decision table in **`{stages_dir}/3-routing.md`**.
+That table also covers two lookups — not properties of the signal itself:
+
+- **New vs. update:** does an existing FR/BR on this feature already cover it?
+- **Durable vs. feature-scoped:** for a design signal.
 
 | Lane | Produces | Guide |
 |---|---|---|

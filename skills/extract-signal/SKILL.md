@@ -1,6 +1,6 @@
 ---
 name: extract-signal
-description: Drain the raw intake queue in 00-Inbox — extract each INT-### note's signals into a flat raw record on the note, audit that record against the source in both directions, then anchor every signal to a FEATURES.md slug and file it onto that feature's Signal Log grouped by functional theme. A signal that can't be anchored raises a written question on the note instead of a guess, parking it needs-clarification until a human supplies the slug. Never drafts or edits an FR — that's a later step. Use when the ask is to extract signals, process the intake queue, drain 00-Inbox, or map intake to features.
+description: This skill should be used when the ask is to extract signals, process the intake queue, drain 00-Inbox, or map intake to features. This skill will drain the raw intake queue in 00-Inbox — extract each INT-### note's signals into a flat raw record on the note, audit that record against the source in both directions, then anchor every signal to a FEATURES.md slug and file it onto that feature's Signal Log grouped by functional theme. A signal that can't be anchored raises a written question on the note instead of a guess, parking it needs-clarification until a human supplies the slug. Never drafts or edits an FR — that's a later step.
 argument-hint: "[resume]"
 disallowed-tools: AskUserQuestion
 ---
@@ -50,6 +50,8 @@ improvises and reports success.
 
 ## Step 1 — Build the queue
 
+### Step 1.1 - get the int list
+
 Scan `{inbox_dir}` for `INT-###` notes and read each frontmatter:
 
 - `kind: info` → skip. Operational/admin capture, never refined into signals.
@@ -60,11 +62,15 @@ Scan `{inbox_dir}` for `INT-###` notes and read each frontmatter:
 - `status: needs-clarification`, nothing newly answered → still waiting on a human.
 - Any other `status` (`in-review`, `consumed`, …) → already processed, skip.
 
-Then collect the vault's **open questions** once for the batch: every unchecked `- [ ] Q:` line across
-`{fr_dir}` and `{inbox_dir}`. Pass this list to each extraction subagent so an incoming statement that
-resolves a question raised elsewhere is typed `answer` and cited, rather than landing as a generic
-requirement or being dropped as restated context. On a vault with more than ~40 open questions, scope the
-list to `{inbox_dir}` plus the FRs of features named in the note's `declared_features`.
+### Step 1.2 - Collect open questions
+
+Scan `{fr_dir}` and `{inbox_dir}` once for every unchecked `- [ ] Q:` line, then pass the list to each
+extraction subagent. This is what lets a statement that resolves someone else's question get typed
+`answer` and cited, instead of landing as a generic requirement or being dropped as restated context.
+
+- **≤ 40 open questions:** pass the full list.
+- **> 40:** scope it down to `{inbox_dir}`'s questions plus `{fr_dir}` questions for features in the
+  note's `declared_features` — cuts context noise without dropping anything the batch could resolve.
 
 Empty queue: say so and stop.
 
@@ -129,9 +135,12 @@ other way.
 ## Step 3 — Verify the filing
 
 After each batch, one `Agent` (`haiku`, `general-purpose`, foreground) checks the batch's own claims. Per
-note and per slug reported, confirm `{hub_dir}/<slug>.md`'s `## Signal Log` cites that `INT-###`, that
-**every anchored row number in the note's table appears in exactly one hub row's `Source` cite** — none
-missing, none cited twice — and that the note's `status` matches its `## Open Questions` state.
+note and per slug reported, confirm:
+
+- `{hub_dir}/<slug>.md`'s `## Signal Log` cites that `INT-###`.
+- **Every anchored row number in the note's table appears in exactly one hub row's `Source` cite** — none
+  missing, none cited twice.
+- The note's `status` matches its `## Open Questions` state.
 
 Row counts are *not* the check: a themed row covers several note rows by design, so counting hub rows
 against note rows would flag every correct consolidation and miss the one thing that actually goes wrong,
@@ -185,26 +194,31 @@ hub enrolment-eligibility ## Signal Log — one themed row:
 The `Source` cite's row numbers are what makes this followable — they're the traceability that replaces
 one-row-per-signal, and Step 3 verifies every anchored note row appears in exactly one of them.
 
-Four things never merge: signals from **different notes or runs** (the log is append-only — a continuing
-theme cites the older row as `Notes: extends #<n>`), signals with **different `Status`** (only `new`
-consolidates), a presentation-only signal with a **behavioural** one (different lanes, and the design lane
-skips the approval gate), and two signals that **contradict** each other (that's a `conflict`). Full
-rules: `{filing_rules}` § Consolidating into themed hub rows.
+Four things never merge — full rules in `{filing_rules}` § Consolidating into themed hub rows:
+
+- **Different notes or runs.** The log is append-only; a continuing theme cites the older row as
+  `Notes: extends #<n>`.
+- **Different `Status`.** Only `new` rows consolidate.
+- **Presentation vs. behavioural.** Different lanes, and the design lane skips the approval gate.
+- **Contradicting signals.** That's a `conflict`, not a merge.
 
 Over-merging is the failure mode to watch. A row that reads like one ask but hides four is worse than a
 long log — the detail a drafter needs is still on the page but no longer legible as separate obligations.
 
 ## The feature-mapping loop
 
-A signal matching no `{requirements_file}` slug is never guessed onto one. It becomes a question on the
-`INT` note (owner: team), tagged `needs-review`, and the note flips to `needs-clarification`. The
-question's wording depends on why the match failed (`{filing_rules}` § Anchoring a signal to a feature):
-ambiguous among two or more existing slugs asks which one; nothing fitting at all comes with a **drafted
-slug and one-line scope** for a possible new feature, so the human is confirming or editing a proposal
-rather than inventing one from a blank line. Either way, a human resolves it by writing the slug into the
-question's `A:` line — minting a `proposed` row first if the scope is genuinely new, using the draft as a
-starting point rather than accepting it verbatim — and ticking the box. The next run picks the note up as
-a fold-in and anchors it properly. No separate command, no re-extraction of what was already correct.
+A signal matching no `{requirements_file}` slug is never guessed onto one — it becomes a question on the
+`INT` note (owner: team, tagged `needs-review`), and the note flips to `needs-clarification`. Wording
+depends on why the match failed (`{filing_rules}` § Anchoring a signal to a feature):
+
+- **Ambiguous among existing slugs:** the question asks which one.
+- **Nothing fits:** the question ships with a **drafted slug and one-line scope** for a possible new
+  feature — a proposal to confirm or edit, not a blank line to fill.
+
+Either way, a human resolves it by writing the slug into the `A:` line — minting a `proposed` row first if
+the scope is genuinely new, using the draft as a starting point rather than accepting it verbatim — and
+ticking the box. The next run folds the note in and anchors it properly. No separate command, no
+re-extraction of what was already correct.
 
 ## Why the pipeline has this shape
 
