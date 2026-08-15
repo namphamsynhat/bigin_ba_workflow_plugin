@@ -122,6 +122,9 @@ absorbed_by:             # retired FR only: the UC-### that took this FR's conte
 source_ids: []           # intake only: email provider's conversation+message ids (Outlook, or Spark thread id) /
                          # meeting provider's meeting id (Fathom, Spark, or Firefly) — re-run dedup; see
                          # `email_provider`/`meeting_provider` in `_bigin/system/project.md`
+raw_sources: []          # intake only: manifest of ## Raw's blocks, one per "### SRC-n" —
+                         # "SRC-1 · transcript · <ref>". /extract-signal's read plan; a source
+                         # missing here is never read (§ Intake capture & the question loop)
 tags: []                 # intake only: e.g. needs-review (unknown sender/invitee)
 owner: team
 updated: 2026-07-03
@@ -427,8 +430,8 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
     raw record — **the two tables' row counts are not meant to match**, and anything comparing them
     is checking the wrong thing. Signals never merge across notes, across `Status` (only `new`
     consolidates), across the design/behaviour boundary, or when they contradict each other. A
-    theme of one is normal. Full rules: `/extract-signal`'s `3-filing.md` § Consolidating into
-    themed hub rows.
+    theme of one is normal. Full rules: `/extract-signal`'s `3-filing.md`
+    § Step 2 — File to the Feature Hub.
   - **`#` is permanent** once assigned, like a `BR-###` number — never renumbered or deleted. A
     conflicting or superseding signal is always a **new row**; the old row's `Status`/`Notes` gets
     updated to point at the row that superseded it. History is never rewritten in place.
@@ -619,16 +622,43 @@ signals in `/extract-signal`. Semantics: § Signal → feature mapping → Decla
 
 ## Intake capture & the question loop
 
-`/bigin-intake` is **capture-only**: it writes frontmatter, verbatim `## Raw`, and attachments —
-nothing else. The only judgement it makes is the `kind:` filing label. All interpretation belongs
-to `/extract-signal`, which fills the note's `## Extracted signals` table
+`/bigin-intake` is **capture-only**: it writes frontmatter, verbatim `## Raw`, attachments, plus two
+bookkeeping sections — `## Capture history` (what was fetched, what failed) and `## Referenced but not
+captured` (things the source points at but doesn't contain, such as files pasted into meeting chat).
+Nothing else. `## Raw` holds source text only: a retry narrative written there is read downstream as if
+the client had said it. The only judgement intake makes is the `kind:` filing label.
+
+`## Raw` is a **container of source blocks**, not a body of text — one
+`### SRC-<n> · <kind> · <ref>` block per artifact captured, `kind` being
+`transcript · summary · email · attachment · webpage · note`, each mirrored as an entry in the
+`raw_sources:` frontmatter manifest. `/extract-signal` plans its reads from that manifest and reads
+every block on it, so a source with no block is a source nothing downstream will ever see. Three rules
+carry the weight: a meeting stores its **full transcript** in its own block and the AI recap in a
+separate `summary` block (derived text — navigable, never quotable as a signal or a `Why`); an
+attachment gets a block holding its text, or its path when binary; and an append is always a **new**
+block, never merged into an existing one.
+
+All interpretation belongs to `/extract-signal`, which fills the note's `## Extracted signals` table
 (`_bigin/templates/intake.md`): one row per signal —
 `# | Type | Signal | Why | Source | Feature | Status | Notes` — each traced to a message,
-timestamp, or attachment, and every `requirement`/`feedback` row carrying a `Why` (the client's
-stated reason). A requirement without a stated why is not ready — the missing why becomes a
-`question` row, never a guessed rationale. `Feature` and `Status` make the row's anchor and
-progress machine-readable — `Status` reuses the same vocabulary as the Feature Hub's
-`## Signal Log` (§ Feature Hub) so a signal reads the same state at both levels.
+timestamp, or attachment.
+
+Every claim is classified **as-is / pain / to-be** before it is typed
+(`_bigin/stages/extract/2-extraction.md` § Classify first): a description of the system being replaced
+is a `decision`, a named frustration is a `pain-point`, and only a statement about the new system is a
+`requirement`. This matters because most client sessions are a walkthrough of the incumbent product, and
+an extractor that skips the call records the software being thrown away as the specification for its
+replacement.
+
+A `Why` is carried by `requirement`/`feedback` rows only, and is one of three values: the client's stated
+reason · `derived from #<n>` (a to-be inferred from as-is + pain rows, flagged for client confirmation) ·
+the literal `not stated`. A guessed rationale is never acceptable. `not stated` rows are recorded as
+such; the ones whose missing reason would change what gets built are raised together in **one** batched
+question rather than one question each — a note carrying dozens of checkboxes gets none of them answered.
+
+`Feature` and `Status` make the row's anchor and progress machine-readable — `Status` reuses the same
+vocabulary as the Feature Hub's `## Signal Log` (§ Feature Hub) so a signal reads the same state at both
+levels.
 
 This table is the vault's **raw signal record**, and it stays flat: one row per signal in arrival
 order, never merged or grouped, however many rows describe the same thing. It's what the source
@@ -863,6 +893,8 @@ Every `[requirement]`/`[feedback]` signal `/bigin-transform-signal` folds in lan
 | A data field/entity described — a thing the business tracks and its attributes | a `proposed` row in `ENTITIES.md`, later promoted to `EN-###` `## Fields` (§ Entity Data Model) — new or existing entity |
 | Narrative context — the client's stated why, not yet actionable on its own | the UC's `## 1` Business Need / Goal |
 | A concrete frustration/cost the client named, with no requirement attached yet | a new `PP-###` in `01-Requirements/PAIN-POINTS.md` (§ Pain Point Register), its id added to the UC's `pain_points:` once one exists |
+| A description of how the **current/legacy** system behaves (`[decision]`, as-is) | context, not a build item: an `ENTITIES.md` row when it names data the business tracks, the UC's `## 1` Business Need when it explains why the replacement is wanted. Never a functional requirement — it describes software being retired |
+| Something a person committed to supply or do (`[commitment]`) | stays on its feature hub's `## Signal Log` as its own row until delivered; its `Notes` names the row or question it unblocks. Often the authoritative version of a rule the transcript states loosely |
 
 A `[pain-point]` with no attached requirement is not a gap to fill — it's kept on record
 (`PP-###`, `Status: open`) until a later signal turns it into a UC/BR line or an epic/story
@@ -924,7 +956,10 @@ exists).
 
 ## Pain Point Register
 
-Every `[pain-point]` signal gets a **`PP-###` id the moment it's extracted** — vault-wide,
+Every `[pain-point]` signal gets a **`PP-###` id the moment it's extracted** — **or cites the existing
+one it restates.** Clients repeat the same frustration in meeting after meeting, so `/extract-signal`
+matches against the register before minting: a match adds the new `INT-###` to that row's `Source` and
+cites its id on the signal row instead of creating a near-duplicate. Ids are vault-wide,
 numbered like `BR-###` (scan `01-Requirements/PAIN-POINTS.md`, not any UC, since a pain point can
 predate its feature's UC) — tracked in `01-Requirements/PAIN-POINTS.md`
 (`type: pain-point-register`, singleton, instantiate from
@@ -1072,7 +1107,7 @@ How `/extract-signal` consumes a non-empty `declared_features:`:
 
 When no existing row fits, `/extract-signal` never guesses the anchor — but it doesn't stop at "no
 match" either. It distinguishes two failure shapes, because they ask a human two different questions
-(full rules: `/extract-signal`'s `3-filing.md` § Anchoring a signal to a feature):
+(full rules: `/extract-signal`'s `3-filing.md` § Step 1 — Anchor):
 
 - **Ambiguous among existing features** — more than one slug's scope plausibly fits: record the
   candidates on the signal line (`unresolved — candidates: a | b`) and ask which one.
@@ -1084,8 +1119,8 @@ match" either. It distinguishes two failure shapes, because they ask a human two
 Either way:
 
 - Add an Open Question (owner: team) on the closest UC, or on the source INT note itself if no UC
-  exists yet, worded for whichever shape it is (`3-filing.md` § Raising a question instead of
-  guessing has the exact templates).
+  exists yet, worded for whichever shape it is (`3-filing.md` § Step 5 — Questions has the exact
+  templates).
 - Park the source INT note `status: needs-clarification` and add `needs-review` to its `tags:` —
   the same surfacing mechanism as any other open question, so it's visible as specifically needing
   a human to map the feature, not just answer a content question.

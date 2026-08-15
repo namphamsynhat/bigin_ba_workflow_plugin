@@ -1,230 +1,211 @@
 ---
 name: bigin-transform-signal
-description: This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's staged UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), Design Directives, and cross-feature Entities (EN). Stages all UC/BR updates through a resumable human-review gate. 
+description: This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's staged UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), Design Directives, and cross-feature Entities (EN). Stages all UC/BR updates through a resumable human-review gate.
 argument-hint: "[feature slug, or omit for all pending, or resume]"
 ---
 
 # Bigin Transform Signal
 
-Transforms `new`/`held` signals on a Feature Hub's `## Signal Log` into drafted or updated **Use Cases** (UC), governing **Business Rules** (BR), Design Directives.
+Turn `new`/`held` signals on a Feature Hub's `## Signal Log` into **Use Cases** (UC), **Business Rules**
+(BR), and **Design Directives**. Every UC/BR change passes a written, resumable human-review gate.
 
-Every UC/BR change passes a written, resumable human-review gate before integration.
+**The output is a use case, not a list of requirement fragments.** One `UC-###` is one user goal:
+actors and trigger (`## 1`), the flow that delivers it (`## 2`), the branches that can happen instead
+(`## 3`), a read-only mirror of the rules governing it (`## 4`), its open questions plus decision log
+(`## 5`). A UC may span features, is updated in place as signals keep arriving, and is what a human
+reviews and approves. `FR-###` is retired.
 
-**The output is a use case, not a list of requirement fragments.** One `UC-###` is one user goal: its
-actors, trigger, pre- and post-conditions, the flow that delivers the goal (`## 2`), the branches that
-can happen instead (`## 3`), a read-only mirror of the rules that govern it (`## 4`), and its still-open
-questions plus the decision log behind them (`## 5`). A UC may span features, is updated in place as
-signals keep arriving, and is the artifact a human reviews and approves. `FR-###` is retired —
-`{conventions_reference}` § Use Case is the definition, and this skill's
-`references/use-case-standard.md` is where its shape comes from, with sources.
-
-This skill is the procedure; `{conventions_reference}` is the standard it follows. Before Stage 1, read
-only its § Use Case, § Feature Hub, § Status vocabularies, § Feedback handling, and § Resumable
-unattended — not the whole file.
+This skill is the **procedure**; `{conventions_reference}` is the **standard**. Read only its § Use
+Case, § Feature Hub, § Status vocabularies, § Feedback handling, § Resumable unattended.
 
 ## Operating modes
 
-* **Written gate (default, unattended):** stage UC/BR proposals into `## Discussion`, add
-  `- [ ] Q: ... A:` items to the UC's `## 5` (a BR's `## Open Questions`). Never blocks on a human.
-* **Interactive path:** a question answered inline folds in immediately, no written round-trip.
-* **Design directives are not gated.** They never reach a UC, a PRD, or approval — they feed
-  `/prototype-design`, reviewed in its own right. Write them directly (§ Stage 3,
-  `{stages_dir}/3-lane-design.md`); raise a question only if the directive itself is ambiguous.
+| Mode | Behaviour |
+|---|---|
+| **Written gate** (default, unattended) | stage UC/BR proposals into `## Discussion` + a `- [ ] Q:` on the UC's `## 5` (a BR's `## Open Questions`). Never blocks on a human. |
+| **Interactive** | a question answered inline folds in immediately, no written round-trip. |
+| **Design directives** | **not gated.** They never reach a UC, a PRD, or approval — they feed `/prototype-design`, reviewed in its own right. Write them directly. |
 
 ## Paths
 
-| Variable | Target path | Description |
+| Variable | Path | Notes |
 | :--- | :--- | :--- |
-| `{conventions_reference}` | `_bigin/conventions/conventions.md` | The rulebook: ID scheme, § Use Case, frontmatter schema, status vocabularies, artifact conventions |
-| `{paths_reference}` | `_bigin/conventions/paths.md` | Resolves every `{variable}` the stage files below refer to — what a subagent reads instead of this table |
-| `{stages_dir}` | `_bigin/stages/transform/` | One file per stage, numbered: `1-foldin`, `2-qualification`, `3-routing`, `3-lane-{uc,br,design,entity}`, `4-sync`, `5-status` |
-| `{requirements_file}` | `01-Requirements/FEATURES.md` | The feature slug registry |
-| `{hub_dir}` | `01-Requirements/_features/<slug>.md` | One Feature Hub per slug |
+| `{conventions_reference}` | `_bigin/conventions/conventions.md` | ID scheme, § Use Case, frontmatter, status vocabularies |
+| `{paths_reference}` | `_bigin/conventions/paths.md` | resolves every `{variable}` the stage files use — what a subagent reads instead of this table |
+| `{stages_dir}` | `_bigin/stages/transform/` | `1-foldin`, `2-qualification`, `3-routing`, `3-lane-{uc,br,design,entity}`, `4-sync`, `5-status` |
+| `{requirements_file}` | `01-Requirements/FEATURES.md` | the feature slug registry |
+| `{hub_dir}` | `01-Requirements/_features/<slug>.md` | one Feature Hub per slug |
 | `{uc_dir}` | `01-Requirements/_ucs/UC-<NNN> <Title>.md` | **Use Cases** — the requirement artifact |
-| `{br_dir}` | `01-Requirements/_brs/BR-<NNN> <Title>.md` | Business Rules (each its own file, `uc: []` citing what it governs) |
-| `{entities_file}` | `01-Requirements/ENTITIES.md` | Proposed entity register |
-| `{entity_dir}` | `01-Requirements/_entities/EN-<NNN> <Entity>.md` | Promoted entity specs |
-| `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | Durable cross-cutting design register |
-| `{inbox_dir}` | `00-Inbox/INT-<NNN>.md` | Source intake notes — read frontmatter, `## Extracted signals`, and `## Open Questions` only, never `## Raw` (§ Stage 2) |
-| `{template_*}` | `_bigin/templates/*` | Scaffolds (`use-case`, `br`, `entity`, `entities-register`) |
+| `{br_dir}` | `01-Requirements/_brs/BR-<NNN> <Title>.md` | Business Rules, each its own file, `uc: []` citing what it governs |
+| `{entities_file}` | `01-Requirements/ENTITIES.md` | proposed entity register |
+| `{entity_dir}` | `01-Requirements/_entities/EN-<NNN> <Entity>.md` | promoted entity specs |
+| `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | durable cross-cutting design register |
+| `{inbox_dir}` | `00-Inbox/INT-<NNN>.md` | read frontmatter, `## Extracted signals`, `## Open Questions` **only** — never `## Raw` |
+| `{template_*}` | `_bigin/templates/*` | `use-case`, `br`, `entity`, `entities-register` |
 
-Retired and read-only: `{fr_dir}` (`_frs/`) and `{scenarios_file}` (`SCENARIOS.md`). Ids there still
-resolve; nothing writes to either. A feature that still has FRs gets them adopted into a UC on first
-touch (`{stages_dir}/3-lane-uc.md` § Adopting an existing FR).
+Retired, read-only: `{fr_dir}` (`_frs/`), `{scenarios_file}` (`SCENARIOS.md`). Ids resolve; nothing
+writes. A feature still carrying FRs gets them adopted into a UC on first touch
+(`3-lane-uc.md` § Adopting an existing FR).
 
-All paths are project-relative; `/bigin-new-project` materializes `_bigin/conventions/`,
-`_bigin/stages/`, and `_bigin/templates/`. Confirm they exist before Stage 1 — if not, stop and say
+Missing `_bigin/conventions/`, `_bigin/stages/`, or `_bigin/templates/` → stop, say
 `/bigin-new-project` must run first. A subagent that can't read `3-lane-uc.md` still writes a UC, just
 one following no rule.
 
 ## Execution order
 
-Run the five stages in order every invocation. Stage 1 first is what makes a rerun useful: it
-harvests answers written since the last run before staging anything new.
+```text
+scope = $ARGUMENTS slug, else every {hub_dir} file
+        a UC spanning features is in scope when ANY of its slugs is
 
-Each stage has one file in `{stages_dir}`; the sections below say when to run it and what it hands the
-next stage, the file holds the procedure. **Load a stage file when you reach that stage, not up front** —
-and of the four `3-lane-*.md` guides, only the lanes this run's signals actually hit.
+1  foldin    apply every staged UC/BR change whose question is now answered   [1-foldin.md]
+2  qualify   build the worklist, gate each signal                            [2-qualification.md]
+3  route     send each qualified signal down its lane                        [3-routing.md → 3-lane-*.md]
+4  sync      shared registers + cross-feature UC changes, then conflict-check [4-sync.md]
+5  status    set every status from a live re-count, verify, report            [5-status.md]
+```
 
-| # | Stage | Procedure | Runs in |
-|---|---|---|---|
-| 1 | **Fold-in** — apply every staged UC/BR change whose question has been answered | `1-foldin.md` | orchestrator |
-| 2 | **Qualify** — build the worklist and gate each signal before it can become requirement content | `2-qualification.md` | orchestrator |
-| 3 | **Route and draft** — send each qualified signal down its lane | `3-routing.md` → `3-lane-*.md` | one subagent per feature |
-| 4 | **Sync** — write the shared registers and cross-feature UC changes, then conflict-check each touched feature | `4-sync.md` | orchestrator (sequential) |
-| 5 | **Status and report** — set every status from a live re-count, then verify | `5-status.md` | orchestrator |
+Run all five in order, every invocation. **Stage 1 first is what makes a rerun useful** — it harvests
+answers written since the last run before anything new gets staged.
 
-Scope every stage to the slug in `$ARGUMENTS` when one is given; otherwise scan every
-`{hub_dir}` file. A UC spanning features is in scope when **any** of its slugs is.
+**Load a stage file when you reach that stage, not up front** — and of the four `3-lane-*.md` guides,
+only the lanes this run's signals actually hit.
 
-## Stage 1 — Resumable fold-in
+## Stage 1 — Fold-in
 
-Scan `{uc_dir}`/`{br_dir}` for every artifact whose feature has a `staged` Signal Log row pointing at
-it. Read **`{stages_dir}/1-foldin.md`** for the three-way read (unanswered / already applied / apply
-now), the atomic-write order, how a step id is minted on fold-in, and the mirror reconcile.
+```text
+scan {uc_dir} + {br_dir} for artifacts whose feature has a `staged` Signal Log row pointing at them
+per artifact → three-way read: unanswered | already applied | apply now       [1-foldin.md]
+```
 
-Two rules matter enough to state here:
+- **Reconcile mirrors unconditionally, every run** — including artifacts already applied, and
+  **every** hub a cross-feature UC names. Re-setting a correct field is a no-op; skipping it leaves a
+  hub reading `staged` against a folded-in UC forever.
+- **Never renumber a step.** A new step takes the next unused `S#` in flow order; a removed step keeps
+  its row and id, marked removed. Rules, branches, stories, and prototypes all cite these ids.
 
-- **Reconcile mirrors unconditionally, every run** — including for an artifact that was already
-  applied, and including **every** hub a cross-feature UC names. Re-setting a correct field is a
-  no-op, not a duplicate; skipping it is how a prior run's kill leaves a hub reading `staged` against
-  a folded-in UC forever.
-- **Never renumber a step.** A new step takes the next unused `S#` and sits in flow order; a removed
-  step keeps its row and id, marked removed. Rules, branches, stories, and prototypes all cite these
-  ids.
+## Stage 2 — Qualify
 
-## Stage 2 — Qualify the worklist
-
-Collect every Signal Log row with `Status: new` or `held`. Re-check `held` rows every run — what
-blocked one last time may be resolved now. Empty worklist: say so and stop.
-
-Each row passes four gates — **blocked-on-answer, source-materialized, fidelity, dedup**. Read
-**`{stages_dir}/2-qualification.md`** for the procedure and the exact `Status`/`Notes` per outcome.
-
-Two rules matter enough to state here:
+```text
+worklist = every Signal Log row with Status: new or held      # re-check `held` every run —
+                                                              # what blocked it may now be resolved
+empty → say so, stop
+each row passes four gates, in order, stopping at the first failure:
+    1 blocked-on-answer · 2 source-materialized · 3 fidelity · 4 dedup        [2-qualification.md]
+```
 
 - **Detect source problems; never fix them.** A signal whose note awaits an answer, whose attachment
-  was never pulled, or whose thread has no reply yet is parked `held` with the remedy named — never
-  repaired by re-reading `## Raw` or pulling the source here. Extraction owns raw material; re-running
-  `/bigin-intake` and `/extract-signal` re-derives a signal whose source has since grown.
-- **Never invent a Signal Log status.** Fixed vocabulary: `new · held · staged · applied · question ·
-  conflict · superseded · rejected` (`conventions.md` § Feature Hub). A redundant signal is `applied`
-  with a `Notes` pointer naming the step or rule that covers it, not `removed` or `duplicated` —
-  `removed` is a UC/BR status, human-gated only (hard rule 4).
+  was never pulled, or whose thread has no reply is parked `held` with the remedy named. Extraction
+  owns raw material — a transform-side pull produces a richer note that nothing re-extracts.
+- **Never invent a Signal Log status.** Fixed: `new · held · staged · applied · question · conflict ·
+  superseded · rejected`. A redundant signal is `applied` with a pointer, never `removed` (a UC/BR
+  status, human-gated) or `duplicated` (doesn't exist).
 
 ## Stage 3 — Route and draft
 
-Route each qualified signal to exactly one lane via the decision table in **`{stages_dir}/3-routing.md`**.
-That table also covers two lookups — not properties of the signal itself:
-
-- **Which UC, new or update:** does an existing use case cover this *goal*? Most signals are a step, a
-  branch, or a rule inside a workflow that already exists.
-- **Durable vs. feature-scoped:** for a design signal.
+```text
+per qualified signal → exactly one lane, per clause not per row              [3-routing.md]
+```
 
 | Lane | Produces | Guide |
 |---|---|---|
-| UC | New or updated `UC-###` — steps, flows, `## 1` metadata, `## 4` mirror rows — staged into `## Discussion` | `{stages_dir}/3-lane-uc.md` |
-| BR | New or updated `BR-###`, its own file, `uc: []` citing what it governs | `{stages_dir}/3-lane-br.md` |
-| Design | A `{design_principles_file}` row, or a directive on the hub's `## Design Directives` | `{stages_dir}/3-lane-design.md` |
-| Entity | An `{entities_file}` row promoted to `{entity_dir}` | `{stages_dir}/3-lane-entity.md` |
-| Context | The UC's `## 1` Business Need / Goal, or a `PP-###` id on its `pain_points:` | `{stages_dir}/3-lane-uc.md` |
+| UC | new/updated `UC-###` — steps, flows, `## 1` metadata, `## 4` mirror — staged into `## Discussion` | `3-lane-uc.md` |
+| BR | new/updated `BR-###`, its own file, `uc: []` citing what it governs | `3-lane-br.md` |
+| Design | a `{design_principles_file}` row, or a hub `## Design Directives` row | `3-lane-design.md` |
+| Entity | an `{entities_file}` row promoted to `{entity_dir}` | `3-lane-entity.md` |
+| Context | the UC's `## 1` Business Need / Goal, or a `PP-###` on its `pain_points:` | `3-lane-uc.md` |
 
-**Fan out one subagent per feature slug, never per lane.** A feature's hub and its UC/BR files are one
-ownership domain — two lanes on the same feature routinely touch the same UC, so a per-lane fan-out
-races itself. Features are independent and parallelize safely; within a feature, process signals
-sequentially. Dispatch prompt: **`references/agent-dispatch.md`**.
+Two lookups happen **inside** a lane, not at routing: **which UC, new or update** (most signals are a
+step, branch, or rule in a workflow that already exists) and **durable vs. feature-scoped** for design.
 
-**Subagents never write a shared register, and never a UC another feature owns.** `{entities_file}`,
-`{entity_dir}`, and `{design_principles_file}` are vault-wide. A `UC-###` is written only by its
-`primary_feature`'s subagent — a UC spanning three features would otherwise have three concurrent
-writers. A subagent *reports* entity candidates, cross-cutting-design candidates, and
-`cross_feature_uc_change` items; the orchestrator applies them sequentially in Stage 4. A subagent does
-write its own feature's hub, its own UCs, and its BRs.
+```text
+FAN OUT ONE SUBAGENT PER FEATURE SLUG, never per lane                        [references/agent-dispatch.md]
+    → a feature's hub + UC/BR files are one ownership domain; two lanes routinely touch the same UC
+    → features are independent and parallelize safely; within a feature, process sequentially
+
+a subagent NEVER writes:  {entities_file} · {entity_dir} · {design_principles_file}   # vault-wide
+                          a UC-### owned by another feature's primary_feature
+                          another feature's hub · anything under {inbox_dir}
+    → it REPORTS entity candidates, design-principle candidates, cross_feature_uc_change items
+    → Stage 4 applies them sequentially
+a subagent DOES write:    its own feature's hub, its own UCs, its BRs
+```
 
 ## Stage 4 — Sync and conflict-check
 
-Write the shared registers and every cross-feature UC change from what Stage 3's subagents reported —
-**one at a time, in the orchestrator** — then write each participating hub's `## Use Cases` pointer and
-conflict-check each touched feature, scoped to that feature. Procedure: **`{stages_dir}/4-sync.md`**.
+```text
+orchestrator, sequential, after every Stage 3 subagent has reported          [4-sync.md]
+    write shared registers + every cross-feature UC change, ONE AT A TIME
+    write each participating hub's ## Use Cases pointer
+    conflict-check each touched feature, scoped to that feature
+```
 
-A cross-feature UC change is **staged, not applied**: it is UC content, so it passes the same gate as
-any other. Most signals touch no entity. Never promote an entity speculatively, and never auto-resolve
-a contradiction: raise it, name both sides, stop.
+A cross-feature UC change is **staged, not applied** — it is UC content, so it passes the same gate.
+Most runs touch no entity; never promote one speculatively. Never auto-resolve a contradiction: raise
+it, name both sides, stop.
 
 ## Stage 5 — Status and report
 
-**Set every status last, from a live re-count** — never decide it earlier in a stage and leave it stale
-(`conventions.md` § Open Questions ↔ status consistency). On a UC, count the `## 5` **Still open** list
-only; a decision-log row is answered history. Then run the seven verification checks before reporting:
-each catches a real failure that otherwise reports as success. Procedure and the full checklist:
-**`{stages_dir}/5-status.md`**.
-
-A verification mismatch is blocking: repair and re-check rather than report a count the vault doesn't
-support.
+```text
+orchestrator, last                                                           [5-status.md]
+    set EVERY status from a LIVE RE-COUNT — never from what the run intended
+        on a UC, count the ## 5 Still open list only; a decision-log row is answered history
+    run the seven verification checks
+    mismatch → BLOCKING: repair, re-check, then report
+```
 
 ```text
 Stage 1 (fold-in): <N> UC/BR resolved — <slug>: UC-### now draft, ready for /enrich-feature
 Stage 2 (qualify): <N> qualified, <N> held (<reason>), <N> applied as duplicate/already-covered
-Stage 3 (draft):   <N> UC created, <N> updated, <N> BR created, <N> BR updated — <slug>: UC-### (staged, needs-clarification | staged, draft)
-                   steps staged: <slug> UC-### — <N> new step(s), <N> changed, <N> flow(s)
+Stage 3 (draft):   <N> UC created, <N> updated, <N> BR created, <N> BR updated
+                   — <slug>: UC-### (staged, needs-clarification | staged, draft)
+                   steps staged: <slug> UC-### — <N> new, <N> changed, <N> flow(s)
                    design: <N> directive(s) — <slug> ## Design Directives, <N> DESIGN-PRINCIPLES row(s)
-Stage 4 (sync):    <N> entity promotion(s), <N> cross-feature UC change(s), <N> in-feature conflict(s) — or "none this run"
+Stage 4 (sync):    <N> entity promotion(s), <N> cross-feature UC change(s), <N> conflict(s) — or none
 cross-feature:     UC-### spans <slug> · <slug> — pointers written on both
-remaining unanswered: <slug>: UC-###/BR-### — N open question(s), owner client|team
-next: <slug> ready for /enrich-feature | <slug> ready for /prototype-design (design-only)
+remaining:         <slug>: UC-###/BR-### — N open question(s), owner client|team
+next:              <slug> ready for /enrich-feature | <slug> ready for /prototype-design (design-only)
 ```
 
 ## Failure modes
 
 Each produces a run that looks clean. Ordered by cost to discover later.
 
-- **Drafting from an unqualified signal.** Skipping Stage 2 produces a flow built on an incomplete
-  source or an unchased rationale. It reaches `/approve-fr` looking identical to a sound one.
-- **Inventing a step, a validation, or a branch nobody stated.** A plausible-looking system response
-  is the cheapest way to launder a guess into approved scope, and a flow reads as complete once it has
-  one. Missing → a question, or a step that names the gap.
-- **Renumbering steps to keep them sequential.** Every `S#` is cited from a rule's enforcement point, a
-  branch point, a story, or a prototype screen. Non-sequential ids are the design.
-- **Minting a second UC for the same goal.** Two use cases covering one goal split the review and drift
-  against each other. New signals about an existing goal are updates — `3-routing.md` § Which UC.
-- **Fixing a source problem instead of returning it.** Pulling a missing attachment or re-reading
-  `## Raw` makes a richer note that nothing re-extracts — the new material is lost while the note
-  looks complete.
-- **Writing a rule statement into a UC's `## 4`.** That table is a mirror; `BR-###` is the source. A
-  rule written in both places drifts, and the UC copy is the one reviewers trust.
-- **Manufacturing a question to have one.** Each unnecessary question adds a round-trip and parks an
-  artifact at `needs-clarification` that was ready to fold.
-- **Routing a behaviour change down the Design lane.** That lane skips the PRD and the approval gate,
-  which makes it the cheap path — a misrouted behaviour change reaches a prototype never reviewed as
-  scope (`{stages_dir}/3-routing.md` § The design boundary test).
-- **Treating a repeated ask as noise.** A duplicate is `applied` with a pointer, never dropped — the
-  second mention is evidence of priority.
-- **Writing a shared register, or another feature's UC, from a per-feature subagent.** Two concurrent
-  features `Grep` the same highest id and both mint `EN-007`, or one write overwrites the other.
-- **Pointing only the primary hub at a cross-feature UC.** The other features read as uninvolved.
-- **Deciding a conflict.** Recency settles a supersession, never a disagreement between two people's
-  stated requirements. Raise it, name both sides, stop.
-- **Setting status early.** A status decided mid-stage and left stale is this vault's most common
-  drift — re-count and set it last, every time.
+- **Drafting from an unqualified signal** — a flow built on an incomplete source reaches `/approve-fr`
+  looking identical to a sound one.
+- **Inventing a step, validation, or branch nobody stated** — the cheapest way to launder a guess into
+  approved scope, and a flow reads as complete once it has one. Missing → a question.
+- **Renumbering steps** — every `S#` is cited from a rule, a branch, a story, or a prototype screen.
+  Non-sequential ids are the design.
+- **Minting a second UC for the same goal** — splits the review and drifts. New signals about an
+  existing goal are updates.
+- **Fixing a source problem instead of returning it** — the new material is lost while the note looks
+  complete.
+- **Writing a rule statement into a UC's `## 4`** — that table is a mirror; `BR-###` is the source, and
+  the UC copy is the one reviewers trust.
+- **Manufacturing a question** — each one adds a round-trip and parks an artifact that was ready.
+- **Routing a behaviour change down the Design lane** — that lane skips the PRD and the approval gate,
+  so it reaches a prototype never reviewed as scope.
+- **Treating a repeated ask as noise** — a duplicate is `applied` with a pointer; the second mention is
+  evidence of priority.
+- **Writing a shared register, or another feature's UC, from a per-feature subagent** — two features
+  `Grep` the same highest id and both mint `EN-007`.
+- **Pointing only the primary hub at a cross-feature UC** — the other features read as uninvolved.
+- **Deciding a conflict** — recency settles a supersession, never a disagreement.
+- **Setting status early** — this vault's most common drift. Re-count and set it last, every time.
 
 ## Model
 
-Per-feature subagents run on the **session's default model**, not `haiku`: drafting is judgment-heavy
-(which UC a signal belongs to, where a step sits in a flow, wording a self-contained question,
-spotting a cross-feature goal). Contrast `extract-signal`, mechanical against a tight rule set,
-`haiku` throughout.
+Per-feature subagents run on the **session default model**, not `haiku`: drafting is judgment-heavy
+(which UC a signal belongs to, where a step sits in a flow, spotting a cross-feature goal). Contrast
+`/extract-signal`, mechanical against a tight rule set.
 
-Deep fidelity checking belongs to **`extract-signal`'s source audit**, next to the raw material
-where a quote-anchored check is cheap. This skill does the shallow half only (§ Stage 2): the hub row
-matches the note's row and its `Source` cite is specific. Re-reading transcripts here would duplicate
-a rule that already has an owner, then drift from it.
+Deep fidelity checking belongs to **`/extract-signal`'s source audit**, next to the raw material where
+a quote-anchored check is cheap. This skill does the shallow half only (Stage 2, Gate 3).
 
 ## Additional resources
 
-Paths are in § Paths; each is cited at the stage that needs it. Load a lane guide only for lanes this
-run's signals actually hit.
-
-- **`references/agent-dispatch.md`** — the per-feature subagent prompt and its report contract.
+- **`references/agent-dispatch.md`** — the per-feature subagent prompt, its report contract, and the
+  wave-verification checklist.
 - **`references/use-case-standard.md`** — where the UC artifact's shape comes from (Cockburn, BABOK,
-  Use-Case 2.0, Wiegers), which parts are established practice, which are deliberate departures, and
-  why. Read before changing the template or a lane guide; not needed for a run.
+  Use-Case 2.0, Wiegers), what is established practice and what is a deliberate departure. Read before
+  changing the template or a lane guide; not needed for a run.
