@@ -1,6 +1,6 @@
 ---
 name: bigin-new-project
-description: Initiate a new BA project in the current repo — materialize the rulebook and templates into `_bigin/`, capture the engagement config (client, approver, contacts, new vs. ongoing product), import a proposal or, for a greenfield project with none yet, ask what's being built and run domain research on it, map the existing codebase when there is one, and verify the configured email/meeting providers are reachable, installing a missing MCP server where an install command is known. Use once per repo before the first /bigin-intake, and again after a plugin upgrade to refresh the materialized rulebook or re-check provider access.
+description: Initiate a new BA project in the current repo — materialize the rulebook and templates into `_bigin/`, capture the engagement config (client, approver, contacts, new vs. ongoing product), import a proposal or, for a greenfield project with none yet, ask what's being built and run domain research on it, materialize a repo-root CLAUDE.md as the project's standing agent brief, map the existing codebase when there is one, and verify the configured email/meeting providers are reachable, installing a missing MCP server where an install command is known. Use once per repo before the first /bigin-intake, and again after a plugin upgrade to refresh the materialized rulebook, regenerate CLAUDE.md, or re-check provider access.
 argument-hint: "[client name]"
 ---
 
@@ -16,13 +16,14 @@ plugin context, so a path into the install directory is unreachable to them.
 > **Artifact Standard:** Outputs:
 >> **The materialized workspace** — `_bigin/conventions/`, `_bigin/stages/`, `_bigin/templates/`: plugin-owned, overwritten every run, reachable to every subagent.
 >> **The engagement config** — `_bigin/system/project.md`: client, approver, contacts, providers, greenfield vs. ongoing, plus the project brief, domain-research pointer, and provider-readiness snapshot.
+>> **The project agent** — repo-root `CLAUDE.md`: a delimited, plugin-owned section orienting any Claude Code session to the engagement, the workspace map, and the skill sequence, regenerated every run.
 
 ---
 
 ## Non-Negotiable Core Rules
 
 * **Record, never guess:** client name, approver, and email addresses come from the human. Unknowns stay `<unknown>` and get asked. Only the git remote (§ 3) and the codebase map (§ 6) may be derived, both read from the repo rather than from intent.
-* **Plugin-owned vs. project data:** overwrite `_bigin/{conventions,stages,templates}/` every run; never touch `_bigin/system/project.md`, `00-Inbox/`, `01-Requirements/`, `PRD.md`, `prototypes/`, `epics.md`. Project overrides belong in `.claude/bigin-ba-workflow-plugin.local.md`.
+* **Plugin-owned vs. project data:** overwrite `_bigin/{conventions,stages,templates}/` every run; never touch `_bigin/system/project.md`, `00-Inbox/`, `01-Requirements/`, `PRD.md`, `prototypes/`, `epics.md`. Project overrides belong in `.claude/bigin-ba-workflow-plugin.local.md`. `CLAUDE.md` is a special case — see § 5.4: only the plugin's own delimited section inside it is overwritten; whatever else is in that file, including a pre-existing codebase CLAUDE.md, is never touched.
 * **Verify, don't assume:** a partial copy surfaces later as a subagent silently unable to read its lane guide — reported as a clean run. Confirm the file count before continuing.
 * **Use the template, not memory:** `_bigin/templates/project.md` *is* the schema `/bigin-intake` parses. A hand-written variant is how a field it reads goes missing.
 * **Never improvise an install:** § 7.3's table or nothing. `claude mcp add` only, never `sudo`, never re-add a server that already has a row.
@@ -38,7 +39,8 @@ plugin context, so a path into the install directory is unreachable to them.
 | 1 | Check what's already there | every run |
 | 2 | Materialize the workspace | every run |
 | 3–4 | Gather and write the engagement config | fresh initiation, or an explicit re-initiate |
-| 5 | Import a proposal, capture the brief, research the domain | § 5.3 on `project_mode: new` only |
+| 5.1–5.3 | Import a proposal, capture the brief, research the domain | § 5.3 on `project_mode: new` only |
+| 5.4 | Materialize the project agent (`CLAUDE.md`) | every run |
 | 6 | Map the codebase | `ongoing` only — currently deferred |
 | 7 | Check the configured providers | every run |
 | 8 | Report | every run |
@@ -70,21 +72,12 @@ plugin context, so a path into the install directory is unreachable to them.
   Then list all three recursively and confirm the file count matches the source. Anything missing:
   stop and report rather than continue to § 3.
 
-  What lands, and who reads it — nothing reads all of it:
+  What lands, and who reads it — nothing reads all of it, and this skill reads none of it itself:
 
   | Path | Read by |
   |---|---|
-  | `_bigin/conventions/conventions.md` | every skill and subagent, **named sections only** — see that file's own stage table |
-  | `_bigin/conventions/paths.md` | any subagent resolving a `{variable}` a stage file refers to |
-  | `_bigin/conventions/design-conventions.md` | `/bigin-generate-design` and its per-feature workers — the **design** rulebook, kept separate from the requirement one, with its own paths table |
-  | `_bigin/stages/extract/2-extraction.md` | `/extract-signal`'s extraction subagent — that one only |
-  | `_bigin/stages/extract/3-filing.md` | `/extract-signal`'s filing subagent — that one only |
-  | `_bigin/stages/transform/1-foldin.md` | `/bigin-transform-signal` Stage 1 (orchestrator) |
-  | `_bigin/stages/transform/2-qualification.md`, `3-routing.md` | `/bigin-transform-signal` Stages 2–3 (orchestrator) |
-  | `_bigin/stages/transform/3-lane-{uc,br,design,entity}.md` | `/bigin-transform-signal`'s per-feature subagents — only the lanes that run |
-  | `_bigin/stages/transform/4-sync.md`, `5-status.md` | `/bigin-transform-signal` Stages 4–5 (orchestrator) |
-  | `_bigin/stages/design/1-scope.md`, `2-system.md`, `4-prompt.md`, `5-close.md` | `/bigin-generate-design` Stages 1–5 (orchestrator) |
-  | `_bigin/stages/design/3-screens.md` | `/bigin-generate-design`'s per-feature workers — that one only |
+  | `_bigin/conventions/` | every skill and subagent, but only its own named section or file — never the whole tree |
+  | `_bigin/stages/` | the orchestrator or per-feature subagent for whichever stage is currently running — never the whole directory |
   | `_bigin/templates/*.md` | whichever skill creates that artifact type, the first time it's needed |
 
 * **Rules:**
@@ -161,6 +154,20 @@ plugin context, so a path into the install directory is unreachable to them.
 * **Goal:** ground the engagement in its domain before the first signal arrives, so `/extract-signal` and `/enrich-feature` inherit context instead of each rediscovering it per feature.
 * **Action:** Read **`references/domain-research.md`** before doing anything here and follow it through to its own "Writing the findings" step. The output lands in two places: `_bigin/system/domain-research.md` (the full report) and a dated pointer line under `_bigin/system/project.md`'s `## Domain Research` (the summary).
 * **Rules:** **Don't improvise a research procedure inline.** That file defines the built-in method and, separately, how to swap it for a different skill or agent without touching this file. Report the summary in § 8 as new grounding, not a housekeeping detail.
+
+### 5.4 Materialize the project agent (`CLAUDE.md`)
+
+* **Goal:** give any Claude Code session opened in this repo — not just one running a `/bigin-*`
+  command — a standing brief: what the engagement is, where the BA artifacts live, and which skill to
+  reach for next, without having to read `_bigin/system/project.md` and every SKILL.md cold.
+* **Action:** Read **`references/claude-md.md`** before doing anything here and follow it through.
+  It covers what the file must contain, how to merge into an existing repo-root `CLAUDE.md` (common on
+  `ongoing`) without disturbing anything outside the plugin's own delimited section, and what to skip
+  when there's no domain research to point to.
+* **Rules:** **Don't improvise the content shape inline** — that file is the spec, the same way § 5.3
+  defers to `domain-research.md`. Never overwrite a `CLAUDE.md` a codebase already had; only the
+  delimited section is the plugin's to write. Report what happened in § 8 — new file, section added to
+  an existing one, or section regenerated on a rerun.
 
 ## 6. Map the codebase (`project_mode: ongoing` only)
 
@@ -270,10 +277,12 @@ applies to it directly.
 5. **Features** — `proposed` rows imported from a proposal, if any, so wrong slugs get corrected now.
 6. **Codebase map** — for `ongoing`, that mapping is deferred and the section is intentionally empty.
 7. **Project brief & domain research** — for `new`: where the brief came from, which method ran the research, and the dated `## Domain Research` summary with a pointer to the full report. New grounding, not a housekeeping line — don't bury it under Features.
-8. **Providers** — one line per configured provider, its state, what happened, and every command run verbatim. For anything unresolved give the exact next action — "authorize Fathom in claude.ai connector settings", "install the `spark` CLI and re-run this" — not "provider unavailable". An unactionable warning gets ignored until the first failed sweep.
-9. **Next step** — `/bigin-intake` to capture the first meeting, email, or note. If a provider is unresolved, say plainly that `/bigin-intake direct …` works regardless and only Mode B's sweep is affected.
+8. **Project agent (`CLAUDE.md`)** — whether it was created fresh, merged into an existing file (say so explicitly on `ongoing`, since that means a pre-existing codebase CLAUDE.md is now sharing the file), or regenerated on a rerun.
+9. **Providers** — one line per configured provider, its state, what happened, and every command run verbatim. For anything unresolved give the exact next action — "authorize Fathom in claude.ai connector settings", "install the `spark` CLI and re-run this" — not "provider unavailable". An unactionable warning gets ignored until the first failed sweep.
+10. **Next step** — `/bigin-intake` to capture the first meeting, email, or note. If a provider is unresolved, say plainly that `/bigin-intake direct …` works regardless and only Mode B's sweep is affected.
 
 ## Additional resources
 
 - **`references/domain-research.md`** — the § 5.3 research method, and how to swap it for another skill or agent. Read before running § 5.3.
+- **`references/claude-md.md`** — the § 5.4 spec for what `CLAUDE.md` must contain and how to merge it into an existing one. Read before running § 5.4.
 - **`template/settings.local.md`** — the § 4.2 scaffold for project-level plugin overrides.

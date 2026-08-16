@@ -10,7 +10,7 @@
       "name": "bigin-ba-workflow-plugin",
       "source": "./",
       "description": "Guides a BA through turning raw communication into structured requirement documentation: project initiation, intake, signal extraction, FR drafting, enrichment, approval, prototyping, and PRD/epic generation.",
-      "version": "1.4.0",
+      "version": "1.4.1",
       "author": {
         "name": "Nam Pham"
       }
