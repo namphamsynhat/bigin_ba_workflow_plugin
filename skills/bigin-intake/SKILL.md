@@ -1,6 +1,6 @@
 ---
 name: bigin-intake
-description: Capture raw requirement intake (a meeting transcript, email thread, or direct note) into the workspace, unmodified, for later signal extraction. Use when a BA has new raw communication to log before processing.
+description: This skill is used when BA starts the new working day, capture project raw material in the last `x` days. Capture raw requirement intake (a meeting transcript, email thread, or direct note) into the workspace, unmodified, for later signal extraction process.
 argument-hint: "[auto|direct] <pasted text, file path, or note>"
 model: haiku
 ---
@@ -8,7 +8,6 @@ model: haiku
 # Bigin Intake
 
 Land raw input in `00-Inbox/` verbatim so nothing is lost or paraphrased before `/extract-signal` runs.
-Capture stage of extract → transform → load.
 
 **Outputs:**
 
