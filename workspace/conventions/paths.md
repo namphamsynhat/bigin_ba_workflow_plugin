@@ -35,8 +35,9 @@ feature**: a `UC-###` is written only by its `primary_feature`'s subagent
 | Variable | Path | Notes |
 | :--- | :--- | :--- |
 | `{conventions_reference}` | `_bigin/conventions/conventions.md` | The rulebook. Read the sections your stage needs — it has a stage table at the top. Never read it whole. |
+| `{design_conventions}` | `_bigin/conventions/design-conventions.md` | **The design rulebook, deliberately separate** — screens, tokens, prototype prompts. It carries **its own** `{variable}` table (`{ux_dir}`, `{design_system_dir}`, `{template_ux}`, …), so a design-stage worker resolves paths there, not here. Nothing in this file governs design, and nothing in that file governs requirements. |
 | `{paths_reference}` | `_bigin/conventions/paths.md` | This file. |
-| `{stages_dir}` | `_bigin/stages/` | `extract/` and `transform/`, one numbered file per stage. |
+| `{stages_dir}` | `_bigin/stages/` | `extract/`, `transform/`, and `design/` — one numbered file per stage. The `design/` guides resolve against `{design_conventions}` § Paths. |
 | `{conventions_file}` | `.claude/bigin-ba-workflow-plugin.local.md` | Optional per-project overrides. A plugin **setting**, not project data — hence `.claude/`. Absent is normal; fall back to built-in defaults per blank section. |
 
 ## Templates

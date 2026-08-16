@@ -49,11 +49,14 @@ Never re-append a `## Changelog` or `## Discussion` line because this run starte
 
 ## Folding into a UC
 
+A main-flow step (`new step ...`, `S# becomes:`, `S# is removed because ...`) is no longer this
+stage's job — Stage 4 Part 2 (`4-sync.md`) applies it directly, same run it's staged. It should
+already be gone from `## Discussion` by the time this stage runs. If one is still sitting there
+unfolded, that's Stage 4 Part 2 having skipped it, not a normal wait — apply it here using the same
+rule it would have used (mint the next unused `S#`, never renumber) rather than leaving it stuck.
+
 | `proposed:` says | Do |
 | :--- | :--- |
-| `new step after S4:` | **Mint the next unused `S#`** — one higher than the highest ever used, including removed rows — and insert **after S4 in row order**. Never renumber the rows below. |
-| `S6 becomes:` | replace that row's cells, keeping `S6` |
-| `S6 is removed because <reason>` | keep the row and id, mark it `**S6** *(removed v<version> — <reason>)*`, cells struck through or emptied. Never delete: extensions, `## 4`, and stories cite this id. |
 | `new flow E2:` | mint the next unused `E#`/`A#`, same discipline. Check its branch point `S#` still exists and isn't removed — if it is, that's a question, not a fold-in. |
 
 ```text

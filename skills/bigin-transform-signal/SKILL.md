@@ -22,9 +22,9 @@ Case, § Feature Hub, § Status vocabularies, § Feedback handling, § Resumable
 
 | Mode | Behaviour |
 |---|---|
-| **Written gate** (default, unattended) | stage UC/BR proposals into `## Discussion` + a `- [ ] Q:` on the UC's `## 5` (a BR's `## Open Questions`). Never blocks on a human. |
+| **Written gate** (default, unattended) | stage UC/BR proposals into `## Discussion` + a `- [ ] Q:` on the UC's `## 5` (a BR's `## Open Questions`). Never blocks on a human. **One exception:** a Main Success Scenario step (`## 2`) writes straight in, same run — Stage 4 Part 2. |
 | **Interactive** | a question answered inline folds in immediately, no written round-trip. |
-| **Design directives** | **not gated.** They never reach a UC, a PRD, or approval — they feed `/prototype-design`, reviewed in its own right. Write them directly. |
+| **Design directives** | **not gated.** They never reach a UC, a PRD, or approval — they feed `/bigin-generate-design`, reviewed in its own right. Write them directly. |
 
 ## Paths
 
@@ -60,7 +60,7 @@ scope = $ARGUMENTS slug, else every {hub_dir} file
 1  foldin    apply every staged UC/BR change whose question is now answered   [1-foldin.md]
 2  qualify   build the worklist, gate each signal                            [2-qualification.md]
 3  route     send each qualified signal down its lane                        [3-routing.md → 3-lane-*.md]
-4  sync      shared registers + cross-feature UC changes, then conflict-check [4-sync.md]
+4  sync      shared registers + cross-feature UC changes, draft § 2, conflict-check [4-sync.md]
 5  status    set every status from a live re-count, verify, report            [5-status.md]
 ```
 
@@ -130,18 +130,24 @@ a subagent NEVER writes:  {entities_file} · {entity_dir} · {design_principles_
 a subagent DOES write:    its own feature's hub, its own UCs, its BRs
 ```
 
-## Stage 4 — Sync and conflict-check
+## Stage 4 — Sync, draft § 2, and conflict-check
 
 ```text
 orchestrator, sequential, after every Stage 3 subagent has reported          [4-sync.md]
     write shared registers + every cross-feature UC change, ONE AT A TIME
     write each participating hub's ## Use Cases pointer
+    spawn one subagent per UC with a new/changed/removed main-flow step this run —
+        it writes ## 2 Main Success Scenario directly, same run (the one exception to the gate)
     conflict-check each touched feature, scoped to that feature
 ```
 
 A cross-feature UC change is **staged, not applied** — it is UC content, so it passes the same gate.
 Most runs touch no entity; never promote one speculatively. Never auto-resolve a contradiction: raise
 it, name both sides, stop.
+
+**Only `## 2` skips the gate.** A branch, a rule, `## 1`, or `## 6` always stages in `## Discussion`
+and waits for Stage 1 on a later run, same as before — see `4-sync.md` § Part 2 for exactly what
+qualifies and how short to write it.
 
 ## Stage 5 — Status and report
 
@@ -160,10 +166,11 @@ Stage 3 (draft):   <N> UC created, <N> updated, <N> BR created, <N> BR updated
                    — <slug>: UC-### (staged, needs-clarification | staged, draft)
                    steps staged: <slug> UC-### — <N> new, <N> changed, <N> flow(s)
                    design: <N> directive(s) — <slug> ## Design Directives, <N> DESIGN-PRINCIPLES row(s)
-Stage 4 (sync):    <N> entity promotion(s), <N> cross-feature UC change(s), <N> conflict(s) — or none
+Stage 4 (sync):    <N> entity promotion(s), <N> cross-feature UC change(s),
+                   <N> UC(s) with § 2 drafted, <N> conflict(s) — or none
 cross-feature:     UC-### spans <slug> · <slug> — pointers written on both
 remaining:         <slug>: UC-###/BR-### — N open question(s), owner client|team
-next:              <slug> ready for /enrich-feature | <slug> ready for /prototype-design (design-only)
+next:              <slug> ready for /enrich-feature | <slug> ready for /bigin-generate-design (design-only)
 ```
 
 ## Failure modes
@@ -172,6 +179,9 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 
 - **Drafting from an unqualified signal** — a flow built on an incomplete source reaches `/approve-fr`
   looking identical to a sound one.
+- **Stretching the § 2 direct-write exception to § 3/§ 4/§ 1/§ 6** — only a new/changed/removed
+  main-flow step skips the human-review wait (Stage 4 Part 2); a branch, a rule, or anything else
+  still stages in `## Discussion` and waits for Stage 1, same as always.
 - **Inventing a step, validation, or branch nobody stated** — the cheapest way to launder a guess into
   approved scope, and a flow reads as complete once it has one. Missing → a question.
 - **Renumbering steps** — every `S#` is cited from a rule, a branch, a story, or a prototype screen.

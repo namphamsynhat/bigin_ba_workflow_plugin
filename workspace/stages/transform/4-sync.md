@@ -1,10 +1,11 @@
-# Stage 4 — Sync the shared writes, then conflict-check
+# Stage 4 — Sync the shared writes, draft § 2, then conflict-check
 
 ```text
 runs: orchestrator, SEQUENTIALLY, after every Stage 3 subagent has reported
 in:   the candidates Stage 3's subagents REPORTED
 out:  shared registers written · cross-feature UC changes staged · every participating hub pointed
-      · each touched feature conflict-checked
+      · § 2 Main Success Scenario drafted for any UC with a new step this run · each touched
+      feature conflict-checked
 never: inside a per-feature subagent — two concurrent features Grep the same highest id and both
        mint EN-007, or one append overwrites the other
 ```
@@ -34,7 +35,8 @@ MINT EVERY ID HERE, never in a subagent — EN-###, and UC-### for a `new` cross
 a cross_feature_uc_change is STAGED, NOT APPLIED — it is UC content, so it passes the same gate:
     write the ## Discussion entry
     flip the REPORTING feature's Signal Log row: Status: staged, Destination: UC-###
-    Stage 1 folds it in on a later run
+    Stage 1 folds it in on a later run — UNLESS it's a main-flow step, which Part 2 below
+    picks up this same pass, same as any other § 2 entry
 ```
 
 ### Part 1b — every participating hub, not just the primary
@@ -53,7 +55,57 @@ For each UC this run created or changed, re-derive its pointers from the UC's ow
 - Setting an already-correct pointer again is a no-op — **re-derive all of them every run** rather than
   tracking which changed.
 
-## Part 2 — Conflict-check each touched feature
+## Part 2 — Draft the Main Success Scenario
+
+```text
+runs: one subagent per UC, after Part 1, only for a UC with a new/changed/removed main-flow step
+      staged this run (from Stage 3 or from Part 1 above)
+in:   that UC's ## Discussion entries whose destination is "new step ...", "S# becomes:", or
+      "S# is removed because ..."
+out:  § 2 written directly, same run
+never: touch § 1, § 3, § 4, § 5, § 6, or a flow ("new flow A#/E#") entry — those still stage and
+       wait for a human, same as always
+```
+
+**Why this one section skips the wait.** § 2 is a short, high-level business story — low risk to
+write straight away, and it's the thing a human actually reads to review a UC. Everything riskier
+(branches, rules, exceptions) still waits for Stage 1's gate on a later run.
+
+```text
+Agent(session default model, general-purpose, foreground), one per UC
+
+Read the UC file in full: its current § 2 and every ## Discussion entry.
+
+Apply ONLY entries whose destination starts "new step", "S# becomes:", or "S# is removed
+because". Leave every other entry alone — do not remove it, do not fold it in.
+
+| Destination says              | Do |
+| :--- | :--- |
+| new step after S4: <text>     | mint the next unused S# (one higher than the highest ever used, including removed rows), insert after S4, never renumber the rows below |
+| S6 becomes: <text>            | replace S6's two cells, keep the id S6 |
+| S6 is removed because <reason> | keep the row and id, write **S6** *(removed v<version> — <reason>)*, empty the cells |
+
+Write each cell SHORT and HIGH-LEVEL, one line, plain business language:
+    "Parent submits the payment request" — not a paragraph with every validation clause.
+Never invent a step, field, or check the signal didn't state — missing detail stays missing,
+never guessed.
+
+Example of the level of detail this section wants:
+    Parent submits the payment request
+    Parent selects the student/award
+    Parent selects the vendor or submits a new vendor
+    Parent enters the amount, date, invoice number
+    System checks the request and records it with the entered data
+
+Then, ONE write:
+1  remove the entries you just applied from ## Discussion — leave every other entry in place
+2  bump version, append one ## Changelog line per INT-### applied
+3  flip that INT's hub Signal Log row: staged → applied
+
+Report: UC-### — N step(s) added, N changed, N removed.
+```
+
+## Part 3 — Conflict-check each touched feature
 
 Scoped **to that feature**, not the vault. After a new or updated UC/BR lands, re-read that feature's
 UC(s) together with its BRs and look for a genuine contradiction — two statements that cannot both hold.
@@ -82,8 +134,9 @@ on finding one:
 ## Hand-off
 
 Report: `<N> entity promotion(s), <N> design-principle row(s), <N> cross-feature UC change(s),
-<N> in-feature conflict(s)` — or `none this run`. Stage 5 re-counts questions on every artifact this
-stage touched, including any UC that just gained a conflict question.
+<N> UC(s) with § 2 drafted, <N> in-feature conflict(s)` — or `none this run`. Stage 5 re-counts
+questions on every artifact this stage touched, including any UC that just gained a conflict
+question.
 
 ## Failure modes
 
@@ -99,3 +152,7 @@ stage touched, including any UC that just gained a conflict question.
   is a permanent id and a maintenance obligation.
 - **Skipping the conflict check because the run "only updated" a UC.** An update is exactly how a new
   step lands next to a rule that forbids it.
+- **Stretching Part 2's exception to § 3/§ 4/§ 6.** Only a new/changed/removed main-flow step skips
+  the wait — a flow, a rule, or anything else still stages in `## Discussion` and waits for Stage 1.
+- **Writing validation prose into a § 2 cell.** Keep it one short business line; a real validation
+  detail belongs in § 4 or a branch, not padding the main flow.

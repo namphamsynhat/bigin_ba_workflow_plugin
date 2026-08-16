@@ -8,7 +8,7 @@ never: a UC step · a BR · anything in PRD.md · Status: reflected
 
 This lane exists because a presentation-only signal has nothing for a PRD to consume. Routed through
 the UC lane it would either sit in a flow as an untestable step, or wait behind an approval gate it
-doesn't need, while whoever runs `/prototype-design` never sees it.
+doesn't need, while whoever runs `/bigin-generate-design` never sees it.
 
 ## The chain this lane serves
 
@@ -25,7 +25,7 @@ through the hub's Signal Log row.
 ## Why this lane is not gated
 
 The written gate protects **approved scope**: a UC that folds in a misread signal becomes a contract
-the client signed off. A design directive enters no contract — it is read by `/prototype-design`, whose
+the client signed off. A design directive enters no contract — it is read by `/bigin-generate-design`, whose
 entire output is a proposal a human reviews before anything is built. Gating the input too adds a
 round-trip in front of a review that already happens.
 
@@ -71,7 +71,7 @@ serves a different reader.
 ## Destination 2 — feature-scoped
 
 This screen, this flow, this component. Destination: the hub's `## Design Directives`, which
-`/prototype-design` reads as the feature's presentation brief. Create the section from
+`/bigin-generate-design` reads as the feature's presentation brief. Create the section from
 `_bigin/templates/feature-hub.md` if the hub predates it — immediately before `## UX Spec`, since
 directives are the input and the UX spec is the output.
 
@@ -84,30 +84,31 @@ directives are the input and the UX spec is the output.
   paraphrase that generalizes it into a principle; if it generalizes, it also belongs in Destination 1.
 - **`Source`** — `<INT-###> — <the Signal Log row's own Source cite>`.
 - **`Status`** — `open` (not yet in a prototype) · `reflected` (a prototype implements it, set by
-  `/prototype-design`) · `superseded` · `conflict`. **Leave `open` — this skill never sets `reflected`.**
+  `/bigin-generate-design`) · `superseded` · `conflict`. **Leave `open` — this skill never sets `reflected`.**
 
 Then set the Signal Log row: `Status: applied`, `Destination: <slug> ## UX Spec`.
 
 Leave the hub's `uiux:` field alone — it points at a UX artifact that doesn't exist until
-`/prototype-design` runs.
+`/bigin-generate-design` runs.
 
-## Where this lane stops today
+## Where this lane goes next
 
-**Planned — the downstream consumer is not migrated.** `/prototype-design` currently keys on an FR id
-and writes `prototypes/FR-<NNN>-prototype.md` from the pre-migration `.bigin/features/` layout. Since
-`FR-###` is retired, that gap now applies to every feature.
+**The downstream consumer is live: `/bigin-generate-design`.** It reads **both** destinations —
+`{design_principles_file}` and each hub's `## Design Directives` — and needs no PRD and no `FR-###`,
+so a directive filed here reaches screens on the next design run.
 
 ```text
-1  a feature with design directives cannot reach /prototype-design yet — no id it accepts.
-   The directives are filed correctly and lose nothing; they are queued.
-2  /prototype-design does not yet read ## Design Directives. It DOES read {design_principles_file}
-   directly, so Destination 1 is live today; Destination 2 goes live when that skill migrates.
+1  a feature with directives and NO UC is still in scope — it is designed "design-only",
+   from the directives alone.
+2  the directive's Status: open is what makes it visible there. /bigin-generate-design flips a row
+   to `reflected` once a screen really implements it — this lane never sets `reflected` itself.
 ```
 
-Report design-only features explicitly (`next: <slug> ready for /prototype-design (design-only)`) so
-the queue is visible rather than silent. **Never mint a placeholder UC** just to give
-`/prototype-design` something to key on — a UC with no flow pollutes the feature's material set and
-reaches `/approve-fr` as if it were scope.
+Report design-only features explicitly (`next: <slug> ready for /bigin-generate-design
+(design-only)`) so the queue is visible rather than silent. **Never mint a placeholder UC** just to
+give the design stage something to key on — a UC with no flow pollutes the feature's material set,
+reaches `/approve-fr` as if it were scope, and the design stage skips it anyway (its Stage 1 gate 1
+drops a UC with no main flow).
 
 ## What this lane never does
 

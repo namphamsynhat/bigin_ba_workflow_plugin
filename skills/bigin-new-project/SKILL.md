@@ -63,7 +63,7 @@ plugin context, so a path into the install directory is unreachable to them.
 
   ```
   ${CLAUDE_PLUGIN_ROOT}/workspace/conventions/  →  _bigin/conventions/
-  ${CLAUDE_PLUGIN_ROOT}/workspace/stages/       →  _bigin/stages/       (incl. extract/, transform/)
+  ${CLAUDE_PLUGIN_ROOT}/workspace/stages/       →  _bigin/stages/       (incl. extract/, transform/, design/)
   ${CLAUDE_PLUGIN_ROOT}/workspace/templates/    →  _bigin/templates/
   ```
 
@@ -76,12 +76,15 @@ plugin context, so a path into the install directory is unreachable to them.
   |---|---|
   | `_bigin/conventions/conventions.md` | every skill and subagent, **named sections only** — see that file's own stage table |
   | `_bigin/conventions/paths.md` | any subagent resolving a `{variable}` a stage file refers to |
+  | `_bigin/conventions/design-conventions.md` | `/bigin-generate-design` and its per-feature workers — the **design** rulebook, kept separate from the requirement one, with its own paths table |
   | `_bigin/stages/extract/2-extraction.md` | `/extract-signal`'s extraction subagent — that one only |
   | `_bigin/stages/extract/3-filing.md` | `/extract-signal`'s filing subagent — that one only |
   | `_bigin/stages/transform/1-foldin.md` | `/bigin-transform-signal` Stage 1 (orchestrator) |
   | `_bigin/stages/transform/2-qualification.md`, `3-routing.md` | `/bigin-transform-signal` Stages 2–3 (orchestrator) |
   | `_bigin/stages/transform/3-lane-{uc,br,design,entity}.md` | `/bigin-transform-signal`'s per-feature subagents — only the lanes that run |
   | `_bigin/stages/transform/4-sync.md`, `5-status.md` | `/bigin-transform-signal` Stages 4–5 (orchestrator) |
+  | `_bigin/stages/design/1-scope.md`, `2-system.md`, `4-prompt.md`, `5-close.md` | `/bigin-generate-design` Stages 1–5 (orchestrator) |
+  | `_bigin/stages/design/3-screens.md` | `/bigin-generate-design`'s per-feature workers — that one only |
   | `_bigin/templates/*.md` | whichever skill creates that artifact type, the first time it's needed |
 
 * **Rules:**

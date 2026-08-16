@@ -55,6 +55,11 @@ business need, a trigger, or a pre-condition the signals didn't state. -->
 <!-- The happy path: trigger to goal delivery, plus any cleanup. Nothing goes wrong here — every
 branch belongs in § 3.
 
+The ONE section /bigin-transform-signal writes without waiting for a human: Stage 4 Part 2 drafts a
+new/changed/removed step here directly, same run, right after it's staged. Keep it short and
+high-level, plain business language, one line per step — a business reader should get the whole
+flow from a handful of lines. Every other section still stages in ## Discussion and waits.
+
 STEP IDS ARE PERMANENT. An S# is assigned in mint order and is never reused, renumbered, or deleted;
 ROW ORDER is the flow order. A step inserted between S4 and S5 gets the next unused id (e.g. S10) and
 sits in the third row. Non-sequential ids are expected — extensions, § 4's enforcement points, Signal
@@ -146,8 +151,12 @@ An unstated frequency is not a guess to make. -->
 
 ## Discussion
 <!-- Staged, not-yet-applied change proposals — one entry per pending signal, cleared into the
-numbered sections above only once the human gate resolves it (SKILL.md Stage 3 stages it, Stage 1
-folds it in on a later run). Format:
+numbered sections above once resolved (SKILL.md Stage 3 stages it). Two speeds:
+- a main-flow step ("new step ...", "S# becomes:", "S# is removed because ...") clears into § 2
+  the SAME run, Stage 4 Part 2 — no human wait
+- everything else (a flow, a rule, § 1, § 6) waits for a human and clears on a later run, Stage 1
+
+Format:
 
 - **<INT-###>** (staged <YYYY-MM-DD>): <quoted/tightly paraphrased signal> → proposed: <the exact
   final text this becomes, naming its destination — "new step after S4:", "S6 becomes:", "new flow

@@ -10,7 +10,7 @@ Durable, cross-cutting design/brand/tone/accessibility/interaction/content prefe
 
 Append-only: `#` is permanent, never renumbered or deleted. A later statement that contradicts an earlier one is a **new** row, with the old row's `Status` set to `superseded` (or `rejected` if it was explicitly walked back) and `Notes` pointing at the row that replaced it. `Status` is `active | superseded | rejected | conflict`. Every write bumps `version` and appends a `## Changelog` line.
 
-`/prototype-design` reads this file directly, not only via the PRD — so a feature that reaches prototyping before its PRD is finished still produces a prototype consistent with what the client has said.
+`/bigin-generate-design` reads this file directly, not only via the PRD — so a feature that reaches prototyping before its PRD is finished still produces a prototype consistent with what the client has said.
 
 | # | Principle | Why | Category | Source | Status | Notes |
 |---|-----------|-----|----------|--------|--------|-------|

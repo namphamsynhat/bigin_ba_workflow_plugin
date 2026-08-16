@@ -37,7 +37,10 @@ what governs a stage is findable from the stage, and a run loads only the files 
 /approve-fr               [Load] approve the UCs,   |
         |                  generate/update the PRD  |
         |                                           |
-/prototype-design         [Load] produce a text-level prototype design (flows, screens, states)
+/bigin-generate-design    [Load] every UC with no current design -> one UX-### per feature:
+        |                  screen specs, the shared design system, and two prototype prompts
+        |                  (Claude design + Figma Make). Runs off UCs, not the PRD, so it can
+        |                  start as soon as a use case has a main flow — and it is headless.
         |
 /consolidate-prd          [Load] merge design decisions into the PRD, generate Epics & User Stories
 ```
@@ -129,7 +132,7 @@ tools** is a name collision, reported rather than reinstalled over. The step nev
 
 Every UC's own frontmatter `status` (`draft` ⇄ `needs-clarification` → `enriched` → `approved`, human-only per `/approve-fr`, → `consolidated`) is the authoritative gate. A feature carries one use case per distinct user goal, so several at different stages at once is normal, and a use case that spans features is owned by one of them (`primary_feature:`) while appearing on every participating hub. Each Feature Hub's `## Requirement Readiness` table is a refreshed snapshot for orientation, not the gate itself. Features are matched by slug across stages, so `/extract-signal` and `/bigin-transform-signal` update an existing hub/UC rather than duplicating one when new signals map to the same feature — and a new signal about an existing *goal* is a step, branch, or rule inside that UC, not a second one.
 
-> **Migration note:** `/enrich-feature`, `/approve-fr`, `/prototype-design`, and `/consolidate-prd` still read the older `.bigin/features/FR-<id>-*.md` single-file model **and still key on the retired `FR-###` artifact**. They haven't been moved onto the `01-Requirements/` layout or onto `UC-###` yet — that's the next stage of this migration, not yet done, and it is now a two-axis gap. A feature that finishes `/bigin-transform-signal` cannot proceed further without a human. See `_bigin/conventions/conventions.md` § Reconciliation notes for the per-skill breakdown.
+> **Migration note:** `/enrich-feature`, `/approve-fr`, and `/consolidate-prd` still read the older `.bigin/features/FR-<id>-*.md` single-file model **and still key on the retired `FR-###` artifact**. They haven't been moved onto the `01-Requirements/` layout or onto `UC-###` yet — that's the remaining stage of this migration, and it is a two-axis gap. `/bigin-generate-design` **is** migrated (it replaces `/prototype-design`, reads `_ucs/` directly, and needs no PRD), so the design exit from `/bigin-transform-signal` works today while the PRD/epics exit still needs a human. See `_bigin/conventions/conventions.md` § Reconciliation notes for the per-skill breakdown.
 
 ## Configuration
 

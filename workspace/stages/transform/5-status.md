@@ -71,10 +71,11 @@ Stage 3 (draft):   <N> UC created, <N> updated, <N> BR created, <N> BR updated
                    — <slug>: UC-### (staged, needs-clarification | staged, draft)
                    steps staged: <slug> UC-### — <N> new, <N> changed, <N> flow(s)
                    design: <N> directive(s) — <slug> ## Design Directives, <N> DESIGN-PRINCIPLES row(s)
-Stage 4 (sync):    <N> entity promotion(s), <N> cross-feature UC change(s), <N> conflict(s) — or none
+Stage 4 (sync):    <N> entity promotion(s), <N> cross-feature UC change(s),
+                   <N> UC(s) with § 2 drafted, <N> conflict(s) — or none
 cross-feature:     UC-### spans <slug> · <slug> — pointers written on both
 remaining:         <slug>: UC-###/BR-### — N open question(s), owner client|team
-next:              <slug> ready for /enrich-feature | <slug> ready for /prototype-design (design-only)
+next:              <slug> ready for /enrich-feature | <slug> ready for /bigin-generate-design (design-only)
 ```
 
 **Report what the vault says after Part 3, not what the run intended.** A held signal names its remedy;

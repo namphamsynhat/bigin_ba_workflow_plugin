@@ -52,4 +52,4 @@ Read `.bigin/features/FR-<id>-*.md`. If `Status` is not `Enriched`, say enrichme
   2. On confirmation, set `Status: Approved` in the feature file.
   3. Read `.bigin/PRD.md`, creating it with a `# Product Requirements Document` heading if missing.
   4. Write or replace **only this feature's section**: feature summary, requirements, pain points, entity map, accepted-risk domain concerns.
-  5. Confirm the PRD update and tell the user to run `/prototype-design <feature-id>` next.
+  5. Confirm the PRD update and tell the user to run `/bigin-generate-design <feature-id>` next.
