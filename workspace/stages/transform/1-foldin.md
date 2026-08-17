@@ -49,21 +49,20 @@ Never re-append a `## Changelog` or `## Discussion` line because this run starte
 
 ## Folding into a UC
 
-A main-flow step (`new step ...`, `S# becomes:`, `S# is removed because ...`) is no longer this
-stage's job — Stage 4 Part 2 (`4-sync.md`) applies it directly, same run it's staged. It should
-already be gone from `## Discussion` by the time this stage runs. If one is still sitting there
-unfolded, that's Stage 4 Part 2 having skipped it, not a normal wait — apply it here using the same
-rule it would have used (mint the next unused `S#`, never renumber) rather than leaving it stuck.
-
-| `proposed:` says | Do |
-| :--- | :--- |
-| `new flow E2:` | mint the next unused `E#`/`A#`, same discipline. Check its branch point `S#` still exists and isn't removed — if it is, that's a question, not a fold-in. |
+A main-flow step (`new step ...`, `S# becomes:`, `S# is removed because ...`) or a flow (`new flow
+A#/E#:`, `A#/E# becomes:`, `A#/E# is removed because ...`) is never this stage's job. Stage 4 Part 2
+(`4-sync.md`) is the only place that ever applies them, and it sweeps EVERY in-scope UC's own
+`## Discussion` on EVERY invocation — not just what this run staged — so an entry like this should
+never survive to a second run. If one is still sitting in `## Discussion` when this stage reads it,
+leave it alone: it is Stage 4's worklist, not this stage's, and Part 2 later in this same run will
+pick it up regardless of whether Stage 1 or Stage 3 touched this UC at all.
 
 ```text
-after ANY step change → re-check ## 4 enforcement points and ## 3 branch points against the ids
-                        that now exist
-    a rule enforced at a just-removed step, or a flow branching from one, is a real inconsistency
-    → fold in the step change, then raise ONE question naming both
+when folding in a ## 4 enforcement point → check the S#/A#/E# it names still exists on § 2/§ 3 as
+                        they stand on disk right now, and isn't marked removed
+    a rule enforced at an already-removed step, or citing an id that was never minted, is a real
+    inconsistency
+    → fold in the rule mirror anyway, then raise ONE question naming both
     → NEVER silently re-point a citation at a neighbouring step
 ```
 

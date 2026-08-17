@@ -101,14 +101,15 @@ Report the adoption explicitly — the one case where one signal produces a larg
 | `new step after S4:` | a step added mid-flow — mints the next unused `S#`, placed after `S4` | Stage 4 Part 2, same run |
 | `S6 becomes:` | a step's wording or validation changes | Stage 4 Part 2, same run |
 | `S6 is removed because <reason>` | a step that no longer applies — the row keeps its id, marked removed | Stage 4 Part 2, same run |
-| `new flow E2:` / `A1 becomes:` | an exception or alternative path | Stage 1, later run |
+| `new flow E2:` / `A1 becomes:` / `A1 is removed because <reason>` | an exception or alternative path, added, changed, or removed | Stage 4 Part 2, same run |
 | `§ 1 Trigger becomes:` | any `## 1` metadata line | Stage 1, later run |
 | `§ 4: add BR-014, enforced at S5` | the rule mirror — the `BR-###` file itself is the BR lane's job | Stage 1, later run |
 | `§ 6: <text>` | a special requirement / NFR scoped to this workflow | Stage 1, later run |
 
-This lane always **stages**, regardless of which column applies it — never write § 2 (or anything
-else) directly from here. Only the § 2 rows fast-track, and only in Stage 4, after this lane's run
-finishes.
+This lane always **stages**, regardless of which column applies it — never write § 2, § 3, or anything
+else directly from here. Only the § 2 and § 3 rows fast-track, and only in Stage 4, after this lane's
+run finishes — and only § 2 changes trigger Stage 4's review flag (`4-sync.md` Part 2); a § 3-only
+change does not.
 
 - **Final text, not an instruction.** "add a rule about approvals" cannot be folded by a later run.
 - **One entry per signal**, even when three signals produce three adjacent steps — signals resolve at
@@ -212,8 +213,8 @@ not settle a disagreement between two people's requirements.
 
 ## What this lane never does
 
-- Write into `## 1`–`## 6` directly — that is Stage 4 Part 2 for a main-flow step, same run, or
-  Stage 1's fold-in for everything else, after the gate. Never this lane.
+- Write into `## 1`–`## 6` directly — that is Stage 4 Part 2 for a main-flow step or a flow, same
+  run, or Stage 1's fold-in for everything else, after the gate. Never this lane.
 - Write a UC owned by another `primary_feature`, or touch another feature's hub.
 - Write a rule statement into `## 4`, or any `BR-###` content beyond adding this UC to its `uc:` list.
 - Renumber, reuse, or delete an `S#`, `A#`, or `E#`.

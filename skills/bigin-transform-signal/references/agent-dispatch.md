@@ -150,7 +150,9 @@ THEN, one signal at a time, in hub row order:
    a new one. For BR/design/entity, follow that lane's guide exactly. Stage UC/BR content into
    ## Discussion, naming its destination ("new step after S4:", "S6 becomes:", "new flow E2:",
    "§ 1 Trigger becomes:", "§ 4: add BR-###, enforced at S5") as FINAL TEXT — never write into
-   § 1-§ 6 or a BR's rule statement, which is the fold-in stage's job on a later run.
+   § 1-§ 6 or a BR's rule statement yourself. A "new step"/"S# becomes"/"new flow"/"A#/E# becomes"
+   destination is applied same-run by Stage 4 Part 2; everything else is the fold-in stage's job on
+   a later run.
 2. Update the hub's Signal Log row: Status and Destination per 3-routing.md § Recording the
    routing decision. Never renumber or delete a row.
 3. Raise a question ONLY when a decision is genuinely needed (3-lane-uc.md § Questions), on the

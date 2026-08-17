@@ -31,7 +31,10 @@ Two hard limits:
 - **Never write `in-review` or `superseded` on a UC/BR** — both retired. Never write `removed` either —
   human-gated only.
 - **Editing content on an `enriched`/`approved`/`consolidated` artifact sets it back** to
-  `draft`/`needs-clarification`. Approval does not freeze a UC.
+  `draft`/`needs-clarification`. Approval does not freeze a UC. This is exactly what makes Stage 4
+  Part 2's review flag real rather than cosmetic: a § 2 change on an already-`approved` UC lands here
+  and drops it back automatically — Part 2's Changelog line just makes the reason legible without a
+  diff.
 
 ## Part 2 — Refresh the hub, don't restate it
 
@@ -72,7 +75,7 @@ Stage 3 (draft):   <N> UC created, <N> updated, <N> BR created, <N> BR updated
                    steps staged: <slug> UC-### — <N> new, <N> changed, <N> flow(s)
                    design: <N> directive(s) — <slug> ## Design Directives, <N> DESIGN-PRINCIPLES row(s)
 Stage 4 (sync):    <N> entity promotion(s), <N> cross-feature UC change(s),
-                   <N> UC(s) with § 2 drafted, <N> conflict(s) — or none
+                   <N> UC(s) with § 2/§ 3 drafted, <N> flagged for review, <N> conflict(s) — or none
 cross-feature:     UC-### spans <slug> · <slug> — pointers written on both
 remaining:         <slug>: UC-###/BR-### — N open question(s), owner client|team
 next:              <slug> ready for /enrich-feature | <slug> ready for /bigin-generate-design (design-only)

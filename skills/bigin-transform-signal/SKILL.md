@@ -22,7 +22,7 @@ Case, § Feature Hub, § Status vocabularies, § Feedback handling, § Resumable
 
 | Mode | Behaviour |
 |---|---|
-| **Written gate** (default, unattended) | stage UC/BR proposals into `## Discussion` + a `- [ ] Q:` on the UC's `## 5` (a BR's `## Open Questions`). Never blocks on a human. **One exception:** a Main Success Scenario step (`## 2`) writes straight in, same run — Stage 4 Part 2. |
+| **Written gate** (default, unattended) | stage UC/BR proposals into `## Discussion` + a `- [ ] Q:` on the UC's `## 5` (a BR's `## Open Questions`). Never blocks on a human. **Two exceptions:** a Main Success Scenario step (`## 2`) or an Alternative/Exception Flow (`## 3`) write straight in, same run — Stage 4 Part 2, sweeping every in-scope UC's full `## Discussion` backlog, not just what this run staged. A `## 2` change also flags the UC for `/enrich-feature` + `/approve-uc` re-review. |
 | **Interactive** | a question answered inline folds in immediately, no written round-trip. |
 | **Design directives** | **not gated.** They never reach a UC, a PRD, or approval — they feed `/bigin-generate-design`, reviewed in its own right. Write them directly. |
 
@@ -60,7 +60,8 @@ scope = $ARGUMENTS slug, else every {hub_dir} file
 1  foldin    apply every staged UC/BR change whose question is now answered   [1-foldin.md]
 2  qualify   build the worklist, gate each signal                            [2-qualification.md]
 3  route     send each qualified signal down its lane                        [3-routing.md → 3-lane-*.md]
-4  sync      shared registers + cross-feature UC changes, draft § 2, conflict-check [4-sync.md]
+4  sync      shared registers + cross-feature UC changes, draft § 2/§ 3, flag,
+             conflict-check                                                 [4-sync.md]
 5  status    set every status from a live re-count, verify, report            [5-status.md]
 ```
 
@@ -140,14 +141,18 @@ a subagent NEVER writes:  {entities_file} · {entity_dir} · {design_principles_
 a subagent DOES write:    its own feature's hub, its own UCs, its BRs
 ```
 
-## Stage 4 — Sync, draft § 2, and conflict-check
+## Stage 4 — Sync, draft § 2/§ 3, and conflict-check
 
 ```text
 orchestrator, sequential, after every Stage 3 subagent has reported          [4-sync.md]
     write shared registers + every cross-feature UC change, ONE AT A TIME
     write each participating hub's ## Use Cases pointer
-    spawn one subagent per UC with a new/changed/removed main-flow step this run —
-        it writes ## 2 Main Success Scenario directly, same run (the one exception to the gate)
+    spawn one subagent per UC carrying an unapplied ## 2 or ## 3 entry — found by reading every
+        in-scope UC's own ## Discussion directly, not just what Stage 3 reported this run —
+        it pulls every requirement fact tied to that UC (the full ## Discussion, the cited hub
+        Signal Log rows, the UC's own current sections) and writes ## 2 and/or ## 3 directly,
+        same run (the two exceptions to the gate)
+    flag any UC whose ## 2 changed this pass for /enrich-feature + /approve-uc re-review
     conflict-check each touched feature, scoped to that feature
 ```
 
@@ -155,9 +160,13 @@ A cross-feature UC change is **staged, not applied** — it is UC content, so it
 Most runs touch no entity; never promote one speculatively. Never auto-resolve a contradiction: raise
 it, name both sides, stop.
 
-**Only `## 2` skips the gate.** A branch, a rule, `## 1`, or `## 6` always stages in `## Discussion`
-and waits for Stage 1 on a later run, same as before — see `4-sync.md` § Part 2 for exactly what
-qualifies and how short to write it.
+**Only `## 2` and `## 3` skip the gate.** A rule, `## 1`, `## 5`, or `## 6` always stages in
+`## Discussion` and waits for Stage 1 on a later run, same as before — see `4-sync.md` § Part 2 for
+exactly what qualifies, how short to write it, and when a `## 2` change must flag the UC for review.
+The sweep is **cumulative, not scoped to this run** — a UC nobody's Stage 3 touched today can still
+carry an entry an earlier run staged and never applied; Part 2 reads every in-scope UC's own
+`## Discussion` fresh, every invocation, so a missed pass self-heals on the next run instead of
+leaving `## 2`/`## 3` empty indefinitely.
 
 ## Stage 5 — Status and report
 
@@ -177,7 +186,7 @@ Stage 3 (draft):   <N> UC created, <N> updated, <N> BR created, <N> BR updated
                    steps staged: <slug> UC-### — <N> new, <N> changed, <N> flow(s)
                    design: <N> directive(s) — <slug> ## Design Directives, <N> DESIGN-PRINCIPLES row(s)
 Stage 4 (sync):    <N> entity promotion(s), <N> cross-feature UC change(s),
-                   <N> UC(s) with § 2 drafted, <N> conflict(s) — or none
+                   <N> UC(s) with § 2/§ 3 drafted, <N> flagged for review, <N> conflict(s) — or none
 cross-feature:     UC-### spans <slug> · <slug> — pointers written on both
 remaining:         <slug>: UC-###/BR-### — N open question(s), owner client|team
 next:              <slug> ready for /enrich-feature | <slug> ready for /bigin-generate-design (design-only)
@@ -192,9 +201,15 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 - **Skipping `uc-detector`, or re-deciding new-vs-update inside the drafting subagent anyway** — the
   whole reason the lookup got its own step is that a busy drafting pass under-reads a cross-feature
   hub and either mints a duplicate UC or drafts into the wrong one.
-- **Stretching the § 2 direct-write exception to § 3/§ 4/§ 1/§ 6** — only a new/changed/removed
-  main-flow step skips the human-review wait (Stage 4 Part 2); a branch, a rule, or anything else
-  still stages in `## Discussion` and waits for Stage 1, same as always.
+- **Stretching the § 2/§ 3 direct-write exception to § 1/§ 4/§ 5/§ 6** — only a new/changed/removed
+  main-flow step or flow skips the human-review wait (Stage 4 Part 2); a rule, `## 1` metadata, an
+  open question, or a special requirement still stages in `## Discussion` and waits for Stage 1.
+- **Scoping Stage 4 Part 2 to only this run's Stage 3 output** — a UC nobody's Stage 3 touched this
+  run can still carry an old, unapplied § 2/§ 3 entry from a run whose Stage 4 skipped it. Part 2
+  must read every in-scope UC's own `## Discussion` fresh, every invocation, or the gap is permanent.
+- **Writing § 2 without flagging the UC for review** — a main-flow change that doesn't visibly say a
+  human should look again (a status revert, or at minimum a Changelog line) reads as reviewed content
+  nobody was actually asked to check.
 - **Inventing a step, validation, or branch nobody stated** — the cheapest way to launder a guess into
   approved scope, and a flow reads as complete once it has one. Missing → a question.
 - **Renumbering steps** — every `S#` is cited from a rule, a branch, a story, or a prototype screen.

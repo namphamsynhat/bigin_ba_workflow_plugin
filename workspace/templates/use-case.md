@@ -55,10 +55,14 @@ business need, a trigger, or a pre-condition the signals didn't state. -->
 <!-- The happy path: trigger to goal delivery, plus any cleanup. Nothing goes wrong here — every
 branch belongs in § 3.
 
-The ONE section /bigin-transform-signal writes without waiting for a human: Stage 4 Part 2 drafts a
-new/changed/removed step here directly, same run, right after it's staged. Keep it short and
-high-level, plain business language, one line per step — a business reader should get the whole
-flow from a handful of lines. Every other section still stages in ## Discussion and waits.
+One of the two sections /bigin-transform-signal writes without waiting for a human (§ 3 is the
+other): Stage 4 Part 2 drafts a new/changed/removed step here directly, same run — sweeping every
+outstanding ## Discussion entry for this section, not only what the current run staged. Keep it
+short and high-level, plain business language, one line per step — a business reader should get the
+whole flow from a handful of lines. Because this section skips the wait, any run that changes it
+flags this UC for /enrich-feature + /approve-uc re-review (dropping status back from
+enriched/approved/consolidated if it had reached one of those). Every other section still stages in
+## Discussion and waits.
 
 STEP IDS ARE PERMANENT. An S# is assigned in mint order and is never reused, renumbered, or deleted;
 ROW ORDER is the flow order. A step inserted between S4 and S5 gets the next unused id (e.g. S10) and
@@ -88,7 +92,12 @@ handle). Number within this UC, in mint order, permanently: A1, A2, E1, E2.
 
 Every flow states its branch point as an S# id, its condition as a DETECTED FACT ("Card is invalid:")
 never as a question ("Is the card valid?"), and how it ends: rejoins the main flow at an S#, reaches a
-different success, or fails. A flow with no ending is an unfinished flow. -->
+different success, or fails. A flow with no ending is an unfinished flow.
+
+The other section /bigin-transform-signal writes without waiting for a human: Stage 4 Part 2 drafts a
+new/changed/removed flow here directly, same run, sweeping every outstanding ## Discussion entry for
+this section the same way it does for § 2. Unlike § 2, a § 3-only change does not by itself flag this
+UC for review — only a § 2 change does (4-sync.md Part 2). -->
 
 ### A1: <name>
 * **Branch point:** S<n>
@@ -152,9 +161,10 @@ An unstated frequency is not a guess to make. -->
 ## Discussion
 <!-- Staged, not-yet-applied change proposals — one entry per pending signal, cleared into the
 numbered sections above once resolved (SKILL.md Stage 3 stages it). Two speeds:
-- a main-flow step ("new step ...", "S# becomes:", "S# is removed because ...") clears into § 2
-  the SAME run, Stage 4 Part 2 — no human wait
-- everything else (a flow, a rule, § 1, § 6) waits for a human and clears on a later run, Stage 1
+- a main-flow step ("new step ...", "S# becomes:", "S# is removed because ...") or a flow ("new
+  flow A#/E#:", "A#/E# becomes:", "A#/E# is removed because ...") clears into § 2/§ 3 the SAME run,
+  Stage 4 Part 2 — no human wait, and swept every run regardless of which run staged it
+- everything else (a rule, § 1, § 6) waits for a human and clears on a later run, Stage 1
 
 Format:
 
