@@ -94,18 +94,22 @@ rule, and it is a question.
 ## Field-level rules
 
 A rule about a specific entity field — "a vendor's tax code must be unique", "a claim's date cannot be
-in the future" — is still its own BR file, citing the entity in its own body:
+in the future" — is still its own BR file, citing the entity in its own body, by its `EN-###` id once
+one exists, otherwise by name against `{entities_file}`'s `proposed` row:
 
 ```text
-Governs EN-004 Vendor → tax_code.
+Governs EN-004 Vendor → tax_code.        # once EN-004 exists
+Governs the Vendor entity → tax_code.    # before it does
 ```
 
 It does **not** become a row or subsection inside `{entity_dir}`. `## Fields` records what a field *is*;
 the BR records what must hold of it. That split is what lets one rule govern fields on two entities
 without either doc owning it.
 
-Report the entity to the orchestrator so Stage 4 can promote or extend it — never write to
-`{entities_file}` or `{entity_dir}` from inside a per-feature subagent.
+Never write to `{entities_file}` or `{entity_dir}` from inside a per-feature subagent, and never
+report this as a candidate for the orchestrator to promote — **entity promotion doesn't happen in
+this skill any more.** A `proposed` row stays a row until `/approve-uc` promotes it, the first time
+an approved UC or one of its BRs is actually confirmed to reference it (§ Entity Data Model).
 
 ## Updating an existing BR
 

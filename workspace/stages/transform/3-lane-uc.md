@@ -26,6 +26,10 @@ subagent per feature, so a shared UC has as many potential writers as it has slu
 `primary_feature` is the feature whose actor holds the goal — a write-ownership fact, not a claim that
 the other features matter less. Every participating hub gets the same `## Use Cases` pointer in Stage 4.
 
+When a cross-feature flow reveals that a participating feature contributes a step nobody described,
+that is a signal-shaped gap worth a question on that feature's hub — never a step invented from the
+narration of the flow.
+
 ## Granularity — one UC per user goal
 
 | `level` | What it is | Use when |

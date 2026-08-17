@@ -35,6 +35,13 @@ whatever a prior run last wrote.
   Re-count `## 5` **Still open** before anything else — a UC with any unresolved `- [ ] Q:` line is
   `needs-clarification`, not approvable, no matter what `status` currently reads
   (§ Open Questions ↔ status consistency).
+* **Never fold flow drift into the summary silently:** `## 2`/`## 3` are the two sections
+  `/bigin-transform-signal` writes directly, with no human wait (4-sync.md § Part 2) — a UC can reach
+  this skill with its flow changed since a human last looked, marked only by a `## Changelog` line
+  ending "flagged for ... review" or "reverts from approved, main flow changed". Surface every one of
+  those lines since this UC's last approval on its own, before anything else in the summary — that flag
+  exists so the human gets a chance to catch a wrong flow, and a summary that buries it defeats the
+  point.
 * **Entities are promoted from real references, never speculatively:** only an entity this UC's steps
   or rules actually cite gets a document or an update (§ Entity Data Model). Most UCs touch none —
   skip cleanly when that's true.
@@ -74,6 +81,12 @@ hub at `01-Requirements/_features/<slug>.md`, and `01-Requirements/ENTITIES.md`.
        are still open and stop; don't ask to approve a UC with an open question
        (§ Open Questions ↔ status consistency's invariant — this holds regardless of what `status`
        currently reads).
+     * Find this UC's last human touchpoint: scan `## Changelog` bottom-to-top for the most recent line
+       that documents an approval (or, with none yet, treat the `1.0` creation line as the start).
+       Collect every line strictly after it — nothing a human has confirmed since — and pull out the
+       ones ending "flagged for ... review" or naming a "main flow changed" revert. Those are exactly
+       the lines `/bigin-transform-signal` Stage 4 Part 2 writes whenever it direct-writes a `## 2`/
+       `## 3` change (4-sync.md § Part 2); this is the flow drift step 3 leads with.
      * Check `## 4`'s rule mirror against each cited `BR-###`'s current statement and enforcement
        point. `## 4` is a read-only mirror (§ Use Case) — if a human edit left it drifted from the BR
        file, refresh the mirror to match; never invent a rule that isn't already in a `BR-###` file.
@@ -101,8 +114,17 @@ hub at `01-Requirements/_features/<slug>.md`, and `01-Requirements/ENTITIES.md`.
        across features may still be unsettled from another UC's point of view.
      * Most UCs reference no new or changed entity. Skip this step cleanly when that's true — never
        promote or extend one speculatively.
-  3. **Show a short summary** — the goal, main-flow step count, any drift this run corrected in `## 4`,
-     entities touched (and any recommended for `approved`) — and confirm the user intends to approve.
+  3. **Show a short summary.** Lead with the flow drift collected in step 1: quote each flagged
+     Changelog line since the last approval, in the order it happened, naming the `INT-###`/source
+     behind it — this is what changed in `## 2`/`## 3` that no human has confirmed yet, shown before
+     anything else so the human is reviewing the flow itself, not a paraphrase of it. Follow with the
+     goal, main-flow step count, any drift this run corrected in `## 4`, and entities touched (and any
+     recommended for `approved`) — then ask whether the flow still reads right and the user intends to
+     approve.
+     * **If the human says a step or flow now looks wrong:** stop — don't approve. Point at the
+       specific `S#`/`A#`/`E#` row in `## 2`/`## 3` that needs a hand edit, or say it belongs back
+       through `/bigin-transform-signal` for a proper fold-in, then pick this back up once it's fixed.
+       Approving a flow the human just flagged as wrong defeats the reason this summary exists.
   4. **On confirmation:** set `status: approved` on the UC, bump `version`, and add one `## Changelog`
      line noting the approval and anything this run corrected. Flip any confirmed entity to `approved`
      in the same pass.

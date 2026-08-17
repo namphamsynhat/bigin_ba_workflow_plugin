@@ -64,13 +64,19 @@ READ FIRST:
   § Adopting an existing FR
 - _bigin/conventions/conventions.md § Use Case, § ID scheme, § Frontmatter schema — nothing else
 - 01-Requirements/_features/<slug>.md — the hub, its uc: list and ## Use Cases
-- every UC that list names, in full — title, ## 1, and the flow, not just the title
+- every UC that list names, in full — title, ## 1, ## 2 (Main Success Scenario — the happy path
+  only, no branches), ## 3 (every Alternative & Exception Flow), and ## Discussion (proposals
+  already staged but not yet folded into ## 2/## 3 — they're part of the flow's real, current
+  shape even though unapplied). Not just the title, and not just ## 2.
 
 THEN, per signal, in hub row order:
 1. Read it on its own content — never by adjacency to the row before it, never by phrasing
    ("we also need…" is not evidence of a new goal).
 2. Same actor sitting down to accomplish the same thing as an existing UC, AT ANY STATUS → that
-   UC, update. A new step, branch, validation, or rule are all updates, never a second UC.
+   UC, update. A new step, branch, validation, or rule are all updates, never a second UC. A
+   signal that reads as a branch off an existing ## 2 or ## 3, or that matches a proposal already
+   sitting in ## Discussion, IS the same goal — never rule "different goal" from the title or
+   ## 2 alone; check ## 3 and ## Discussion first.
 3. Different goal → new. Mint the next id with the Grep TOOL over {uc_dir} for the highest number
    — never a Bash pipeline; a denied pipeline silently reuses an id.
 4. The goal's actor belongs to ANOTHER feature's hub → do not mint it here. Report it as owned
@@ -94,6 +100,8 @@ REPORT, per signal:
   <hub row #> -> UC-### (new|existing) | primary_feature: <slug> | features: [<slug>, …] |
                  goal: "<title>"
   (new only)   level: <level> | skeleton written: <path>
+  (existing only) evidence: ## 2 | ## 3 (<A#/E#>) | ## Discussion (<the entry>) — whichever
+                 section actually settled the same-goal call
   cross-feature reasoning: <hub(s) you read and what settled the call>, or "none needed"
 adoptions:       <slug>: absorbs FR-###, … (or "none")
 owned_elsewhere: <hub row #> -> belongs to <slug> (not written)
@@ -134,9 +142,8 @@ UCs you must NOT write (owned by another feature):        <UC-### (owner: <slug>
 READ FIRST:
 - _bigin/conventions/conventions.md — these sections ONLY, not the whole file: § ID scheme,
   § Use Case, § Frontmatter schema, § Status vocabularies, § Feature Hub, § Open Questions
-  wording, § Open Questions ↔ status consistency, § Feedback handling. Add § Entity Data Model
-  only if this run has an entity candidate.
-- _bigin/conventions/paths.md — resolves {uc_dir}, {br_dir}, {entity_dir}, {template_br}, and
+  wording, § Open Questions ↔ status consistency, § Feedback handling.
+- _bigin/conventions/paths.md — resolves {uc_dir}, {br_dir}, {entities_file}, {template_br}, and
   every other variable the lane guides refer to
 - _bigin/stages/transform/3-lane-<x>.md for ONLY the lanes listed above — not all four. Skip
   3-lane-uc.md § Creating a new UC and § Adopting an existing FR — uc-detector already did that;
@@ -147,7 +154,8 @@ READ FIRST:
 
 THEN, one signal at a time, in hub row order:
 1. For a UC/Context-lane signal, stage into the UC TARGET given above — never a different UC, never
-   a new one. For BR/design/entity, follow that lane's guide exactly. Stage UC/BR content into
+   a new one. For BR/design, follow that lane's guide exactly; for entity, just cite the existing
+   `{entities_file}` row per `3-routing.md` § Entity — never promote it. Stage UC/BR content into
    ## Discussion, naming its destination ("new step after S4:", "S6 becomes:", "new flow E2:",
    "§ 1 Trigger becomes:", "§ 4: add BR-###, enforced at S5") as FINAL TEXT — never write into
    § 1-§ 6 or a BR's rule statement yourself. A "new step"/"S# becomes"/"new flow"/"A#/E# becomes"
@@ -162,8 +170,11 @@ THEN, one signal at a time, in hub row order:
 
 DO NOT WRITE — vault-wide or owned elsewhere, and other features run concurrently. Report
 candidates instead; the orchestrator applies them in Stage 4:
-  01-Requirements/ENTITIES.md · 01-Requirements/_entities/ · DESIGN-PRINCIPLES.md
-  01-Requirements/FEATURES.md · PAIN-POINTS.md · any UC-### listed above as owned elsewhere
+  DESIGN-PRINCIPLES.md · 01-Requirements/FEATURES.md · PAIN-POINTS.md
+  any UC-### listed above as owned elsewhere
+NEVER WRITE, full stop — not even via a reported candidate, in this skill:
+  01-Requirements/ENTITIES.md · 01-Requirements/_entities/          # /approve-uc's job, not this
+  skill's; cite {entities_file} by name if a signal needs it, never promote or extend a row
 DO NOT touch another feature's hub, or any file under 00-Inbox/.
 DO NOT write to 01-Requirements/_frs/ or SCENARIOS.md — both retired. An FR adoption's skeleton and
 absorbs: are already written by uc-detector; stage the FR's existing lines as proposed steps, then
@@ -179,8 +190,6 @@ REPORT, as plain lines:
   design_directives: <N> written to the hub's ## Design Directives (row #s)
   staged: <hub row #> -> <UC-###|BR-###> (one line each)
   questions: <artifact> -> <the question>, owner client|team (one line each)
-  entity_candidates: <name> | fields: <field>:<type>:<required?> … | source: <INT-###> |
-                     referenced_by: <UC-### S<n>|BR-###>
   cross_feature_uc_change: <UC-###|new> | owner: <slug> | change: <the staged text> |
                            from_feature: <slug> | source: <INT-###>
   design_principle_candidates: <preference> | source: <INT-###>
@@ -200,7 +209,8 @@ per feature:
                    features set, ## 1-## 6 EMPTY, and a uc: + ## Use Cases pointer on the dispatched
                    feature's own hub — no other hub touched
 1  each "existing" UC → the id is actually on the hub's uc: list (or a cross-feature hub's, for a
-                   goal owned elsewhere) and its title/flow genuinely matches the same-goal call made
+                   goal owned elsewhere) and its ## 2/## 3/## Discussion genuinely matches the
+                   same-goal call made, per the reported `evidence:` line — not just its title
 2  no two signals in the report resolved to the "new" case for what reads as the same goal — that's
                    two skeletons about to receive the same content from 3b
 3  every owned_elsewhere / unresolved row has a real reason, not a placeholder
@@ -224,8 +234,9 @@ per feature in the wave:
                          (a UC's ## 5 Still open, a BR's ## Open Questions)
 4  each touched UC    → NO S#/A#/E# renumbered or deleted, and nothing written into ## 1-## 6
                          (the gate lives in ## Discussion)
-5  shared registers   → git diff --stat over ENTITIES.md, DESIGN-PRINCIPLES.md, PAIN-POINTS.md,
-                         _entities/, and any other-owned UC-### shows NO change until Stage 4
+5  shared registers   → git diff --stat over DESIGN-PRINCIPLES.md, PAIN-POINTS.md, and any
+                         other-owned UC-### shows NO change until Stage 4; over ENTITIES.md and
+                         _entities/ shows NO change at all — this skill never writes either
 
 mismatch → BLOCKING. Dispatch one scoped repair subagent, re-check that feature, then move on.
 ```

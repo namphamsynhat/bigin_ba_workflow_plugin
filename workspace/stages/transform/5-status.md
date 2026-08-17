@@ -74,7 +74,7 @@ Stage 3 (draft):   <N> UC created, <N> updated, <N> BR created, <N> BR updated
                    — <slug>: UC-### (staged, needs-clarification | staged, draft)
                    steps staged: <slug> UC-### — <N> new, <N> changed, <N> flow(s)
                    design: <N> directive(s) — <slug> ## Design Directives, <N> DESIGN-PRINCIPLES row(s)
-Stage 4 (sync):    <N> entity promotion(s), <N> cross-feature UC change(s),
+Stage 4 (sync):    <N> cross-feature UC change(s),
                    <N> UC(s) with § 2/§ 3 drafted, <N> flagged for review, <N> conflict(s) — or none
 cross-feature:     UC-### spans <slug> · <slug> — pointers written on both
 remaining:         <slug>: UC-###/BR-### — N open question(s), owner client|team

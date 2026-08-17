@@ -168,8 +168,8 @@ solved for its shared registers.
 Hence `primary_feature:`. Exactly one feature owns the UC — the one whose actor holds the goal — and
 **only that feature's subagent writes the file**. A signal anchored to a participating feature that
 needs to change a UC owned by another feature is *reported* to the orchestrator and applied
-sequentially in Stage 4, exactly like an entity promotion. This keeps per-feature parallelism intact
-and keeps the write path single-owner.
+sequentially in Stage 4, the same discipline Stage 4 uses for every other vault-wide write. This
+keeps per-feature parallelism intact and keeps the write path single-owner.
 
 The corollary: `primary_feature` is a *write-ownership* fact, not a claim that the other features
 matter less. Every participating hub gets the same pointer in its `## Use Cases` section.

@@ -41,7 +41,7 @@ can already run.
 | UC | **Use case** — the requirement artifact: one user goal, its flow, its branches, its rules mirror, its open questions | 01-Requirements/_ucs | Implemented — its own file, `UC-<NNN> <Title>.md`, drafted/updated by `/bigin-transform-signal`. May span features. Status: `draft → enriched → approved → consolidated`, plus `needs-clarification`/`removed` (§ Status vocabularies). See § Use Case |
 | BR | Business rule | 01-Requirements/_brs | Implemented — its own file, `BR-<NNN> <Title>.md`, `uc: []` citing the use case(s) it governs (feature-level if none apply yet). Same status vocab as UC. **The source of the rule** — a UC's `§ 4` is a read-only mirror |
 | PP | Pain point (register row, ids cited from a UC's `pain_points:`, no separate per-item file) | 01-Requirements | Implemented |
-| EN | Entity data model | 01-Requirements/_entities | Implemented — `/bigin-transform-signal` promotes an `ENTITIES.md` `proposed` row into its own file, `EN-<NNN> <Entity>.md`, the first time a UC/BR references it; `/approve-uc` re-does the same check at the approval gate, since a human editing a UC directly during review can introduce or change an entity reference `/bigin-transform-signal` never saw |
+| EN | Entity data model | 01-Requirements/_entities | Implemented — `/bigin-transform-signal` only cites an `ENTITIES.md` `proposed` row, by name; `/approve-uc` is the only skill that promotes one into its own file, `EN-<NNN> <Entity>.md`, and only once a UC it's approving (or a BR it mirrors) actually references it. Deferring promotion to the approval gate means a still-drafting UC never leaves behind an entity doc nobody ended up needing |
 | FR | ~~Feature requirement~~ | 01-Requirements/_frs | **Retired**, replaced by `UC-###`. Existing files stay on disk, frozen, carrying `absorbed_by: UC-###`; ids keep resolving and nothing writes there any more (§ Use Case → What it replaced) |
 | SCN | ~~Business scenario (cross-feature flow)~~ | 01-Requirements/SCENARIOS.md | **Retired**, replaced by a `UC-###` whose `features:` lists every slug it touches. Existing rows stay, `superseded`, naming the UC that absorbed them (§ Business Scenarios (retired)) |
 | PRD | Product requirements doc | 02-PRD | **Planned** — nothing in this plugin writes one today. `/approve-uc` approves the UC itself and stops there (§ Feature material); a PRD stage that consolidates approved UCs into a document, per feature or per `PRD-###`, isn't built yet. Decided status vocab once it exists as its own artifact: `draft → approved` (§ Status vocabularies) |
@@ -80,7 +80,8 @@ its rows. Also singleton, one per feature: `01-Requirements/_features/<slug>.md`
 `01-Requirements/DESIGN-PRINCIPLES.md` (`type: design-principles`) — the standing client
 design-preference register, maintained by `/extract-signal`, see § Design Principles Register
 below. Also singleton, vault-wide: `01-Requirements/ENTITIES.md` (`type: entity-map`) — the
-canonical entity list, maintained by `/extract-signal`/`/enrich-feature`, mirrors `FEATURES.md`
+canonical entity list. `/extract-signal` files a `proposed` row the moment a signal describes one;
+`/approve-uc` points a row at its promoted `EN-###` doc once one exists. Mirrors `FEATURES.md`
 (see § Entity Data Model). Also singleton, vault-wide: `01-Requirements/PAIN-POINTS.md`
 (`type: pain-point-register`) — the vault-wide pain-point register (see § Pain Point Register).
 
@@ -526,9 +527,10 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   UC exists.
 - `/bigin-transform-signal`: drafts/updates UC/BR files under `_ucs`/`_brs` (§ Feedback handling),
   after each confirmed human-gate fold-in flips the affected Signal Log row from `staged` to
-  `applied`, and refreshes `## Use Cases`, `## Requirement Readiness`, `uc:`/`br:` frontmatter, and —
-  for the entity cases it catches (§ Entity Data Model) — `## Entities` and `entities:` frontmatter.
-  For a UC spanning features it writes `## Use Cases` and `uc:` on **every** participating hub, in its
+  `applied`, and refreshes `## Use Cases`, `## Requirement Readiness`, `uc:`/`br:` frontmatter. It
+  never touches `## Entities`/`entities:` — it doesn't promote an entity, only cites a `proposed` row
+  by name (§ Entity Data Model); `/approve-uc` is what refreshes those. For a UC spanning features it
+  writes `## Use Cases` and `uc:` on **every** participating hub, in its
   sequential Stage 4 pass. Also appends to `## Design Directives` for
   every presentation-only signal it routes down the Design chain, and fills each processed Signal
   Log row's `Destination` cell (the column `/extract-signal` leaves blank) with where the signal
@@ -921,8 +923,11 @@ features** (a Vendor's fields matter to both a Vendor Management feature and a P
 so a per-UC field list duplicates and drifts.
 
 `01-Requirements/_entities/EN-<NNN>-<slug>.md` (`type: entity`) is the artifact for this: one
-document per business entity, promoted by `/bigin-transform-signal` (Stage 4) from a `proposed`
-row in `01-Requirements/ENTITIES.md` the first time a UC/BR actually references it.
+document per business entity, promoted by `/approve-uc` from a `proposed` row in
+`01-Requirements/ENTITIES.md`, the first time a UC it's approving (or a `BR-###` that UC mirrors)
+actually references it. `/bigin-transform-signal` never promotes one — a UC/BR drafted or updated
+mid-review can cite the entity by name against the `proposed` row, but the row stays a row until
+approval, so a goal that never reaches `/approve-uc` never leaves behind an entity doc nobody needed.
 
 **Frontmatter (`_bigin/templates/entity.md`):**
 ```yaml
@@ -957,9 +962,8 @@ fields it governs in its own body. An earlier draft of this document described a
 `EN-### | Entity | Status | Fields (so far) | Features | Notes`, created by `/extract-signal` the
 moment a signal describes a data field or entity attribute, with a `proposed` row per entity.
 Cluster aggressively — one row per real-world business object, not per field.
-`/bigin-transform-signal` promotes a row to its own `EN-###` document; the register keeps the row
-afterward as the vault-wide index (mirroring how `FEATURES.md` stays the index once a feature hub
-exists).
+`/approve-uc` promotes a row to its own `EN-###` document; the register keeps the row afterward as
+the vault-wide index (mirroring how `FEATURES.md` stays the index once a feature hub exists).
 
 ## Pain Point Register
 

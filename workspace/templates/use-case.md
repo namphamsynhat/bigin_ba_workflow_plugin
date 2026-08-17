@@ -72,7 +72,7 @@ invalidate every one of them (references/use-case-standard.md § Deliberate depa
 
 WRITING RULES (Cockburn, 3-lane-uc.md § Writing a step):
 - One step = one interaction, one validation, or one state change, with its actor named.
-- Actor INTENT, never UI gesture: "Parent provides the student's details", not "Parent types into the
+- Actor INTENT, never UI gesture: "Parent provides the student's details: Student First Name, Student Last Name, Residence Address: line, City, Zip, State", not "Parent types into the
   name field and clicks Next". A flow written in gestures is design smuggled into a requirement.
 - 3-9 steps at user-goal level. More than ~12 means this is a summary-level UC and wants splitting.
 - The System column is not optional. What validates, what gets recorded, what the actor sees next.

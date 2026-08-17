@@ -1,6 +1,6 @@
 ---
 name: bigin-transform-signal
-description: This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's staged UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), Design Directives, and cross-feature Entities (EN). Stages all UC/BR updates through a resumable human-review gate.
+description: This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's staged UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), and Design Directives. Stages all UC/BR updates through a resumable human-review gate. It never promotes an Entity (EN) doc — it only cites the ENTITIES.md register; /approve-uc is the only skill that promotes one.
 argument-hint: "[feature slug, or omit for all pending, or resume]"
 ---
 
@@ -32,16 +32,16 @@ Case, § Feature Hub, § Status vocabularies, § Feedback handling, § Resumable
 | :--- | :--- | :--- |
 | `{conventions_reference}` | `_bigin/conventions/conventions.md` | ID scheme, § Use Case, frontmatter, status vocabularies |
 | `{paths_reference}` | `_bigin/conventions/paths.md` | resolves every `{variable}` the stage files use — what a subagent reads instead of this table |
-| `{stages_dir}` | `_bigin/stages/transform/` | `1-foldin`, `2-qualification`, `3-routing`, `3-lane-{uc,br,design,entity}`, `4-sync`, `5-status` |
+| `{stages_dir}` | `_bigin/stages/transform/` | `1-foldin`, `2-qualification`, `3-routing`, `3-lane-{uc,br,design}`, `4-sync`, `5-status` |
 | `{requirements_file}` | `01-Requirements/FEATURES.md` | the feature slug registry |
 | `{hub_dir}` | `01-Requirements/_features/<slug>.md` | one Feature Hub per slug |
 | `{uc_dir}` | `01-Requirements/_ucs/UC-<NNN> <Title>.md` | **Use Cases** — the requirement artifact |
 | `{br_dir}` | `01-Requirements/_brs/BR-<NNN> <Title>.md` | Business Rules, each its own file, `uc: []` citing what it governs |
-| `{entities_file}` | `01-Requirements/ENTITIES.md` | proposed entity register |
-| `{entity_dir}` | `01-Requirements/_entities/EN-<NNN> <Entity>.md` | promoted entity specs |
+| `{entities_file}` | `01-Requirements/ENTITIES.md` | proposed entity register — this skill only ever reads/cites it, never writes it |
+| `{entity_dir}` | `01-Requirements/_entities/EN-<NNN> <Entity>.md` | promoted entity specs — never written by this skill; `/approve-uc` promotes |
 | `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | durable cross-cutting design register |
 | `{inbox_dir}` | `00-Inbox/INT-<NNN>.md` | read frontmatter, `## Extracted signals`, `## Open Questions` **only** — never `## Raw` |
-| `{template_*}` | `_bigin/templates/*` | `use-case`, `br`, `entity`, `entities-register` |
+| `{template_*}` | `_bigin/templates/*` | `use-case`, `br` |
 
 Retired, read-only: `{fr_dir}` (`_frs/`), `{scenarios_file}` (`SCENARIOS.md`). Ids resolve; nothing
 writes. A feature still carrying FRs gets them adopted into a UC on first touch
@@ -112,7 +112,7 @@ per qualified signal → exactly one lane, per clause not per row              [
 | UC | new/updated `UC-###` — steps, flows, `## 1` metadata, `## 4` mirror — staged into `## Discussion` | `3-lane-uc.md` |
 | BR | new/updated `BR-###`, its own file, `uc: []` citing what it governs | `3-lane-br.md` |
 | Design | a `{design_principles_file}` row, or a hub `## Design Directives` row | `3-lane-design.md` |
-| Entity | an `{entities_file}` row promoted to `{entity_dir}` | `3-lane-entity.md` |
+| Entity | a citation onto `{entities_file}`'s existing `proposed` row — never promoted here | `3-routing.md` § Entity |
 | Context | the UC's `## 1` Business Need / Goal, or a `PP-###` on its `pain_points:` | `3-lane-uc.md` |
 
 One lookup happens **inside** the Design lane, not at routing: **durable vs. feature-scoped**.
@@ -133,10 +133,13 @@ within a feature, two subagents run in sequence, never merged:
                         never re-decides which UC a signal belongs to, and never mints one itself.
                         [agent-dispatch.md § 3b]
 
-a subagent NEVER writes:  {entities_file} · {entity_dir} · {design_principles_file}   # vault-wide
+a subagent NEVER writes:  {design_principles_file}                                    # vault-wide
                           a UC-### owned by another feature's primary_feature
                           another feature's hub · anything under {inbox_dir}
-    → it REPORTS entity candidates, design-principle candidates, cross_feature_uc_change items
+                          {entities_file} · {entity_dir}   # nobody writes these in this skill, not
+                                                            # even Stage 4 — /approve-uc promotes,
+                                                            # never here
+    → it REPORTS design-principle candidates, cross_feature_uc_change items
     → Stage 4 applies them sequentially
 a subagent DOES write:    its own feature's hub, its own UCs, its BRs
 ```
@@ -157,8 +160,8 @@ orchestrator, sequential, after every Stage 3 subagent has reported          [4-
 ```
 
 A cross-feature UC change is **staged, not applied** — it is UC content, so it passes the same gate.
-Most runs touch no entity; never promote one speculatively. Never auto-resolve a contradiction: raise
-it, name both sides, stop.
+No entity is ever promoted here — that's `/approve-uc`'s job, at the approval gate (§ Entity Data
+Model). Never auto-resolve a contradiction: raise it, name both sides, stop.
 
 **Only `## 2` and `## 3` skip the gate.** A rule, `## 1`, `## 5`, or `## 6` always stages in
 `## Discussion` and waits for Stage 1 on a later run, same as before — see `4-sync.md` § Part 2 for
@@ -185,7 +188,7 @@ Stage 3 (draft):   <N> UC created, <N> updated, <N> BR created, <N> BR updated
                    — <slug>: UC-### (staged, needs-clarification | staged, draft)
                    steps staged: <slug> UC-### — <N> new, <N> changed, <N> flow(s)
                    design: <N> directive(s) — <slug> ## Design Directives, <N> DESIGN-PRINCIPLES row(s)
-Stage 4 (sync):    <N> entity promotion(s), <N> cross-feature UC change(s),
+Stage 4 (sync):    <N> cross-feature UC change(s),
                    <N> UC(s) with § 2/§ 3 drafted, <N> flagged for review, <N> conflict(s) — or none
 cross-feature:     UC-### spans <slug> · <slug> — pointers written on both
 remaining:         <slug>: UC-###/BR-### — N open question(s), owner client|team
@@ -226,7 +229,11 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 - **Treating a repeated ask as noise** — a duplicate is `applied` with a pointer; the second mention is
   evidence of priority.
 - **Writing a shared register, or another feature's UC, from a per-feature subagent** — two features
-  `Grep` the same highest id and both mint `EN-007`.
+  `Grep` the same highest id and both mint the same new `UC-###` number, or two appends to
+  `DESIGN-PRINCIPLES.md` race and one is lost.
+- **Promoting an entity, or reporting one as a candidate to promote, from anywhere in this skill** —
+  that lane doesn't exist any more. Cite `{entities_file}`'s `proposed` row by name; `/approve-uc`
+  is the only place a `proposed` row becomes an `EN-###` doc.
 - **Pointing only the primary hub at a cross-feature UC** — the other features read as uninvolved.
 - **Deciding a conflict** — recency settles a supersession, never a disagreement.
 - **Setting status early** — this vault's most common drift. Re-count and set it last, every time.

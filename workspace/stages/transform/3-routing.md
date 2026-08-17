@@ -23,7 +23,7 @@ Routing decides **the artifact the signal becomes**. It is deliberately *not* a 
 | an end-to-end flow, including one crossing feature boundaries | **UC** (one UC, `features: []` listing each) | `3-lane-uc.md` |
 | a conditional or policy constraint — feature-level, or governing one workflow | **BR** | `3-lane-br.md` |
 | presentation only: look, layout, tone, visual style, copy voice, interaction feel, accessibility affordance | **Design** | `3-lane-design.md` |
-| a thing the business tracks and its attributes — a data field or entity | **Entity** | `3-lane-entity.md` |
+| a thing the business tracks and its attributes — a data field or entity | **Entity** | § Entity — cite, never promote, below |
 | narrative context — the client's stated why, not actionable alone | **Context** → the UC's `## 1` | `3-lane-uc.md` |
 | a named frustration or cost with no requirement attached | **Context** → `PP-###` on the UC's `pain_points:` | `3-lane-uc.md` |
 
@@ -117,6 +117,23 @@ stated about one feature but clearly generalizes → BOTH
 **Check `{design_principles_file}` before adding a row.** `/extract-signal` already files durable design
 constraints there at extraction time, so the row often exists and the correct action is to cite it.
 
+## Entity — cite, never promote
+
+`/extract-signal` already files a `proposed` row in `{entities_file}` the moment a signal describes a
+data field or entity attribute — that row is what this lane cites. Match the signal against
+`{entities_file}` and record the citation in the hub row's `Destination` cell (§ Recording the
+routing decision, below). If no row exists for a signal that clearly describes one, that's an
+extraction gap worth reporting, not backfilling here.
+
+**Never promote a row to a full `EN-###` document, and never report one as a candidate for the
+orchestrator to promote.** That lane doesn't exist in this skill any more — a `proposed` row stays a
+row until `/approve-uc` promotes it, the first time an approved UC (or a `BR-###` it mirrors) is
+actually confirmed to reference it (§ Entity Data Model). Deferring it that far means a UC that never
+reaches approval never leaves behind an entity doc nobody ended up needing.
+
+A UC or BR drafted or updated in this run may still cite the entity **by name** against the register
+row — there is no `EN-###` id to cite yet, and minting one is not this skill's job.
+
 ## Recording the routing decision
 
 The hub row's `Destination` cell — the column extraction deliberately leaves blank — records where the
@@ -129,9 +146,10 @@ terminal `Status` once all of them are recorded.
 | BR | `BR-###` | `staged` |
 | Design, durable | `DESIGN-PRINCIPLES #<n>` | `applied` |
 | Design, feature-scoped | `<slug> ## Design Directives` | `applied` |
-| Entity | `EN-###`, or `ENTITIES.md proposed` if not promoted | `applied` |
+| Entity | `ENTITIES.md proposed` — never promoted here | `applied` |
 | Context | `UC-### § 1` or `PP-###` | `applied` |
 
 Design, Entity, and Context are `applied` on write because nothing about them is staged behind a gate —
 the gate exists to protect UC/BR content from entering approved scope unreviewed, and none of these
-enter it.
+enter it. Entity's `applied` marks the *citation* as done, not the entity as modelled — the row still
+waits on `/approve-uc` for that.

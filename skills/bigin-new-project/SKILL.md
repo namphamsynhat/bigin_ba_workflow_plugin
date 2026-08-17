@@ -81,7 +81,7 @@ plugin context, so a path into the install directory is unreachable to them.
   | `_bigin/templates/*.md` | whichever skill creates that artifact type, the first time it's needed |
 
 * **Rules:**
-  - **Copy every stage file, not just the ones this project will use.** Which files a run reads is decided at read time, per signal and per lane; a project that skipped `3-lane-entity.md` because its first intake had no entity signal breaks the first run that does.
+  - **Copy every stage file, not just the ones this project will use.** Which files a run reads is decided at read time, per signal and per lane; a project that skipped `3-lane-design.md` because its first intake had no presentation-only signal breaks the first run that does.
   - **Report the refresh** (§ 8) so anyone who edited a plugin-owned file finds out it was overwritten.
   - **Remove a legacy `_bigin/rules/` — only after the copy above has verified.** Projects initiated on plugin `≤ 1.2.0` have the flat layout this replaced. Left in place it's a second, stale copy of the rulebook at a path older prose may still cite, so a subagent can read a rule that no longer governs.
 

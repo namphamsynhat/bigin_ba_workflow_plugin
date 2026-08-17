@@ -26,8 +26,9 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |
 /bigin-transform-signal   [Transform] qualify each filed signal, route it to a lane, turn it into
                            drafted/updated Use Cases (a user goal with its flow, branches, rules
-                           mirror and open questions) and the BRs governing them, keep
-                           cross-feature Entities in sync, human-gate every UC/BR change first
+                           mirror and open questions) and the BRs governing them, human-gate every
+                           UC/BR change first. Cites an Entity's proposed row by name -- never
+                           promotes one; that waits for /approve-uc
         |
         |------------------------------------------.
         |                                          |
@@ -74,7 +75,7 @@ _bigin/stages/                    one file per pipeline stage, same ownership. G
     transform/2-qualification.md   filing are separate files because they are separate subagents:
                                    the extractor must not know its rows get grouped downstream
     transform/3-routing.md
-    transform/3-lane-{uc,br,design,entity}.md
+    transform/3-lane-{uc,br,design}.md
     transform/4-sync.md
     transform/5-status.md
 _bigin/templates/                 blank scaffolds for every artifact type, same ownership
