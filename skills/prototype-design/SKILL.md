@@ -18,7 +18,7 @@ This is the design stage of the extract → transform → load pipeline.
 ## Non-Negotiable Core Rules
 
 * **Precondition halts, never degrades:** this skill still reads the pre-migration `.bigin/` layout (§ Precondition).
-* **Approved input only:** an unapproved feature goes back to `/approve-fr`, not into a prototype.
+* **Approved input only:** an unapproved feature goes back to `/approve-uc`, not into a prototype.
 * **Traceable, not decorative:** a flow step that satisfies a requirement cites it. An untraceable step is scope nobody approved.
 * **Concrete over pretty:** textual detail an engineer can build from beats a tidy outline.
 
@@ -40,7 +40,7 @@ is the worse failure: it reads as an empty backlog rather than a missing bridge.
 ## Input
 
 Read the approved feature's section in `.bigin/PRD.md`. If the feature isn't `Approved`, tell the user
-to run `/approve-fr` first.
+to run `/approve-uc` first.
 
 ## What to do
 

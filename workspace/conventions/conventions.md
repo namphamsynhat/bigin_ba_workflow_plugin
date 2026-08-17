@@ -41,10 +41,10 @@ can already run.
 | UC | **Use case** — the requirement artifact: one user goal, its flow, its branches, its rules mirror, its open questions | 01-Requirements/_ucs | Implemented — its own file, `UC-<NNN> <Title>.md`, drafted/updated by `/bigin-transform-signal`. May span features. Status: `draft → enriched → approved → consolidated`, plus `needs-clarification`/`removed` (§ Status vocabularies). See § Use Case |
 | BR | Business rule | 01-Requirements/_brs | Implemented — its own file, `BR-<NNN> <Title>.md`, `uc: []` citing the use case(s) it governs (feature-level if none apply yet). Same status vocab as UC. **The source of the rule** — a UC's `§ 4` is a read-only mirror |
 | PP | Pain point (register row, ids cited from a UC's `pain_points:`, no separate per-item file) | 01-Requirements | Implemented |
-| EN | Entity data model | 01-Requirements/_entities | Implemented — `/bigin-transform-signal` promotes an `ENTITIES.md` `proposed` row into its own file, `EN-<NNN> <Entity>.md` |
+| EN | Entity data model | 01-Requirements/_entities | Implemented — `/bigin-transform-signal` promotes an `ENTITIES.md` `proposed` row into its own file, `EN-<NNN> <Entity>.md`, the first time a UC/BR references it; `/approve-uc` re-does the same check at the approval gate, since a human editing a UC directly during review can introduce or change an entity reference `/bigin-transform-signal` never saw |
 | FR | ~~Feature requirement~~ | 01-Requirements/_frs | **Retired**, replaced by `UC-###`. Existing files stay on disk, frozen, carrying `absorbed_by: UC-###`; ids keep resolving and nothing writes there any more (§ Use Case → What it replaced) |
 | SCN | ~~Business scenario (cross-feature flow)~~ | 01-Requirements/SCENARIOS.md | **Retired**, replaced by a `UC-###` whose `features:` lists every slug it touches. Existing rows stay, `superseded`, naming the UC that absorbed them (§ Business Scenarios (retired)) |
-| PRD | Product requirements doc | 02-PRD | **Planned** — `/approve-fr` today writes one consolidated `PRD.md` with a section per approved feature, not a per-`PRD-###` file. Decided status vocab once it exists as its own artifact: `draft → approved` (§ Status vocabularies) |
+| PRD | Product requirements doc | 02-PRD | **Planned** — nothing in this plugin writes one today. `/approve-uc` approves the UC itself and stops there (§ Feature material); a PRD stage that consolidates approved UCs into a document, per feature or per `PRD-###`, isn't built yet. Decided status vocab once it exists as its own artifact: `draft → approved` (§ Status vocabularies) |
 | EP | Epic | 03-Epics-Stories | **Planned** — `/consolidate-prd` today writes one flat `epics.md`, not per-`EP-###` files. Same `draft → approved` status vocab once split out |
 | US | User story | 03-Epics-Stories | **Planned** — stories live nested under their epic in `epics.md` today, not as their own `US-###` files. Same `draft → approved` status vocab once split out |
 | UX | UI/UX spec | 04-UIUX | Implemented — one `UX-<NNN> <Feature>.md` per feature, written by `/bigin-generate-design` from the feature's UC(s). **Its rules are not in this file:** the design rulebook is `_bigin/conventions/design-conventions.md`, deliberately separate, and it carries UX's own status vocabulary (`draft → needs-clarification → accepted`), paths, and hard rules. The retired `/prototype-design` wrote `<feature-id>-prototype.md` with no id |
@@ -228,7 +228,7 @@ four:
 | `draft` | Content exists — created or last folded in by `/bigin-transform-signal` — but hasn't been through `/enrich-feature` yet. The default resting state. |
 | `needs-clarification` | At least one unresolved `- [ ] Q:` line in the artifact's question list — a UC's `## 5` **Still open**, a BR's `## Open Questions` (§ Open Questions ↔ status consistency's invariant — unchanged, just now one value in this list rather than sitting alongside a separate `in-review`). Once every question resolves, status moves to whatever it would otherwise be — `draft` if it hasn't been enriched yet, `enriched`/`approved`/`consolidated` if a later-stage edit is what raised the question. Never a fixed placeholder. |
 | `enriched` | `/enrich-feature` has run: domain research + entity mapping done, concerns resolved or accepted as risk. |
-| `approved` | A human has approved it via `/approve-fr`; it's feature material (§ Feature material) and folded into the PRD. |
+| `approved` | A human has approved it via `/approve-uc`; it's feature material (§ Feature material), ready to hand to a PRD/epics stage once one exists (§ Reconciliation notes). |
 | `consolidated` | `/consolidate-prd` has merged prototype-driven changes back and generated its epic/story. The UC's pipeline is complete — until new feedback lands. |
 | `removed` | A human decided this UC/BR is no longer relevant/wanted (§ Feedback handling's "Removing scope") — human-gated like `approved`, never set by an agent. Not deletion (hard rule 1): the file, id, and history stay intact. |
 
@@ -253,9 +253,10 @@ don't conflate the two just because both use `needs-clarification`.
 
 ## Traceability chain
 
-`/approve-fr` (PRD) and `/consolidate-prd` (Epics/Stories) branch on the UC's `primary_feature:` slug
+A future PRD stage and `/consolidate-prd` (Epics/Stories) branch on the UC's `primary_feature:` slug
 looked up in `01-Requirements/FEATURES.md` — the feature's `Status` there decides which of two
-valid chains applies:
+valid chains applies. `/approve-uc` itself doesn't branch on this: it approves the UC regardless of
+which chain the feature will take, and stops there (§ Feature material):
 
 - **Full** — feature `proposed` / `committed` / `not-built` (new scope):
   `INT → UC/BR → PRD → EP → US → UX`.
@@ -325,7 +326,7 @@ another would carry it:
 
 | Artifact | `absorbed:` entries | Written by |
 |---|---|---|
-| PRD section | `UC-###@version` for each approved UC folded into it | `/approve-fr` |
+| PRD section | `UC-###@version` for each approved UC folded into it | a future PRD stage (Planned — `/approve-uc` approves the UC and stops there, § Feature material) |
 | Epic/Story | `PRD-###@version` (or `UC-###@version` on the lightweight path) it decomposes | `/consolidate-prd` |
 | Prototype | `UC-###@version` / PRD section version it designed from | `/bigin-generate-design` |
 
@@ -360,10 +361,10 @@ Approval converts a UC from *work in progress* into **staged material on its fea
   human re-approves it. A feature carries as many UCs as it has distinct user goals, each staged as
   material only while it is currently `approved` — so a feature can be part-approved, and that is a
   real, useful state rather than a defect.
-- Humans gate `approved` (hard rule 4) — an agent never sets it; `/approve-fr` is the point where
+- Humans gate `approved` (hard rule 4) — an agent never sets it; `/approve-uc` is the point where
   a human confirms and the status flips.
 - **Planned** — a richer engagement (a front-end dashboard, a workflow picker per feature) may
-  eventually replace the fixed `/enrich-feature → /approve-fr → /bigin-generate-design →
+  eventually replace the fixed `/enrich-feature → /approve-uc → /bigin-generate-design →
   /consolidate-prd` pipeline described here with something that dispatches per-feature by need.
   Not built today; the fixed order is what every feature runs.
 
@@ -470,7 +471,7 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
 
   One row per UC/BR touching this feature — a feature with four distinct user goals gets four UC rows,
   oldest first, which is normal rather than fragmentation (§ Use Case). The
-  authoritative gate for `/enrich-feature`/`/approve-fr`/`/bigin-generate-design` is always each UC's
+  authoritative gate for `/enrich-feature`/`/approve-uc`/`/bigin-generate-design` is always each UC's
   own live frontmatter `status` (§ Feature material) — this table just saves a human or agent from
   having to open every UC to see what's ready; a skill still checks the UC directly before
   proceeding, never trusts a possibly-stale table alone. An `approved` UC can still receive new
@@ -536,8 +537,10 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
 - `/enrich-feature`: refreshes `## Requirement Readiness`/`## Related Documents`/
   `## Open Questions / Gates`, and **`## Pain Points`** whenever it folds a pain-point signal into the
   UC's `pain_points:` list.
-- `/approve-fr`: refresh `## PRD`, and flip the corresponding Signal Log rows (the ones the PRD
-  was drafted from) to `applied` if not already.
+- `/approve-uc`: refresh `## Requirement Readiness` to reflect the new `approved` status, refresh
+  `## Entities`/`entities:` for any entity it promoted or extended, and flip the corresponding Signal
+  Log rows (the ones the UC was drafted/updated from) to `applied` if not already. Writes nothing to
+  `## PRD` — that section stays "not started" until a PRD stage exists (§ Reconciliation notes).
 - `/bigin-generate-design`: refresh `## UX Spec` (link + status) and `uiux:`, flip the
   `## Design Directives` rows a screen actually implements to `reflected`, and mirror its design
   questions into `## Open Questions / Gates`. If the source UC is still open (not yet `approved`),
@@ -1014,7 +1017,7 @@ single feature:
   less corporate") go to that feature hub's own `## Design Directives` section, on the Design chain
   (§ Traceability chain) — **not** onto its UC. An earlier draft of this document routed them to
   the UC; that put untestable presentation language inside approved functional scope and made a
-  purely visual note wait behind `/approve-fr` before `/bigin-generate-design` could ever see it. A
+  purely visual note wait behind `/approve-uc` before `/bigin-generate-design` could ever see it. A
   feature-scoped directive that turns out to change behaviour was misrouted and belongs back on the
   UC — see `_bigin/stages/transform/3-routing.md` § The design boundary test.
 - **Cross-cutting** preferences (brand, tone, accessibility, interaction, layout, content,
@@ -1032,9 +1035,10 @@ single feature:
   `## Changelog` line, so the register's own history is auditable over time, same as any other
   vault artifact.
 
-Downstream: `/approve-fr` reads it when drafting a PRD section's design-goals content, citing rows
-instead of re-deriving the same preference per feature. `/bigin-generate-design` reads it
-**directly** (not via a PRD at all) and seeds the shared design system's `## Foundations` from its
+Downstream: a future PRD stage (Planned) would read it when drafting a PRD section's design-goals
+content, citing rows instead of re-deriving the same preference per feature — `/approve-uc` doesn't
+draft PRD content itself (§ Feature material), so this reading is still unbuilt. `/bigin-generate-design`
+reads it **directly** (not via a PRD at all) and seeds the shared design system's `## Foundations` from its
 `active` rows — so it stays authoritative even if a given PRD section forgot to transcribe a
 preference, and so a feature that reaches design before its PRD is finished still produces screens
 consistent with what the client has said. That register is **read-only** to the design stage: it
@@ -1174,7 +1178,7 @@ the feature shipping):
 - Either way — cascade: set the downstream PRD/epic/story/prototype that trace (via
   `sources`/`links`) to the affected UC back to `draft` too (a changelog entry on each citing
   the INT id and naming the upstream UC change that triggered it), so stale artifacts surface
-  until `/approve-fr`/`/bigin-generate-design`/`/consolidate-prd` re-run.
+  until `/approve-uc`/`/bigin-generate-design`/`/consolidate-prd` re-run.
 - Open questions with owner `client` stay listed in the (current) UC's `## Open Questions` for the
   human to raise with the client; answers return through `/bigin-intake` as feedback.
 
@@ -1273,31 +1277,39 @@ scattered inline caveats — resolve and delete each line as the corresponding s
 - ~~**The design stage was on the old layout.**~~ **Resolved.** `/prototype-design` is superseded by
   **`/bigin-generate-design`**, which reads `01-Requirements/_ucs/` directly, accepts a feature
   carrying several UCs and a UC spanning several features, and writes `04-UIUX/UX-<NNN> …` plus the
-  shared design system. It runs off UCs, not a PRD, so it does not wait on `/approve-fr`. Its rules
+  shared design system. It runs off UCs, not a PRD, so it does not wait on `/approve-uc`. Its rules
   are in `_bigin/conventions/design-conventions.md` — **a separate rulebook on purpose**; design
   conventions and requirement conventions are never merged into this file. `/prototype-design` is
   kept only so old references resolve; do not run both.
-- **`enrich-feature`, `approve-fr`, `consolidate-prd` are on the old `.bigin/`
+- ~~**The approval stage was on the old layout and the retired `FR-###` artifact.**~~ **Resolved.**
+  `/approve-fr` is superseded by **`/approve-uc`**, which reads and writes `01-Requirements/_ucs/`
+  directly, re-derives the UC's live state (a human may edit the file directly while reviewing,
+  outside `/bigin-transform-signal`) rather than trusting stale status, and promotes/extends any
+  `EN-###` the UC references as part of the same gate. It does **not** write a PRD — PRD generation
+  is still fully **Planned**, so `approved` today means "feature material, ready to hand off"
+  (§ Feature material), not "folded into a document." `/approve-fr` is kept only so old references
+  resolve; do not run both.
+- **`enrich-feature`, `consolidate-prd` are on the old `.bigin/`
   flat-file layout AND on the retired `FR-###` artifact** (`.bigin/features/FR-<id>-*.md`,
   `.bigin/PRD.md`, `.bigin/epics.md`, inline `Status:` headings) — not the
   `01-Requirements/_ucs/`/`_brs/` model with `status:` frontmatter that `bigin-intake`,
-  `bigin-new-project`, `extract-signal`, `bigin-transform-signal`, and `bigin-generate-design` use.
-  **This is now a two-axis gap, and it is the largest open item in this plugin:** those three skills
+  `bigin-new-project`, `extract-signal`, `bigin-transform-signal`, `bigin-generate-design`, and
+  `approve-uc` use.
+  **This is now a two-axis gap, and it is the largest open item in this plugin:** these two skills
   need both the path migration *and* the FR→UC migration. Concretely, each of them:
   - reads `.bigin/features/FR-<id>-*.md` and must read `01-Requirements/_ucs/UC-<NNN> <Title>.md`;
   - keys its whole run on a single FR id per feature and must accept a feature carrying **several**
     UCs, plus a UC spanning **several** features (`primary_feature` decides the chain);
   - expects an FR's `## Functional requirements` list and must read a UC's `## 2`/`## 3` flows, its
     `## 4` rule mirror, and its `## 5` **Still open** list (not `## Open Questions`);
-  - in `/approve-fr`'s case, gates approval on the artifact that is now the reviewable one — which is
-    the point of the UC migration, so this skill is the highest-value one to move first;
   - in `/consolidate-prd`'s case, should cut epics/stories as **use-case slices** (§ Traceability
     chain), flows first, rather than one story per FR line.
 
-  Until then, § Feature Hub's "Maintenance contract" rows for those three describe the target, not
-  the current read/write paths. **Two exits from `/bigin-transform-signal` now work:** the design
-  one (`/bigin-generate-design`, live) and the human. The PRD/epics exit still needs a person.
-  `/bigin-ba` stops at that boundary rather than run a stage against paths that no longer exist.
+  Until then, § Feature Hub's "Maintenance contract" rows for those two describe the target, not
+  the current read/write paths. **Three exits from `/bigin-transform-signal` now work:** the design
+  one (`/bigin-generate-design`, live), the approval one (`/approve-uc`, live), and the human.
+  `/bigin-ba` stops at the remaining boundary (`enrich-feature`/`consolidate-prd`) rather than run a
+  stage against paths that no longer exist.
   § Absorbed is likewise **half-real**: `/bigin-generate-design` implements it for `UX-###`
   (stamping `UC-###@version`, re-stamped whole each run, which is what makes "this design is stale"
   detectable), while the PRD/epic rows in its table remain planned.
@@ -1315,14 +1327,15 @@ scattered inline caveats — resolve and delete each line as the corresponding s
   Anything still writing `in-review` or `superseded` onto a UC/BR is a bug.
 - **Command order mismatch**: this document's Full chain is `PRD → EP → US → UX`, but design no
   longer sits at the end of it — `/bigin-generate-design` runs off `UC-###` as soon as a UC has a
-  main flow, in parallel with `/approve-fr` and `/consolidate-prd` rather than between them.
+  main flow, in parallel with `/approve-uc` and `/consolidate-prd` rather than between them.
   Decide whether the documented chain should say so explicitly.
 - **PRD/Epic/Story file granularity is still undecided** — only their status vocab is decided
   (`draft → approved`, § Status vocabularies). This document assumes `PRD-###`/`EP-###`/`US-###`
-  are each their own file with their own id. Today `/approve-fr` writes one consolidated `PRD.md`
-  and `/consolidate-prd` writes one flat `epics.md`. Decide whether to build toward per-artifact
-  files (as this document assumes) or formalize the flat-file model instead — don't let both
-  readings coexist in downstream skill docs. **`UX-###` is settled**: one file per feature,
+  are each their own file with their own id. Today nothing writes a PRD (`/approve-uc` approves the
+  UC and stops, § Feature material — PRD generation is Planned) and `/consolidate-prd` writes one
+  flat `epics.md`. Decide whether to build toward per-artifact files (as this document assumes) or
+  formalize the flat-file model instead — don't let both readings coexist in downstream skill docs.
+  **`UX-###` is settled**: one file per feature,
   `04-UIUX/UX-<NNN> <Feature>.md`, per `_bigin/conventions/design-conventions.md`.
 - **No front-end app exists yet to consume this vault.** A companion front-end is planned as a
   separate repository (not an Obsidian plugin bundled with this one) — treat every "a front-end

@@ -93,7 +93,7 @@ plugin context, so a path into the install directory is unreachable to them.
   | Field | How to get it |
   |---|---|
   | `client` | `$ARGUMENTS`, or ask |
-  | `approver` / `approver_email` | Ask — the one human who signs off requirements (`/approve-fr` gates on this person) |
+  | `approver` / `approver_email` | Ask — the one human who signs off requirements (`/approve-uc` gates on this person) |
   | `client_emails` | Ask — every address on the client side that might appear on an intake |
   | `team_emails` | Ask — your own team's addresses for this engagement |
   | `email_provider` | `AskUserQuestion`: **outlook** (default) or **spark** |

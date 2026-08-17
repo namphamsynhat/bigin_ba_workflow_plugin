@@ -45,7 +45,7 @@ a duplicate copy that can drift out of sync with the source.
    plugin-owned and overwritten on every `/bigin-new-project` run — a real override belongs in
    `.claude/bigin-ba-workflow-plugin.local.md`, never edited in place.
 6. **Engagement snapshot** — client, approver, and project mode (`new`/`ongoing`), pulled from
-   `project.md`'s frontmatter. Enough for a session to know whose sign-off gates `/approve-fr` without
+   `project.md`'s frontmatter. Enough for a session to know whose sign-off gates `/approve-uc` without
    opening a second file.
 
 Leave out anything a generic template would ask for that doesn't apply here: there's no build/test/

@@ -34,9 +34,11 @@ what governs a stage is findable from the stage, and a run loads only the files 
 /enrich-feature           [Load] domain research    |  presentation-only signals take the Design
         |                  + entity mapping         |  chain — a directive on the feature hub or
         |                                           |  in DESIGN-PRINCIPLES.md, no UC, no PRD
-/approve-fr               [Load] approve the UCs,   |
-        |                  generate/update the PRD  |
-        |                                           |
+/approve-uc               [Load] approve the UC once its open questions are resolved:
+        |                  reprocess its live content, promote/update any entity
+        |                  it references, flip status to approved. No PRD is
+        |                  written here yet -- that stage is still Planned.
+        |
 /bigin-generate-design    [Load] every UC with no current design -> one UX-### per feature:
         |                  screen specs, the shared design system, and two prototype prompts
         |                  (Claude design + Figma Make). Runs off UCs, not the PRD, so it can
@@ -95,7 +97,9 @@ _bigin/templates/                 blank scaffolds for every artifact type, same 
 ├── _frs/FR-<NNN> <Title>.md      RETIRED — pre-UC requirement docs, frozen, absorbed_by: UC-###
 └── SCENARIOS.md                  RETIRED — pre-UC SCN-### cross-feature register; a cross-feature
                                   flow is now one UC
-PRD.md                            consolidated PRD, one section per approved feature
+PRD.md                            Planned — nothing writes this yet. /approve-uc approves the UC
+                                  and stops there; a PRD-generation stage isn't built (see the
+                                  migration note below)
 prototypes/FR-<NNN>-prototype.md flows/screens for an approved feature (still FR-keyed — see
                                   the migration note below)
 epics.md                          generated Epics & User Stories
@@ -130,9 +134,9 @@ for it; **needs authentication** cannot be fixed here at all, since OAuth needs 
 tools** is a name collision, reported rather than reinstalled over. The step never blocks initiation —
 `/bigin-intake direct …` works with no provider at all, and only Mode B's sweep depends on one.
 
-Every UC's own frontmatter `status` (`draft` ⇄ `needs-clarification` → `enriched` → `approved`, human-only per `/approve-fr`, → `consolidated`) is the authoritative gate. A feature carries one use case per distinct user goal, so several at different stages at once is normal, and a use case that spans features is owned by one of them (`primary_feature:`) while appearing on every participating hub. Each Feature Hub's `## Requirement Readiness` table is a refreshed snapshot for orientation, not the gate itself. Features are matched by slug across stages, so `/extract-signal` and `/bigin-transform-signal` update an existing hub/UC rather than duplicating one when new signals map to the same feature — and a new signal about an existing *goal* is a step, branch, or rule inside that UC, not a second one.
+Every UC's own frontmatter `status` (`draft` ⇄ `needs-clarification` → `enriched` → `approved`, human-only per `/approve-uc`, → `consolidated`) is the authoritative gate. A feature carries one use case per distinct user goal, so several at different stages at once is normal, and a use case that spans features is owned by one of them (`primary_feature:`) while appearing on every participating hub. Each Feature Hub's `## Requirement Readiness` table is a refreshed snapshot for orientation, not the gate itself. Features are matched by slug across stages, so `/extract-signal` and `/bigin-transform-signal` update an existing hub/UC rather than duplicating one when new signals map to the same feature — and a new signal about an existing *goal* is a step, branch, or rule inside that UC, not a second one.
 
-> **Migration note:** `/enrich-feature`, `/approve-fr`, and `/consolidate-prd` still read the older `.bigin/features/FR-<id>-*.md` single-file model **and still key on the retired `FR-###` artifact**. They haven't been moved onto the `01-Requirements/` layout or onto `UC-###` yet — that's the remaining stage of this migration, and it is a two-axis gap. `/bigin-generate-design` **is** migrated (it replaces `/prototype-design`, reads `_ucs/` directly, and needs no PRD), so the design exit from `/bigin-transform-signal` works today while the PRD/epics exit still needs a human. See `_bigin/conventions/conventions.md` § Reconciliation notes for the per-skill breakdown.
+> **Migration note:** `/enrich-feature` and `/consolidate-prd` still read the older `.bigin/features/FR-<id>-*.md` single-file model **and still key on the retired `FR-###` artifact**. They haven't been moved onto the `01-Requirements/` layout or onto `UC-###` yet — that's the remaining stage of this migration, and it is a two-axis gap. `/bigin-generate-design` and `/approve-uc` **are** migrated (`/bigin-generate-design` replaces `/prototype-design`, reads `_ucs/` directly, and needs no PRD; `/approve-uc` replaces `/approve-fr`, reads/writes `_ucs/` directly, and generates no PRD of its own — that's still Planned), so both the design exit and the human-approval exit from `/bigin-transform-signal` work today, while the PRD/epics exit still needs a person. See `_bigin/conventions/conventions.md` § Reconciliation notes for the per-skill breakdown.
 
 ## Configuration
 
@@ -142,7 +146,7 @@ Every UC's own frontmatter `status` (`draft` ⇄ `needs-clarification` → `enri
 
 Every stage is available two ways: type `/<stage>` yourself, or let the `bigin-ba` agent drive the
 pipeline stage by stage. The agent reads the vault to decide what runs next, continues automatically
-where the next stage needs no decision, and stops at the ones that do — `/approve-fr`, and
+where the next stage needs no decision, and stops at the ones that do — `/approve-uc`, and
 `/bigin-transform-signal`'s UC/BR review gate. The human-confirmation requirements live inside those
 skills, so they hold whether a person or the agent invoked them.
 

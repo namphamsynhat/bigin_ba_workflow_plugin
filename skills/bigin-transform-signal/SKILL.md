@@ -177,7 +177,7 @@ next:              <slug> ready for /enrich-feature | <slug> ready for /bigin-ge
 
 Each produces a run that looks clean. Ordered by cost to discover later.
 
-- **Drafting from an unqualified signal** — a flow built on an incomplete source reaches `/approve-fr`
+- **Drafting from an unqualified signal** — a flow built on an incomplete source reaches `/approve-uc`
   looking identical to a sound one.
 - **Stretching the § 2 direct-write exception to § 3/§ 4/§ 1/§ 6** — only a new/changed/removed
   main-flow step skips the human-review wait (Stage 4 Part 2); a branch, a rule, or anything else

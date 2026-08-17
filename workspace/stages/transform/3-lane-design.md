@@ -107,7 +107,7 @@ so a directive filed here reaches screens on the next design run.
 Report design-only features explicitly (`next: <slug> ready for /bigin-generate-design
 (design-only)`) so the queue is visible rather than silent. **Never mint a placeholder UC** just to
 give the design stage something to key on — a UC with no flow pollutes the feature's material set,
-reaches `/approve-fr` as if it were scope, and the design stage skips it anyway (its Stage 1 gate 1
+reaches `/approve-uc` as if it were scope, and the design stage skips it anyway (its Stage 1 gate 1
 drops a UC with no main flow).
 
 ## What this lane never does

@@ -61,4 +61,4 @@ Read `.bigin/features/FR-<id>-*.md` for the feature named in `$ARGUMENTS`. With 
      ```
   4. Set `Status:` to `Enriched`.
   5. Summarize the concerns and ask, per concern, whether it needs resolving now or can be accepted as a known risk. Record the call inline next to each one.
-  6. Tell the user to run `/approve-fr <feature-id>` when ready.
+  6. Tell the user to run `/approve-uc <UC-id>` when ready.
