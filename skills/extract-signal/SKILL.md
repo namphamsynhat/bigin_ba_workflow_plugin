@@ -32,7 +32,7 @@ Row counts won't match, and shouldn't. Every later stage reads the raw record; n
 | `{conventions_reference}` | `_bigin/conventions/conventions.md` | ID scheme, frontmatter schema, artifact conventions |
 | `{extraction_rules}` | `_bigin/stages/extract/2-extraction.md` | the **extraction** subagent's only rulebook |
 | `{filing_rules}` | `_bigin/stages/extract/3-filing.md` | the **filing** subagent's only rulebook |
-| `{conventions_file}` | `.claude/bigin-ba-workflow-plugin.local.md` | optional project overrides |
+| `{conventions_file}` | `.agents/bigin-ba-workflow-plugin.local.md` (or `.claude/bigin-ba-workflow-plugin.local.md`) | optional project overrides |
 | `{pain_points_file}` | `01-Requirements/PAIN-POINTS.md` | canonical `PP-###`; each hub mirrors its own rows |
 | `{entities_file}` | `01-Requirements/ENTITIES.md` | candidate `EN-###`; no hub mirror |
 | `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | cross-cutting constraints; no hub mirror |

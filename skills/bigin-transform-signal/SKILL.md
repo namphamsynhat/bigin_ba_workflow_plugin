@@ -114,13 +114,23 @@ per qualified signal → exactly one lane, per clause not per row              [
 | Entity | an `{entities_file}` row promoted to `{entity_dir}` | `3-lane-entity.md` |
 | Context | the UC's `## 1` Business Need / Goal, or a `PP-###` on its `pain_points:` | `3-lane-uc.md` |
 
-Two lookups happen **inside** a lane, not at routing: **which UC, new or update** (most signals are a
-step, branch, or rule in a workflow that already exists) and **durable vs. feature-scoped** for design.
+One lookup happens **inside** the Design lane, not at routing: **durable vs. feature-scoped**.
+**Which UC, new or update** (most signals are a step, branch, or rule in a workflow that already
+exists) is resolved by its own subagent, `uc-detector`, before any lane drafts — see below.
 
 ```text
 FAN OUT ONE SUBAGENT PER FEATURE SLUG, never per lane                        [references/agent-dispatch.md]
     → a feature's hub + UC/BR files are one ownership domain; two lanes routinely touch the same UC
     → features are independent and parallelize safely; within a feature, process sequentially
+
+within a feature, two subagents run in sequence, never merged:
+  3a  uc-detector       resolves every UC/Context-lane signal to a UC-### — new or existing — reading
+                        other features' hubs when a signal sounds cross-feature. Mints a new UC's
+                        empty skeleton (frontmatter + hub pointer only); never stages content.
+                        [agent-dispatch.md § 3a]
+  3b  drafting subagent stages content into every lane, using 3a's resolved UC targets AS GIVEN — it
+                        never re-decides which UC a signal belongs to, and never mints one itself.
+                        [agent-dispatch.md § 3b]
 
 a subagent NEVER writes:  {entities_file} · {entity_dir} · {design_principles_file}   # vault-wide
                           a UC-### owned by another feature's primary_feature
@@ -179,6 +189,9 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 
 - **Drafting from an unqualified signal** — a flow built on an incomplete source reaches `/approve-uc`
   looking identical to a sound one.
+- **Skipping `uc-detector`, or re-deciding new-vs-update inside the drafting subagent anyway** — the
+  whole reason the lookup got its own step is that a busy drafting pass under-reads a cross-feature
+  hub and either mints a duplicate UC or drafts into the wrong one.
 - **Stretching the § 2 direct-write exception to § 3/§ 4/§ 1/§ 6** — only a new/changed/removed
   main-flow step skips the human-review wait (Stage 4 Part 2); a branch, a rule, or anything else
   still stages in `## Discussion` and waits for Stage 1, same as always.
@@ -205,17 +218,17 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 
 ## Model
 
-Per-feature subagents run on the **session default model**, not `haiku`: drafting is judgment-heavy
-(which UC a signal belongs to, where a step sits in a flow, spotting a cross-feature goal). Contrast
-`/extract-signal`, mechanical against a tight rule set.
+Both Stage 3 subagents (`uc-detector` and the drafting subagent) run on the **session default model**,
+not `haiku`: this is judgment-heavy work — which UC a signal belongs to, where a step sits in a flow,
+spotting a cross-feature goal. Contrast `/extract-signal`, mechanical against a tight rule set.
 
 Deep fidelity checking belongs to **`/extract-signal`'s source audit**, next to the raw material where
 a quote-anchored check is cheap. This skill does the shallow half only (Stage 2, Gate 3).
 
 ## Additional resources
 
-- **`references/agent-dispatch.md`** — the per-feature subagent prompt, its report contract, and the
-  wave-verification checklist.
+- **`references/agent-dispatch.md`** — the `uc-detector` prompt (§ 3a), the drafting subagent prompt
+  (§ 3b) and its report contract, and the wave-verification checklist.
 - **`references/use-case-standard.md`** — where the UC artifact's shape comes from (Cockburn, BABOK,
   Use-Case 2.0, Wiegers), what is established practice and what is a deliberate departure. Read before
   changing the template or a lane guide; not needed for a run.

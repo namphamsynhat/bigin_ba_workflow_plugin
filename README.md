@@ -114,6 +114,17 @@ rulebook and templates into `_bigin/` at init gives skills, subagents, and the `
 path convention that all three can actually read. It also makes the rules inspectable: a BA can open
 `_bigin/stages/transform/3-lane-uc.md` and see exactly what governed a use case.
 
+`/extract-signal`'s four dispatched subagents are named, versioned agent definitions —
+`agents/signal-extractor.md` (2a), `signal-auditor.md` (2b), `signal-filer.md` (2c), and
+`signal-batch-verifier.md` (Stage 3) — rather than a fresh hand-written prompt per dispatch. Each
+still resolves `{variable}`s from the project's own materialized `_bigin/conventions/paths.md` and
+reads its stage's rulebook from `_bigin/stages/extract/` at runtime, so a project-level override still
+applies; the agent file only fixes the identity, tool scope, model, and report contract, not the
+procedure itself. The one exception is 2b: there is no `_bigin/stages/extract/2b-audit.md` file to
+materialize, so `signal-auditor.md` carries its procedure directly in its own system prompt — a gap
+worth closing by adding that stage file and updating `signal-auditor.md` to point at it, the same way
+2a and 2c already work.
+
 The tradeoff is that a project pins the rulebook it was initiated with. `_bigin/system/project.md`
 records `workspace_version`; re-running `/bigin-new-project` after a plugin upgrade refreshes
 `_bigin/conventions/`, `_bigin/stages/`, and `_bigin/templates/` to the new version. All three are

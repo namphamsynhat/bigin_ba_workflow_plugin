@@ -43,7 +43,7 @@ Land raw input in `00-Inbox/` verbatim so nothing is lost or paraphrased before 
 | `{inbox_dir}` | `00-Inbox` | notes, `_attachments/`, `_raw/` |
 | `{requirements_file}` | `01-Requirements/FEATURES.md` | read-only, to render the feature-binding prompt |
 | `{system_config}` | `_bigin/system/project.md` | client/team addresses, providers, lookback, provider readiness |
-| `{conventions_file}` | `.claude/bigin-ba-workflow-plugin.local.md` | plugin settings, not project data |
+| `{conventions_file}` | `.agents/bigin-ba-workflow-plugin.local.md` (or `.claude/bigin-ba-workflow-plugin.local.md`) | plugin settings, not project data |
 | `{template_intake}` | `_bigin/templates/intake.md` | the note scaffold — **is** the schema `/extract-signal` parses |
 | `{intake_log}` | `{inbox_dir}/.intake_log` | append-only audit trail and idempotency index |
 
