@@ -43,6 +43,22 @@ Concretely:
 `{tokens_file}` from **those** names and values rather than inventing parallel ones. A token that
 already exists in the client's Figma library and is re-invented here guarantees drift.
 
+## Design quality boosters — optional, layered on top of whichever engine runs
+
+These never replace the engine or the built-in method above — they are consulted **in addition**,
+and only when they actually apply. Neither changes the CONTRACT: output is still a UX spec, a design
+system (tokens/components/nav map), and two prompts, written to the usual paths.
+
+| Booster | Check for it | Use it when | Never |
+|---|---|---|---|
+| **Agentic UX design** — a relationship-centric-interfaces skill (e.g. `agentic-ux-design-relationship-centric-interfaces`) in this session's available skills | is it in the skill list? | the feature being designed is genuinely about an ongoing AI-agent relationship — memory carried across sessions, trust that deepens over time, collaborative planning with an agent — not just any screen with a chatbot in it | invoke it for an ordinary CRUD form, dashboard, or list. That skill is explicit that it is for relationship-centric design only, on request — a generic UI task is out of its scope even here |
+| **A design-library skill** — a catalog of real-brand design references (e.g. a `design-library` skill shipping a library of DESIGN.md-style brand files) in this session's available skills | is it in the skill list? | Stage 2 is bootstrapping (`{tokens_file}` absent) and `{design_principles_file}` has few or no active rows — there is nothing client-stated to seed Foundations from, and a palette invented from nothing reads as generic | a client preference or an existing token already answers the question — a real DESIGN-PRINCIPLES row always outranks a library reference (§ The design system: Foundations is the client's own words, never research) |
+
+Using either: read the skill's own instructions for how to invoke it, treat what it returns as one
+more **PATTERN** input to Stage 3's grounding test (§ Grounding, ground 2) — never as a client
+preference (ground 3) and never as a requirement (ground 1). Say which booster was used, and why, in
+the closeout, the same way the chosen engine is named.
+
 ## When nothing is installed
 
 The built-in method is complete — it is what the five stage guides describe. So:
@@ -100,7 +116,10 @@ This is what stages 2–4 already do; it is written out here so a reader can see
 6  STATES        empty · loading · validation-error · permission-denied · failure · success,
                  each traced to a BR, an exception flow, an entity constraint, or a post-condition.
 
-7  GROUND OR ASK every decision cites a requirement, an existing pattern, or a stated preference.
+7  NAVIGATION    only a screen the actor opens directly from a menu gets a nav-map entry — a
+                 detail, wizard step, or modal reached through another screen does not.
+
+8  GROUND OR ASK every decision cites a requirement, an existing pattern, or a stated preference.
                  None of the three → an Open Question. This is the line between a design decision
                  and an invented requirement.
 ```

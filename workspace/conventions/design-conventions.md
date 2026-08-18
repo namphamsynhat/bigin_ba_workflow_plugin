@@ -17,10 +17,10 @@ Read only the sections your stage needs.
 | Stage | Sections |
 |---|---|
 | `1-scope` | Paths · Write map · Design status · Staleness |
-| `2-system` | The design system · Token architecture |
-| `3-screens` | The UX spec · Screen spec · Grounding · Open questions |
+| `2-system` | The design system · Token architecture · The navigation map |
+| `3-screens` | The UX spec · Screen spec · Grounding · Open questions · The navigation map |
 | `4-prompt` | Prototype prompt |
-| `5-close` | Design status · Write map · Staleness |
+| `5-close` | Design status · Write map · Staleness · The navigation map |
 
 ## Paths
 
@@ -34,11 +34,13 @@ Project-relative, from the repo root.
 | `{design_system_dir}` | `04-UIUX/_design-system/` | **one, vault-wide**, shared by every feature |
 | `{tokens_file}` | `04-UIUX/_design-system/design-tokens.md` | the token file |
 | `{components_dir}` | `04-UIUX/_design-system/components/` | one `<component>.md` per shared component |
+| `{nav_map_file}` | `04-UIUX/_design-system/navigation-map.md` | the vault's menu/navigation system |
 | `{design_stages_dir}` | `_bigin/stages/design/` | `1-scope`, `2-system`, `3-screens`, `4-prompt`, `5-close` |
 | `{design_conventions}` | `_bigin/conventions/design-conventions.md` | this file |
 | `{template_ux}` | `_bigin/templates/ux-spec.md` | |
 | `{template_design_system}` | `_bigin/templates/design-system.md` | |
 | `{template_component}` | `_bigin/templates/design-component.md` | |
+| `{template_nav_map}` | `_bigin/templates/navigation-map.md` | |
 
 **Requirement side — inputs. Read them; do not rewrite them.**
 
@@ -60,6 +62,7 @@ screen, just one following no rule.
 ```text
 WRITE   {ux_dir}                      the UX spec (create, or update in place)
         {design_system_dir}           tokens + components — ADD ONLY
+        {nav_map_file}                menu entries — ADD ONLY (part of {design_system_dir})
         hub ## UX Spec                link + status
         hub uiux:                     the UX-### id
         hub ## Design Directives      Status: open → reflected, on rows a screen really implements
@@ -81,7 +84,7 @@ all on an `approved` UC.
 ## The six design hard rules
 
 ```text
-D1  The design system is APPEND-ONLY. Never delete or rename a token or component.
+D1  The design system is APPEND-ONLY. Never delete or rename a token, component, or nav entry.
 D2  A screen spec names TOKENS, never raw values. No hex, no px, no font name.
 D3  Every screen, element, and state is GROUNDED (see § Grounding). Ungrounded → a question.
 D4  Requirement content is READ-ONLY. Design never edits a UC, a BR, or an entity.
@@ -165,6 +168,35 @@ Level 3  component  --button-primary-bg: L2 action-primary  where it is used ←
 
 A screen spec cites Level 2 or Level 3 by **name**. A raw value in a screen spec is D2 broken: the
 value now lives in two places and the next screen drifts from it.
+
+## The navigation map
+
+**One** navigation map, at `{nav_map_file}`, shared by the whole vault — the menu/navigation system
+for the platform or project: every persistent, directly-reachable entry point (a nav bar item, a
+sidebar link, a tab) and the screen it opens. Same two modes as the design system:
+
+```text
+{nav_map_file} absent  → BOOTSTRAP  create it from {template_nav_map}; the first screens seed it
+{nav_map_file} present → EXTEND     load it, reuse its groups, ADD new entries screens actually need
+```
+
+**Not every screen gets an entry.** A screen a user reaches directly from the menu gets one; a screen
+reached only *through* another screen (a detail opened from a list, a step inside a wizard, a modal)
+does not — it is reachable through its parent, and a menu entry for it is a duplicate way in that
+drifts from the real IA the first time one of the two paths changes.
+
+```text
+directly reachable from the menu, on its own            → gets an entry
+reached only via another screen's control                → no entry (it is a destination, not a menu item)
+```
+
+Every entry is **grounded** the same way any other design decision is (§ Grounding below): a role
+split traces to a `BR-###` or a UC's actors, a grouping traces to a stated preference or an existing
+pattern, and a label that nothing in the flow calls for is an Open Question, never an invented menu.
+
+**Append-only (D1).** A screen that stops existing does not get its row deleted — see the template's
+§ Removing an entry: mark it `retired`, keep the row, keep the history. Deleting it breaks nothing
+technically, but it also erases the record of why the IA looks the way it does.
 
 ## Screen spec — semantic structure only
 

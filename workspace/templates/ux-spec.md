@@ -18,6 +18,7 @@ sources: []             # UC-###/BR-###/EN-### ids + DESIGN-PRINCIPLES row #s + 
 absorbed: []            # UC-<NNN>@<version> — THE staleness record. Only UCs that really got
                         # screens this run. Re-stamped WHOLE every run (§ Staleness).
 design_system:          # the {tokens_file} version these screens were specced against
+nav_map:                # the {nav_map_file} version these screens were specced against
 engine:                 # which design engine produced this: wds | figma | <plugin> | built-in
 updated:
 ---
@@ -84,6 +85,8 @@ references the shared system; it never forks it. -->
 * **Tokens used:** <name, name, …>
 * **Components used:** <name, name, …>
 * **Added this run:** <token/component — why nothing existing fitted>
+* **Nav map version:** <version>
+* **Nav entries added:** <entry label — screen — group, or "none — reached only via another screen">
 
 ## 6. Open Questions
 <!-- The canonical list. Zero unchecked lines ⟺ status is not needs-clarification

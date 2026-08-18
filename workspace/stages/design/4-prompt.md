@@ -2,7 +2,7 @@
 
 ```text
 runs: orchestrator, after Stage 2 Part B has finalised every token name
-in:   the UX spec's screens, states, flows, copy + the design system's real values
+in:   the UX spec's screens, states, flows, copy + the design system's real values + the nav map
 out:  ## Prototype Prompt — Claude design   and   ## Prototype Prompt — Figma Make
 never: a vault id inside a prompt body · a prompt that says "see the use case"
 ```
@@ -25,6 +25,10 @@ INT-014       → delete it. Never put a client's meeting id in a prompt.
 --color-action-primary: #2563eb   → keep BOTH: the name AND the value
 ```
 
+`{nav_map_file}`'s entry labels and group names are already plain words — carry them in as-is, no
+de-identification needed. Pull only the groups/entries these screens actually touch, never the whole
+vault-wide map (a feature's prototype does not need every other feature's menu items).
+
 Grep your own draft for `UC-`, `BR-`, `EN-`, `PP-`, `UX-`, `INT-`, `PRD-`, `S1`…`S9`, `A1`, `E1`
 before writing it. A hit is D6 broken.
 
@@ -34,12 +38,16 @@ before writing it. A hit is D6 broken.
 1  what it is        one paragraph: the product, the user, what this part of it does
 2  the look          every token: name, value, and a plain-language note
                      ("action primary #2563eb — the colour every main button uses")
-3  the screens       one block per screen: purpose, regions, elements, real copy
-4  the flow          screen order, and what each button leads to
-5  the states        per screen: empty, loading, error, permission, success — what each says
-6  the data          3-5 rows of realistic sample data per list, real field names from the entity
-7  the rules         the behaviour the screens must show, in plain words (from the BRs)
-8  what NOT to build anything out of scope that a tool would otherwise helpfully add
+3  the navigation     the persistent menu/nav shell these screens live inside: which entries
+                     (this feature's own, plus any sibling entries needed for orientation),
+                     and which screen each one opens — so the tool builds ONE shell, not one
+                     per screen it improvises
+4  the screens       one block per screen: purpose, regions, elements, real copy
+5  the flow          screen order, and what each button leads to
+6  the states        per screen: empty, loading, error, permission, success — what each says
+7  the data          3-5 rows of realistic sample data per list, real field names from the entity
+8  the rules         the behaviour the screens must show, in plain words (from the BRs)
+9  what NOT to build anything out of scope that a tool would otherwise helpfully add
 ```
 
 Item 8 is the one people skip and the one that saves the most time.
@@ -56,6 +64,9 @@ Build a clickable prototype of <what it is>.
 **Design system** — use these values everywhere, never anything else:
 - <token name> — <value> — <what it is for>
 ...
+
+**Navigation** — this persistent menu wraps every screen below; build it once, not per screen:
+- <group>: <entry> → <screen>, <entry> → <screen> …
 
 **Screens** (build all <N>):
 ### <Screen name>
@@ -91,6 +102,9 @@ Create a <N>-frame prototype of <what it is>.
 **Components** (build once, reuse):
 - <component> — variants: <list> — states: <list>
 
+**Navigation** (build once as a shared frame/component, reuse on every screen):
+- <group>: <entry> → frame <N>, <entry> → frame <N> …
+
 **Frames:**
 1. <Screen name> — <layout in one line> — contains <elements with copy>
    Variants: <state frames>
@@ -108,6 +122,8 @@ Create a <N>-frame prototype of <what it is>.
 ```text
 □ no vault id anywhere in either block                                    (D6)
 □ every token appears with BOTH its name and its value
+□ the navigation block lists every entry this feature added or touches, each pointing at a
+  real screen name that also appears in the Screens/Frames section below it
 □ every screen in ## 2 Screen Inventory appears in both blocks
 □ every state in ## 3 appears in both blocks
 □ the copy in the prompt matches the copy in the screen spec, word for word
@@ -126,3 +142,5 @@ A prompt failing the last line is the only real test; the others are how it fail
   screens — the ones the client actually argues about — never get reviewed.
 - **Two blocks that disagree.** Whichever the BA pastes, the other becomes wrong.
 - **Lorem ipsum.** Real copy is the cheapest way to find out the words are wrong.
+- **Leaving navigation out.** The tool then improvises its own menu per screen, and the prototype
+  reads as several disconnected apps instead of one product.

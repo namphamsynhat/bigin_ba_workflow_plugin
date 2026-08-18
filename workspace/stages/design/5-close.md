@@ -2,8 +2,8 @@
 
 ```text
 runs: orchestrator, LAST
-in:   every UX spec, design-system file, and hub this run touched
-out:  absorbed: stamped · statuses set from a live count · hubs refreshed · eight checks · the report
+in:   every UX spec, design-system file, nav map file, and hub this run touched
+out:  absorbed: stamped · statuses set from a live count · hubs refreshed · nine checks · the report
 never: a status decided in Stages 1-4 · an absorbed: entry for a UC with no screen
 ```
 
@@ -16,6 +16,7 @@ per UX spec:
     a UC in the hub's uc: but not in `designed` → stays OFF absorbed:
                                                  → named in ## 6 as not yet designed
     design_system: = {tokens_file}'s version, as it stands now
+    nav_map:       = {nav_map_file}'s version, as it stands now
     engine:        = the engine Stage 1 detected (wds | figma | <plugin> | built-in)
     sources:       = every UC/BR/EN id, DESIGN-PRINCIPLES row #, and hub directive # used
     features:      = the owning slug first, then every other slug these screens touch
@@ -69,7 +70,7 @@ per UC designed this run:
 
 Nothing else on the UC, ever (D4). Not a step, not a rule, not a question, not a version bump.
 
-## Part 5 — Eight checks, every run
+## Part 5 — Nine checks, every run
 
 Each is a real failure that otherwise reports as success. **A mismatch is blocking:** repair,
 re-check, then report.
@@ -84,6 +85,7 @@ re-check, then report.
 | 6 | every question in `## 6` is mirrored on the hub, same sentence, and is not already open on the UC's `## 5` | one question, two places — never two questions |
 | 7 | each UX spec's `status` matches its live unchecked-question count | the invariant Part 2 exists to hold |
 | 8 | both prompt blocks exist and contain no `UC-`/`BR-`/`EN-`/`UX-`/`INT-`/`PRD-` id | D6 — an id in a prompt renders as a heading in the prototype |
+| 9 | `{nav_map_file}` lost nothing (no entry removed/renamed), and every entry added this run points to a screen that really exists in an actual UX spec | D1, and an orphaned menu entry reaches a client as a dead link |
 
 Also confirm **every feature Stage 1 put on the work-list was reached**: designed, or skipped with a
 stated reason. A feature the run never got to prints as **pending**, never disappears — otherwise the
@@ -92,13 +94,14 @@ next run's scan and the human both assume it was covered.
 ## Part 6 — Report
 
 ```text
-mode:      bootstrap | extend — design system v<x> (<N> tokens, <N> components)
+mode:      bootstrap | extend — design system v<x> (<N> tokens, <N> components), nav map v<x> (<N> entries)
 engine:    <engine> | built-in — <install command, if none was found>
+boosters:  <agentic-ux-design | design-library | none> — <one line: where it applied and why, or "none — did not apply this run">
 Stage 1:   <N> feature(s) in scope — <slug>: <N> NEW, <N> CHANGED, <N> CURRENT (skipped)
 Stage 3:   <slug> UX-### created|updated — <N> screens (<N> new), <N> states
                   serving UC-### S<n>… (one line per feature)
 Stage 2B:  <N> token(s) added, <N> component(s) added — total <N> tokens / <N> components
-           0 removed, 0 renamed
+           <N> nav entr(y/ies) added — total <N> entries; 0 removed, 0 renamed (tokens or nav)
 Stage 4:   <slug> UX-### — Claude design ✓  Figma Make ✓
 directives: <slug> #<n> → reflected (one line each); <N> still open
 skipped:   <slug>/UC-### — <no main flow | already current | owned by <slug> | removed>
@@ -121,3 +124,5 @@ next:      human review of UX-### → paste a Prototype Prompt into Claude desig
 - **Editing the UC beyond the one `## Discussion` line.** That is `/bigin-transform-signal`'s job and
   the human gate exists for a reason.
 - **Dropping a feature out of the report because the run ran out of room.** Pending is a result.
+- **Leaving a nav entry pointing at a screen check 9 never confirmed.** It reaches a client as a
+  menu item with nothing real behind it.

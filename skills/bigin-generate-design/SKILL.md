@@ -16,6 +16,7 @@ in    UC-###  (new, or changed since it was last designed)
 
 out   UX-### per feature      screen inventory + screen specs + flows
     + _design-system/         one vault-wide, append-only token/component system
+                               + navigation-map.md — the platform's menu/navigation system
     + two prototype prompts   Claude design and Figma Make, self-contained
 ```
 
@@ -44,11 +45,11 @@ an unattended batch. The review happens on the artifacts afterwards, not mid-run
 | `{design_conventions}` | `_bigin/conventions/design-conventions.md` | the design rulebook — paths, the six hard rules, statuses, grounding |
 | `{design_stages_dir}` | `_bigin/stages/design/` | `1-scope`, `2-system`, `3-screens`, `4-prompt`, `5-close` |
 | `{ux_dir}` | `04-UIUX/UX-<NNN> <Feature>.md` | one spec per feature |
-| `{design_system_dir}` | `04-UIUX/_design-system/` | `design-tokens.md` + `components/<component>.md` |
+| `{design_system_dir}` | `04-UIUX/_design-system/` | `design-tokens.md` + `components/<component>.md` + `navigation-map.md` |
 | `{hub_dir}` | `01-Requirements/_features/<slug>.md` | `## Design Directives` in, `## UX Spec` out |
 | `{uc_dir}` · `{br_dir}` · `{entity_dir}` | `01-Requirements/_ucs/` · `_brs/` · `_entities/` | **read-only** input |
 | `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | **read-only** — client-stated preferences |
-| `{template_*}` | `_bigin/templates/*` | `ux-spec`, `design-system`, `design-component` |
+| `{template_*}` | `_bigin/templates/*` | `ux-spec`, `design-system`, `design-component`, `navigation-map` |
 
 `{design_conventions}` § Paths is the full table, and the one a subagent reads — a `SKILL.md` lives
 in the plugin install directory, which a subagent cannot reach.
@@ -69,7 +70,11 @@ none of 1-3 → run the built-in method and REPORT the install command in the cl
               Never halt to ask: this skill is headless, and the built-in method is complete.
 ```
 
-Full detection, install commands, and how to hand work to an engine: **`references/engine-detection.md`**.
+Full detection, install commands, and how to hand work to an engine: **`references/engine-detection.md`**,
+which also covers two optional **quality boosters** layered on top of whichever engine is chosen — an
+agentic-relationship-UX skill for features that are genuinely about an ongoing AI-agent relationship,
+and a design-library skill for a non-generic starting palette on bootstrap. Neither replaces the
+engine; both are read at Stage 1/3 only when they actually apply.
 
 ## Execution order
 
@@ -100,13 +105,18 @@ summary-level UC, a UC owned by another feature, a removed UC.
 
 A `needs-clarification` UC is **in** scope. Its open questions become known gaps in the brief.
 
-## Stage 2 — Design system (Part A)
+## Stage 2 — Design system and navigation map (Part A)
 
 Bootstrap it, or load it. Fill `## Foundations` from `{design_principles_file}`'s `active` rows, then
 make sure the Level-2 semantic tokens the screens will need exist **by name**. Screens cite names,
 so the names come first.
 
-Do not pre-build a palette. Part B adds what real screens actually turn out to need.
+Do the same for `{nav_map_file}` — bootstrap or load it alongside the tokens (D3, § The navigation
+map). It is the menu/navigation system for the platform: seed its `## Structure` from whatever menu
+groups already exist; Part B is where screens add the entries a real flow actually needs.
+
+Do not pre-build a palette, and do not pre-build a full menu tree. Part B adds what real screens
+actually turn out to need.
 
 ## Stage 3 — Screens
 
@@ -116,9 +126,9 @@ FAN OUT ONE WORKER PER FEATURE SLUG                    [references/agent-dispatc
     → features are independent and parallelize safely
     → one or two features: run it inline, dispatch costs more than the work
 
-a worker NEVER writes:  {design_system_dir} · another feature's UX spec or hub
+a worker NEVER writes:  {design_system_dir} (incl. {nav_map_file}) · another feature's UX spec or hub
                         DESIGN-PRINCIPLES.md · any UC, BR, or entity · FEATURES.md
-    → it REPORTS token candidates, component candidates, questions, designed UCs
+    → it REPORTS token candidates, component candidates, nav candidates, questions, designed UCs
 a worker DOES write:    its own feature's UX spec (created from a number the orchestrator minted)
 ```
 
@@ -135,7 +145,9 @@ an existing screen pattern, or a stated preference. Grounded in none of those �
 
 Part B of `2-system.md` applies the reported candidates one at a time, in the orchestrator: dedup
 first, reuse before adding, add only what is genuinely new, bump the version, changelog it. **Nothing
-is ever deleted or renamed** (D1) — a screen specced last month cites that name.
+is ever deleted or renamed** (D1) — a screen specced last month cites that name. The same pass adds
+any reported nav entries to `{nav_map_file}` — one row per screen a worker flagged as directly
+menu-reachable, never one for a screen reached only through another screen.
 
 Then both prompt blocks, from the same screens and the now-final token values. Every vault id is
 expanded into words before it goes in (D6): a prompt with `UC-012 S4` in it renders that string as a
@@ -146,11 +158,12 @@ heading in the prototype.
 Stamp `absorbed:` with `UC-###@version` for **only the UCs that really got a screen row this run**,
 re-stamped whole. Set each status from a live count of unchecked questions on disk. Refresh every
 hub named in `features:` — `## UX Spec`, `uiux:`, directives that a screen really implements flipped
-to `reflected`, questions mirrored. Then the eight verification checks; a mismatch is blocking.
+to `reflected`, questions mirrored. Then the nine verification checks; a mismatch is blocking.
 
 ```text
 mode · engine · per-feature screens · tokens added (0 removed, 0 renamed) · prompts written
-directives reflected · skipped · pending · questions (design | REQUIREMENT GAP) · next
+nav entries added (0 removed, 0 renamed) · directives reflected · skipped · pending
+questions (design | REQUIREMENT GAP) · next
 ```
 
 ## Failure modes
@@ -170,6 +183,8 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 - **Dropping the states from a prompt.** Prototypes come back happy-path only, and the empty and
   error screens — the ones clients argue about — never get reviewed.
 - **Minting a second UX spec for a feature that has one.** The review splits and both go stale.
+- **Giving every screen a nav entry.** A detail screen opened from a list is not a menu item; an
+  entry for it is a second, drifting way into the same place.
 - **Flipping a directive to `reflected` because it was read.** It is reflected when a screen
   implements it.
 - **Setting status early.** Count the open questions from disk, last, every time.
@@ -183,6 +198,7 @@ work — the same reason `/bigin-transform-signal` fans out on the default model
 ## Additional resources
 
 - **`references/engine-detection.md`** — the provider table, how to detect each one, the install
-  command to report when none is present, and how the built-in method works. Read at Stage 1.
+  command to report when none is present, how the built-in method works, and the two optional
+  quality boosters (agentic-relationship UX, design-library). Read at Stage 1.
 - **`references/agent-dispatch.md`** — the per-feature worker prompt, its report contract, and the
   wave-verification checklist. Read at Stage 3, before fanning out.

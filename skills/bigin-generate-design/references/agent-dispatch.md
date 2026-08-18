@@ -48,7 +48,8 @@ DESIGN SYSTEM:       04-UIUX/_design-system/design-tokens.md at v<x> — cite th
 
 READ FIRST:
 - _bigin/conventions/design-conventions.md — these sections ONLY: § Paths, § Write map,
-  § The six design hard rules, § The UX spec, § Screen spec, § Grounding, § Open questions
+  § The six design hard rules, § The UX spec, § Screen spec, § Grounding, § Open questions,
+  § The navigation map
 - _bigin/stages/design/3-screens.md — your stage guide, in full
 - 01-Requirements/_features/<slug>.md — the hub: ## Design Directives (Status: open), actors
 - each UC above, in full: § 1 actors/trigger/post-conditions, § 2 steps, § 3 branches,
@@ -56,6 +57,8 @@ READ FIRST:
 - every BR-### named in those § 4 mirrors, and every EN-### in the UCs' entities:
 - 01-Requirements/DESIGN-PRINCIPLES.md — rows with Status: active
 - 04-UIUX/_design-system/design-tokens.md and components/ — what already exists
+- 04-UIUX/_design-system/navigation-map.md — its ## Structure, so a new entry joins an existing
+  group instead of starting a parallel one
 - every other 04-UIUX/UX-*.md — how a sibling feature already solved a list, a queue, an
   approval, a form. Reusing an existing pattern beats inventing a parallel one.
 
@@ -63,17 +66,20 @@ THEN, one UC at a time, in the order listed:
 1. Map its flow to screens (3-screens.md Part 2): consecutive steps by the same actor in the same
    place = ONE screen; a validation = a state; an exception flow = a named error state; a
    system-only step = not a screen. Merge screens two UCs both land on.
-2. Write the screen spec (Part 3): regions, elements, real copy, TOKEN NAMES, the entity field
+2. Decide which of those screens gets a nav entry (Part 2b): only one the actor opens DIRECTLY from
+   a menu — never a detail, a wizard step, or a modal reached through another screen. Most features
+   contribute 0-2 entries, not one per screen.
+3. Write the screen spec (Part 3): regions, elements, real copy, TOKEN NAMES, the entity field
    each input renders, and what grounds each element.
-3. Add the states (Part 4) — each traced to a BR, an exception flow, an entity constraint, or a
+4. Add the states (Part 4) — each traced to a BR, an exception flow, an entity constraint, or a
    post-condition.
-4. NEVER invent a screen, a field, a state, a threshold, or a label the sources did not state.
-   Missing detail is a question on § 6, not a plausible guess.
+5. NEVER invent a screen, a field, a state, a nav entry, a threshold, or a label the sources did not
+   state. Missing detail is a question on § 6, not a plausible guess.
 
 DO NOT WRITE — vault-wide or owned elsewhere, and other features run concurrently. Report
 candidates instead; the orchestrator applies them:
-  04-UIUX/_design-system/ (tokens AND components) · another feature's UX spec or hub
-  01-Requirements/DESIGN-PRINCIPLES.md · FEATURES.md
+  04-UIUX/_design-system/ (tokens AND components AND navigation-map.md) · another feature's UX spec
+  or hub · 01-Requirements/DESIGN-PRINCIPLES.md · FEATURES.md
 DO NOT edit any UC, BR, or entity — they are read-only here, in every section.
 DO NOT fill absorbed:, do not set status: accepted, do not write either Prototype Prompt block —
 the orchestrator does all three after your report.
@@ -86,6 +92,8 @@ REPORT, as plain lines:
   tokens_used:          <existing token name> (one line each)
   token_candidates:     <proposed name> | level: 2|3 | value: <raw> | means: <meaning> | on: <screen>
   component_candidates: <name> | variants: <…> | states: <…> | used on: <screen>, <screen>
+  nav_candidates:       <entry label> | group: <existing, or "new: <name>"> | points to: <screen>
+                        | role(s): <actor(s)> | grounded by: <UC-### S<n> | BR-### | pattern <name>>
   directives_reflected: hub row #<n> → <screen> (only rows a screen really implements)
   questions:            <the question> | owner: client|team | kind: design|requirement-gap
   designed_ucs:         UC-###@<version> (ONLY UCs that really got screen rows)
@@ -106,10 +114,13 @@ per feature in the wave:
 4  no raw value           → Grep the spec for "#" hex codes, "px", and font names. Any hit is D2
                             broken and must be replaced with a token name (or a candidate)
 5  every question         → an unchecked "- [ ] Q:" in ## 6, and not already open on the UC's ## 5
-6  shared files untouched → git diff --stat shows NO change to 04-UIUX/_design-system/,
-                            DESIGN-PRINCIPLES.md, FEATURES.md, or any file under 01-Requirements/
-                            (the design system moves in Stage 4, in the orchestrator, not here)
-7  absorbed: still empty  → Stage 5 stamps it, after check 1 has passed
+6  every reported nav candidate → NOT a screen reached only through another screen (re-check
+                            against Part 2b's test); a violation is dropped, not applied
+7  shared files untouched → git diff --stat shows NO change to 04-UIUX/_design-system/ (tokens,
+                            components, AND navigation-map.md), DESIGN-PRINCIPLES.md, FEATURES.md,
+                            or any file under 01-Requirements/ (the design system and nav map move
+                            in Stage 4, in the orchestrator, not here)
+8  absorbed: still empty  → Stage 5 stamps it, after check 1 has passed
 
 mismatch → BLOCKING. Dispatch one scoped repair worker, re-check that feature, then move on.
 ```

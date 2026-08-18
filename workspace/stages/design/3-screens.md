@@ -4,11 +4,12 @@
 runs: one worker per FEATURE (a subagent, or the orchestrator inline for a small run)
 in:   this feature's NEW/CHANGED UCs + its BRs, entities, directives, principles
 out:  {ux_dir}/UX-<NNN> <Feature>.md — brief, screen inventory, screen specs, flows
-      + a report of token/component candidates (this stage NEVER writes the design system)
-never: an invented screen · a raw colour/size · an edit to a UC, BR, or entity
+      + a report of token/component/nav candidates (this stage NEVER writes the design system)
+never: an invented screen · a raw colour/size · an invented nav entry · an edit to a UC, BR, or entity
 ```
 
-Read `{design_conventions}` § The UX spec, § Screen spec, § Grounding, § Open questions first.
+Read `{design_conventions}` § The UX spec, § Screen spec, § Grounding, § Open questions, and
+§ The navigation map first.
 
 ---
 
@@ -22,8 +23,10 @@ Read `{design_conventions}` § The UX spec, § Screen spec, § Grounding, § Ope
 4  each EN in the UC's entities:  the field list, types, required?, enum values
 5  {design_principles_file}    rows with Status: active
 6  {tokens_file} + {components_dir}   what already exists, so you cite instead of invent
-7  the existing UX spec, if any        you UPDATE it; you never fork it
-8  every other UX-*.md in {ux_dir}     how a sibling feature already solved a list, a queue,
+7  {nav_map_file}              its ## Structure — what menu groups already exist, so a new entry
+                               joins one instead of starting a parallel group
+8  the existing UX spec, if any        you UPDATE it; you never fork it
+9  every other UX-*.md in {ux_dir}     how a sibling feature already solved a list, a queue,
                                        an approval, a wizard. Reuse beats inventing (ground 2).
 ```
 
@@ -69,6 +72,30 @@ Write the result into `## 2 Screen Inventory`:
 | Screen | Purpose | Serves | Entities | Key actions |
                      ^ UC-### S4, S5   ^ EN-###   ^ the real buttons
 ```
+
+---
+
+## Part 2b — Which of these screens get a nav entry
+
+Most screens in the inventory above are **not** menu items — they are reached by clicking through
+from one that is. Read `{design_conventions}` § The navigation map before this part.
+
+```text
+per screen in the inventory:
+    is it reached ONLY via another screen's control (a detail from a list, a step in a wizard,
+    a modal, a confirmation)?                                          → NO entry
+    is it something the actor opens directly, on its own, from a menu?  → nav candidate
+
+    for each nav candidate:
+        joins an existing {nav_map_file} group        → cite that group's name
+        needs a new group                              → propose one, grounded the same way a
+                                                          screen is (a UC/BR, an existing pattern
+                                                          in {nav_map_file}, or a stated preference)
+        which roles see it                             → the UC's § 1 actors, or a BR — never guessed
+```
+
+**A feature normally contributes 0–2 nav entries**, not one per screen. Zero is common and correct —
+most of a feature's screens are steps inside a flow the actor reaches from the one entry point.
 
 ---
 
@@ -159,9 +186,9 @@ has checked which UCs really got screens.
 ## Part 7 — Report, do not write
 
 ```text
-DO NOT WRITE   {tokens_file} · {components_dir} · another feature's UX spec · another feature's hub
+DO NOT WRITE   {tokens_file} · {components_dir} · {nav_map_file} · another feature's UX spec/hub
                DESIGN-PRINCIPLES.md · any UC, BR, or entity · FEATURES.md
-REPORT INSTEAD token candidates · component candidates · cross-feature screens
+REPORT INSTEAD token candidates · component candidates · nav candidates · cross-feature screens
 ```
 
 Report lines:
@@ -173,6 +200,8 @@ screens:            <screen> serves UC-### S<n>, S<n>  (one line each)
 tokens_used:        <existing token name> (one line each)
 token_candidates:   <proposed name> | level: 2|3 | value: <raw> | why: <what it means> | on: <screen>
 component_candidates: <name> | variants: … | states: … | used on: <screen>, <screen>
+nav_candidates:     <entry label> | group: <existing name, or "new: <name>"> | points to: <screen>
+                    | role(s): <actor(s)> | grounded by: <UC-### S<n> | BR-### | pattern <name>>
 directives_reflected: hub row #<n> → <screen>  (one line each — only rows a screen really implements)
 questions:          <the question>, owner client|team, kind: design|requirement-gap
 designed_ucs:       UC-###@<version>  (one line each — ONLY UCs that really got screens)
@@ -188,5 +217,7 @@ blocked:            UC-### — <why, one line>
 - **Making up form fields.** The entity has the fields. If it does not, that is a question.
 - **Re-asking a question the UC already has open.** The human answers it twice and the copies drift.
 - **Creating a second UX spec for a feature that has one.** The review splits and both go stale.
-- **Writing the design system from here.** Two features run at once; the second write loses.
+- **Writing the design system or nav map from here.** Two features run at once; the second write loses.
+- **Proposing a nav entry for a screen reached only through another screen.** It reads as a second
+  door into the same room, and the two drift the first time one changes.
 - **Stamping `absorbed:` yourself.** Stage 5 stamps it, after verifying the screens exist.
