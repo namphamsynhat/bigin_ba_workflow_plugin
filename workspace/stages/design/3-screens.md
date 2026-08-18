@@ -23,8 +23,9 @@ Read `{design_conventions}` § The UX spec, § Screen spec, § Grounding, § Ope
 4  each EN in the UC's entities:  the field list, types, required?, enum values
 5  {design_principles_file}    rows with Status: active
 6  {tokens_file} + {components_dir}   what already exists, so you cite instead of invent
-7  {nav_map_file}              its ## Structure — what menu groups already exist, so a new entry
-                               joins one instead of starting a parallel group
+7  {nav_map_file}              its ## Structure — the tree that already exists, at whatever depth,
+                               so a new entry joins an existing branch instead of starting a
+                               parallel one
 8  the existing UX spec, if any        you UPDATE it; you never fork it
 9  every other UX-*.md in {ux_dir}     how a sibling feature already solved a list, a queue,
                                        an approval, a wizard. Reuse beats inventing (ground 2).
@@ -86,13 +87,22 @@ per screen in the inventory:
     a modal, a confirmation)?                                          → NO entry
     is it something the actor opens directly, on its own, from a menu?  → nav candidate
 
-    for each nav candidate:
-        joins an existing {nav_map_file} group        → cite that group's name
-        needs a new group                              → propose one, grounded the same way a
-                                                          screen is (a UC/BR, an existing pattern
-                                                          in {nav_map_file}, or a stated preference)
-        which roles see it                             → the UC's § 1 actors, or a BR — never guessed
+    for each nav candidate, where does it sit in the tree that already exists?
+        joins an existing branch, at whatever depth it lives          → cite that branch (e.g.
+                                                                          "under settings.team")
+        needs a whole new branch (no existing container fits)         → propose one, grounded the
+                                                                          same way a screen is (a
+                                                                          UC/BR, an existing branch
+                                                                          in {nav_map_file}, or a
+                                                                          stated preference) — say
+                                                                          how deep it nests and why
+        which roles see it                                            → the UC's § 1 actors, or a
+                                                                          BR — never guessed
 ```
+
+Nesting depth is itself a grounded decision, not a default. "Settings → Team → Members" is right
+when the UC actually reads as a sub-area of Team; forcing three levels because it looks tidier is an
+invented information architecture the same way an invented screen is.
 
 **A feature normally contributes 0–2 nav entries**, not one per screen. Zero is common and correct —
 most of a feature's screens are steps inside a flow the actor reaches from the one entry point.
@@ -200,8 +210,9 @@ screens:            <screen> serves UC-### S<n>, S<n>  (one line each)
 tokens_used:        <existing token name> (one line each)
 token_candidates:   <proposed name> | level: 2|3 | value: <raw> | why: <what it means> | on: <screen>
 component_candidates: <name> | variants: … | states: … | used on: <screen>, <screen>
-nav_candidates:     <entry label> | group: <existing name, or "new: <name>"> | points to: <screen>
-                    | role(s): <actor(s)> | grounded by: <UC-### S<n> | BR-### | pattern <name>>
+nav_candidates:     <entry label> | parent: <existing id it nests under, or "new: <path>", or "top-level">
+                    | points to: <screen> | role(s): <actor(s)>
+                    | grounded by: <UC-### S<n> | BR-### | pattern <name>>
 directives_reflected: hub row #<n> → <screen>  (one line each — only rows a screen really implements)
 questions:          <the question>, owner client|team, kind: design|requirement-gap
 designed_ucs:       UC-###@<version>  (one line each — ONLY UCs that really got screens)
@@ -220,4 +231,6 @@ blocked:            UC-### — <why, one line>
 - **Writing the design system or nav map from here.** Two features run at once; the second write loses.
 - **Proposing a nav entry for a screen reached only through another screen.** It reads as a second
   door into the same room, and the two drift the first time one changes.
+- **Nesting a nav entry three levels deep because it looks tidier.** Depth is grounded like anything
+  else; an ungrounded sub-group is an invented IA.
 - **Stamping `absorbed:` yourself.** Stage 5 stamps it, after verifying the screens exist.

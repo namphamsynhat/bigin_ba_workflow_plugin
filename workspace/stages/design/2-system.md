@@ -44,7 +44,8 @@ Same for the nav map, same run:
     version 1.0
 
 {nav_map_file} present:
-    read its ## Structure whole — the menu groups already exist; reuse them
+    read its ## Structure whole — the tree already exists, at whatever depth it has grown to;
+    reuse a branch before starting a parallel one
     NEVER overwrite it. NEVER re-instantiate the template over it.
 ```
 
@@ -122,17 +123,25 @@ Second use is the trigger. Promoting on first use fills the system with things n
 ```text
 per reported nav candidate:
     does an existing entry already point at the same screen?  → nothing to add, tell Stage 4 the
-                                                                  existing label
+                                                                  existing id
     is it a screen reached only through another screen?       → NOT an entry (§ Structure test in
                                                                   design-conventions.md § The
                                                                   navigation map) — decline it
-    is it directly menu-reachable and genuinely new?           → add ONE row to ## Structure,
-                                                                  ONE row to ## Entry detail, citing
-                                                                  what grounds it
+    is it directly menu-reachable and genuinely new?           → mint its id and add ONE row
 ```
 
-A role split on the entry (who sees it) goes on `## Access rules`, citing the `BR-###` or the UC's
-actors — never invented to "look complete".
+Minting the `id` — where it nests, not just whether it exists:
+
+```text
+reported parent already in ## Structure   → id = <parent id>.<new segment>
+reported parent does NOT exist yet        → mint the parent container row FIRST (Points to: —),
+                                             then the child under it — never skip straight to a
+                                             child whose parent id nothing resolves to
+no parent reported (a new top-level item) → id = <one segment>, no dot
+```
+
+A role split on the entry (who sees it) goes in that row's `Role(s)` cell, citing the `BR-###` or
+the UC's actors — never invented to "look complete".
 
 ### B5. Close out the files
 
@@ -171,6 +180,8 @@ feature one, so it does not go on a UX spec or a hub — and it never becomes a 
   speculative palette or IA is a design nobody asked for.
 - **Giving a sub-screen its own nav entry.** It is reached through its parent; a second way in
   drifts from the real navigation the first time one path changes.
+- **Minting a child id whose parent id resolves to nothing.** `settings.team.members` with no
+  `settings.team` row is an orphan branch — check 9 in `5-close.md` exists to catch it.
 - **Letting a subagent write the design system or nav map.** Two features run at once and both add
   `--color-warning`, or both add a "Reports" menu entry under different groups.
 - **Bumping either version on a run that added nothing.** The changelog stops meaning anything.

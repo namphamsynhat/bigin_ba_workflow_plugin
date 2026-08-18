@@ -112,8 +112,9 @@ make sure the Level-2 semantic tokens the screens will need exist **by name**. S
 so the names come first.
 
 Do the same for `{nav_map_file}` — bootstrap or load it alongside the tokens (D3, § The navigation
-map). It is the menu/navigation system for the platform: seed its `## Structure` from whatever menu
-groups already exist; Part B is where screens add the entries a real flow actually needs.
+map). It is the menu/navigation system for the platform: seed its `## Structure` from whatever tree
+already exists — a dot-path `id` per row, so it nests to whatever depth the real IA needs, not a
+fixed two levels. Part B is where screens add the entries a real flow actually needs.
 
 Do not pre-build a palette, and do not pre-build a full menu tree. Part B adds what real screens
 actually turn out to need.

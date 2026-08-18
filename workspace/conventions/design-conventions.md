@@ -173,29 +173,39 @@ value now lives in two places and the next screen drifts from it.
 
 **One** navigation map, at `{nav_map_file}`, shared by the whole vault — the menu/navigation system
 for the platform or project: every persistent, directly-reachable entry point (a nav bar item, a
-sidebar link, a tab) and the screen it opens. Same two modes as the design system:
+sidebar link, a tab, a flyout child) and the screen it opens. Same two modes as the design system:
 
 ```text
 {nav_map_file} absent  → BOOTSTRAP  create it from {template_nav_map}; the first screens seed it
-{nav_map_file} present → EXTEND     load it, reuse its groups, ADD new entries screens actually need
+{nav_map_file} present → EXTEND     load it, reuse its tree, ADD new entries screens actually need
 ```
 
-**Not every screen gets an entry.** A screen a user reaches directly from the menu gets one; a screen
-reached only *through* another screen (a detail opened from a list, a step inside a wizard, a modal)
-does not — it is reachable through its parent, and a menu entry for it is a duplicate way in that
-drifts from the real IA the first time one of the two paths changes.
+**Arbitrary depth, via a path id.** The map is not fixed at "group → entry" — a real IA nests as
+deep as "Settings → Team → Members". One row per entry, at any depth; its `id` is a dot-path, the
+parent's `id` plus one segment (`settings`, then `settings.team`, then `settings.team.members`). The
+path **is** the tree: no separate level or parent column, and no cap on how deep it goes. A row can
+be a pure container (a section header with children but no screen of its own — `Points to: —`), a
+leaf (a screen, no children), or both.
+
+**Not every screen gets an entry.** A screen a user reaches directly from the menu — at whatever
+depth — gets one; a screen reached only *through* another screen (a detail opened from a list, a
+step inside a wizard, a modal) does not — it is reachable through its parent, and a menu entry for it
+is a duplicate way in that drifts from the real IA the first time one of the two paths changes.
 
 ```text
-directly reachable from the menu, on its own            → gets an entry
-reached only via another screen's control                → no entry (it is a destination, not a menu item)
+directly reachable from the menu, on its own (top-level or nested)  → gets an entry
+reached only via another screen's control                          → no entry (it is a destination,
+                                                                       not a menu item)
 ```
 
 Every entry is **grounded** the same way any other design decision is (§ Grounding below): a role
-split traces to a `BR-###` or a UC's actors, a grouping traces to a stated preference or an existing
-pattern, and a label that nothing in the flow calls for is an Open Question, never an invented menu.
+split traces to a `BR-###` or a UC's actors, a nesting decision traces to a stated preference or an
+existing branch of the tree, and a label that nothing in the flow calls for is an Open Question,
+never an invented menu.
 
 **Append-only (D1).** A screen that stops existing does not get its row deleted — see the template's
-§ Removing an entry: mark it `retired`, keep the row, keep the history. Deleting it breaks nothing
+§ Removing an entry: mark it `retired`, keep the row, keep the history. Retiring a container retires
+its whole subtree implicitly; its children are not re-listed. Deleting a row breaks nothing
 technically, but it also erases the record of why the IA looks the way it does.
 
 ## Screen spec — semantic structure only

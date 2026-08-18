@@ -57,8 +57,9 @@ READ FIRST:
 - every BR-### named in those § 4 mirrors, and every EN-### in the UCs' entities:
 - 01-Requirements/DESIGN-PRINCIPLES.md — rows with Status: active
 - 04-UIUX/_design-system/design-tokens.md and components/ — what already exists
-- 04-UIUX/_design-system/navigation-map.md — its ## Structure, so a new entry joins an existing
-  group instead of starting a parallel one
+- 04-UIUX/_design-system/navigation-map.md — its ## Structure (a dot-path `id` per row, so it can
+  nest arbitrarily deep — "settings", "settings.team", "settings.team.members"), so a new entry
+  joins an existing branch instead of starting a parallel one
 - every other 04-UIUX/UX-*.md — how a sibling feature already solved a list, a queue, an
   approval, a form. Reusing an existing pattern beats inventing a parallel one.
 
@@ -92,8 +93,9 @@ REPORT, as plain lines:
   tokens_used:          <existing token name> (one line each)
   token_candidates:     <proposed name> | level: 2|3 | value: <raw> | means: <meaning> | on: <screen>
   component_candidates: <name> | variants: <…> | states: <…> | used on: <screen>, <screen>
-  nav_candidates:       <entry label> | group: <existing, or "new: <name>"> | points to: <screen>
-                        | role(s): <actor(s)> | grounded by: <UC-### S<n> | BR-### | pattern <name>>
+  nav_candidates:       <entry label> | parent: <existing id it nests under, or "new: <path>", or
+                        "top-level"> | points to: <screen> | role(s): <actor(s)>
+                        | grounded by: <UC-### S<n> | BR-### | pattern <name>>
   directives_reflected: hub row #<n> → <screen> (only rows a screen really implements)
   questions:            <the question> | owner: client|team | kind: design|requirement-gap
   designed_ucs:         UC-###@<version> (ONLY UCs that really got screen rows)

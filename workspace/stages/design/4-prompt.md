@@ -65,8 +65,13 @@ Build a clickable prototype of <what it is>.
 - <token name> — <value> — <what it is for>
 ...
 
-**Navigation** — this persistent menu wraps every screen below; build it once, not per screen:
-- <group>: <entry> → <screen>, <entry> → <screen> …
+**Navigation** — this persistent menu wraps every screen below; build it once, not per screen. Indent
+to show nesting (a sub-item sits under its parent; a parent with no screen of its own is a header
+only):
+- <top-level item> → <screen, or "—" if it only opens a submenu>
+  - <nested item> → <screen>
+    - <nested-nested item> → <screen>
+- <top-level item> → <screen>
 
 **Screens** (build all <N>):
 ### <Screen name>
@@ -102,8 +107,11 @@ Create a <N>-frame prototype of <what it is>.
 **Components** (build once, reuse):
 - <component> — variants: <list> — states: <list>
 
-**Navigation** (build once as a shared frame/component, reuse on every screen):
-- <group>: <entry> → frame <N>, <entry> → frame <N> …
+**Navigation** (build once as a shared frame/component, reuse on every screen). Indent to show
+nesting — a parent item with children but no frame of its own opens a submenu, not a screen:
+- <top-level item> → frame <N>, or "opens submenu" if it has no frame of its own
+  - <nested item> → frame <N>
+- <top-level item> → frame <N>
 
 **Frames:**
 1. <Screen name> — <layout in one line> — contains <elements with copy>

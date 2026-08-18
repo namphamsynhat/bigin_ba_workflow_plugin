@@ -85,7 +85,7 @@ re-check, then report.
 | 6 | every question in `## 6` is mirrored on the hub, same sentence, and is not already open on the UC's `## 5` | one question, two places — never two questions |
 | 7 | each UX spec's `status` matches its live unchecked-question count | the invariant Part 2 exists to hold |
 | 8 | both prompt blocks exist and contain no `UC-`/`BR-`/`EN-`/`UX-`/`INT-`/`PRD-` id | D6 — an id in a prompt renders as a heading in the prototype |
-| 9 | `{nav_map_file}` lost nothing (no entry removed/renamed), and every entry added this run points to a screen that really exists in an actual UX spec | D1, and an orphaned menu entry reaches a client as a dead link |
+| 9 | `{nav_map_file}` lost nothing (no entry removed/renamed); every entry's `Points to` (when not "—") names a screen that really exists in an actual UX spec; every entry whose `id` has a dot has a parent `id` that also exists in the table | D1, and either an orphaned menu entry (dead link) or an orphaned branch (a child with no parent row) reaches a client looking like real IA |
 
 Also confirm **every feature Stage 1 put on the work-list was reached**: designed, or skipped with a
 stated reason. A feature the run never got to prints as **pending**, never disappears — otherwise the
