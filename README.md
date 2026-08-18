@@ -28,7 +28,7 @@ what governs a stage is findable from the stage, and a run loads only the files 
                            drafted/updated Use Cases (a user goal with its flow, branches, rules
                            mirror and open questions) and the BRs governing them, human-gate every
                            UC/BR change first. Cites an Entity's proposed row by name -- never
-                           promotes one; that waits for /approve-uc
+                           promotes one; that waits for /sync-entities, after approval
         |
         |------------------------------------------.
         |                                          |
@@ -36,9 +36,15 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |                  + entity mapping         |  chain — a directive on the feature hub or
         |                                           |  in DESIGN-PRINCIPLES.md, no UC, no PRD
 /approve-uc               [Load] approve the UC once its open questions are resolved:
-        |                  reprocess its live content, promote/update any entity
-        |                  it references, flip status to approved. No PRD is
-        |                  written here yet -- that stage is still Planned.
+        |                  reprocess its live content, flip status to approved.
+        |                  Touches only the UC's own file -- no PRD written here
+        |                  yet (still Planned), and entity/hub bookkeeping is
+        |                  deferred to /sync-entities.
+        |
+/sync-entities            [Load] catch up the vault-wide bookkeeping an approval
+        |                  implied: promote/update any entity an approved UC
+        |                  references, refresh its feature hub(s). Run whenever
+        |                  convenient -- not part of the review loop.
         |
 /bigin-generate-design    [Load] every UC with no current design -> one UX-### per feature:
         |                  screen specs, the shared design system, and two prototype prompts
@@ -148,7 +154,7 @@ tools** is a name collision, reported rather than reinstalled over. The step nev
 
 Every UC's own frontmatter `status` (`draft` ⇄ `needs-clarification` → `enriched` → `approved`, human-only per `/approve-uc`, → `consolidated`) is the authoritative gate. A feature carries one use case per distinct user goal, so several at different stages at once is normal, and a use case that spans features is owned by one of them (`primary_feature:`) while appearing on every participating hub. Each Feature Hub's `## Requirement Readiness` table is a refreshed snapshot for orientation, not the gate itself. Features are matched by slug across stages, so `/extract-signal` and `/bigin-transform-signal` update an existing hub/UC rather than duplicating one when new signals map to the same feature — and a new signal about an existing *goal* is a step, branch, or rule inside that UC, not a second one.
 
-> **Migration note:** `/enrich-feature` and `/consolidate-prd` still read the older `.bigin/features/FR-<id>-*.md` single-file model **and still key on the retired `FR-###` artifact**. They haven't been moved onto the `01-Requirements/` layout or onto `UC-###` yet — that's the remaining stage of this migration, and it is a two-axis gap. `/bigin-generate-design` and `/approve-uc` **are** migrated (`/bigin-generate-design` replaces `/prototype-design`, reads `_ucs/` directly, and needs no PRD; `/approve-uc` replaces `/approve-fr`, reads/writes `_ucs/` directly, and generates no PRD of its own — that's still Planned), so both the design exit and the human-approval exit from `/bigin-transform-signal` work today, while the PRD/epics exit still needs a person. See `_bigin/conventions/conventions.md` § Reconciliation notes for the per-skill breakdown.
+> **Migration note:** `/enrich-feature` and `/consolidate-prd` still read the older `.bigin/features/FR-<id>-*.md` single-file model **and still key on the retired `FR-###` artifact**. They haven't been moved onto the `01-Requirements/` layout or onto `UC-###` yet — that's the remaining stage of this migration, and it is a two-axis gap. `/bigin-generate-design`, `/approve-uc`, and `/sync-entities` **are** migrated (`/bigin-generate-design` replaces `/prototype-design`, reads `_ucs/` directly, and needs no PRD; `/approve-uc` replaces `/approve-fr`, reads/writes `_ucs/` directly, and generates no PRD of its own — that's still Planned; `/sync-entities` reads/writes `_entities/` and the feature hub directly), so both the design exit and the human-approval exit from `/bigin-transform-signal` work today, while the PRD/epics exit still needs a person. See `_bigin/conventions/conventions.md` § Reconciliation notes for the per-skill breakdown.
 
 ## Configuration
 

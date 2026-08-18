@@ -41,7 +41,7 @@ can already run.
 | UC | **Use case** — the requirement artifact: one user goal, its flow, its branches, its rules mirror, its open questions | 01-Requirements/_ucs | Implemented — its own file, `UC-<NNN> <Title>.md`, drafted/updated by `/bigin-transform-signal`. May span features. Status: `draft → enriched → approved → consolidated`, plus `needs-clarification`/`removed` (§ Status vocabularies). See § Use Case |
 | BR | Business rule | 01-Requirements/_brs | Implemented — its own file, `BR-<NNN> <Title>.md`, `uc: []` citing the use case(s) it governs (feature-level if none apply yet). Same status vocab as UC. **The source of the rule** — a UC's `§ 4` is a read-only mirror |
 | PP | Pain point (register row, ids cited from a UC's `pain_points:`, no separate per-item file) | 01-Requirements | Implemented |
-| EN | Entity data model | 01-Requirements/_entities | Implemented — `/bigin-transform-signal` only cites an `ENTITIES.md` `proposed` row, by name; `/approve-uc` is the only skill that promotes one into its own file, `EN-<NNN> <Entity>.md`, and only once a UC it's approving (or a BR it mirrors) actually references it. Deferring promotion to the approval gate means a still-drafting UC never leaves behind an entity doc nobody ended up needing |
+| EN | Entity data model | 01-Requirements/_entities | Implemented — `/bigin-transform-signal` only cites an `ENTITIES.md` `proposed` row, by name; `/sync-entities` is the only skill that promotes one into its own file, `EN-<NNN> <Entity>.md`, and only once an approved UC (or a BR it mirrors) actually references it. Deferring promotion until after approval means a still-drafting UC never leaves behind an entity doc nobody ended up needing |
 | FR | ~~Feature requirement~~ | 01-Requirements/_frs | **Retired**, replaced by `UC-###`. Existing files stay on disk, frozen, carrying `absorbed_by: UC-###`; ids keep resolving and nothing writes there any more (§ Use Case → What it replaced) |
 | SCN | ~~Business scenario (cross-feature flow)~~ | 01-Requirements/SCENARIOS.md | **Retired**, replaced by a `UC-###` whose `features:` lists every slug it touches. Existing rows stay, `superseded`, naming the UC that absorbed them (§ Business Scenarios (retired)) |
 | PRD | Product requirements doc | 02-PRD | **Planned** — nothing in this plugin writes one today. `/approve-uc` approves the UC itself and stops there (§ Feature material); a PRD stage that consolidates approved UCs into a document, per feature or per `PRD-###`, isn't built yet. Decided status vocab once it exists as its own artifact: `draft → approved` (§ Status vocabularies) |
@@ -81,7 +81,7 @@ its rows. Also singleton, one per feature: `01-Requirements/_features/<slug>.md`
 design-preference register, maintained by `/extract-signal`, see § Design Principles Register
 below. Also singleton, vault-wide: `01-Requirements/ENTITIES.md` (`type: entity-map`) — the
 canonical entity list. `/extract-signal` files a `proposed` row the moment a signal describes one;
-`/approve-uc` points a row at its promoted `EN-###` doc once one exists. Mirrors `FEATURES.md`
+`/sync-entities` points a row at its promoted `EN-###` doc once one exists. Mirrors `FEATURES.md`
 (see § Entity Data Model). Also singleton, vault-wide: `01-Requirements/PAIN-POINTS.md`
 (`type: pain-point-register`) — the vault-wide pain-point register (see § Pain Point Register).
 
@@ -103,6 +103,9 @@ status: draft            # vocabulary is per artifact type, not one shared list 
                          # (raw | needs-clarification | in-review | consumed) is separate again —
                          # see § Intake capture & the question loop.
 version: 1.0
+synced: true             # use-case only: false from the moment /approve-uc sets status: approved,
+                         # until /sync-entities has promoted/extended entities: [] and refreshed the
+                         # feature hub(s) for this UC (§ Entity Data Model). Meaningless otherwise.
 level: user-goal         # use-case only: summary | user-goal | subfunction (§ Use Case)
 scope: Bigin Portal      # use-case only: the system under design, black-box
 primary_feature: invoicing        # use-case only: the ONE slug that owns the file — write-ownership
@@ -529,7 +532,7 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   after each confirmed human-gate fold-in flips the affected Signal Log row from `staged` to
   `applied`, and refreshes `## Use Cases`, `## Requirement Readiness`, `uc:`/`br:` frontmatter. It
   never touches `## Entities`/`entities:` — it doesn't promote an entity, only cites a `proposed` row
-  by name (§ Entity Data Model); `/approve-uc` is what refreshes those. For a UC spanning features it
+  by name (§ Entity Data Model); `/sync-entities` is what refreshes those. For a UC spanning features it
   writes `## Use Cases` and `uc:` on **every** participating hub, in its
   sequential Stage 4 pass. Also appends to `## Design Directives` for
   every presentation-only signal it routes down the Design chain, and fills each processed Signal
@@ -539,10 +542,13 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
 - `/enrich-feature`: refreshes `## Requirement Readiness`/`## Related Documents`/
   `## Open Questions / Gates`, and **`## Pain Points`** whenever it folds a pain-point signal into the
   UC's `pain_points:` list.
-- `/approve-uc`: refresh `## Requirement Readiness` to reflect the new `approved` status, refresh
-  `## Entities`/`entities:` for any entity it promoted or extended, and flip the corresponding Signal
-  Log rows (the ones the UC was drafted/updated from) to `applied` if not already. Writes nothing to
-  `## PRD` — that section stays "not started" until a PRD stage exists (§ Reconciliation notes).
+- `/approve-uc`: writes nothing to the hub at all — it only flips the UC's own `status`/`version`/
+  `## Changelog` and sets `synced: false` (§ Entity Data Model). `/sync-entities` does the hub refresh
+  that used to run inline here, separately, whenever it runs: `## Requirement Readiness` to reflect
+  the UC's current status, `## Entities`/`entities:` for any entity it promoted or extended, and the
+  corresponding Signal Log rows (the ones the UC was drafted/updated from) flipped to `applied` if not
+  already. Writes nothing to `## PRD` — that section stays "not started" until a PRD stage exists
+  (§ Reconciliation notes).
 - `/bigin-generate-design`: refresh `## UX Spec` (link + status) and `uiux:`, flip the
   `## Design Directives` rows a screen actually implements to `reflected`, and mirror its design
   questions into `## Open Questions / Gates`. If the source UC is still open (not yet `approved`),
@@ -923,11 +929,20 @@ features** (a Vendor's fields matter to both a Vendor Management feature and a P
 so a per-UC field list duplicates and drifts.
 
 `01-Requirements/_entities/EN-<NNN>-<slug>.md` (`type: entity`) is the artifact for this: one
-document per business entity, promoted by `/approve-uc` from a `proposed` row in
-`01-Requirements/ENTITIES.md`, the first time a UC it's approving (or a `BR-###` that UC mirrors)
+document per business entity, promoted by `/sync-entities` from a `proposed` row in
+`01-Requirements/ENTITIES.md`, the first time a UC it's processing (or a `BR-###` that UC mirrors)
 actually references it. `/bigin-transform-signal` never promotes one — a UC/BR drafted or updated
 mid-review can cite the entity by name against the `proposed` row, but the row stays a row until
 approval, so a goal that never reaches `/approve-uc` never leaves behind an entity doc nobody needed.
+
+Promotion itself is decoupled from the approval moment: `/approve-uc` only ever flips the UC's own
+`status`/`version`/`## Changelog` and sets its `synced: false` — it never touches `ENTITIES.md`, an
+`EN-###` doc, or a feature hub, so approving several UCs in a row is never blocked on shared-file
+writes. `/sync-entities` is what actually does the promotion/extension described below, run separately
+whenever convenient (right after an approval, batched at the end of a review session, or lazily before
+whatever later stage needs the entity data) — it scans for `status: approved` + `synced: false` UCs
+and processes them one at a time, the same sequential discipline as always, and flips each to
+`synced: true` once done.
 
 **Frontmatter (`_bigin/templates/entity.md`):**
 ```yaml
@@ -962,7 +977,7 @@ fields it governs in its own body. An earlier draft of this document described a
 `EN-### | Entity | Status | Fields (so far) | Features | Notes`, created by `/extract-signal` the
 moment a signal describes a data field or entity attribute, with a `proposed` row per entity.
 Cluster aggressively — one row per real-world business object, not per field.
-`/approve-uc` promotes a row to its own `EN-###` document; the register keeps the row afterward as
+`/sync-entities` promotes a row to its own `EN-###` document; the register keeps the row afterward as
 the vault-wide index (mirroring how `FEATURES.md` stays the index once a feature hub exists).
 
 ## Pain Point Register
@@ -1287,18 +1302,19 @@ scattered inline caveats — resolve and delete each line as the corresponding s
   kept only so old references resolve; do not run both.
 - ~~**The approval stage was on the old layout and the retired `FR-###` artifact.**~~ **Resolved.**
   `/approve-fr` is superseded by **`/approve-uc`**, which reads and writes `01-Requirements/_ucs/`
-  directly, re-derives the UC's live state (a human may edit the file directly while reviewing,
-  outside `/bigin-transform-signal`) rather than trusting stale status, and promotes/extends any
-  `EN-###` the UC references as part of the same gate. It does **not** write a PRD — PRD generation
-  is still fully **Planned**, so `approved` today means "feature material, ready to hand off"
-  (§ Feature material), not "folded into a document." `/approve-fr` is kept only so old references
-  resolve; do not run both.
+  directly and re-derives the UC's live state (a human may edit the file directly while reviewing,
+  outside `/bigin-transform-signal`) rather than trusting stale status. It touches only the UC's own
+  file — promoting/extending any `EN-###` the UC references is **`/sync-entities`**'s job, run
+  separately (§ Entity Data Model), not part of the same gate any more. `/approve-uc` does **not**
+  write a PRD — PRD generation is still fully **Planned**, so `approved` today means "feature
+  material, ready to hand off" (§ Feature material), not "folded into a document." `/approve-fr` is
+  kept only so old references resolve; do not run both.
 - **`enrich-feature`, `consolidate-prd` are on the old `.bigin/`
   flat-file layout AND on the retired `FR-###` artifact** (`.bigin/features/FR-<id>-*.md`,
   `.bigin/PRD.md`, `.bigin/epics.md`, inline `Status:` headings) — not the
   `01-Requirements/_ucs/`/`_brs/` model with `status:` frontmatter that `bigin-intake`,
-  `bigin-new-project`, `extract-signal`, `bigin-transform-signal`, `bigin-generate-design`, and
-  `approve-uc` use.
+  `bigin-new-project`, `extract-signal`, `bigin-transform-signal`, `bigin-generate-design`,
+  `approve-uc`, and `sync-entities` use.
   **This is now a two-axis gap, and it is the largest open item in this plugin:** these two skills
   need both the path migration *and* the FR→UC migration. Concretely, each of them:
   - reads `.bigin/features/FR-<id>-*.md` and must read `01-Requirements/_ucs/UC-<NNN> <Title>.md`;

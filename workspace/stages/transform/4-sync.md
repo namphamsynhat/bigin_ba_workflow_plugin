@@ -27,8 +27,9 @@ Each write completing before the next starts:
 Steps 2 and 3 belong in this same sequential pass, not back in Stage 3: a cross-feature UC touches hubs
 whose own subagent has already finished, and a pointer written from two places at once loses a row.
 
-No entity is minted or promoted here — that's `/approve-uc`'s job, at the approval gate, never Stage 4
-(§ Entity Data Model). This stage only ever cites an existing `{entities_file}` row by name.
+No entity is minted or promoted here — that's `/sync-entities`'s job, run separately once a UC is
+approved, never Stage 4 (§ Entity Data Model). This stage only ever cites an existing `{entities_file}`
+row by name.
 
 ```text
 MINT EVERY ID HERE, never in a subagent — UC-### for a `new` cross_feature_uc_change

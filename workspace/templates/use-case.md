@@ -7,6 +7,10 @@ status: draft       # draft | needs-clarification | enriched | approved | consol
                     # only ever writes draft/needs-clarification; enriched belongs to /enrich-feature,
                     # consolidated to /consolidate-prd, and approved/removed are human-only (hard rule 4).
 version: 1.0
+synced: true        # false the moment /approve-uc flips status to approved, until /sync-entities has
+                    # promoted/extended any entities: [] this UC references and refreshed its feature
+                    # hub(s) (conventions.md § Entity Data Model). Meaningless at any other status —
+                    # leave true.
 level: user-goal    # summary | user-goal | subfunction — Cockburn's goal levels. user-goal is the
                     # default and the "boss test" level: real work, one sitting, 3-9 main-flow steps.
                     # Anything else needs a reason (3-lane-uc.md § Granularity).

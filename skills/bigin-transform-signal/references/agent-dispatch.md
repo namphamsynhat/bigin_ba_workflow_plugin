@@ -173,7 +173,7 @@ candidates instead; the orchestrator applies them in Stage 4:
   DESIGN-PRINCIPLES.md · 01-Requirements/FEATURES.md · PAIN-POINTS.md
   any UC-### listed above as owned elsewhere
 NEVER WRITE, full stop — not even via a reported candidate, in this skill:
-  01-Requirements/ENTITIES.md · 01-Requirements/_entities/          # /approve-uc's job, not this
+  01-Requirements/ENTITIES.md · 01-Requirements/_entities/          # /sync-entities's job, not this
   skill's; cite {entities_file} by name if a signal needs it, never promote or extend a row
 DO NOT touch another feature's hub, or any file under 00-Inbox/.
 DO NOT write to 01-Requirements/_frs/ or SCENARIOS.md — both retired. An FR adoption's skeleton and

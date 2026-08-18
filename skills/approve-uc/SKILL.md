@@ -1,6 +1,6 @@
 ---
 name: approve-uc
-description: Approve a use case (UC) once its open questions are resolved and its content is right. Reprocesses the UC's own live content — the human may have edited it directly while reviewing — promotes/updates any entity it references, then flips its status to `approved` so it's feature material, ready for PRD. Use once a UC is drafted (and, where enrichment runs, enriched) and the human is ready to sign off.
+description: Approve a use case (UC) once its open questions are resolved and its content is right. Reprocesses the UC's own live content — the human may have edited it directly while reviewing — then flips its status to `approved` so it's feature material, ready for PRD. Entity promotion and feature-hub refresh are deferred to `/sync-entities`, run separately whenever convenient. Use once a UC is drafted (and, where enrichment runs, enriched) and the human is ready to sign off.
 argument-hint: "<UC id, e.g. UC-012>"
 ---
 
@@ -16,14 +16,15 @@ to edit the file directly rather than route every change back through `/bigin-tr
 skill's first job is to re-derive the UC's own state from whatever is on disk right now, not trust
 whatever a prior run last wrote.
 
+This skill only ever touches the UC's own file, so approving several UCs back to back is never
+blocked on anything slower than the human's own read-and-decide pace. Entity promotion and feature-hub
+refresh — the vault-wide bookkeeping that used to happen inline here — is `/sync-entities`'s job now,
+run separately, on its own schedule (§ Entity Data Model).
+
 > **Artifact Standard:** Outputs:
->> **An approved UC** — `status: approved`, set only after the human confirms, with `version` bumped
+>> **An approved UC** — `status: approved`, set only after the human confirms, with `version` bumped,
+>> `synced: false` so `/sync-entities` knows this UC is waiting on its entity/feature-hub bookkeeping,
 >> and a `## Changelog` line if this run corrected anything.
->> **Entity docs kept current** — every `EN-###` this UC's steps/rules actually reference, promoted
->> from a `proposed` `ENTITIES.md` row or extended to match the UC's current content, plus
->> `ENTITIES.md` and every referencing feature hub's `## Entities` / `entities:` refreshed.
->> **A refreshed feature hub** — `## Requirement Readiness` reflecting the new status, and the Signal
->> Log rows this UC was drafted/updated from flipped to `applied`.
 
 ---
 
@@ -42,12 +43,10 @@ whatever a prior run last wrote.
   those lines since this UC's last approval on its own, before anything else in the summary — that flag
   exists so the human gets a chance to catch a wrong flow, and a summary that buries it defeats the
   point.
-* **Entities are promoted from real references, never speculatively:** only an entity this UC's steps
-  or rules actually cite gets a document or an update (§ Entity Data Model). Most UCs touch none —
-  skip cleanly when that's true.
-* **Vault-wide registers, one write at a time:** `ENTITIES.md` and `01-Requirements/_entities/` are
-  shared across every feature. Approving several UCs in one sitting still writes these sequentially,
-  never in parallel (same discipline as `/bigin-transform-signal` Stage 4).
+* **Entity promotion and feature-hub refresh happen elsewhere:** this skill never touches
+  `ENTITIES.md`, `01-Requirements/_entities/`, or a feature hub — that's `/sync-entities`, run
+  separately (§ Entity Data Model). Setting `synced: false` here is the only handoff needed; don't
+  reach for those files from this skill even opportunistically.
 * **No PRD is generated here.** `approved` means the UC is feature material (§ Feature material) —
   a human, or a future PRD stage, takes it from there. Writing a `PRD.md` section is out of scope for
   this skill.
@@ -67,13 +66,14 @@ by feature) and ask which one.
 
 ## Input
 
-Read `01-Requirements/_ucs/UC-<NNN> <Title>.md` for the id in `$ARGUMENTS`. Read its `primary_feature`'s
-hub at `01-Requirements/_features/<slug>.md`, and `01-Requirements/ENTITIES.md`.
+Read `01-Requirements/_ucs/UC-<NNN> <Title>.md` for the id in `$ARGUMENTS`. That's the only file this
+skill reads — no feature hub, no `ENTITIES.md`; those belong to `/sync-entities`.
 
 ## What to do
 
 * **Goal:** convert a reviewed use case into committed scope, ready to hand to whatever comes next
-  (design, and eventually a PRD stage), while catching any drift the human's own edit introduced.
+  (design, and eventually a PRD stage), while catching any drift the human's own edit introduced —
+  without waiting on, or blocking, the separate entity/feature-hub bookkeeping pass.
 * **Action:**
   1. **Reprocess the UC.** Treat the file's current content as authoritative, not whatever a prior run
      last computed:
@@ -86,51 +86,27 @@ hub at `01-Requirements/_features/<slug>.md`, and `01-Requirements/ENTITIES.md`.
        Collect every line strictly after it — nothing a human has confirmed since — and pull out the
        ones ending "flagged for ... review" or naming a "main flow changed" revert. Those are exactly
        the lines `/bigin-transform-signal` Stage 4 Part 2 writes whenever it direct-writes a `## 2`/
-       `## 3` change (4-sync.md § Part 2); this is the flow drift step 3 leads with.
+       `## 3` change (4-sync.md § Part 2); this is the flow drift step 2 leads with.
      * Check `## 4`'s rule mirror against each cited `BR-###`'s current statement and enforcement
        point. `## 4` is a read-only mirror (§ Use Case) — if a human edit left it drifted from the BR
        file, refresh the mirror to match; never invent a rule that isn't already in a `BR-###` file.
      * If `status` isn't `enriched` yet, note that `/enrich-feature` hasn't (or can't yet) run against
        this UC and ask whether to proceed anyway — enrichment is expected, not enforced.
-  2. **Process entities.** For every entity this UC's `## 2`/`## 3` steps or `## 4` rules actually
-     reference — its `entities: []` list, plus anything a human edit introduced that isn't listed yet:
-     * Match the entity against `01-Requirements/ENTITIES.md`. A `proposed` row this UC references,
-       with no `EN-###` document yet, gets promoted now: instantiate
-       `_bigin/templates/entity.md` as `01-Requirements/_entities/EN-<NNN> <Entity>.md`, id from a
-       `Grep` scan of `01-Requirements/_entities/` (its own sequence — never a bash `grep`/`awk`
-       pipeline, § ID scheme).
-     * An entity that already has an `EN-###` doc gets its `## Fields`/`## Relationships` extended
-       with whatever this UC's current content adds, each row's `Source` citing this UC's `S#`/rule.
-       A field that contradicts what's already recorded is a question for the human, never a silent
-       overwrite.
-     * Add this UC's feature slug(s) to the entity's `features:` list if missing, and add
-       `EN-### <Name> (<status>)` to every referencing feature hub's `## Entities` section plus its
-       `entities:` frontmatter.
-     * Update this UC's own `entities: []` frontmatter to the final list.
-     * An entity still at `status: proposed`/`draft` and settled enough for this review — no open
-       question against its fields, nothing contradicted this run — can move to `approved` per
-       `_bigin/templates/entity.md`'s own vocabulary ("human confirmed at a UC/BR review gate").
-       Include it in the confirmation in step 3 rather than flipping it silently: an entity shared
-       across features may still be unsettled from another UC's point of view.
-     * Most UCs reference no new or changed entity. Skip this step cleanly when that's true — never
-       promote or extend one speculatively.
-  3. **Show a short summary.** Lead with the flow drift collected in step 1: quote each flagged
+  2. **Show a short summary.** Lead with the flow drift collected in step 1: quote each flagged
      Changelog line since the last approval, in the order it happened, naming the `INT-###`/source
      behind it — this is what changed in `## 2`/`## 3` that no human has confirmed yet, shown before
      anything else so the human is reviewing the flow itself, not a paraphrase of it. Follow with the
-     goal, main-flow step count, any drift this run corrected in `## 4`, and entities touched (and any
-     recommended for `approved`) — then ask whether the flow still reads right and the user intends to
-     approve.
+     goal, main-flow step count, and any drift this run corrected in `## 4` — then ask whether the flow
+     still reads right and the user intends to approve.
      * **If the human says a step or flow now looks wrong:** stop — don't approve. Point at the
        specific `S#`/`A#`/`E#` row in `## 2`/`## 3` that needs a hand edit, or say it belongs back
        through `/bigin-transform-signal` for a proper fold-in, then pick this back up once it's fixed.
        Approving a flow the human just flagged as wrong defeats the reason this summary exists.
-  4. **On confirmation:** set `status: approved` on the UC, bump `version`, and add one `## Changelog`
-     line noting the approval and anything this run corrected. Flip any confirmed entity to `approved`
-     in the same pass.
-  5. **Refresh the owning feature hub(s).** For every feature in this UC's `features:` list, update
-     `## Requirement Readiness` to reflect `approved`, and flip this UC's Signal Log rows to `applied`
-     if not already (§ Feature Hub — Maintenance contract).
-  6. **Confirm and point to next.** Tell the user the UC is ready for PRD — `/bigin-generate-design` can
-     run off it now (it doesn't wait on approval), and a PRD/epics stage, once one exists, picks up
-     `approved` UCs as feature material (§ Feature material).
+  3. **On confirmation:** set `status: approved` on the UC, bump `version`, set `synced: false`, and
+     add one `## Changelog` line noting the approval and anything this run corrected.
+  4. **Confirm and point to next.** Tell the user the UC is ready for PRD — `/bigin-generate-design`
+     can run off it now (it doesn't wait on approval, or on `/sync-entities`), and a PRD/epics stage,
+     once one exists, picks up `approved` UCs as feature material (§ Feature material). If this UC's
+     `entities: []` isn't empty, mention `/sync-entities` is still pending for it — run it now to catch
+     up `ENTITIES.md` and the feature hub, or leave it queued and run it later; nothing here depends on
+     it.

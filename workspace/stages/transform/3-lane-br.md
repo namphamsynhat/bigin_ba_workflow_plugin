@@ -108,8 +108,8 @@ without either doc owning it.
 
 Never write to `{entities_file}` or `{entity_dir}` from inside a per-feature subagent, and never
 report this as a candidate for the orchestrator to promote — **entity promotion doesn't happen in
-this skill any more.** A `proposed` row stays a row until `/approve-uc` promotes it, the first time
-an approved UC or one of its BRs is actually confirmed to reference it (§ Entity Data Model).
+this skill any more.** A `proposed` row stays a row until `/sync-entities` promotes it, run once a UC
+or one of its BRs is actually approved and confirmed to reference it (§ Entity Data Model).
 
 ## Updating an existing BR
 

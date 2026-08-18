@@ -1,6 +1,6 @@
 ---
 name: bigin-transform-signal
-description: This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's staged UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), and Design Directives. Stages all UC/BR updates through a resumable human-review gate. It never promotes an Entity (EN) doc — it only cites the ENTITIES.md register; /approve-uc is the only skill that promotes one.
+description: This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's staged UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), and Design Directives. Stages all UC/BR updates through a resumable human-review gate. It never promotes an Entity (EN) doc — it only cites the ENTITIES.md register; /sync-entities is the only skill that promotes one.
 argument-hint: "[feature slug, or omit for all pending, or resume]"
 ---
 
@@ -38,7 +38,7 @@ Case, § Feature Hub, § Status vocabularies, § Feedback handling, § Resumable
 | `{uc_dir}` | `01-Requirements/_ucs/UC-<NNN> <Title>.md` | **Use Cases** — the requirement artifact |
 | `{br_dir}` | `01-Requirements/_brs/BR-<NNN> <Title>.md` | Business Rules, each its own file, `uc: []` citing what it governs |
 | `{entities_file}` | `01-Requirements/ENTITIES.md` | proposed entity register — this skill only ever reads/cites it, never writes it |
-| `{entity_dir}` | `01-Requirements/_entities/EN-<NNN> <Entity>.md` | promoted entity specs — never written by this skill; `/approve-uc` promotes |
+| `{entity_dir}` | `01-Requirements/_entities/EN-<NNN> <Entity>.md` | promoted entity specs — never written by this skill; `/sync-entities` promotes |
 | `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | durable cross-cutting design register |
 | `{inbox_dir}` | `00-Inbox/INT-<NNN>.md` | read frontmatter, `## Extracted signals`, `## Open Questions` **only** — never `## Raw` |
 | `{template_*}` | `_bigin/templates/*` | `use-case`, `br` |
@@ -137,7 +137,7 @@ a subagent NEVER writes:  {design_principles_file}                              
                           a UC-### owned by another feature's primary_feature
                           another feature's hub · anything under {inbox_dir}
                           {entities_file} · {entity_dir}   # nobody writes these in this skill, not
-                                                            # even Stage 4 — /approve-uc promotes,
+                                                            # even Stage 4 — /sync-entities promotes,
                                                             # never here
     → it REPORTS design-principle candidates, cross_feature_uc_change items
     → Stage 4 applies them sequentially
@@ -160,8 +160,9 @@ orchestrator, sequential, after every Stage 3 subagent has reported          [4-
 ```
 
 A cross-feature UC change is **staged, not applied** — it is UC content, so it passes the same gate.
-No entity is ever promoted here — that's `/approve-uc`'s job, at the approval gate (§ Entity Data
-Model). Never auto-resolve a contradiction: raise it, name both sides, stop.
+No entity is ever promoted here — that's `/sync-entities`'s job, run separately once a UC referencing
+it is approved (§ Entity Data Model). Never auto-resolve a contradiction: raise it, name both sides,
+stop.
 
 **Only `## 2` and `## 3` skip the gate.** A rule, `## 1`, `## 5`, or `## 6` always stages in
 `## Discussion` and waits for Stage 1 on a later run, same as before — see `4-sync.md` § Part 2 for
@@ -232,7 +233,7 @@ Each produces a run that looks clean. Ordered by cost to discover later.
   `Grep` the same highest id and both mint the same new `UC-###` number, or two appends to
   `DESIGN-PRINCIPLES.md` race and one is lost.
 - **Promoting an entity, or reporting one as a candidate to promote, from anywhere in this skill** —
-  that lane doesn't exist any more. Cite `{entities_file}`'s `proposed` row by name; `/approve-uc`
+  that lane doesn't exist any more. Cite `{entities_file}`'s `proposed` row by name; `/sync-entities`
   is the only place a `proposed` row becomes an `EN-###` doc.
 - **Pointing only the primary hub at a cross-feature UC** — the other features read as uninvolved.
 - **Deciding a conflict** — recency settles a supersession, never a disagreement.
