@@ -188,6 +188,16 @@ B) UNSUPPORTED (rows → source) — check EVERY requirement/constraint/decision
        the ask to change it. e.g. source "it doesn't tell me the type, just the school name" → row
        "the export tracks school type". The most common error on a screen-share transcript: check
        every requirement row for it.
+     - UNRESOLVED MECHANISM stated as settled — the row asserts *who or what* performs an action
+       ("system does X automatically" / "admin does X") as plain fact, but the surrounding exchange
+       has two or more speakers describing the mechanism in ways that don't reconcile (one says
+       automatic, another says it can't happen unilaterally, a third denies it's "the default") and
+       the disagreement is never actually resolved in the transcript. This is 2-extraction.md's "one
+       mechanism, contradictory framings" case (§ Special cases) landing here anyway — treat a missing
+       companion `question` row on this claim as UNSUPPORTED, the same as a missing "two wordings"
+       question row on a numeric claim. Read past the row's own cited timestamp into the surrounding
+       exchange before judging this one; the contradiction is often a sentence or two away, not in the
+       cited line itself.
      - the cited timestamp doesn't contain the quoted words
    EXEMPT: rows whose Why is "derived from #<n>" and whose Notes says "inferred — confirm with
    client". These are declared inferences — instead verify the rows they cite exist, are quotable,

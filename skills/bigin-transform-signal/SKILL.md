@@ -129,7 +129,7 @@ within a feature, two subagents run in sequence, never merged:
                         other features' hubs when a signal sounds cross-feature. Mints a new UC's
                         empty skeleton (frontmatter + hub pointer only); never stages content.
                         [agent-dispatch.md § 3a]
-  3b  drafting subagent stages content into every lane, using 3a's resolved UC targets AS GIVEN — it
+  3b  uc-drafter        stages content into every lane, using 3a's resolved UC targets AS GIVEN — it
                         never re-decides which UC a signal belongs to, and never mints one itself.
                         [agent-dispatch.md § 3b]
 
@@ -150,7 +150,7 @@ a subagent DOES write:    its own feature's hub, its own UCs, its BRs
 orchestrator, sequential, after every Stage 3 subagent has reported          [4-sync.md]
     write shared registers + every cross-feature UC change, ONE AT A TIME
     write each participating hub's ## Use Cases pointer
-    spawn one subagent per UC carrying an unapplied ## 2 or ## 3 entry — found by reading every
+    spawn one uc-applier per UC carrying an unapplied ## 2 or ## 3 entry — found by reading every
         in-scope UC's own ## Discussion directly, not just what Stage 3 reported this run —
         it pulls every requirement fact tied to that UC (the full ## Discussion, the cited hub
         Signal Log rows, the UC's own current sections) and writes ## 2 and/or ## 3 directly,
@@ -202,9 +202,9 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 
 - **Drafting from an unqualified signal** — a flow built on an incomplete source reaches `/approve-uc`
   looking identical to a sound one.
-- **Skipping `uc-detector`, or re-deciding new-vs-update inside the drafting subagent anyway** — the
-  whole reason the lookup got its own step is that a busy drafting pass under-reads a cross-feature
-  hub and either mints a duplicate UC or drafts into the wrong one.
+- **Skipping `uc-detector`, or re-deciding new-vs-update inside `uc-drafter` anyway** — the whole
+  reason the lookup got its own step is that a busy drafting pass under-reads a cross-feature hub and
+  either mints a duplicate UC or drafts into the wrong one.
 - **Stretching the § 2/§ 3 direct-write exception to § 1/§ 4/§ 5/§ 6** — only a new/changed/removed
   main-flow step or flow skips the human-review wait (Stage 4 Part 2); a rule, `## 1` metadata, an
   open question, or a special requirement still stages in `## Discussion` and waits for Stage 1.
@@ -241,17 +241,32 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 
 ## Model
 
-Both Stage 3 subagents (`uc-detector` and the drafting subagent) run on the **session default model**,
-not `haiku`: this is judgment-heavy work — which UC a signal belongs to, where a step sits in a flow,
+Both Stage 3 subagents (`uc-detector` and `uc-drafter`) run on the **session default model**, not
+`haiku`: this is judgment-heavy work — which UC a signal belongs to, where a step sits in a flow,
 spotting a cross-feature goal. Contrast `/extract-signal`, mechanical against a tight rule set.
+Stage 4 Part 2's `uc-applier` runs one tier down (fixed at a mid-tier model, not session default,
+not `haiku`) — it never decides routing or wording from scratch, only applies text someone already
+wrote against a documented destination table, closer to `signal-filer`'s tier than `uc-detector`'s.
 
 Deep fidelity checking belongs to **`/extract-signal`'s source audit**, next to the raw material where
 a quote-anchored check is cheap. This skill does the shallow half only (Stage 2, Gate 3).
 
 ## Additional resources
 
-- **`references/agent-dispatch.md`** — the `uc-detector` prompt (§ 3a), the drafting subagent prompt
-  (§ 3b) and its report contract, and the wave-verification checklist.
+- **`references/agent-dispatch.md`** — the per-run variable data handed to `uc-detector` (§ 3a),
+  `uc-drafter` (§ 3b), and `uc-applier` (Stage 4 Part 2, in `4-sync.md`) — their own procedures and
+  report contracts live in `agents/uc-detector.md`, `agents/uc-drafter.md`, and `agents/uc-applier.md`
+  respectively, plus the wave-verification checklist here.
 - **`references/use-case-standard.md`** — where the UC artifact's shape comes from (Cockburn, BABOK,
   Use-Case 2.0, Wiegers), what is established practice and what is a deliberate departure. Read before
   changing the template or a lane guide; not needed for a run.
+- **`agents/hub-bookkeeper.md`** — an optional, narrowly-scoped subagent for refreshing one feature
+  hub's own derived tables (Signal Log Status/Destination cells, `## Use Cases`, `## Requirement
+  Readiness`, `## Open Questions / Gates`, `## Changelog`) from facts already decided elsewhere.
+  Nothing in this skill's stage sequencing currently dispatches it — the mirror-refresh steps in
+  `1-foldin.md`, `agent-dispatch.md` § 3b, and `4-sync.md` § Part 1b still run inline in the
+  orchestrator or the relevant subagent, each governed by its own concurrency rule (never inside a
+  per-feature subagent for a cross-feature pointer, one hub at a time, etc.). Delegating one of those
+  steps to `hub-bookkeeper` instead is a deliberate future change to make where it's worth the extra
+  dispatch, not a default — respect each stage's existing "never concurrent" constraints before
+  wiring it in.

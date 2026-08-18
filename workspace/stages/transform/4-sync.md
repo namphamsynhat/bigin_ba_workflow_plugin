@@ -89,62 +89,12 @@ waiting before was caution, not a real difference in review weight; the review f
 made visible *after* the fact) now carries that caution instead of a pre-write wait.
 
 ```text
-Agent(session default model, general-purpose, foreground), one per UC
-
-Pull every requirement fact tied to this UC before writing a word:
-1  read the UC file in full — § 1 through § 6 as they stand today, and EVERY ## Discussion entry,
-   not only the ones this run staged
-2  for each entry about to be applied, read its cited hub Signal Log row(s) in full (Signal, Notes,
-   Status) — the entry's own paraphrase can predate a citation correction made since it was staged
-3  note every existing S#/A#/E# id already in use, including removed rows, so nothing mints a
-   duplicate
-
-Apply ONLY entries whose destination starts "new step", "S# becomes:", "S# is removed because",
-"new flow", "A#/E# becomes:", or "A#/E# is removed because". Leave every other entry alone — do not
-remove it, do not fold it in.
-
-| Destination says                          | Do |
-| :--- | :--- |
-| new step after S4: <text>                 | mint the next unused S# (one higher than the highest ever used, including removed rows), insert after S4, never renumber the rows below |
-| S6 becomes: <text>                        | replace S6's two cells, keep the id S6 |
-| S6 is removed because <reason>            | keep the row and id, write **S6** *(removed v<version> — <reason>)*, empty the cells |
-| new flow A2: <text> / new flow E2: <text> | mint the next unused id in its own series (A# or E#, one higher than the highest ever used including removed), append as a new § 3 subsection with the stated branch point, condition, steps, and ending |
-| A2 becomes: <text>                        | replace A2's body, keep its id and heading |
-| A2 is removed because <reason>            | keep the heading and id, write *(removed v<version> — <reason>)*, empty the body |
-
-Write § 2 cells SHORT and HIGH-LEVEL, one line, plain business language:
-    "Parent submits the payment request" — not a paragraph with every validation clause.
-Write a § 3 flow to the template's own shape: branch point as an S# id, condition as a detected fact
-never a question, and an explicit ending (rejoins an S#, reaches a different success, or fails).
-Never invent a step, flow, validation, or branch nobody stated — missing detail stays missing, never
-guessed. Before minting an A#/E#, confirm its stated branch point S# still exists and isn't removed —
-if it is, that inconsistency is a question (see step 4 below), not a fold-in.
-
-Example of the level of detail § 2 wants:
-    Parent submits the payment request
-    Parent selects the student/award
-    Parent selects the vendor or submits a new vendor
-    Parent enters the amount, date, invoice number
-    System checks the request and records it with the entered data
-
-Then, ONE write:
-1  remove the entries you just applied from ## Discussion — leave every other entry in place
-2  bump version, append one ## Changelog line per INT-### applied
-3  flip that INT's hub Signal Log row: staged → applied
-4  if a branch point or enforcement point no longer resolves to a live S#, raise ONE question on
-   § 5 naming both sides instead of silently re-pointing it (same rule as Stage 1's fold-in)
-5  if § 2 changed this pass (a step added, changed, or removed) — flag for review:
-     a  if status is enriched/approved/consolidated, this content edit already reverts it per
-        5-status.md's hard rule — say so explicitly in the Changelog line, e.g. "... — reverts from
-        approved, main flow changed, needs /enrich-feature + /approve-uc re-review"
-     b  regardless of prior status, end the Changelog line with "flagged for /enrich-feature +
-        /approve-uc review" so the reason a human should look again is visible without diffing
-   a § 3-only change (no § 2 step touched) does NOT trigger this flag — a stated branch changing what
-   happens off the happy path is lower-stakes than the happy path itself changing
-
-Report: UC-### — N step(s) added, N changed, N removed to § 2; N flow(s) added, N changed, N removed
-to § 3; flagged for review: yes/no.
+Agent(session default model, uc-applier, foreground), one per UC
 ```
+
+Its rulebook — the three-way pre-read, the destination table, the § 2 wording standard, the one-write
+sequence, and the review-flag rule — is baked into `agents/uc-applier.md`; this dispatch only needs to
+name the one UC to apply this pass over. Report format is fixed in that agent's own § Report.
 
 ## Part 3 — Conflict-check each touched feature
 

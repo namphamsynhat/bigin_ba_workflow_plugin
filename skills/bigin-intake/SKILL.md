@@ -120,7 +120,18 @@ MODE = first token of $ARGUMENTS:
    (a share link and a direct link to one meeting don't match on URL alone)
        match → append as a NEW block on the existing note
        files → by filename within {inbox_dir}/_attachments/
-       plain descriptions → always a new note
+       plain description answering an open question →
+           if the newest note (by `updated`) is `status: needs-clarification` and this description
+           reads as a direct answer to one of ITS OWN unchecked `## Open Questions` lines, in the same
+           sitting → append as a new SRC-n block on THAT note instead of minting a new one; re-open it
+           to `status: raw` per the fold-in convention (§ Stage 2B step 4's re-opening rule applies
+           here too, even though this is Mode A)
+           → this is what makes a multi-round live Q&A (the BA relays an answer, gets a follow-up
+             question, relays the next answer) cost one note with a growing raw_sources list instead
+             of a fresh INT-### — and therefore one extract-signal pass instead of several — per
+             round-trip
+           uncertain whether it's answering that note vs. raising new scope → ask once, don't guess
+       plain description not answering a same-session open question → a new note, same as always
 
 5. KIND — operational/admin → info · existing artifact or shipped behavior → feedback
           everything else → requirement (the default on uncertainty)

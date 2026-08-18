@@ -132,6 +132,21 @@ materialize, so `signal-auditor.md` carries its procedure directly in its own sy
 worth closing by adding that stage file and updating `signal-auditor.md` to point at it, the same way
 2a and 2c already work.
 
+`/bigin-transform-signal`'s Stage 3/4 dispatches follow the same pattern: `agents/uc-detector.md`
+(3a, UC identification), `uc-drafter.md` (3b, staging content into every lane), and `uc-applier.md`
+(Stage 4 Part 2, applying an already-staged main-flow step/flow into `## 2`/`## 3`) each read their
+stage's rulebook (`3-routing.md`, `3-lane-uc.md`, `3-lane-br.md`, `3-lane-design.md`, `4-sync.md`)
+from `_bigin/stages/transform/` at runtime rather than hard-coding it, for the same override reason.
+Before these existed, `references/agent-dispatch.md` dispatched Stage 3b and Part 2 as a bare
+`general-purpose` agent with the entire rulebook re-typed into the prompt on every call — expensive
+and inconsistent across runs, and the reason these two files exist now. `agents/hub-bookkeeper.md`
+is the same idea applied to a smaller, still-unwired seam: the mechanical hub-table refresh currently
+done inline by the orchestrator (`1-foldin.md` § Reconcile mirrors) and by `uc-drafter`/`uc-applier`
+themselves (the Signal Log Status/Destination write, `4-sync.md` § Part 1b's per-hub pointer). It's
+available to delegate that work to once it's worth the extra dispatch; nothing currently calls it, and
+wiring it in means respecting each stage's own concurrency rule (e.g. a cross-feature hub pointer must
+never be written from two dispatches at once) — not a mechanical swap the way 3b/Part 2 were.
+
 The tradeoff is that a project pins the rulebook it was initiated with. `_bigin/system/project.md`
 records `workspace_version`; re-running `/bigin-new-project` after a plugin upgrade refreshes
 `_bigin/conventions/`, `_bigin/stages/`, and `_bigin/templates/` to the new version. All three are

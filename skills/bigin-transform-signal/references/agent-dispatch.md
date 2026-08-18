@@ -2,7 +2,7 @@
 
 ```text
 Agent(session default model, uc-detector, foreground)        # 3a — resolves every UC target
-Agent(session default model, general-purpose, foreground)    # 3b — drafts, not haiku — judgment work
+Agent(session default model, uc-drafter, foreground)         # 3b — drafts, not haiku — judgment work
 one PAIR per FEATURE SLUG, never per lane
     → a feature's hub + UC/BR files are one ownership domain that two lanes routinely both touch
     → features are independent, so they parallelize safely
@@ -111,19 +111,16 @@ unresolved:      <hub row #> — <why you could not confidently place it>
 Give the orchestrator's repair pass a hook: a `uc-detector` report claiming a new UC is not trustworthy
 until the wave check below confirms the file actually landed with the hub pointer set.
 
-## 3b — Drafting
+## 3b — Drafting (`uc-drafter`)
 
 Runs after `uc-detector` reports for the same feature. The subagent has no memory of this
 conversation, including `uc-detector`'s run — hand it the resolved targets as data, not a pointer to
-re-derive.
+re-derive. Its rulebook (which conventions/lane-guide sections to read, the DO-NOT-WRITE list, the
+report format) is baked into `agents/uc-drafter.md` — this dispatch only needs to supply the
+per-run facts that agent has no way to already know:
 
 ```text
 Draft the requirement artifacts for feature <slug> from its already-qualified signals.
-
-The requirement artifact is a USE CASE (UC-###): one user goal, with its actors and trigger (§ 1),
-its main flow as a step table (§ 2), its alternative/exception flows (§ 3), a read-only mirror of
-the business rules governing it (§ 4), and its open questions plus decision log (§ 5). FR-### is
-retired. Steps carry permanent S# ids — never renumber, reuse, or delete one.
 
 QUALIFIED SIGNALS (hub row # → lane), decided in Stage 2/3 — do not re-qualify or re-route:
 <row #>: <signal text> | lane: UC|BR|design|entity|context | target: <UC-### | BR-### | new>
@@ -139,64 +136,11 @@ subagents minting the same goal twice:
 UCs you MAY write (this feature is their primary_feature): <UC-### …, or "none yet">
 UCs you must NOT write (owned by another feature):        <UC-### (owner: <slug>) …, or "none">
 
-READ FIRST:
-- _bigin/conventions/conventions.md — these sections ONLY, not the whole file: § ID scheme,
-  § Use Case, § Frontmatter schema, § Status vocabularies, § Feature Hub, § Open Questions
-  wording, § Open Questions ↔ status consistency, § Feedback handling.
-- _bigin/conventions/paths.md — resolves {uc_dir}, {br_dir}, {entities_file}, {template_br}, and
-  every other variable the lane guides refer to
-- _bigin/stages/transform/3-lane-<x>.md for ONLY the lanes listed above — not all four. Skip
-  3-lane-uc.md § Creating a new UC and § Adopting an existing FR — uc-detector already did that;
-  read the rest (Staging a change, Writing a step, alternative/exception flows, the § 4 mirror, the
-  Context sub-lane, Questions, Conflict)
-- 01-Requirements/_features/<slug>.md — the hub
-- every UC/BR in that hub's uc: / br: frontmatter, in full
-
-THEN, one signal at a time, in hub row order:
-1. For a UC/Context-lane signal, stage into the UC TARGET given above — never a different UC, never
-   a new one. For BR/design, follow that lane's guide exactly; for entity, just cite the existing
-   `{entities_file}` row per `3-routing.md` § Entity — never promote it. Stage UC/BR content into
-   ## Discussion, naming its destination ("new step after S4:", "S6 becomes:", "new flow E2:",
-   "§ 1 Trigger becomes:", "§ 4: add BR-###, enforced at S5") as FINAL TEXT — never write into
-   § 1-§ 6 or a BR's rule statement yourself. A "new step"/"S# becomes"/"new flow"/"A#/E# becomes"
-   destination is applied same-run by Stage 4 Part 2; everything else is the fold-in stage's job on
-   a later run.
-2. Update the hub's Signal Log row: Status and Destination per 3-routing.md § Recording the
-   routing decision. Never renumber or delete a row.
-3. Raise a question ONLY when a decision is genuinely needed (3-lane-uc.md § Questions), on the
-   UC's § 5 Still open list. Never copy a question that already exists on the source INT note.
-4. NEVER invent a step, validation, threshold, notification, or branch the signal didn't state.
-   Missing detail is a question, not a plausible guess.
-
-DO NOT WRITE — vault-wide or owned elsewhere, and other features run concurrently. Report
-candidates instead; the orchestrator applies them in Stage 4:
-  DESIGN-PRINCIPLES.md · 01-Requirements/FEATURES.md · PAIN-POINTS.md
-  any UC-### listed above as owned elsewhere
-NEVER WRITE, full stop — not even via a reported candidate, in this skill:
-  01-Requirements/ENTITIES.md · 01-Requirements/_entities/          # /sync-entities's job, not this
-  skill's; cite {entities_file} by name if a signal needs it, never promote or extend a row
-DO NOT touch another feature's hub, or any file under 00-Inbox/.
-DO NOT write to 01-Requirements/_frs/ or SCENARIOS.md — both retired. An FR adoption's skeleton and
-absorbs: are already written by uc-detector; stage the FR's existing lines as proposed steps, then
-stamp each FR absorbed_by: and change nothing else.
-DO NOT set status: approved, removed, enriched, consolidated, in-review, or superseded. Leave
-every UC/BR at draft — the orchestrator sets the final status from a live count in Stage 5.
-
-REPORT, as plain lines:
-  feature: <slug>
-  uc: <UC-### staged|unchanged> (one line each, with its goal title — creation itself is uc-detector's)
-  steps_staged: <UC-###> -> <N new, N changed, N removed, N flows> (one line each)
-  br: <BR-### created|updated|unchanged> (one line each)
-  design_directives: <N> written to the hub's ## Design Directives (row #s)
-  staged: <hub row #> -> <UC-###|BR-###> (one line each)
-  questions: <artifact> -> <the question>, owner client|team (one line each)
-  cross_feature_uc_change: <UC-###|new> | owner: <slug> | change: <the staged text> |
-                           from_feature: <slug> | source: <INT-###>
-  design_principle_candidates: <preference> | source: <INT-###>
-  fr_adoption: <UC-### absorbs FR-###, …> (only if this feature was migrated this run)
-  blocked: <hub row #> — <why, in one line> (any row you could not process, including a missing
-           or contradictory UC target from 3a)
+01-Requirements/_features/<slug>.md is the hub. Every UC/BR in its uc: / br: frontmatter is fair
+game to read in full before drafting.
 ```
+
+Report format is fixed in `agents/uc-drafter.md` § Report — do not restate it in the dispatch prompt.
 
 ## Verifying 3a, before 3b starts
 

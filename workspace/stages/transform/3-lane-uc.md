@@ -208,9 +208,22 @@ Two statements that cannot both hold. **Never pick a winner** — recency settle
 not settle a disagreement between two people's requirements.
 
 ```text
-1  flip the new Signal Log row: Status: conflict, Notes: conflicts with #<n>
-2  raise ONE question on the UC naming BOTH sides in plain language, and the S#/flow each affects
-3  STAGE NOTHING for this signal
+1  BEFORE writing the question: re-open the existing content's own cited INT-### source and read past
+   its cited line into the surrounding exchange — not just the UC's current wording. Existing content
+   is a prior run's *reading* of that source, not the source itself, and a prior extraction can have
+   resolved a genuinely unsettled exchange into one confident sentence (2-extraction.md's "one
+   mechanism, contradictory framings" case, or an older run predating that rule). Find out which:
+     source itself was ambiguous/contested  → word the question as a THREE-(or-more)-way choice
+         naming every framing the source actually contains, not "we already built X, does the new
+         signal contradict it" — that framing hides that X was never firmly settled and biases the
+         human toward defending the status quo instead of picking freely
+     source was clear, the new signal is what's new  → word it as the existing two-sided conflict
+         the procedure below already describes
+   Report which case this was — it is itself a finding worth surfacing, not just a step you did.
+2  flip the new Signal Log row: Status: conflict, Notes: conflicts with #<n>
+3  raise ONE question on the UC naming EVERY side in plain language (two, if the source was clear;
+   three or more, if step 1 found the source itself never converged), and the S#/flow each affects
+4  STAGE NOTHING for this signal
    → a conflicting proposal in ## Discussion becomes foldable the moment the box is ticked,
      regardless of which side the answer picked
 ```
