@@ -49,6 +49,12 @@ Land raw input in `00-Inbox/` verbatim so nothing is lost or paraphrased before 
 
 Bare paths resolve from the workspace root. `/bigin-new-project` materializes `_bigin/`.
 
+While reading `{system_config}`, run `_bigin/conventions/conventions.md` § Workspace version check on its
+`workspace_version` against the installed plugin's version, compared as semver. Behind → warn and
+recommend `/bigin-upgrade-project`; **ahead → stop** (a stale plugin is being resolved, and continuing
+risks a later run downgrading the materialized rulebook). Capture is the cheapest stage to re-run, so
+warn early rather than let the mismatch surface three stages downstream.
+
 ## Stage 1 — Pre-flight
 
 ```text

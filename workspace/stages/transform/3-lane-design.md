@@ -86,7 +86,11 @@ directives are the input and the UX spec is the output.
 - **`Status`** — `open` (not yet in a prototype) · `reflected` (a prototype implements it, set by
   `/bigin-generate-design`) · `superseded` · `conflict`. **Leave `open` — this skill never sets `reflected`.**
 
-Then set the Signal Log row: `Status: applied`, `Destination: <slug> ## UX Spec`.
+Then set the Signal Log row: `Status: applied`, `Destination: <slug> ## Design Directives #<n>` —
+naming the directive row this signal became, not the section it sits in. Two reasons it is not
+`## UX Spec`: this lane never writes `## UX Spec` (§ What this lane never does, below), and
+`5-status.md` check 2 asserts an `applied` row's content is findable at the id its `Destination`
+names, which "somewhere in a section" is not.
 
 Leave the hub's `uiux:` field alone — it points at a UX artifact that doesn't exist until
 `/bigin-generate-design` runs.

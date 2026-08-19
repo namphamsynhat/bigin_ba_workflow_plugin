@@ -45,7 +45,17 @@ narration of the flow.
 
 ## Creating a new UC
 
-Only when no existing UC covers this goal. Instantiate `{template_uc}` as
+Only when no existing UC covers this goal.
+
+**Only the orchestrator mints a `UC-###` id, and only one at a time.** Up to four features run
+concurrently in Stage 3, and two concurrent `Grep`s over `{uc_dir}` return the same highest number, so
+two features mint the same id and one file overwrites the other. A subagent that finds a genuinely new
+goal therefore **reports it as `new (unminted)`** with the frontmatter values below; the orchestrator
+mints the id, instantiates the skeleton, and writes the hub pointer between waves 3a and 3b
+(`references/agent-dispatch.md` § Minting new UCs, between 3a and 3b). The same rule already covers
+cross-feature news (`4-sync.md` § Part 1) — this just extends it to *every* new id.
+
+The skeleton, once the orchestrator mints it: instantiate `{template_uc}` as
 `{uc_dir}/UC-<NNN> <Title>.md`, id from a `Grep` scan of `{uc_dir}` for the highest number (its own
 sequence; use the `Grep` **tool**, never a Bash pipeline — a denied pipeline silently reuses an id).
 
@@ -56,16 +66,19 @@ sequence; use the `Grep` **tool**, never a Bash pipeline — a denied pipeline s
 | `version` | `1.0` |
 | `level` | `user-goal` unless § Granularity says otherwise |
 | `scope` | the system under design, black-box — usually the product name |
-| `primary_feature` | the slug you were dispatched for |
+| `primary_feature` | the slug whose actor holds the goal — the dispatched slug, in the ordinary case |
 | `features` | `[<primary_feature>]`, plus any other slug a **stated** step lands in |
 | `sources` | the `INT-###` this signal traces to |
 | `attachments` | every path from the source note's own `attachments:` — copied, not summarized |
 | `owner` / `updated` | `team`, today |
 
 Leave `links:`, `brs:`, `entities:`, `pain_points:`, `absorbs:` empty unless this run fills them. Leave
-the `> [!summary]-` block blank — `/enrich-feature` writes it.
+the `> [!summary]-` block blank — it belongs to `/enrich-feature`, which is **halted** today
+(`conventions.md` § Reconciliation notes), so in practice it stays blank. That is correct: a summary
+written by this lane would be this lane's paraphrase of content the human hasn't reviewed yet.
 
-Then add the id to the hub's `uc:` list and a pointer row to its `## Use Cases`.
+Then add the id to the hub's `uc:` list and a pointer row to its `## Use Cases` — the same write, the
+same actor (the orchestrator), in the same sequential pass that minted the id.
 
 **Never write into `## 1`–`## 6` on creation.** A new UC is created with its numbered sections empty and
 its first content staged in `## Discussion`, like every later change. The gate applies to the first step
@@ -106,7 +119,7 @@ Report the adoption explicitly — the one case where one signal produces a larg
 | `S6 becomes:` | a step's wording or validation changes | Stage 4 Part 2, same run |
 | `S6 is removed because <reason>` | a step that no longer applies — the row keeps its id, marked removed | Stage 4 Part 2, same run |
 | `new flow E2:` / `A1 becomes:` / `A1 is removed because <reason>` | an exception or alternative path, added, changed, or removed | Stage 4 Part 2, same run |
-| `§ 1 Trigger becomes:` | any `## 1` metadata line | Stage 1, later run |
+| `§ 1 Trigger becomes:` · `§ 1 Business Need becomes:` | any `## 1` line — trigger, actors, pre/post-conditions, **and the Business Need the Context sub-lane produces** | Stage 1, later run |
 | `§ 4: add BR-014, enforced at S5` | the rule mirror — the `BR-###` file itself is the BR lane's job | Stage 1, later run |
 | `§ 6: <text>` | a special requirement / NFR scoped to this workflow | Stage 1, later run |
 
@@ -169,16 +182,30 @@ question.** Never leave the cell blank, and never invent the step that would jus
 
 ## The Context sub-lane
 
-Two destinations, neither gated — they add provenance, not requirement content.
+Two destinations, and only one of them is a direct write.
 
 ```text
-## 1 Business Need / Goal → the client's stated why, IN THE CLIENT'S OWN TERMS, only what was said
+## 1 Business Need / Goal → STAGED, exactly like every other UC change:
+    - **<INT-###>** (staged <date>): <the signal> → proposed: § 1 Business Need becomes: <final text>
+    the client's stated why, IN THE CLIENT'S OWN TERMS, only what was said
     a `decision`-type signal has no Why by design — inventing one launders a guess into the record
+    flip the Signal Log row: Status: staged, Destination: UC-### § 1
+    → Stage 1 folds it in on a later run. `## 1` is not one of the two fast-track sections — only
+      `## 2` and `## 3` are (4-sync.md § Part 2)
 
-pain_points: frontmatter  → the PP-### id. IDS ONLY: the statement lives in {pain_points_file} and is
-    already mirrored on the hub; a third copy is a third thing to keep in sync
+pain_points: frontmatter  → a DIRECT write, the one ungated Context destination: the PP-### id.
+    IDS ONLY: the statement lives in {pain_points_file} and is already mirrored on the hub; a third
+    copy is a third thing to keep in sync
+    frontmatter is not a numbered section, so no gate applies → Status: applied, Destination: PP-###
     NEVER mint a PP-### here — a pain point with no register row is an extraction gap to REPORT
 ```
+
+**Why `## 1` is gated even though it "only adds provenance."** A Business Need is what every later
+reader takes as the reason the flow exists, and `## 1` sits inside the numbered block that three
+separate blocking checks assert no lane writes directly (`agent-dispatch.md` § Verifying the wave
+check 4, `5-status.md`, and § What this lane never does below). An earlier version of this guide
+called both Context destinations ungated, which made those checks unsatisfiable — every possible
+behaviour failed one of them.
 
 ## Questions, and moving one to the decision log
 
@@ -228,6 +255,16 @@ not settle a disagreement between two people's requirements.
      regardless of which side the answer picked
 ```
 
+**A `conflict` row is parked, not finished.** Because nothing is staged, no later run would ever pick it
+back up on its own: Stage 1 folds only `staged` rows and Stage 2's worklist is only `new`/`held`. Stage 1
+therefore re-enters it explicitly — once the question this conflict raised carries a filled `A:`, Stage 1
+flips the row back to `new` so this lane drafts it **from the decision** on the next pass
+(`1-foldin.md` § Re-entry). Writing the question well is what makes that re-entry possible: an answer
+that doesn't say which side won, or names a third option, is still an answer and still re-enters.
+
+The same applies to a `question` row (`2-qualification.md` Gate 1's `held` sibling raised on the hub
+rather than the note): answered → re-entered by Stage 1, never left sitting.
+
 ## What this lane never does
 
 - Write into `## 1`–`## 6` directly — that is Stage 4 Part 2 for a main-flow step or a flow, same
@@ -237,5 +274,6 @@ not settle a disagreement between two people's requirements.
 - Renumber, reuse, or delete an `S#`, `A#`, or `E#`.
 - Write `status: approved`, `removed`, `enriched`, or `consolidated` — approval and removal are
   human-gated; the other two belong to their own skills.
-- Write `## Domain Concerns` or the summary block — `/enrich-feature` owns both.
+- Write `## Domain Concerns` or the summary block — `/enrich-feature` owns both, and it is halted, so
+  both stay empty rather than getting filled by whoever noticed the gap.
 - Edit an `FR-###`'s body, or set it `removed`. An absorbed FR is frozen history.

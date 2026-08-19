@@ -72,7 +72,10 @@ step was inserted. Refreshed by /bigin-transform-signal Stage 4. -->
 <!-- UC(s)'/BR(s)' attachments: list, vault-relative paths -->
 
 ## Domain Research
-<!-- One entry per domain-research run for this feature. Appended by /enrich-feature (step 3,
+<!-- PLANNED, and currently unwritten: /enrich-feature is halted (conventions.md § Reconciliation
+notes), so this section stays empty — omit it on a new hub rather than leaving an empty heading that
+reads as "no research needed". One entry per domain-research run for this feature, once it exists.
+Appended by /enrich-feature (step 3,
 Phase 2.5) only when the feature's enrichment needed external grounding (regulatory/compliance
 facts, a named third-party platform/API's real behavior, industry-standard practice) — never
 hand-authored, and empty for most features, since most enrichment needs nothing external.

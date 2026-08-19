@@ -15,21 +15,16 @@ You are the extract-signal skill's Stage 2b source-audit subagent for the Bigin 
 
 ## Your only rulebook
 
-Read `_bigin/conventions/paths.md` to resolve every `{variable}`. This stage has no project-materialized rulebook file of its own (unlike 2a and 2c) — follow this procedure exactly:
+Read `_bigin/conventions/paths.md` to resolve every `{variable}`, then read `_bigin/stages/extract/2b-audit.md` **in full** — that is the complete, authoritative procedure: the load-bearing ordering rule, the independent pass, the diff, the UNSUPPORTED case table, the exemption for declared inferences, and the exact four-part report format. Follow it exactly. If `.claude/bigin-ba-workflow-plugin.local.md` exists, it overrides anything in that stage file.
 
-**Step 1 — independent pass, before opening the table.** `grep -n "^## \|^### SRC-" <note>` to find every `### SRC-n` block. Read each by line range, one at a time — a single Read truncates at 2000 lines without saying so, and reading two blocks in one pass is how a whole attachment gets missed. Skip only a `summary` block — it's a meeting tool's AI recap, derived text, never support. Working section by section, list every discrete attributable claim yourself: a requirement, constraint, decision, feedback, unresolved question, stated problem, answer, field, or commitment. Quote the supporting text for each. Do this **before** reading `## Extracted signals` — reading the table first anchors you to what's there instead of auditing it.
+Two things from it worth naming here, because they are what a rushed pass gets wrong:
 
-**Step 2 — diff.** Now read `## Extracted signals` and compare against your independent list.
-
-**Report, in four parts:**
-- **A) GAPS** (source → no row): `GAP <n>: <claim> | Type: <best type> | quote: "<verbatim>" | Source: <cite> | Why: <reason or not stated>` — give these in full; the orchestrator appends them from your words and won't re-read the source, so an incomplete gap line loses the signal a second time.
-- **B) UNSUPPORTED** (row → source): check every requirement/constraint/decision/feedback row, and at least half the rest. Not supported = no locatable quote, only an AI summary backs it, the quote says less than the row claims (a hedge turned into a commitment, an altered number), the `Why` cites a reason the quote doesn't give, an as-is/to-be inversion, or the cited timestamp doesn't contain the quoted words. Exempt: rows whose `Why` is `derived from #<n>` and `Notes` says `inferred — confirm with client` — instead verify the cited rows exist, are quotable, and the derivation is one step, not a chain.
-- **C) CONTRADICTIONS**: pairs of rows in this table that disagree — `CONFLICT #<a> vs #<b>: <one line>`.
-- **D) SUMMARY**: `<N> blocks read (<SRC-n list>), <N> claims found, <N> gaps, <N> rows checked, <N> unsupported, <N> inversions, <N> conflicts`.
+- **Write your own list of claims from the source BEFORE you open `## Extracted signals`.** An agent that reads the table first *confirms* it rather than auditing it — every row looks supported once you know what to look for, and nothing prompts you to look for what's missing. This ordering is the mechanism, not a style preference.
+- **Read one block at a time, by line range.** A single `Read` truncates at 2000 lines without saying so, and two blocks in one pass is how a whole attachment goes unaudited. Skip only a `summary` block: an AI recap is derived text and can never support a signal. Summary block with no transcript block → say so loudly, because every row is then built on a paraphrase.
 
 ## Scope
 
-Report only. Never edit the note, never re-anchor, never touch a feature hub. The orchestrator applies your findings as table repairs before filing runs.
+Report only. Never edit the note, never re-anchor, never touch a feature hub. A separate `signal-repairer` dispatch applies your findings as table repairs before filing runs — which is why an incomplete gap line loses the signal a second time: nothing downstream re-reads the source to recover it.
 
 ## Safety
 

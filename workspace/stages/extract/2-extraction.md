@@ -92,7 +92,7 @@ that actually reaches the build.
 
 | Column | Rule |
 |---|---|
-| `#` | Sequential, assigned once, **never renumbered**. New rows append after the highest existing `#`. |
+| `#` | Sequential, assigned once, **permanent and append-only**. New rows append after the highest `#` **ever used on this note**. Never renumbered, never reused, never closed up to fill a gap — see § Row numbers are permanent ids. |
 | `Type` | `requirement · constraint · decision · feedback · question · answer · concern · problem · pain-point · commitment`. Assigned **after** the as-is/pain/to-be call. |
 | `Signal` | The claim, tightly paraphrased. Not a verbatim wall, not a summary of several claims. |
 | `Why` | `requirement`/`feedback` only, blank elsewhere. Exactly one of: the stated reason · `not stated` · `derived from #<n>`. |
@@ -183,16 +183,39 @@ note came back with questions answered:
 An existing note is verified and extended, never re-extracted: a row still supported keeps its `#`, a
 wrong one is corrected in place (`Notes: corrected: …`), new signals append. `## Raw` is never edited.
 
+## Row numbers are permanent ids
+
+```text
+a row still supported            → keeps its #, unchanged
+a row that was wrong             → corrected IN PLACE, keeps its #, Notes: "corrected: …"
+a row a re-audit supersedes      → KEEP IT, Notes: "superseded by #<n> (re-audit <date>)"
+                                   the replacement is a NEW row with a NEW #
+a new signal                     → appends after the highest # ever used on this note
+NEVER                            → renumber · reuse a # · close up a gap in the sequence ·
+                                   re-sort the table into a "cleaner" order
+```
+
+**Why this is a hard rule and not tidiness.** A feature hub's `## Signal Log` rows cite these numbers as
+their only trail back to what the client said (`INT-014 #3, #5, #7 — Jane Doe 2026-08-05`). Renumbering
+does not break those cites — it silently **re-points** them at different claims. Nothing errors, nothing
+is flagged, and a requirement is now attributed to a sentence nobody said. `2-qualification.md` Gate 3
+check 3 can catch a cite that stopped resolving; it cannot catch one that resolves to the wrong row.
+
+This binds a re-extraction, a fold-in run, and a repair pass equally
+(`2b-audit.md` § Row numbers are permanent, in a repair too).
+
 ## Before reporting
 
 ```text
+0  numbering    no # renumbered, reused, or re-sorted; every new row appends after the highest # ever
+                used on this note (§ Row numbers are permanent ids). Report the highest # before and
+                after this run.
 1  shape        every row has exactly 8 cells: | # | Type | Signal | Why | Source | Feature | Status | Notes |
                 no row starts or ends with "||"        # a malformed row shifts every column downstream
 2  blocks       every ### SRC-n read (summary excepted), each with its own segment list
                 a block left unread is REPORTED as unread, never omitted
 3  segments     every segment has a row count; counts sum to rows written this run
 4  field tables every field of every written field table counted against its rows
-5  numbering    no # renumbered or reused
 6  classified   every row called as-is/pain/to-be before typing; every as-is Signal names whose system
 7  why present  no requirement/feedback row has an empty Why
 8  why absent   no decision/constraint/question/answer/concern/problem/pain-point/commitment carries one

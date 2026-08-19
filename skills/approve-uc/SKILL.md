@@ -16,10 +16,12 @@ to edit the file directly rather than route every change back through `/bigin-tr
 skill's first job is to re-derive the UC's own state from whatever is on disk right now, not trust
 whatever a prior run last wrote.
 
-This skill only ever touches the UC's own file, so approving several UCs back to back is never
+This skill only ever *writes* the UC's own file, so approving several UCs back to back is never
 blocked on anything slower than the human's own read-and-decide pace. Entity promotion and feature-hub
 refresh — the vault-wide bookkeeping that used to happen inline here — is `/sync-entities`'s job now,
-run separately, on its own schedule (§ Entity Data Model).
+run separately, on its own schedule (§ Entity Data Model). It does, however, *read* a bounded set of
+other files — the feature hub(s) and any `BR-###` this UC cites — purely to surface related UCs so the
+human reviews this UC's flow with the rest of its neighborhood in view, not in isolation.
 
 > **Artifact Standard:** Outputs:
 >> **An approved UC** — `status: approved`, set only after the human confirms, with `version` bumped,
@@ -43,10 +45,17 @@ run separately, on its own schedule (§ Entity Data Model).
   those lines since this UC's last approval on its own, before anything else in the summary — that flag
   exists so the human gets a chance to catch a wrong flow, and a summary that buries it defeats the
   point.
-* **Entity promotion and feature-hub refresh happen elsewhere:** this skill never touches
+* **Entity promotion and feature-hub refresh happen elsewhere:** this skill never *writes*
   `ENTITIES.md`, `01-Requirements/_entities/`, or a feature hub — that's `/sync-entities`, run
   separately (§ Entity Data Model). Setting `synced: false` here is the only handoff needed; don't
-  reach for those files from this skill even opportunistically.
+  write to those files from this skill even opportunistically.
+* **Related-UC context is read-only:** collecting sibling UCs — same feature hub, a shared `BR-###`,
+  or another `features:` slug — is only to give the human the full-flow picture before they approve.
+  Never open a related UC to edit it, and never write to another UC's file, its hub, or a `BR-###`
+  from this skill. If the human decides an edit belongs to one of those related UCs, that edit goes
+  back through `/bigin-transform-signal` (its Stage 3 `uc-detector` step already reads this same
+  cross-UC context when drafting) — approve-uc stops and waits, it doesn't reach out and make the
+  edit itself.
 * **No PRD is generated here.** `approved` means the UC is feature material (§ Feature material) —
   a human, or a future PRD stage, takes it from there. Writing a `PRD.md` section is out of scope for
   this skill.
@@ -58,6 +67,11 @@ run separately, on its own schedule (§ Entity Data Model).
 Missing `_bigin/conventions/conventions.md` or `_bigin/templates/` → stop, say `/bigin-new-project`
 must run first.
 
+Then run `{conventions_reference}` § Workspace version check — one `Grep` of `_bigin/system/project.md`
+against the installed plugin's version, compared as semver. Behind → warn and recommend
+`/bigin-upgrade-project`; **ahead → stop**, because approving against a rulebook older than the one this
+UC's content was written under commits scope under the wrong contract.
+
 `$ARGUMENTS` names a `UC-###` that doesn't exist under `01-Requirements/_ucs/` → say so and stop; don't
 guess which file was meant.
 
@@ -66,8 +80,10 @@ by feature) and ask which one.
 
 ## Input
 
-Read `01-Requirements/_ucs/UC-<NNN> <Title>.md` for the id in `$ARGUMENTS`. That's the only file this
-skill reads — no feature hub, no `ENTITIES.md`; those belong to `/sync-entities`.
+Read `01-Requirements/_ucs/UC-<NNN> <Title>.md` for the id in `$ARGUMENTS` — the only file this skill
+writes. For related-UC context (step 1 below) it also *reads*, never writes: `primary_feature`'s hub,
+each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or writes `ENTITIES.md` or
+`01-Requirements/_entities/` — those belong to `/sync-entities`.
 
 ## What to do
 
@@ -90,18 +106,38 @@ skill reads — no feature hub, no `ENTITIES.md`; those belong to `/sync-entitie
      * Check `## 4`'s rule mirror against each cited `BR-###`'s current statement and enforcement
        point. `## 4` is a read-only mirror (§ Use Case) — if a human edit left it drifted from the BR
        file, refresh the mirror to match; never invent a rule that isn't already in a `BR-###` file.
-     * If `status` isn't `enriched` yet, note that `/enrich-feature` hasn't (or can't yet) run against
-       this UC and ask whether to proceed anyway — enrichment is expected, not enforced.
+     * **Enrichment: mention it only if it could actually have run.** Check whether
+       `.bigin/features/` exists on disk.
+       * **It doesn't exist** (every migrated project) → say nothing about enrichment. `/enrich-feature`
+         is halted, so `enriched` is an unreachable status and `draft → approved` is the live path
+         (§ Reconciliation notes). Asking "enrichment hasn't run — proceed anyway?" here would fire on
+         every approval forever, and a question whose only possible answer is "yes" trains the human to
+         click past the summary this whole step exists to make them read.
+       * **It does exist** (a pre-migration vault) and `status` isn't `enriched` → note that
+         `/enrich-feature` hasn't run against this UC and ask whether to proceed anyway — enrichment is
+         expected there, not enforced.
+     * **Collect related UCs, read-only.** Read `primary_feature`'s hub `## Use Cases` / `uc:` list
+       for sibling ids on the same feature. For each id in `brs:`, read that `BR-###` file's `uc: []`
+       to find every other UC the same rule governs. If `features:` names more than one slug, read
+       each additional feature's hub `uc:` list too. For every related id found this way (excluding
+       this UC itself), open just enough to note `title` + `status` — not a full reprocess of someone
+       else's file. Skip anything already `consolidated` or `removed`; they're not live review context.
   2. **Show a short summary.** Lead with the flow drift collected in step 1: quote each flagged
      Changelog line since the last approval, in the order it happened, naming the `INT-###`/source
      behind it — this is what changed in `## 2`/`## 3` that no human has confirmed yet, shown before
      anything else so the human is reviewing the flow itself, not a paraphrase of it. Follow with the
-     goal, main-flow step count, and any drift this run corrected in `## 4` — then ask whether the flow
-     still reads right and the user intends to approve.
+     goal, main-flow step count, and any drift this run corrected in `## 4`. Then list the related UCs
+     from step 1 (grouped as same-feature / shared-BR / cross-feature, each with title + status) so the
+     human can judge this UC's flow against its neighborhood, not in isolation — then ask whether the
+     flow still reads right and the user intends to approve.
      * **If the human says a step or flow now looks wrong:** stop — don't approve. Point at the
        specific `S#`/`A#`/`E#` row in `## 2`/`## 3` that needs a hand edit, or say it belongs back
        through `/bigin-transform-signal` for a proper fold-in, then pick this back up once it's fixed.
        Approving a flow the human just flagged as wrong defeats the reason this summary exists.
+     * **If the human flags an inconsistency with a related UC instead:** stop — don't approve, and
+       don't edit that other UC from here. Name the related UC and what looks inconsistent, then say
+       the fix belongs to `/bigin-transform-signal` (whose `uc-detector` step already reads this same
+       cross-UC context when drafting), and pick this back up once it's resolved.
   3. **On confirmation:** set `status: approved` on the UC, bump `version`, set `synced: false`, and
      add one `## Changelog` line noting the approval and anything this run corrected.
   4. **Confirm and point to next.** Tell the user the UC is ready for PRD — `/bigin-generate-design`

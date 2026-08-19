@@ -64,7 +64,7 @@ other): Stage 4 Part 2 drafts a new/changed/removed step here directly, same run
 outstanding ## Discussion entry for this section, not only what the current run staged. Keep it
 short and high-level, plain business language, one line per step — a business reader should get the
 whole flow from a handful of lines. Because this section skips the wait, any run that changes it
-flags this UC for /enrich-feature + /approve-uc re-review (dropping status back from
+flags this UC for /approve-uc re-review (dropping status back from
 enriched/approved/consolidated if it had reached one of those). Every other section still stages in
 ## Discussion and waits.
 

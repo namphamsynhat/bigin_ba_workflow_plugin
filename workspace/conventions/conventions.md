@@ -681,17 +681,30 @@ audit quotes against and what every later stage re-reads to see what was actuall
 here destroys evidence. Grouping is the *hub's* job — these rows file onto the Feature Hub as
 themed Signal Log rows citing their `#` back here (§ Feature Hub).
 
-Questions raised by `/extract-signal` are written **into the source INT note's `## Open
-Questions`** — `- [ ] Q: … (owner: client|team) ↦ UC-###` with an `A:` answer line — mirrored on
-the UC when one exists (the UC copy is canonical). A note left with unanswered questions is parked
-`status: needs-clarification`: that flag is what surfaces it for the human to jump in. Two ways to
-close a question:
+Questions raised by `/extract-signal` live **only on the source INT note's `## Open Questions`** —
+`- [ ] Q: … (owner: client|team) ↦ —` with an `A:` answer line. **There is no UC mirror of an
+extract-stage question**, by design: the filing stage never touches a UC (`3-filing.md` § Scope), so a
+promised mirror would be a promise nothing keeps — the note would read as having a copy elsewhere while
+the UC had nothing. The `↦` field stays `—` until a later stage rewrites it to `↦ UC-###` as a *pointer*,
+not a second copy of the question.
+
+A question about UC content is raised on the UC by `/bigin-transform-signal` instead
+(`3-lane-uc.md` § Questions), and that one *is* the canonical copy of itself. When both exist for the same
+ambiguity, that is the "one question, two places" bug below, not a mirror.
+
+A note left with unanswered questions is parked `status: needs-clarification`: that flag is what surfaces
+it for the human to jump in. Three ways to close a question:
 
 - **Answer inline**: fill the `A:` line, tick the box. The next `/extract-signal` pass folds the
   answer in, ticks the UC copy, and flips the note to `in-review`.
 - **Answer arrives from the client**: `/bigin-intake` appends the reply to the note and resets it
   `status: raw`, which re-enters the extraction queue; extraction matches the reply to the open
   question as an `[answer]`.
+- **Answer arrives inside a *different*, later note**: that note's own extraction produces an `answer`
+  row, and filing ticks **both** copies — the question where it was raised, and this note's — citing the
+  resolving `INT-###` (`3-filing.md` § Step 5b). Without that fold-back the earlier note sits
+  `needs-clarification` forever with an unticked box, reading as blocking when the answer has been on
+  record for weeks.
 
 ### One question, two places — never two questions
 
@@ -1119,7 +1132,13 @@ How `/extract-signal` consumes a non-empty `declared_features:`:
   changelog, `Sources` citing the INT id). This is the single exception to "agents never add scope
   rows unattended" — it holds *only* because the slug came from a human at capture. A slug that
   looks like a typo of an existing row is flagged in the report, never silently remapped to what
-  the agent thinks was meant.
+  the agent thinks was meant, **and never minted either** — minting a typo creates a permanent
+  duplicate slug, which is worse than either option the flag offers.
+  The runnable procedure is `_bigin/stages/extract/3-filing.md` § The declared-slug exception —
+  that file is what the filing stage actually reads, and it is the only place this exception's steps
+  are written out. This bullet is the standard; that section is the procedure. They must not
+  disagree: an earlier version of this pair had conventions granting the exception while the filing
+  guide said "NEVER a new `{requirements_file}` row", which made the case a coin flip.
 - **The scan continues anyway.** The declaration is what the human knew when they typed it, not a
   promise about content they may not have re-read — a note declared `vendor-management` can still
   carry a payments signal. Those anchor normally. This is what makes it a floor rather than a
@@ -1282,6 +1301,43 @@ Not currently applied to PRD/Epic/Story/feature-hub either — the feature hub a
 one-line description under its `# <Feature Name>` heading for the same purpose. Extend the pattern
 to other artifact types only if the same scan-cost problem shows up there.
 
+## Workspace version check (every skill, at its precondition)
+
+`_bigin/conventions/`, `_bigin/stages/`, and `_bigin/templates/` are **copies**. The originals live in the
+installed plugin, and `_bigin/system/project.md`'s `workspace_version` records which plugin version last
+copied them. Those two can disagree in **both** directions, and only one of them is a warning.
+
+```text
+at every skill's existing "missing _bigin/ → stop" precondition, add one Grep each:
+    workspace = Grep '^workspace_version:' _bigin/system/project.md
+    plugin    = Grep '"version"' ${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json
+
+COMPARE AS SEMVER — component by component, numerically. Never as strings: "1.10.0" sorts BEFORE
+"1.6.5" lexically, so a string compare reports an upgrade as a downgrade at exactly the version
+where it starts to matter.
+
+workspace == plugin   → proceed silently. The ordinary case.
+workspace <  plugin    → WARN and proceed: "workspace is on <a>, plugin is <b> — run
+                         /bigin-upgrade-project". The rulebook this run follows is the older one,
+                         which is usually harmless for one run and always worth saying.
+workspace >  plugin    → STOP. Do not run.
+                         Say: the vault's content was built against a NEWER rulebook than the one
+                         installed here, so this run would follow superseded rules and, worse, an
+                         upgrade run would copy the older rulebook over the newer one and stamp the
+                         version backwards. Usual cause: a stale plugin cache being resolved as
+                         ${CLAUDE_PLUGIN_ROOT} while the workspace was materialized from a newer
+                         install. Name both versions and the cache path, and stop.
+workspace_version absent / unparseable → warn, name it, proceed. An old project predates the field.
+```
+
+**Why "ahead" is a stop rather than a warning.** Every other version mismatch costs one run following
+slightly stale rules. This one is the only case where continuing can *destroy* correct state: the
+materialized rulebook gets overwritten with an older one, `workspace_version` is stamped down, and the
+next run has no way left to tell that a downgrade happened. There is nothing to reconcile from
+afterwards, because the record of what the content was built against is exactly what got overwritten.
+
+`${CLAUDE_PLUGIN_ROOT}` is otherwise not a path any stage reads — see § Reconciliation notes.
+
 ## Reconciliation notes for this plugin
 
 Concrete gaps between this document and the plugin's actual skills, collected here instead of as
@@ -1291,8 +1347,14 @@ scattered inline caveats — resolve and delete each line as the corresponding s
   and templates are now materialized into the project by `/bigin-new-project`
   (`_bigin/conventions/`, `_bigin/stages/`, `_bigin/templates/`), and every skill, dispatch prompt, and
   template refers to them project-relatively. Anything still pointing at `references/…`,
-  `skills/*/SKILL.md`, or `skills/*/template/…` for a file a subagent has to read is a bug. `${CLAUDE_PLUGIN_ROOT}` has exactly one legitimate use in this
-  plugin: `/bigin-new-project` § 2, resolving the copy source.
+  `skills/*/SKILL.md`, or `skills/*/template/…` for a file a subagent has to read is a bug.
+  `${CLAUDE_PLUGIN_ROOT}` has exactly four legitimate uses, all of them in the orchestrator and none
+  in a subagent: `/bigin-new-project` § 2 and `/bigin-upgrade-project` § 5 resolve the copy source;
+  every skill's precondition reads `plugin.json`'s `version` for § Workspace version check; and
+  `5-status.md` Part 3 plus `/extract-signal`'s batch check invoke the plugin's own deterministic
+  checker (`hooks/bigin-lint.py --full`). A stage file may name that path because Part 3 and the batch
+  check both run in the orchestrator — never hand it to a dispatched agent, which cannot resolve it.
+  An unavailable checker is always **reported**, never read as a pass.
 - ~~**The design stage was on the old layout.**~~ **Resolved.** `/prototype-design` is superseded by
   **`/bigin-generate-design`**, which reads `01-Requirements/_ucs/` directly, accepts a feature
   carrying several UCs and a UC spanning several features, and writes `04-UIUX/UX-<NNN> …` plus the
@@ -1309,14 +1371,24 @@ scattered inline caveats — resolve and delete each line as the corresponding s
   write a PRD — PRD generation is still fully **Planned**, so `approved` today means "feature
   material, ready to hand off" (§ Feature material), not "folded into a document." `/approve-fr` is
   kept only so old references resolve; do not run both.
-- **`enrich-feature`, `consolidate-prd` are on the old `.bigin/`
-  flat-file layout AND on the retired `FR-###` artifact** (`.bigin/features/FR-<id>-*.md`,
+- **`enrich-feature` and `consolidate-prd` are HALTED, not merely stale.** Both are on the old
+  `.bigin/` flat-file layout AND on the retired `FR-###` artifact (`.bigin/features/FR-<id>-*.md`,
   `.bigin/PRD.md`, `.bigin/epics.md`, inline `Status:` headings) — not the
   `01-Requirements/_ucs/`/`_brs/` model with `status:` frontmatter that `bigin-intake`,
   `bigin-new-project`, `extract-signal`, `bigin-transform-signal`, `bigin-generate-design`,
-  `approve-uc`, and `sync-entities` use.
-  **This is now a two-axis gap, and it is the largest open item in this plugin:** these two skills
-  need both the path migration *and* the FR→UC migration. Concretely, each of them:
+  `approve-uc`, and `sync-entities` use. In any migrated project `.bigin/features/` does not exist, so
+  **their preconditions halt unconditionally: there is no input they can read, and no run of either
+  can succeed.** Each now says so in its own first line rather than looking runnable.
+  Three consequences that were live bugs and are now closed:
+  - the `enriched` status is **unreachable**, so nothing may gate on it. `/approve-uc` asks about
+    enrichment only when `.bigin/features/` actually exists — otherwise it doesn't mention it, instead
+    of asking "enrichment hasn't run, proceed anyway?" on every approval forever.
+  - `draft → approved` is the live path. § Status vocabularies keeps `enriched` as a defined value
+    because a pre-migration vault has UCs already carrying it; nothing writes it today.
+  - `/bigin-ba` does not route to either skill. Its pipeline list marks both as halted.
+
+  **The migration is the largest open item in this plugin**, and it is a two-axis gap: both skills need
+  the path migration *and* the FR→UC migration. Concretely, each of them:
   - reads `.bigin/features/FR-<id>-*.md` and must read `01-Requirements/_ucs/UC-<NNN> <Title>.md`;
   - keys its whole run on a single FR id per feature and must accept a feature carrying **several**
     UCs, plus a UC spanning **several** features (`primary_feature` decides the chain);
@@ -1325,11 +1397,16 @@ scattered inline caveats — resolve and delete each line as the corresponding s
   - in `/consolidate-prd`'s case, should cut epics/stories as **use-case slices** (§ Traceability
     chain), flows first, rather than one story per FR line.
 
+  `/enrich-feature`'s target shape is settled even though it isn't built: per-**UC** enrichment writing
+  `## Domain Concerns` onto the UC itself (§ Feature Hub's `## Domain Research` bullet), not per-feature
+  enrichment writing a hub section. Each skill's own body carries its target contract under a heading
+  saying it isn't runnable, so the design intent survives without either skill looking live.
+
   Until then, § Feature Hub's "Maintenance contract" rows for those two describe the target, not
-  the current read/write paths. **Three exits from `/bigin-transform-signal` now work:** the design
+  the current read/write paths. **Three exits from `/bigin-transform-signal` work:** the design
   one (`/bigin-generate-design`, live), the approval one (`/approve-uc`, live), and the human.
-  `/bigin-ba` stops at the remaining boundary (`enrich-feature`/`consolidate-prd`) rather than run a
-  stage against paths that no longer exist.
+  `/prototype-design` is off the load path entirely — superseded by `/bigin-generate-design`, kept only
+  so old references resolve.
   § Absorbed is likewise **half-real**: `/bigin-generate-design` implements it for `UX-###`
   (stamping `UC-###@version`, re-stamped whole each run, which is what makes "this design is stale"
   detectable), while the PRD/epic rows in its table remain planned.

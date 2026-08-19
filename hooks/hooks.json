@@ -1,0 +1,17 @@
+{
+  "description": "Runs bigin-lint's invariant checks after a write into a Bigin requirements vault, so an ID collision, a malformed signal-table row, a broken citation, or an illegal status value is caught at the moment it lands rather than by a verification pass that a context-pressured run can skip. Exits silently and immediately in any repo that has no _bigin/system/project.md, so it is inert outside a Bigin project.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/bigin-lint.py\" --hook",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

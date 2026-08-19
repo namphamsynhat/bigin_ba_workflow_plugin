@@ -17,6 +17,12 @@ for row in worklist:                       # every Status: new or held
     all pass → stays `new`, moves to Stage 3
 ```
 
+A row Stage 1 just re-entered (`1-foldin.md` § Re-entry — an answered `conflict`/`question`) arrives here
+as an ordinary `new` row, so it needs no special handling: it passes the same four gates as everything
+else. Two things to expect from one, though — Gate 1 will not fail it (the question it was blocked on is
+the one that just got answered), and Stage 3 must draft it **from the decision recorded in its Notes**,
+not from the original signal text (`3-lane-uc.md` § Conflict).
+
 Each gate has exactly one outcome per case — write that outcome, never improvise a new one. A failed
 row is **parked, not deleted**; the next run re-checks it, which is why `held` rows are always
 re-collected.
@@ -85,6 +91,15 @@ directions.
    → ROW COUNTS ARE NOT A CHECK: one hub row covering several note rows is the design
 2  Source cite is specific — resolves to a real place (timestamp · <sender> <date> · attachment
    filename) and names the note row numbers it consolidates, not "somewhere in the note"
+3  every cited note row # RESOLVES — the INT-### named exists, and that note's ## Extracted signals
+   really has a row with that number whose claim matches this clause
+   → the failure this catches: a cite pointing at a row number that a later re-extraction moved,
+     or at a row belonging to a different note entirely. Note-table row #s are append-only and
+     permanent by rule (2-extraction.md § Columns), so a cite that no longer resolves means either
+     the rule was broken upstream or the cite was wrong when written.
+   → Status: held, Notes: "hub cite <INT-### #n> does not resolve — re-run /extract-signal
+     verification". NEVER re-point the cite at whichever row looks closest: a silently re-pointed
+     citation is a signal attributed to something the client never said.
 ```
 
 | Case | Outcome |
@@ -127,7 +142,18 @@ Three cases, three outcomes. Only one touches an existing row; none delete anyth
     if which row wins is a HUMAN call rather than a chronological one → that's a CONFLICT:
       leave both rows, flip the newer to Status: conflict citing the earlier #, raise a question.
       Recency decides a supersession; it never decides a disagreement between two people.
+      → and it does NOT end there: Stage 1 re-enters that row the run after the question is
+        answered (1-foldin.md § Re-entry). A `conflict` is a parked requirement, not a closed one.
 ```
+
+## Every clause, not every row
+
+A themed hub row carries one clause per note row it cites, and its `Type` says so (`requirement +
+constraint`). **Qualify and carry forward every clause**, the way `3-routing.md` routes per clause: a
+row that passes the gates on its dominant clause and drops the rest is a row that reads `staged` while
+half of what the client said never became anything. When one clause fails a gate and another passes,
+the row is `held` with `Notes` naming **which clause** blocked it — never `staged` on the strength of the
+half that was fine.
 
 ## Status values this stage may write
 

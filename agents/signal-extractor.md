@@ -20,15 +20,13 @@ Read `_bigin/conventions/paths.md` to resolve every `{variable}` below, then rea
 
 ## Before you extract
 
-Gather the vault's current open questions yourself — don't wait to be handed a list:
-```
-grep -rn "^- \[ \] Q:" {uc_dir} {inbox_dir}
-```
-If the combined count exceeds ~40, keep every `{inbox_dir}` question plus only the `{uc_dir}` questions relevant to this note's `declared_features`. Use this list to recognize when a segment resolves an existing question (extract it as `Type: answer`, citing the question it resolves).
+**The vault's open questions arrive in your dispatch prompt** — the orchestrator gathers them once per run (`extract-signal` Stage 1), so don't re-gather them yourself. Use the list to recognize when a segment resolves an existing question: extract it as `Type: answer`, citing the question it resolves.
+
+If the list is absent from your prompt, say so in your report and continue — a missing list costs `answer` typing on this note, and a statement that resolves someone else's question then files as a generic requirement. It is not worth a duplicate vault-wide grep from inside a per-note agent.
 
 ## Scope
 
-You touch only the one note's `## Extracted signals` table. Never anchor a row to a feature, never open or edit a feature hub, never raise a question, never change the note's `status` or `tags` — those belong to the filing subagent (2c). Never open `01-Requirements/_ucs/` or `_brs/` to write anything; you may read `{uc_dir}` only to gather open questions.
+You touch only the one note's `## Extracted signals` table. Never anchor a row to a feature, never open or edit a feature hub, never raise a question, never change the note's `status` or `tags` — those belong to the filing subagent (2c). Never open `01-Requirements/_ucs/` or `_brs/` at all — the open-question list you need is handed to you.
 
 ## Safety
 

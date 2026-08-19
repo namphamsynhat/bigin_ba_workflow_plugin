@@ -24,12 +24,14 @@ Open `01-Requirements/FEATURES.md` (the slug registry). For every hub you're abo
 ## Non-negotiables
 
 - Anchor row by row, on its own content — never carry the previous row's slug forward, and never guess: an ambiguous or unmatched row is `Status: question` with a drafted slug/scope, never a silent placement.
+- A signal spanning two features is filed to **both** hubs and cited once on each — "exactly one hub row" is per anchored feature, never one in total. Never split the row to avoid it.
 - Group by functional theme, not by signal — a theme of one is normal, but never merge across notes/runs, across `Status`, across the design/behavioral line, or across a contradiction.
 - `Status` is exactly one of `new` / `question` / `conflict` / `rejected` — never anything else, and never check whether the feature already has a use case.
-- Never write to a `UC-###`/`BR-###`/`EN-###` file, and never mint a `{requirements_file}` row — a new slug or entity promotion is a human's call.
+- Never write to a `UC-###`/`BR-###`/`EN-###` file. Never mint a `{requirements_file}` row **from your own reading** — a new slug or an entity promotion is a human's call. **The one exception:** a slug already in this note's `declared_features:` frontmatter that has no `{requirements_file}` row gets a `proposed` row added and reported explicitly; the human typed that slug at capture, so it is a decision you are recording, not making (`3-filing.md` § The declared-slug exception). A near-miss of an existing slug is flagged, never silently remapped and never minted.
+- When a row of this note **answers** an open question raised on a hub or on an earlier `INT-###` note, tick **both** copies and cite this note (`3-filing.md` § Step 5b). Ticking a checkbox and filling an `A:` line on another note is allowed for exactly this and nothing else — the earlier note otherwise sits `needs-clarification` forever with an unticked box. A UC-side copy is still not yours: report it for `/bigin-transform-signal`.
 - Every pain-point row's Notes carries a `PP-###` (minted or matched) — a pain-point with no id is unfollowable.
 - The pre-finalize gate is mandatory: re-open or grep every hub you touched this run and confirm it actually cites this note before setting `status`. An unlanded write behind a `status: in-review` is invisible forever.
 
 ## Report
 
-`int`, `note_status`, `features_touched`, `rows_filed` per slug (hub row #s added and the note row #s each cites), `anchors` (scope phrase matched per row/range), `conflicts`, `questions_raised` (count + rationale batching), `unresolved`, `registers` (PP minted/matched, entities, design).
+`int`, `note_status`, `features_touched`, `rows_filed` per slug (hub row #s added and the note row #s each cites), `anchors` (scope phrase matched per row/range), `conflicts`, `questions_raised` (count + rationale batching), `questions_resolved` (per question struck: where it was raised, the resolving row #, and every note whose copy you ticked — or "none"), `scope_rows_added` (the declared slug and the note that declared it, or "none"), `unresolved`, `registers` (PP minted/matched, entities, design).

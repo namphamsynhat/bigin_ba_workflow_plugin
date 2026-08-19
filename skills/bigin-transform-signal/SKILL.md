@@ -1,13 +1,15 @@
 ---
 name: bigin-transform-signal
-description: This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's staged UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), and Design Directives. Stages all UC/BR updates through a resumable human-review gate. It never promotes an Entity (EN) doc — it only cites the ENTITIES.md register; /sync-entities is the only skill that promotes one.
+description: This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's staged UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), and Design Directives. Stages every UC/BR update as final text in the artifact's `## Discussion` first, with a written question when a decision is genuinely needed — resumable, never blocking on a live human. It never promotes an Entity (EN) doc — it only cites the ENTITIES.md register; /sync-entities is the only skill that promotes one.
 argument-hint: "[feature slug, or omit for all pending, or resume]"
 ---
 
 # Bigin Transform Signal
 
 Turn `new`/`held` signals on a Feature Hub's `## Signal Log` into **Use Cases** (UC), **Business Rules**
-(BR), and **Design Directives**. Every UC/BR change passes a written, resumable human-review gate.
+(BR), and **Design Directives**. Every UC/BR change is **staged as final text first** — written into the
+artifact's `## Discussion` naming exactly where it goes, resumably, never blocking on a live human. What
+that does and does not guarantee is § Operating modes' first job to state precisely.
 
 **The output is a use case, not a list of requirement fragments.** One `UC-###` is one user goal:
 actors and trigger (`## 1`), the flow that delivers it (`## 2`), the branches that can happen instead
@@ -20,11 +22,29 @@ Case, § Feature Hub, § Status vocabularies, § Feedback handling, § Resumable
 
 ## Operating modes
 
-| Mode | Behaviour |
+This skill is **always unattended**. There is one mode, and it never blocks on a human.
+
+| Content | Behaviour |
 |---|---|
-| **Written gate** (default, unattended) | stage UC/BR proposals into `## Discussion` + a `- [ ] Q:` on the UC's `## 5` (a BR's `## Open Questions`). Never blocks on a human. **Two exceptions:** a Main Success Scenario step (`## 2`) or an Alternative/Exception Flow (`## 3`) write straight in, same run — Stage 4 Part 2, sweeping every in-scope UC's full `## Discussion` backlog, not just what this run staged. A `## 2` change also flags the UC for `/enrich-feature` + `/approve-uc` re-review. |
-| **Interactive** | a question answered inline folds in immediately, no written round-trip. |
+| **UC/BR content** | staged into `## Discussion` as final text, plus a `- [ ] Q:` on the UC's `## 5` (a BR's `## Open Questions`) **when a decision is genuinely needed**. **Two exceptions:** a Main Success Scenario step (`## 2`) or an Alternative/Exception Flow (`## 3`) writes straight in, same run — Stage 4 Part 2, sweeping every in-scope UC's full `## Discussion` backlog, not just what this run staged. A `## 2` change also flags the UC for `/approve-uc` re-review. |
 | **Design directives** | **not gated.** They never reach a UC, a PRD, or approval — they feed `/bigin-generate-design`, reviewed in its own right. Write them directly. |
+
+**What "the gate" actually is, precisely.** It is a **wait for an answer, not a wait for a review.** An
+entry staged *with* a question waits until a human fills that question's `A:`. An entry staged *without*
+one is folded in by the next run's Stage 1 (or, for `## 2`/`## 3`, by this same run's Stage 4 Part 2) with
+no human having looked at it. So:
+
+```text
+staged + a question   → genuinely gated: nothing lands until a human answers
+staged, no question    → a ONE-RUN delay at most, then it lands unreviewed
+## 2 / ## 3 entry      → lands THIS run, and only the review flag says a human should look
+```
+
+That is the design — an unambiguous statement should not need a human round-trip — but do not describe
+it, or rely on it, as "every change is human-reviewed before it lands." The thing that makes an
+unreviewed change *visible* is the review flag and the Changelog line, read at `/approve-uc`, not the
+staging step. There is no interactive mode: nothing in this skill asks a live question, and nothing
+folds a change in on the strength of one answered mid-run.
 
 ## Paths
 
@@ -51,6 +71,11 @@ Missing `_bigin/conventions/`, `_bigin/stages/`, or `_bigin/templates/` → stop
 `/bigin-new-project` must run first. A subagent that can't read `3-lane-uc.md` still writes a UC, just
 one following no rule.
 
+Then run `{conventions_reference}` § Workspace version check — one `Grep` of `_bigin/system/project.md`
+against the installed plugin's version. Behind → warn and recommend `/bigin-upgrade-project`; **ahead →
+stop**, because the materialized rulebook this run would follow is older than the one the vault's content
+was built against.
+
 ## Execution order
 
 ```text
@@ -74,13 +99,23 @@ only the lanes this run's signals actually hit.
 ## Stage 1 — Fold-in
 
 ```text
-scan {uc_dir} + {br_dir} for artifacts whose feature has a `staged` Signal Log row pointing at them
-per artifact → three-way read: unanswered | already applied | apply now       [1-foldin.md]
+GREP-FIRST, never a vault read: Grep {hub_dir} for `Status.*staged`, and for
+    `Status.*conflict|Status.*question` — open only the hubs that hit
+per staged artifact  → three-way read: unanswered | already applied | apply now   [1-foldin.md]
+per conflict/question row whose question now has a filled A: → RE-ENTER it as `new`
 ```
 
+- **Re-enter an answered `conflict`/`question` row** (`1-foldin.md` § Re-entry). This is the one path
+  that would otherwise lose a requirement permanently: such a row is not `staged`, so fold-in skips it,
+  and not `new`/`held`, so Stage 2 skips it. Flipping it back to `new` here is what puts an answered
+  disagreement back into this same run's Stage 2 worklist. Draft it from the **decision**, never by
+  re-staging whichever side lost.
 - **Reconcile mirrors unconditionally, every run** — including artifacts already applied, and
   **every** hub a cross-feature UC names. Re-setting a correct field is a no-op; skipping it leaves a
   hub reading `staged` against a folded-in UC forever.
+- **Never overwrite a section the human edited first.** A staged entry whose anchor text has materially
+  changed raises a question instead of applying; one whose content is already present, verbatim, is
+  treated as applied rather than written twice.
 - **Never renumber a step.** A new step takes the next unused `S#` in flow order; a removed step keeps
   its row and id, marked removed. Rules, branches, stories, and prototypes all cite these ids.
 
@@ -125,15 +160,20 @@ FAN OUT ONE SUBAGENT PER FEATURE SLUG, never per lane                        [re
     → features are independent and parallelize safely; within a feature, process sequentially
 
 within a feature, two subagents run in sequence, never merged:
-  3a  uc-detector       resolves every UC/Context-lane signal to a UC-### — new or existing — reading
-                        other features' hubs when a signal sounds cross-feature. Mints a new UC's
-                        empty skeleton (frontmatter + hub pointer only); never stages content.
+  3a  uc-detector       resolves every UC/Context-lane signal to a UC-### — an existing id, or
+                        `new (unminted)` — reading other features' hubs when a signal sounds
+                        cross-feature. READ-ONLY: it writes nothing at all.
                         [agent-dispatch.md § 3a]
-  3b  uc-drafter        stages content into every lane, using 3a's resolved UC targets AS GIVEN — it
+  ↳   ORCHESTRATOR      mints every new UC id + skeleton + hub pointer, ONE AT A TIME, between the
+                        waves. Never a subagent: four features run concurrently and two concurrent
+                        scans for "the highest id" return the same number.
+                        [agent-dispatch.md § Minting new UCs]
+  3b  uc-drafter        stages content into every lane, using the resolved UC targets AS GIVEN — it
                         never re-decides which UC a signal belongs to, and never mints one itself.
                         [agent-dispatch.md § 3b]
 
 a subagent NEVER writes:  {design_principles_file}                                    # vault-wide
+                          a NEW UC-### id or skeleton              # orchestrator mints, sequentially
                           a UC-### owned by another feature's primary_feature
                           another feature's hub · anything under {inbox_dir}
                           {entities_file} · {entity_dir}   # nobody writes these in this skill, not
@@ -147,15 +187,17 @@ a subagent DOES write:    its own feature's hub, its own UCs, its BRs
 ## Stage 4 — Sync, draft § 2/§ 3, and conflict-check
 
 ```text
-orchestrator, sequential, after every Stage 3 subagent has reported          [4-sync.md]
+orchestrator, after every Stage 3 subagent has reported                      [4-sync.md]
     write shared registers + every cross-feature UC change, ONE AT A TIME
-    write each participating hub's ## Use Cases pointer
-    spawn one uc-applier per UC carrying an unapplied ## 2 or ## 3 entry — found by reading every
-        in-scope UC's own ## Discussion directly, not just what Stage 3 reported this run —
-        it pulls every requirement fact tied to that UC (the full ## Discussion, the cited hub
-        Signal Log rows, the UC's own current sections) and writes ## 2 and/or ## 3 directly,
-        same run (the two exceptions to the gate)
-    flag any UC whose ## 2 changed this pass for /enrich-feature + /approve-uc re-review
+    write each participating hub's ## Use Cases pointer   (may delegate per hub → hub-bookkeeper)
+    spawn one uc-applier per UC carrying an unapplied ## 2 or ## 3 entry — worklist built GREP-FIRST
+        over every in-scope UC's own ## Discussion, not just what Stage 3 reported this run.
+        UCs on DIFFERENT primary_features run concurrently (≤ 4); two on the SAME feature run
+        sequentially. The orchestrator flips the hub Signal Log rows itself afterwards — the only
+        write two concurrent appliers would contend on.
+    COVERAGE, NOT CLAIMS (Part 2b): dispatched rows vs reported rows · a destination per clause on
+        every `<a> + <b>` row · no qualified row still `new`.  Mismatch is BLOCKING.
+    flag any UC whose ## 2 changed this pass for /approve-uc re-review
     conflict-check each touched feature, scoped to that feature
 ```
 
@@ -164,9 +206,10 @@ No entity is ever promoted here — that's `/sync-entities`'s job, run separatel
 it is approved (§ Entity Data Model). Never auto-resolve a contradiction: raise it, name both sides,
 stop.
 
-**Only `## 2` and `## 3` skip the gate.** A rule, `## 1`, `## 5`, or `## 6` always stages in
-`## Discussion` and waits for Stage 1 on a later run, same as before — see `4-sync.md` § Part 2 for
-exactly what qualifies, how short to write it, and when a `## 2` change must flag the UC for review.
+**Only `## 2` and `## 3` skip the wait.** A rule, `## 1` (including a Context-lane Business Need),
+`## 5`, or `## 6` always stages in `## Discussion` and waits for Stage 1 on a later run — see
+`4-sync.md` § Part 2 for exactly what qualifies, how short to write it, and when a `## 2` change must
+flag the UC for review.
 The sweep is **cumulative, not scoped to this run** — a UC nobody's Stage 3 touched today can still
 carry an entry an earlier run staged and never applied; Part 2 reads every in-scope UC's own
 `## Discussion` fresh, every invocation, so a missed pass self-heals on the next run instead of
@@ -178,23 +221,13 @@ leaving `## 2`/`## 3` empty indefinitely.
 orchestrator, last                                                           [5-status.md]
     set EVERY status from a LIVE RE-COUNT — never from what the run intended
         on a UC, count the ## 5 Still open list only; a decision-log row is answered history
-    run the seven verification checks
+    run the nine verification checks — incl. UC-id uniqueness (the mint-race backstop) and
+        "no answered conflict/question row left un-re-entered"
     mismatch → BLOCKING: repair, re-check, then report
 ```
 
-```text
-Stage 1 (fold-in): <N> UC/BR resolved — <slug>: UC-### now draft, ready for /enrich-feature
-Stage 2 (qualify): <N> qualified, <N> held (<reason>), <N> applied as duplicate/already-covered
-Stage 3 (draft):   <N> UC created, <N> updated, <N> BR created, <N> BR updated
-                   — <slug>: UC-### (staged, needs-clarification | staged, draft)
-                   steps staged: <slug> UC-### — <N> new, <N> changed, <N> flow(s)
-                   design: <N> directive(s) — <slug> ## Design Directives, <N> DESIGN-PRINCIPLES row(s)
-Stage 4 (sync):    <N> cross-feature UC change(s),
-                   <N> UC(s) with § 2/§ 3 drafted, <N> flagged for review, <N> conflict(s) — or none
-cross-feature:     UC-### spans <slug> · <slug> — pointers written on both
-remaining:         <slug>: UC-###/BR-### — N open question(s), owner client|team
-next:              <slug> ready for /enrich-feature | <slug> ready for /bigin-generate-design (design-only)
-```
+The report template lives in `5-status.md` § Part 4 — one copy, so a change to it can't drift against
+this file.
 
 ## Failure modes
 
@@ -238,15 +271,27 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 - **Pointing only the primary hub at a cross-feature UC** — the other features read as uninvolved.
 - **Deciding a conflict** — recency settles a supersession, never a disagreement.
 - **Setting status early** — this vault's most common drift. Re-count and set it last, every time.
+- **Leaving an answered `conflict`/`question` row where it is** — the only path in this skill that loses
+  a qualified requirement *permanently*: no later stage's worklist contains it. Stage 1 § Re-entry.
+- **Minting a UC id inside a per-feature subagent** — four features run at once; two get the same number.
+- **Trusting a subagent's report instead of diffing it against what was dispatched** — a partial pass and
+  a complete one produce the same shape of report (Stage 4 Part 2b).
+- **Overwriting a step the reviewer hand-edited** — the correction vanishes with nothing in any diff a
+  human reads, under a Changelog line saying the apply was routine.
+- **Writing a Context-lane Business Need straight into `## 1`** — `## 1` is inside the block no lane
+  writes directly; only the `pain_points:` frontmatter id is a direct Context write.
 
 ## Model
 
-Both Stage 3 subagents (`uc-detector` and `uc-drafter`) run on the **session default model**, not
-`haiku`: this is judgment-heavy work — which UC a signal belongs to, where a step sits in a flow,
-spotting a cross-feature goal. Contrast `/extract-signal`, mechanical against a tight rule set.
-Stage 4 Part 2's `uc-applier` runs one tier down (fixed at a mid-tier model, not session default,
-not `haiku`) — it never decides routing or wording from scratch, only applies text someone already
-wrote against a documented destination table, closer to `signal-filer`'s tier than `uc-detector`'s.
+**Every tier is pinned in the agent's own frontmatter** — `agents/uc-detector.md`, `agents/uc-drafter.md`,
+`agents/uc-applier.md`, `agents/hub-bookkeeper.md`. Never restate or override one from a dispatch prompt:
+one place to change it, and no second copy to drift.
+
+The reasoning behind the pins: both Stage 3 subagents inherit the session default because this is
+judgment-heavy work — which UC a signal belongs to, where a step sits in a flow, spotting a cross-feature
+goal. Contrast `/extract-signal`, mechanical against a tight rule set. `uc-applier` sits one tier down:
+it never decides routing or wording from scratch, only applies text someone already wrote against a
+documented destination table. `hub-bookkeeper` is `haiku` — it mirrors facts it is handed.
 
 Deep fidelity checking belongs to **`/extract-signal`'s source audit**, next to the raw material where
 a quote-anchored check is cheap. This skill does the shallow half only (Stage 2, Gate 3).
@@ -260,13 +305,12 @@ a quote-anchored check is cheap. This skill does the shallow half only (Stage 2,
 - **`references/use-case-standard.md`** — where the UC artifact's shape comes from (Cockburn, BABOK,
   Use-Case 2.0, Wiegers), what is established practice and what is a deliberate departure. Read before
   changing the template or a lane guide; not needed for a run.
-- **`agents/hub-bookkeeper.md`** — an optional, narrowly-scoped subagent for refreshing one feature
-  hub's own derived tables (Signal Log Status/Destination cells, `## Use Cases`, `## Requirement
-  Readiness`, `## Open Questions / Gates`, `## Changelog`) from facts already decided elsewhere.
-  Nothing in this skill's stage sequencing currently dispatches it — the mirror-refresh steps in
-  `1-foldin.md`, `agent-dispatch.md` § 3b, and `4-sync.md` § Part 1b still run inline in the
-  orchestrator or the relevant subagent, each governed by its own concurrency rule (never inside a
-  per-feature subagent for a cross-feature pointer, one hub at a time, etc.). Delegating one of those
-  steps to `hub-bookkeeper` instead is a deliberate future change to make where it's worth the extra
-  dispatch, not a default — respect each stage's existing "never concurrent" constraints before
-  wiring it in.
+- **`agents/hub-bookkeeper.md`** — a narrowly-scoped `haiku` subagent for refreshing one feature hub's
+  own derived tables (Signal Log Status/Destination cells, `## Use Cases`, `## Requirement Readiness`,
+  `## Open Questions / Gates`, `## Changelog`) from facts already decided elsewhere. Two steps may
+  delegate to it, **one hub per dispatch, sequentially**: `1-foldin.md` § Reconcile mirrors (items 1–2
+  only — never the `{inbox_dir}` or `{requirements_file}` items, which it must not write) and
+  `4-sync.md` § Part 1b's per-participating-hub pointer refresh. Delegating keeps a mechanical
+  re-derivation out of the orchestrator's own context, which is the one context the whole fan-out design
+  exists to protect. Never two hubs concurrently, and never hand it a decision — a `Status`,
+  `Destination`, id, or lane arrives as a given fact or the dispatch is `blocked`.

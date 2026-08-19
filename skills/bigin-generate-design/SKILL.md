@@ -57,6 +57,10 @@ in the plugin install directory, which a subagent cannot reach.
 Missing `_bigin/conventions/`, `_bigin/stages/design/`, or `_bigin/templates/` → stop and say
 `/bigin-new-project` must run first.
 
+Then run `_bigin/conventions/conventions.md` § Workspace version check — one `Grep` of
+`_bigin/system/project.md` against the installed plugin's version, compared as semver. Behind → warn and
+recommend `/bigin-upgrade-project`; **ahead → stop**.
+
 ## Design engine — use one if it is installed
 
 ```text

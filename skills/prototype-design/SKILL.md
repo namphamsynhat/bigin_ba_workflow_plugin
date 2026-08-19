@@ -1,15 +1,32 @@
 ---
 name: prototype-design
-description: Produce a text-level prototype design (flows, screens, states) for an approved feature, traceable back to its requirements. Use after a feature is approved.
-argument-hint: "<feature-id, e.g. FR-003>"
+description: RETIRED — superseded by /bigin-generate-design, and not runnable besides. Kept only so old references to it resolve. It reads the retired pre-migration `.bigin/PRD.md` / `.bigin/prototypes/` layout, which does not exist in a project on the current `01-Requirements/_ucs/` model. Never invoke it, never route to it, and never run it alongside /bigin-generate-design. Design work goes to /bigin-generate-design, which reads UCs directly and needs no PRD and no approval first.
+argument-hint: "(retired — use /bigin-generate-design)"
 ---
 
-# Prototype Design
+# Prototype Design — RETIRED
 
-Turns an approved feature into a text-level design a designer or engineer can act on directly, with
-every flow step traceable back to the requirement it satisfies.
+**Superseded by `/bigin-generate-design`. Do not run this, and never run both.**
 
-This is the design stage of the extract → transform → load pipeline.
+`/bigin-generate-design` is the design stage: it reads `01-Requirements/_ucs/` directly, accepts a
+feature carrying several UCs and a UC spanning several features, and writes
+`04-UIUX/UX-<NNN> <Feature>.md` plus the shared append-only design system and two self-contained
+prototype prompts. It runs off UCs rather than a PRD, so it does not wait on `/approve-uc`. Its rules are
+`_bigin/conventions/design-conventions.md` — a separate rulebook on purpose.
+
+This file is kept only so existing references to `/prototype-design` resolve to an explanation instead of
+nothing. On top of being superseded, it is also **not runnable**: it reads `.bigin/PRD.md` and writes
+`.bigin/prototypes/`, neither of which exists in a migrated project.
+
+**When invoked:** say it is retired, point at `/bigin-generate-design`, and stop. Everything below is
+kept as history of what it used to do — do not follow it.
+
+---
+
+## Historical contract (retired — do not execute)
+
+Turned an approved feature into a text-level design a designer or engineer could act on directly, with
+every flow step traceable back to the requirement it satisfied.
 
 > **Artifact Standard:** Outputs a **prototype document** — `.bigin/prototypes/FR-<id>-prototype.md`: the flows that deliver the feature (each step citing the requirement it satisfies) and the screens/states they move through, including the edge-case states (empty, error, loading). Wireframe-level text, not a visual mockup — no mockup tooling is wired into this plugin.
 

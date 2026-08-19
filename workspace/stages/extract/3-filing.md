@@ -22,8 +22,8 @@ present, overrides anything here.
 |---|---|
 | the table's `Feature`, `Status`, `Notes`; the note's `## Open Questions`, `status`, `tags` | any `UC-###`/`BR-###` content |
 | a hub's `## Signal Log`, `## Pain Points`, `sources`, `updated` | any `EN-###` document, or a hub's `## Entities` / `## Requirement Readiness` / `## Business Scenarios` |
-| `{pain_points_file}`, `{entities_file}`, `{design_principles_file}` rows | a `{requirements_file}` row — a new slug is a human's call |
-| | the `#`, `Type`, `Signal`, or `Why` of any table row — 2-extraction.md owns those |
+| `{pain_points_file}`, `{entities_file}`, `{design_principles_file}` rows | the `#`, `Type`, `Signal`, or `Why` of any table row — 2-extraction.md owns those |
+| a **checked box + `A:` line** on another `INT-###`'s `## Open Questions`, when a row of this note answers it (§ Step 5b) — nothing else on that note | a `{requirements_file}` row **from your own reading** — a new slug is a human's call. Sole exception: a slug the human themselves declared at capture (§ The declared-slug exception) |
 
 `Status` is one of exactly four values:
 
@@ -43,6 +43,9 @@ no relationship to one, so it never writes them.
 for row in table:                       # ROW BY ROW, on its own content
     declared_features first             # a floor, not a ceiling — still match every row independently
         declared slug     → settled, never re-questioned
+        declared slug with NO {requirements_file} row → ADD a `proposed` row for it (§ below).
+                             The one exception to "never mint a scope row" — it holds only because
+                             the slug came from a HUMAN at capture, not from any agent's reading.
         declared, unused  → report as a mismatch — never deleted, never justified with a made-up signal
         near-miss of an existing slug (typo, plural, hyphenation) → flag, never silently remap
 
@@ -53,6 +56,8 @@ for row in table:                       # ROW BY ROW, on its own content
 
     feature is status: out-of-scope  → Status: rejected, "out-of-scope — skipped"     # filed and closed
     spans two features               → file to both hubs, Feature names both          # never split the row
+                                       → it is then cited once per hub, and that is correct:
+                                         "exactly one hub row" is PER ANCHORED FEATURE
     NEVER check whether the feature already has a use case
 
     no confident match → NEVER GUESS, and the two failures ask different questions:
@@ -61,8 +66,34 @@ for row in table:                       # ROW BY ROW, on its own content
         nothing fits, reads as new  → Feature: "unresolved — none found"
                                       + draft a slug and scope (§ below), for the question
     → both are Status: question + an ## Open Questions line
-    → NEVER a new {requirements_file} row: a slug is permanent and everything anchors to it
+    → NEVER a new {requirements_file} row FROM YOUR OWN READING: a slug is permanent and everything
+      anchors to it. The declared-slug case above is the only row this stage ever adds, and a human
+      typed that slug themselves.
 ```
+
+### The declared-slug exception, precisely
+
+`conventions.md` § Declared features is the standard; this is the procedure, stated here because this is
+the file the filing stage actually reads. It fires **only** for a slug in the note's `declared_features:`
+frontmatter — written by `/bigin-intake` from a human's own multi-select at capture, never from any
+agent's reading of content.
+
+```text
+declared slug has a {requirements_file} row      → ordinary anchoring, nothing to add
+declared slug has NO row, and is NOT a near-miss of an existing slug
+    → add ONE `proposed` row to {requirements_file}: the slug, a Feature name in the human's own
+      wording, status: proposed, Sources citing this INT-###
+    → bump {requirements_file}'s version + append its ## Changelog line
+    → REPORT IT EXPLICITLY as a scope row you added, and why (declared at capture on INT-###)
+declared slug has NO row but LOOKS like a typo/plural/hyphenation variant of one that does
+    → add NOTHING. Flag it in the report naming both spellings, and anchor those rows to the
+      existing slug ONLY if their described scope actually matches. Otherwise
+      "unresolved — candidates: …". Never silently remap a human's spelling to what you think they
+      meant: if they did mean a new feature, that erases it.
+```
+
+Everything else — an unmatched row, an ambiguous row, a new-scope proposal you drafted yourself — still
+goes through the question path. Those are your reading; this one is the human's declaration.
 
 Adjacency is not evidence. The last rows of a long meeting routinely belong to a feature discussed an
 hour earlier. If this note raises a new-feature proposal, every later row falling in that proposed scope
@@ -192,6 +223,30 @@ none found → "No existing feature covers this — proposed new feature `<slug>
               Confirm this slug/scope, edit it, or point to an existing feature instead. (owner: team) ↦ —"
 ```
 
+### Step 5b — an answer that resolves a question raised elsewhere
+
+A later note routinely answers a question an earlier note asked. When it does, the answer has to reach
+**both** copies of that question, or the earlier note sits parked with an unticked box forever, reading as
+still-blocking when it isn't.
+
+```text
+a row of this note ANSWERS an open question on a hub, a UC, or another INT note
+    (the orchestrator hands you the touched hubs' open questions; a row typed `answer` usually is one)
+→ 1  file the row normally, Status: new, on its own hub row
+  2  strike the question where it was raised: tick its box and write the resolution on its A: line,
+     citing THIS note — "A: <the answer> — resolved by INT-041"
+  3  AND tick the ORIGINATING note's own copy of that question, same wording, same citation
+     → this is the step that gets skipped, and it is the one that unparks the earlier note
+  4  name every note you ticked in your report — you touched a note you were not dispatched on,
+     which nothing else would expect
+
+never invent the link: the row must actually ANSWER the question, not merely share its topic
+```
+
+Ticking a checkbox and filling an `A:` line on another `INT-###` note is allowed for exactly this reason
+and nothing else. A **UC-side** copy of that question is still not yours: report it, and
+`/bigin-transform-signal`'s Stage 1 strikes it (`1-foldin.md` § Reconcile mirrors, item 3).
+
 **Missing rationale is ONE batched question, not one per row:**
 
 ```text
@@ -220,7 +275,10 @@ GATE: re-open or grep every {hub_dir}/<slug>.md touched this run, confirm it cit
       → genuinely can't finish? DON'T finalize — report which slugs are done vs pending
 
 then:
-  every table row's # appears in EXACTLY ONE hub row's Source cite  # none missing, none twice
+  every table row's # appears in EXACTLY ONE hub row's Source cite PER FEATURE IT ANCHORED TO
+      # none missing on a hub it anchored to, none twice on the SAME hub
+      # a row spanning two features is cited once on EACH — that is § Step 2's dual-anchor rule
+      #   working, not a duplicate. "Exactly one" is per anchored feature, never one in total.
       or the row is unresolved/rejected with a reason
       → this replaces comparing row counts, which no longer match by design
   no themed Signal drops a member's claim, and no clause says more than its note row

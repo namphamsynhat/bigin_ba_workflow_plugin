@@ -1,15 +1,19 @@
 # Stage 4 — Sync the shared writes, draft § 2 / § 3, then conflict-check
 
 ```text
-runs: orchestrator, SEQUENTIALLY, after every Stage 3 subagent has reported
+runs: orchestrator, after every Stage 3 subagent has reported
+      Part 1 and Part 1b are STRICTLY SEQUENTIAL — every write completes before the next starts
+      Part 2 parallelizes across UCs owned by DIFFERENT features (§ Part 2), never within one
 in:   the candidates Stage 3's subagents REPORTED, plus every in-scope UC's own ## Discussion —
       Part 2 sweeps the full backlog every run, not just what this run staged
-out:  shared registers written · cross-feature UC changes staged · every participating hub pointed
-      · § 2 Main Success Scenario and § 3 Alternative/Exception Flows drafted for any UC carrying an
-      unapplied entry for either · a review flag written whenever § 2 changed · each touched feature
+out:  shared registers written · every new UC id minted · cross-feature UC changes staged · every
+      participating hub pointed · § 2 Main Success Scenario and § 3 Alternative/Exception Flows
+      drafted for any UC carrying an unapplied entry for either · a review flag written whenever
+      § 2 changed · coverage diffed against what was dispatched · each touched feature
       conflict-checked
-never: inside a per-feature subagent — two concurrent features Grep the same highest id and both
-       mint the same new UC-### number, or one append to a shared register overwrites the other
+never: an id minted inside a per-feature subagent — two concurrent features Grep the same highest id
+       and both mint the same new UC-### number, or one append to a shared register overwrites
+       the other
 ```
 
 Most runs sync nothing.
@@ -32,7 +36,10 @@ approved, never Stage 4 (§ Entity Data Model). This stage only ever cites an ex
 row by name.
 
 ```text
-MINT EVERY ID HERE, never in a subagent — UC-### for a `new` cross_feature_uc_change
+MINT EVERY ID IN THE ORCHESTRATOR, never in a subagent — including every ordinary new UC-###, which
+    `uc-detector` now only PROPOSES as `new (unminted)` and the orchestrator mints between waves 3a
+    and 3b (references/agent-dispatch.md § Minting new UCs). This section covers the ones that
+    surface later: a `new` cross_feature_uc_change, and anything a repair pass adds.
     Grep for the highest existing id and increment
     create a register from its template ({template_design_principles}) if absent
 
@@ -58,14 +65,22 @@ For each UC this run created or changed, re-derive its pointers from the UC's ow
   stale silently every time a step was inserted. The UC file is the only place the flow is written out.
 - Setting an already-correct pointer again is a no-op — **re-derive all of them every run** rather than
   tracking which changed.
+- **May be delegated, one hub per dispatch, sequentially** — to `hub-bookkeeper` (`agents/hub-bookkeeper.md`),
+  whose whole contract is re-deriving a hub's own tables from facts already decided. Hand it the UC ids
+  touched and let it re-read their frontmatter itself. Never two hubs at once: concurrent appends to two
+  hubs is fine, but concurrent *dispatches for the same UC* is how one hub's pointer row goes missing.
 
 ## Part 2 — Draft § 2 and § 3, then flag review
 
 ```text
-runs: one subagent per UC carrying an unapplied § 2 or § 3 entry — build this worklist by reading
-      every in-scope UC's own ## Discussion directly, not from what Stage 3 reported this run.
+runs: one subagent per UC carrying an unapplied § 2 or § 3 entry — build this worklist over every
+      in-scope UC's own ## Discussion, not from what Stage 3 reported this run.
       A UC nobody's Stage 3 touched this run can still carry an entry an earlier run staged and no
       run has ever applied — sweep for it every time, same as a freshly-staged one.
+      BUILD IT GREP-FIRST: Grep {uc_dir} for `→ proposed: (new step|S[0-9]+ becomes|S[0-9]+ is
+      removed|new flow|A[0-9]+ becomes|E[0-9]+ becomes|A[0-9]+ is removed|E[0-9]+ is removed)`
+      and open only the UCs that hit. Reading every in-scope UC in full to discover that none carry
+      an entry is the same O(vault) cost Stage 1 avoids the same way — and it grows every run.
 in:   that UC's ## Discussion entries whose destination is "new step ...", "S# becomes:", "S# is
       removed because ...", "new flow A#/E#:", "A#/E# becomes:", or "A#/E# is removed because ..." —
       PLUS everything needed to write them faithfully: the UC's own current § 1-§ 4 (actor names,
@@ -89,12 +104,63 @@ waiting before was caution, not a real difference in review weight; the review f
 made visible *after* the fact) now carries that caution instead of a pre-write wait.
 
 ```text
-Agent(session default model, uc-applier, foreground), one per UC
+Agent(uc-applier, foreground), one per UC — the agent pins its own model tier, one below session
+    default (agents/uc-applier.md frontmatter); the orchestrator does not override it
+
+PARALLELISM: UCs owned by DIFFERENT primary_features may run concurrently, ≤ 4 at a time.
+    Two UCs on the same primary_feature run SEQUENTIALLY — they can share a hub row, a BR mirror,
+    or a step id neither has minted yet.
+    THE ORCHESTRATOR FLIPS THE HUB SIGNAL LOG ROWS ITSELF, after each wave reports — that is the
+    only write two concurrent appliers would contend on, so it does not live in the agent.
 ```
 
 Its rulebook — the three-way pre-read, the destination table, the § 2 wording standard, the one-write
 sequence, and the review-flag rule — is baked into `agents/uc-applier.md`; this dispatch only needs to
 name the one UC to apply this pass over. Report format is fixed in that agent's own § Report.
+
+### The human may have edited § 2/§ 3 first
+
+Same hazard as Stage 1's, and the same two rules (`1-foldin.md` § The human may have edited the section
+first) — a reviewer is explicitly invited to hand-edit a flow while reviewing it, so an entry's anchor
+text can already be gone by the time this pass runs:
+
+```text
+`S6 becomes:` and S6's current text ALREADY MATCHES the entry's proposed text
+    → treat as applied: drop the entry, append the Changelog line, flip the row. Write nothing.
+      (a hand-applied change carries no Changelog cite, so without this it lands a second time)
+`S6 becomes:` and S6 has been REWORDED since the entry was staged, materially
+    → DO NOT overwrite. Raise ONE question on the UC's ## 5 naming both wordings, leave the entry in
+      ## Discussion, leave the row `staged`, and report it. Stage 5 will read the new question and
+      set needs-clarification.
+`new step after S4:` whose text already exists as some other S#
+    → treat as applied, citing the id it actually landed as
+```
+
+Overwriting is the worse failure of the two: a reviewer's own correction disappears with nothing in any
+diff a human reads, and the UC then carries text nobody approved under a Changelog line that says it
+was applied routinely.
+
+## Part 2b — Coverage, not claims
+
+Before Part 3, diff what was **dispatched** against what was **reported**. Every stage in this skill
+reports its own success, and a subagent that silently skipped a row reports the rows it did handle —
+which reads identically to a clean run.
+
+```text
+1  dispatched vs reported — for each Stage 3 feature, the worklist you handed it vs the rows its
+   report accounts for. A row in the dispatch and in no report line is UNACCOUNTED: re-dispatch it
+   scoped, or park it `held` with why. Never let it fall off the ledger silently.
+2  per-clause coverage — a themed row whose Type is `<a> + <b>` must show a destination per clause
+   in its Destination cell (` · `-joined). One destination on a two-clause row means a clause was
+   dropped at routing (3-routing.md § Route per CLAUSE).
+3  no qualified row still `new` — a row Stage 2 qualified this run must now read `staged`, `applied`,
+   `conflict`, or `question`. One still sitting at `new` after Stage 3 and Stage 4 is a row nothing
+   processed and nothing will report as missed.
+```
+
+A mismatch here is **blocking**, the same as Stage 5's checks: fix or park with a written reason, then
+re-check. Report the counts either way — "3 dispatched, 3 accounted for" is the line that makes a future
+silent drop visible by contrast.
 
 ## Part 3 — Conflict-check each touched feature
 
@@ -108,8 +174,11 @@ UC(s) together with its BRs and look for a genuine contradiction — two stateme
                          exist, or that names a row marked removed
 ```
 
-A vault-wide sweep costs quadratically more and belongs to `/enrich-feature`. A wording difference, a
-narrower restatement, or two rules about different conditions are **not** contradictions.
+A vault-wide sweep costs quadratically more, and nothing runs one today (it was `/enrich-feature`'s, and
+that stage is halted — `conventions.md` § Reconciliation notes). Do **not** promote this scoped check into
+a vault-wide one to compensate: per-feature every run is what keeps an unattended run's cost proportional
+to what changed. A wording difference, a narrower restatement, or two rules about different conditions are
+**not** contradictions.
 
 ```text
 NEVER auto-resolve one. Recency settles a supersession; it never settles a disagreement between
@@ -124,8 +193,9 @@ on finding one:
 
 ## Hand-off
 
-Report: `<N> design-principle row(s), <N> cross-feature UC change(s), <N>
-UC(s) with § 2 and/or § 3 drafted, <N> of those flagged for review, <N> in-feature conflict(s)` — or
+Report: `<N> design-principle row(s), <N> UC id(s) minted, <N> cross-feature UC change(s), <N>
+UC(s) with § 2 and/or § 3 drafted, <N> of those flagged for review, <N> drift question(s) raised
+instead of applied, <N> dispatched/<N> accounted for (Part 2b), <N> in-feature conflict(s)` — or
 `none this run`. Stage 5 re-counts questions on every artifact this stage touched, including any UC
 that just gained a conflict question or dropped back from `approved`/`enriched` because its main flow
 changed.
@@ -158,3 +228,9 @@ changed.
   a Changelog line saying so — reads as unreviewed content nobody was told to check.
 - **Writing validation prose into a § 2 cell, or a full validation ruleset into a § 3 step.** Keep both
   to one short business line each; a real validation detail belongs in § 4, not padding the flow.
+- **Overwriting a step the reviewer reworded.** The entry's text wins over a human's edit exactly never
+  — see § The human may have edited § 2/§ 3 first.
+- **Trusting the subagent reports instead of diffing them against the dispatch.** Part 2b exists because
+  a partial pass and a complete one produce the same *shape* of report.
+- **Running two `uc-appliers` on UCs that share a `primary_feature`.** They contend on the hub row, the
+  BR mirror, and the next unused step id.

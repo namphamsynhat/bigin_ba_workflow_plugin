@@ -31,6 +31,7 @@ Row counts won't match, and shouldn't. Every later stage reads the raw record; n
 | `{uc_dir}` | `01-Requirements/_ucs` | read-only — scanned for open questions (Stage 1) |
 | `{conventions_reference}` | `_bigin/conventions/conventions.md` | ID scheme, frontmatter schema, artifact conventions |
 | `{extraction_rules}` | `_bigin/stages/extract/2-extraction.md` | the **extraction** subagent's only rulebook |
+| `{audit_rules}` | `_bigin/stages/extract/2b-audit.md` | the **source-audit** subagent's only rulebook, plus the table-repair procedure |
 | `{filing_rules}` | `_bigin/stages/extract/3-filing.md` | the **filing** subagent's only rulebook |
 | `{conventions_file}` | `.agents/bigin-ba-workflow-plugin.local.md` (or `.claude/bigin-ba-workflow-plugin.local.md`) | optional project overrides |
 | `{pain_points_file}` | `01-Requirements/PAIN-POINTS.md` | canonical `PP-###`; each hub mirrors its own rows |
@@ -38,9 +39,14 @@ Row counts won't match, and shouldn't. Every later stage reads the raw record; n
 | `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | cross-cutting constraints; no hub mirror |
 | `{template_*}` | `_bigin/templates/*` | `feature-hub`, `pain-points-register`, `entities-register`, `design-principles-register` |
 
-Project-relative, materialized by `/bigin-new-project`. Missing `{extraction_rules}`, `{filing_rules}`,
-or `{conventions_reference}` → stop, say `/bigin-new-project` must run first. A subagent that can't read
-its rules improvises and reports success.
+Project-relative, materialized by `/bigin-new-project`. Missing `{extraction_rules}`, `{audit_rules}`,
+`{filing_rules}`, or `{conventions_reference}` → stop, say `/bigin-new-project` must run first. A subagent
+that can't read its rules improvises and reports success.
+
+Then run `{conventions_reference}` § Workspace version check — one `Grep` of `_bigin/system/project.md`
+against the installed plugin's version. Behind → warn and recommend `/bigin-upgrade-project`; **ahead →
+stop**: the materialized rulebook this run would follow is older than the one the vault was built
+against, and filing against an older contract is how a stage silently regresses.
 
 ## Stage 1 — Build the queue
 
@@ -73,14 +79,22 @@ else        → report(note · mode · sources · raw_lines), continue
 
 ## Stage 2 — Process the queue
 
-Prompts: **`references/agent-dispatch.md`**, verbatim. Every subagent fresh (`Agent`,
-`general-purpose`, foreground) — reuse grows context instead of resetting it.
+**Dispatch the named agents** — `signal-extractor`, `signal-auditor`, `signal-repairer`, `signal-filer`,
+`signal-batch-verifier` — never a bare `general-purpose` agent. Each pins its own model and tool set in
+its frontmatter, and each reads its own rulebook from `_bigin/`. Every subagent is fresh: reuse grows
+context instead of resetting it.
+
+**`references/agent-dispatch.md` carries the per-run data to hand each one, and nothing else.** Do not
+paste a procedure into a prompt — that is how two copies of one rule drift apart, and a dispatch-prompt
+copy also overrides a project's own `_bigin/` override of that rule.
 
 ```text
 for batch in chunks(queue, 5):
-  for note in batch:                        # sequential — two notes can hit one hub, and edits race
 
-    2a  spawn Agent(session default | sonnet) → extract          [dispatch § 2a]
+  # ---- per-note, nothing shared: run these CONCURRENTLY across the batch, <= 4 at a time ----
+  for note in batch, in parallel:
+
+    2a  Agent(signal-extractor)                                  [dispatch § 2a]
         reads   every SRC block in note.sources · {extraction_rules}
         writes  ## Extracted signals — # · Type · Signal · Why · Source
                 Feature and Status left blank
@@ -88,25 +102,51 @@ for batch in chunks(queue, 5):
         if why "not stated" > 30% of requirement/feedback rows
                                        → re-spawn scoped to those rows
 
-    2b  spawn Agent(sonnet) → audit                              [dispatch § 2b]
-        reads   ## Raw by line range FIRST (table unseen), then the table
+    2b  Agent(signal-auditor)                                    [dispatch § 2b]
+        reads   ## Raw by line range FIRST (table unseen), then the table · {audit_rules}
         writes  a two-direction gap report — repairs nothing
+        SKIPPABLE: ## Raw under ~100 lines, ONE block, kind != transcript, no `derived` row
+                   → orchestrator checks inline instead, reported as "audit: inline"
+                   → NEVER skip on a transcript, however short  [{audit_rules} § When this pass
+                     may be skipped]
 
-        repair  orchestrator, from 2b's own quotes                [dispatch § Repairing the table]
-                gap → append row · overreach → narrow · inversion → re-type + add the ask
-                bad cite → fix · no support → question · contradiction → conflict pair
+    2b-repair  Agent(signal-repairer), only if 2b found something [dispatch § 2b-repair]
+        handed  the audit report VERBATIM — it never re-reads the source
+        writes  the table repairs: gap → append · overreach → narrow · inversion → re-type + add
+                the ask · bad cite → fix · no support → question · contradiction → conflict pair
+        → repair touched > 2 rows → RE-AUDIT those rows, scoped, before filing
+        → NOT done in the orchestrator: that pulls every table and audit report into the one
+          context this whole fan-out exists to keep small
 
-    2c  spawn Agent(sonnet) → file                               [dispatch § 2c]
+  # ---- shared writes: SEQUENTIAL, one note at a time ----
+  for note in batch, in order:
+
+    2c  Agent(signal-filer)                                      [dispatch § 2c]
         reads   the repaired table · {filing_rules} · {requirements_file}    # never ## Raw
         writes  Feature · Status · Notes · themed hub rows · registers
-                · questions · the note's status LAST
+                · questions · a resolving tick on an earlier note's question (§ Step 5b)
+                · this note's status LAST
+        → sequential because hubs and the three registers are shared: two concurrent notes
+          appending to one hub lose a row
 
-  3   spawn Agent(haiku) → verify batch                          [dispatch § 3]
-      per note+slug: hub cites this INT · every anchored row # cited in exactly one hub row
-                     · status matches ## Open Questions
-      mismatch → blocking; spawn a scoped repair, re-check, then move on
+  3a  ORCHESTRATOR: python3 "${CLAUDE_PLUGIN_ROOT}/hooks/bigin-lint.py" --full
+      the mechanical half of the batch check, for free and without judgment: table shape, cite
+      resolution, illegal status values, note rows cited by no hub row or cited twice on one hub
+      exit 1 → its findings are blocking, same as the verifier's
+      unavailable (no python3, path won't resolve, command denied) → SAY SO and let 3b cover it all;
+      never read an unavailable checker as a pass
+  3b  Agent(signal-batch-verifier), one per batch                [dispatch § 3]
+      the half a program can't do: does this note's status match what was reported, is every
+      question actually mirrored where a human will see it, is a themed Signal cell really carrying
+      a clause per number it cites, was the rationale question batched
+      mismatch → blocking; dispatch signal-repairer in hub-repair mode, re-check, then move on
   4   report(batch)                                              # before the next batch starts
 ```
+
+**Why 2a/2b parallelize and 2c does not.** 2a and 2b touch exactly one file each — that note's own
+table. The shared-write hazard the old sequential loop guarded against lives entirely in 2c, where hubs
+and the vault-wide registers are appended to. Serializing whole notes to protect 2c costs the wall-clock
+of the entire chain per note and protects nothing extra.
 
 ## Rules
 
@@ -114,8 +154,11 @@ for batch in chunks(queue, 5):
 - **Classify before typing** — as-is · pain · to-be. A screen-share of the old system is a `decision`,
   not a `requirement`. Classifying changes a row's `Type`, never whether it gets written.
 - **Never guess an anchor.** No matching slug → a written question, never the closest slug.
-- **Never mint a feature slug.** Permanent, everything downstream anchors to it — a human's call, which
-  is why this skill has no `AskUserQuestion`.
+- **Never mint a feature slug from your own reading.** Permanent, everything downstream anchors to it — a
+  human's call, which is why this skill has no `AskUserQuestion`. **One exception**, and only one: a slug
+  the human themselves typed into `declared_features:` at capture, which has no `{requirements_file}` row
+  yet, gets a `proposed` row added and reported (`{filing_rules}` § The declared-slug exception). That
+  isn't the agent deciding scope; it is recording a decision a human already made.
 - **Never touch a UC or BR.** Hub Signal Log plus the vault-wide registers, nothing else.
 - **The extractor is blind to themes.** One that knows its rows get grouped starts pre-grouping — the
   raw record is the one place that's unrecoverable.
@@ -126,6 +169,14 @@ for batch in chunks(queue, 5):
   feature permanently. Report the `{requirements_file}` scope phrase matched for each row.
 - **2c sets `status` last**, after confirming every hub write landed. `in-review` drops the note from
   every future scan.
+- **Row numbers on a note's table are permanent ids.** A re-extraction or a repair corrects a row in
+  place, supersedes it with a new row, or appends — it never renumbers. Hub `Source` cites point at these
+  numbers, and a renumber re-points every one of them at a different claim without breaking anything
+  visibly (`{extraction_rules}` § Row numbers are permanent ids).
+- **An answer folds back to the note that asked.** When a row of this note resolves a question raised on
+  a hub or an earlier note, 2c ticks **both** copies and cites this note. Otherwise the earlier note sits
+  `needs-clarification` forever with an unticked box, reading as blocking when it isn't
+  (`{filing_rules}` § Step 5b).
 - **Resume = re-run.** The vault is the only state; every run rescans `{inbox_dir}` fresh.
 
 ## Stage 3 — Report
@@ -141,6 +192,7 @@ audit:     INT-###: N claims in source, N gaps appended, N narrowed, N inversion
 filed:     <slug>: N signals in M themed rows (Signal Log #a-#b)
 registers: PP minted <ids> · PP matched <ids> · entities N · design N
 parked:    INT-### awaiting an answer (N open) · INT-### awaiting a feature mapping
+audit:     INT-###: dispatched | inline (<N> lines, <kind>) — and, if repaired, re-audited (<rows>) | not
 verified:  clean | repaired (<what>)
 remaining: N in queue — re-run to continue
 ```
@@ -169,7 +221,9 @@ hub  enrolment-eligibility ## Signal Log — one row
 ```
 
 The `Source` row numbers are the traceability that replaces one-row-per-signal; Stage 2's verify pass
-checks every anchored row appears in exactly one.
+checks every anchored row appears in exactly one hub row **per feature it anchored to**. A signal spanning
+two features is filed to both hubs and cited once on each — that is the dual-anchor rule working, not a
+duplicate.
 
 Never merge across: **different notes or runs** (cite the older row as `Notes: extends #<n>`) ·
 **different `Status`** (only `new` consolidates) · **presentation vs behavioural** (different lanes) ·
@@ -191,5 +245,6 @@ no {requirements_file} slug matches
 
 ## Additional resources
 
-- **`references/agent-dispatch.md`** — the four subagent prompts (extraction, source audit, filing,
-  batch verification), the table-repair procedure, and the hub-repair procedure.
+- **`references/agent-dispatch.md`** — the per-run data to hand each of the five named agents, and the
+  parallelism rule. Their procedures live in `_bigin/` (`{extraction_rules}`, `{audit_rules}`,
+  `{filing_rules}`) or in the agent's own body — one home each, never a second copy here.

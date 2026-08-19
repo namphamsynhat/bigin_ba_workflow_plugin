@@ -1,6 +1,6 @@
 ---
 name: sync-entities
-description: Promote and update the entities an approved use case references, and refresh the feature hub(s) that UC belongs to — the vault-wide bookkeeping `/approve-uc` no longer does inline. Run with no argument to drain every UC still waiting (`status: approved`, `synced: false`), or name one UC to process just it. Use whenever convenient after one or more approvals — before a `/enrich-feature`/`/consolidate-prd` run that needs entity data, at the end of a review session, or any time in between.
+description: Promote and update the entities an approved use case references, and refresh the feature hub(s) that UC belongs to — the vault-wide bookkeeping `/approve-uc` no longer does inline. Run with no argument to drain every UC still waiting (`status: approved`, `synced: false`), or name one UC to process just it. Use whenever convenient after one or more approvals — at the end of a review session, before anything that needs current entity data, or any time in between.
 argument-hint: "[UC id, e.g. UC-012 — omit to process every UC still waiting on sync]"
 ---
 
@@ -50,6 +50,14 @@ itself; this skill catches up everything the approval implied, on its own schedu
 
 Missing `_bigin/conventions/conventions.md` or `_bigin/templates/` → stop, say `/bigin-new-project`
 must run first.
+
+Then run `_bigin/conventions/conventions.md` § Workspace version check — one `Grep` of
+`_bigin/system/project.md` against the installed plugin's version, compared as semver. Behind → warn and
+recommend `/bigin-upgrade-project`; **ahead → stop**.
+
+**Model:** this skill is bookkeeping against a settled decision — promote what an approved UC actually
+cites, refresh the mirrors. Run it, and anything it dispatches, on `sonnet` rather than inheriting a
+higher session default; nothing here decides scope, routing, or wording.
 
 `$ARGUMENTS` names a `UC-###` that doesn't exist under `01-Requirements/_ucs/` → say so and stop; don't
 guess which file was meant. Named but not `status: approved` → say so and stop; this skill only

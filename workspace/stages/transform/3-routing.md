@@ -24,7 +24,7 @@ Routing decides **the artifact the signal becomes**. It is deliberately *not* a 
 | a conditional or policy constraint — feature-level, or governing one workflow | **BR** | `3-lane-br.md` |
 | presentation only: look, layout, tone, visual style, copy voice, interaction feel, accessibility affordance | **Design** | `3-lane-design.md` |
 | a thing the business tracks and its attributes — a data field or entity | **Entity** | § Entity — cite, never promote, below |
-| narrative context — the client's stated why, not actionable alone | **Context** → the UC's `## 1` | `3-lane-uc.md` |
+| narrative context — the client's stated why, not actionable alone | **Context** → the UC's `## 1`, **staged in `## Discussion`** like any other UC content | `3-lane-uc.md` |
 | a named frustration or cost with no requirement attached | **Context** → `PP-###` on the UC's `pain_points:` | `3-lane-uc.md` |
 
 A `pain-point` with no attached requirement is **not a gap to fill**. It stays on record until a later
@@ -88,8 +88,11 @@ is warranted; most new signals are a step, branch, or rule inside a workflow tha
                  (approval does not freeze a UC, and neither does a shipped feature)
                  "same goal" = the same actor sitting down to accomplish the same thing
                  a new step, a new branch, a changed validation, a new rule are ALL updates
-4  DIFFERENT GOAL → a new UC. Mint the next id by Grep over {uc_dir} for the highest number
-                 (use the Grep TOOL, never a Bash pipeline — a denied pipeline silently reuses an id)
+4  DIFFERENT GOAL → a new UC. Report it as `new (unminted)`: the ORCHESTRATOR mints the id and the
+                 skeleton, one at a time, between waves 3a and 3b — never a per-feature subagent, or
+                 two concurrent features Grep the same highest number and mint the same id
+                 (when the orchestrator mints: use the Grep TOOL, never a Bash pipeline — a denied
+                 pipeline silently reuses an id)
 ```
 
 Two tests worth applying literally:
@@ -142,14 +145,23 @@ terminal `Status` once all of them are recorded.
 
 | Lane | `Destination` | `Status` |
 |---|---|---|
-| UC | `UC-###`, or `UC-### S<n>` / `UC-### E<n>` when the target exists | `staged` (or `applied` if folded in on the interactive path) |
+| UC | `UC-###`, or `UC-### S<n>` / `UC-### E<n>` when the target exists | `staged` |
 | BR | `BR-###` | `staged` |
 | Design, durable | `DESIGN-PRINCIPLES #<n>` | `applied` |
-| Design, feature-scoped | `<slug> ## Design Directives` | `applied` |
+| Design, feature-scoped | `<slug> ## Design Directives #<n>` | `applied` |
 | Entity | `ENTITIES.md proposed` — never promoted here | `applied` |
-| Context | `UC-### § 1` or `PP-###` | `applied` |
+| Context, Business Need | `UC-### § 1` | `staged` — it is content inside `## 1`, so it passes the gate |
+| Context, pain point | `PP-###` | `applied` — frontmatter, not a numbered section |
 
-Design, Entity, and Context are `applied` on write because nothing about them is staged behind a gate —
-the gate exists to protect UC/BR content from entering approved scope unreviewed, and none of these
-enter it. Entity's `applied` marks the *citation* as done, not the entity as modelled — the row still
-waits on `/approve-uc` for that.
+Design, Entity, and a Context **pain point** are `applied` on write because nothing about them is staged
+behind a gate — the gate exists to protect UC/BR content from entering approved scope unreviewed, and
+none of these enter it. A Context **Business Need** is the exception, and the reason the two Context
+destinations are listed separately: it writes into a UC's `## 1`, which *is* UC content, so it stages
+like everything else in that block (`3-lane-uc.md` § The Context sub-lane).
+
+`Destination` for a feature-scoped design directive names the hub row it created (`#<n>`), not just the
+section — `5-status.md` check 2 asserts an `applied` row's content is findable at the id its
+`Destination` names, and "somewhere in `## Design Directives`" isn't findable.
+
+Entity's `applied` marks the *citation* as done, not the entity as modelled — the row still waits on
+`/approve-uc` + `/sync-entities` for that.

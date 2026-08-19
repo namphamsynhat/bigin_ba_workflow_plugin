@@ -151,7 +151,7 @@ plugin context, so a path into the install directory is unreachable to them.
 
 ### 5.3 Domain research (`project_mode: new` only)
 
-* **Goal:** ground the engagement in its domain before the first signal arrives, so `/extract-signal` and `/enrich-feature` inherit context instead of each rediscovering it per feature.
+* **Goal:** ground the engagement in its domain before the first signal arrives, so `/extract-signal` and every later stage inherit context instead of each rediscovering it per feature.
 * **Action:** Read **`references/domain-research.md`** before doing anything here and follow it through to its own "Writing the findings" step. The output lands in two places: `_bigin/system/domain-research.md` (the full report) and a dated pointer line under `_bigin/system/project.md`'s `## Domain Research` (the summary).
 * **Rules:** **Don't improvise a research procedure inline.** That file defines the built-in method and, separately, how to swap it for a different skill or agent without touching this file. Report the summary in § 8 as new grounding, not a housekeeping detail.
 

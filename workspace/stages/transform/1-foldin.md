@@ -3,7 +3,8 @@
 ```text
 runs: orchestrator, FIRST, every invocation
 in:   every UC/BR whose feature has a `staged` Signal Log row pointing at it
-out:  the staged change folded into the artifact · mirrors reconciled
+      + every `conflict`/`question` row whose linked question has since been answered (§ Re-entry)
+out:  the staged change folded into the artifact · mirrors reconciled · re-entered rows back to `new`
 never: status — Stage 5 sets it, from a live re-count
 ```
 
@@ -16,6 +17,12 @@ on disk.
 its own.
 
 A UC/BR with no `staged` row pointing at it is not this stage's business, whatever its status.
+
+**Build the worklist grep-first, never by reading the vault.** `Grep` `{hub_dir}` for
+`Status.*staged` and for `Status.*conflict|Status.*question`, and open only the hubs that hit; open only
+the UC/BR ids those rows' `Destination` cells name. Reading every hub and every UC to discover that
+nothing is pending makes "nothing to fold in" cost the whole vault, and that cost grows with every
+append-only Signal Log row forever. Two greps and an early exit make the same answer a two-second one.
 
 ## The three-way read
 
@@ -69,6 +76,28 @@ when folding in a ## 4 enforcement point → check the S#/A#/E# it names still e
 `## 4` rows fold in as **mirror updates only** — the rule statement comes from the `BR-###` file; this
 stage copies its current text plus the staged enforcement point.
 
+### The human may have edited the section first — two rules
+
+A staged entry carries verbatim final text, and the human is explicitly invited to edit a UC directly
+while reviewing it (`/approve-uc`). So the text an entry expects to replace can already be gone.
+
+```text
+BEFORE writing, compare the entry's anchor text against what is on disk RIGHT NOW:
+
+content already present, verbatim (or semantically identical)
+    → TREAT AS APPLIED: state (b). Remove the entry, append the Changelog line, reconcile mirrors.
+      Do not write it a second time — a manual apply with no Changelog cite otherwise lands twice.
+
+the anchor text MATERIALLY DIFFERS from what the entry expected to replace
+    (`§ 1 Trigger becomes:` against a Trigger a human has since reworded; a `§ 4` row whose rule
+     statement no longer matches)
+    → DO NOT APPLY, and do not overwrite. Raise ONE question on the artifact naming both wordings
+      and asking which stands, leave the entry in ## Discussion, and leave the row `staged`.
+      Silently overwriting is how a reviewer's own correction disappears with no diff anyone reads.
+
+a whitespace, punctuation, or capitalization difference is NOT material — apply normally
+```
+
 ## Reconcile mirrors — unconditionally, every run
 
 Mirrors are read from the artifact's *current* state and corrected to match. Setting an already-correct
@@ -83,15 +112,65 @@ run killed between the artifact write and the hub refresh is exactly what this r
                                        other features have no idea they're part of it
 3  the source INT's ## Open Questions copy → ticked, if the artifact's copy is resolved
                                      → one question, TWO PLACES — never two questions
+                                     → AND: if the answer arrived on a DIFFERENT, later note, tick
+                                       the ORIGINATING note's box too and cite the resolving id
+                                       ("resolved by INT-041"). A note whose question was answered
+                                       elsewhere otherwise sits `needs-clarification` forever with
+                                       an unticked box, and reads as still blocking when it isn't.
 4  {requirements_file}             → if the fold-in changed anything a row there mirrors
 ```
 
 Never renumber, delete, or rewrite the `Signal`/`Source` text of a Signal Log row.
 
+**Delegating this step.** Items 1–2 are pure re-derivation from facts already decided, so they may be
+handed to one `hub-bookkeeper` dispatch **per hub, sequentially** rather than run in the orchestrator's
+own context — that agent's whole contract is mirroring decisions it is given (`agents/hub-bookkeeper.md`).
+Never two hubs concurrently, and never delegate item 3 or 4: those touch `{inbox_dir}` and
+`{requirements_file}`, which that agent must not write.
+
+## Re-entry — an answered `conflict` or `question` row
+
+The one silent-loss path this stage exists to close. A `conflict` row stages **nothing** by design
+(`3-lane-uc.md` § Conflict); a `question` row never had a lane at all (`3-routing.md` § `Type` is a
+hint). Neither is `staged`, so this stage's fold-in ignores both — and neither is `new`/`held`, so
+Stage 2's worklist ignores them too. Without this section a qualified, recorded requirement is
+permanently stranded the moment a human answers it.
+
+```text
+scan every in-scope hub for rows with Status: conflict or Status: question
+per row, find the question it raised — the `- [ ] Q:` its Notes/Destination points at, on the UC's
+    ## 5, the BR's ## Open Questions, or the source INT note
+
+A: line still blank            → leave the row exactly as it is. Not this stage's business yet.
+A: line filled (ticked or not) → RE-ENTER:
+    1  flip the row: Status: new
+       Notes: append "re-entered <date>: <the question>, answered on <artifact> — <A: in ≤10 words>"
+       → keep every existing Note; the conflict history is the reason the answer means anything
+    2  the LOSING side of a conflict, if the answer picked one: flip THAT row Status: superseded,
+       Notes: "superseded by the decision on #<n>"
+       → never rewrite either row's Signal text. History is append-only.
+    3  a conflict pair whose answer names a THIRD option neither row proposed → both rows
+       `superseded`, and the re-entered row is the one carrying the decision, with the answer's own
+       wording in its Notes
+    4  move the resolved question into the decision log, per § The atomic write step 2
+```
+
+Stage 2 then collects the row in its ordinary `new` worklist **this same run**, and Stage 3 drafts it.
+
+- **Draft from the decision, never by copying the losing wording.** The answer is new content: "we
+  decided the school approves, not the fund" is the requirement, not either original signal's text.
+  A verbatim re-stage of whichever side lost is the failure this whole path exists to avoid.
+- **An answer that resolves nothing is not an answer.** A reply restating the disagreement, or naming a
+  further question, leaves the row `conflict` and the box unticked. Say so in the report.
+- **Report every re-entry explicitly** — it is the one case where a row's `Status` moves backwards, and
+  a reader who doesn't see it named will read it as a stage that lost track of its own bookkeeping.
+
 ## Hand-off
 
 Report per artifact: `<slug>: UC-### | BR-### — folded in (INT-###) | already applied, mirrors
-reconciled | waiting on a human`. Stage 2 never re-collects a row this stage just set to `applied`.
+reconciled | waiting on a human | drift question raised (§ The human may have edited…)`, plus
+`re-entered: <slug> #<n> — <the decision>` per row § Re-entry moved back to `new`. Stage 2 never
+re-collects a row this stage just set to `applied`; it always collects one this stage just set to `new`.
 
 ## Failure modes
 
@@ -103,3 +182,8 @@ reconciled | waiting on a human`. Stage 2 never re-collects a row this stage jus
   started".
 - **Setting `status` here.** Stage 3 may edit the same artifact after; Stage 5 re-counts.
 - **Ticking a box to make the count zero.** An answer that doesn't resolve the question stays unchecked.
+- **Skipping § Re-entry because "nothing is staged on that feature".** A hub can carry a dozen answered
+  `conflict`/`question` rows and zero `staged` ones. Those rows are the whole reason this section runs
+  on its own scan rather than as a sub-step of the fold-in worklist.
+- **Applying a staged entry over a section the human already edited.** The reviewer's wording vanishes
+  with nothing in any diff a human reads — see § The human may have edited the section first.

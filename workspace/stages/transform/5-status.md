@@ -3,7 +3,7 @@
 ```text
 runs: orchestrator, LAST
 in:   every artifact this run touched
-out:  every status set from a LIVE RE-COUNT · hubs refreshed · seven checks · the report
+out:  every status set from a LIVE RE-COUNT · hubs refreshed · nine checks · the report
 never: a status decided in Stages 1-4 — they write content and leave status alone
 ```
 
@@ -52,8 +52,42 @@ DO NOT change the hub's status:    # it mirrors the {requirements_file} row — 
 
 ## Part 3 — Verify before reporting
 
-Each is a real failure that otherwise reports as success. Check all seven, every run. **A mismatch is
+Each is a real failure that otherwise reports as success. Check all nine, every run. **A mismatch is
 blocking:** repair and re-check rather than report a count the vault doesn't support.
+
+### Run the deterministic checker first
+
+Four of the nine, plus parts of two more, are pure counting — and a program that counts beats an agent
+that counts, both in cost and in not being able to talk itself into a pass:
+
+```text
+ORCHESTRATOR ONLY, once, before working the table below:
+    Bash: python3 "${CLAUDE_PLUGIN_ROOT}/hooks/bigin-lint.py" --full
+    exit 0 → checks 1, 5, 7, 8 and the mechanical halves of 4 and 6 are clean; skip re-doing them
+    exit 1 → its findings ARE Part 3 mismatches. Blocking, same as any other. Repair, re-run it.
+
+    ${CLAUDE_PLUGIN_ROOT} does not resolve, python3 is missing, or the command is denied
+        → SAY SO in the report, then do all nine checks by hand as below.
+        NEVER treat an unavailable checker as a pass: a run that silently skipped verification
+        is exactly the failure this whole section exists to prevent.
+```
+
+**A subagent cannot run this** — `${CLAUDE_PLUGIN_ROOT}` only resolves in the orchestrator, which is
+where Part 3 runs anyway. Don't hand the command to a dispatched agent.
+
+| # | The checker covers | Still yours |
+| :--- | :--- | :--- |
+| 1 | fully | — |
+| 2 | — | all of it: "would the existing text satisfy a tester checking this signal" is judgment |
+| 3 | — | all of it: needs to know what changed *this run*, which only you know |
+| 4 | the `- [ ] Q:` exists on the artifact named | whether it duplicates a question already open on the source note |
+| 5 | fully | — |
+| 6 | duplicate ids, and every `## 3`/`## 4` reference resolving to a live step | whether anything was renumbered *this run* |
+| 7 | fully | — |
+| 8 | fully | — |
+| 9 | — | all of it: the row → question link is prose, not a parseable field |
+
+The checker is an accelerator, not a replacement. It cannot see intent, and it cannot see history.
 
 | # | Check | Why |
 | :--- | :--- | :--- |
@@ -64,21 +98,26 @@ blocking:** repair and re-check rather than report a count the vault doesn't sup
 | 5 | each touched artifact's `status` matches its live unchecked-question count | the invariant Part 1 exists to hold |
 | 6 | **no `S#`/`A#`/`E#` reused, renumbered, or deleted this run**, and every `## 3` branch point and `## 4` enforcement point resolves to a step id that exists and isn't removed | these ids are cited from rules, flows, stories, and prototypes; a renumber breaks all of them silently |
 | 7 | for every UC touched, each slug in its `features:` has a `## Use Cases` row and the id in its `uc:` list — and no hub lists a UC that doesn't name it | a cross-feature UC on one hub reads as complete while the other features have no idea they're involved |
+| 8 | **no two files in `{uc_dir}` carry the same `UC-###` id** (`Grep '^id:' {uc_dir}`, compare against the filenames) — same for `{br_dir}` and `BR-###` | the backstop on the id-mint race. Up to four features process concurrently; only the orchestrator may mint (`4-sync.md`), and this check is what catches it if that discipline slipped. Two UCs sharing an id means every citation of it is ambiguous forever |
+| 9 | **no `conflict`/`question` Signal Log row on a touched hub whose linked question now carries a filled `A:`** — those should have been re-entered as `new` by Stage 1 and drafted by Stage 3 this same run | `1-foldin.md` § Re-entry. A row left here is an answered, qualified requirement that no future stage will ever collect: not `staged` (so fold-in skips it) and not `new`/`held` (so qualification skips it) |
 
 ## Part 4 — Report
 
 ```text
-Stage 1 (fold-in): <N> UC/BR resolved — <slug>: UC-### now draft, ready for /enrich-feature
+Stage 1 (fold-in): <N> UC/BR resolved — <slug>: UC-### now draft
+                   <N> re-entered — <slug> #<n>: <the decision that unblocked it>   # 1-foldin § Re-entry
+                   <N> drift question(s) raised instead of applied
 Stage 2 (qualify): <N> qualified, <N> held (<reason>), <N> applied as duplicate/already-covered
 Stage 3 (draft):   <N> UC created, <N> updated, <N> BR created, <N> BR updated
                    — <slug>: UC-### (staged, needs-clarification | staged, draft)
                    steps staged: <slug> UC-### — <N> new, <N> changed, <N> flow(s)
                    design: <N> directive(s) — <slug> ## Design Directives, <N> DESIGN-PRINCIPLES row(s)
-Stage 4 (sync):    <N> cross-feature UC change(s),
+Stage 4 (sync):    <N> UC id(s) minted, <N> cross-feature UC change(s),
                    <N> UC(s) with § 2/§ 3 drafted, <N> flagged for review, <N> conflict(s) — or none
+                   coverage: <N> dispatched / <N> accounted for                      # 4-sync § Part 2b
 cross-feature:     UC-### spans <slug> · <slug> — pointers written on both
 remaining:         <slug>: UC-###/BR-### — N open question(s), owner client|team
-next:              <slug> ready for /enrich-feature | <slug> ready for /bigin-generate-design (design-only)
+next:              <slug> ready for /approve-uc | <slug> ready for /bigin-generate-design (design-only)
 ```
 
 **Report what the vault says after Part 3, not what the run intended.** A held signal names its remedy;
@@ -90,8 +129,10 @@ produces a large diff.
 - **Setting status from intent.** "I resolved that question" ≠ "the box is ticked on disk."
 - **Counting decision-log rows as open questions.** They are answered history; counting them parks a
   finished UC at `needs-clarification` forever.
-- **Reporting before verifying.** All seven checks pass silently when they pass — that's the point. The
+- **Reporting before verifying.** All nine checks pass silently when they pass — that's the point. The
   run that skips them is indistinguishable from the run that passes them, until a signal goes missing.
+- **Reading check 9 as "the human hasn't answered yet".** Check the `A:` line, not the checkbox: an
+  answer written without ticking the box is still an answer, and the row still has to re-enter.
 - **Changing a hub's `status:`.** It mirrors scope from `{requirements_file}`; overwriting it desyncs
   the registry with nothing to reconcile them.
 - **Flipping an artifact off `needs-clarification` with a question still unchecked** — including one

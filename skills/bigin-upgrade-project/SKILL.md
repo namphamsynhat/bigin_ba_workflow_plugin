@@ -1,6 +1,6 @@
 ---
 name: bigin-upgrade-project
-description: Compare a materialized project's current rulebook/templates against the plugin version now installed, run whatever documented migration procedures apply to what changed, refresh the materialized workspace, and stamp the project onto the new version. Use after upgrading the plugin, whenever `_bigin/system/project.md`'s `workspace_version` is behind `${CLAUDE_PLUGIN_ROOT}`'s version — instead of guessing whether re-running `/bigin-new-project` alone moved old content forward. Built to need no changes itself the next time an artifact type retires or a template's shape changes: it discovers what to do from "## Adopting an existing <PREFIX>" sections in the stage guides and from template diffs, rather than hardcoding any one migration.
+description: Compare a materialized project's current rulebook/templates against the plugin version now installed (halting rather than downgrading if the workspace turns out to be newer than the installed plugin), run whatever documented migration procedures apply to what changed, refresh the materialized workspace, and stamp the project onto the new version. Use after upgrading the plugin, whenever `_bigin/system/project.md`'s `workspace_version` is behind `${CLAUDE_PLUGIN_ROOT}`'s version — instead of guessing whether re-running `/bigin-new-project` alone moved old content forward. Built to need no changes itself the next time an artifact type retires or a template's shape changes: it discovers what to do from "## Adopting an existing <PREFIX>" sections in the stage guides and from template diffs, rather than hardcoding any one migration.
 argument-hint: "[check]"
 ---
 
@@ -68,8 +68,41 @@ Requires `_bigin/system/project.md` to exist. Missing → say `/bigin-new-projec
     things from `${CLAUDE_PLUGIN_ROOT}/workspace/conventions/conventions.md` and
     `${CLAUDE_PLUGIN_ROOT}/workspace/templates/*.md`.
 * **Rules:**
-  - **`workspace_version` equal to the plugin version → report "already current" and stop at § 1.**
-    Nothing downstream runs — this is what makes re-running the skill after every session cheap.
+  - **Compare the two versions as SEMVER, component by component, numerically — never as strings.**
+    `"1.10.0"` sorts *before* `"1.6.5"` lexically, so a string comparison reports an upgrade as a
+    downgrade at exactly the version where it starts to matter. Then branch on the ordering, three ways:
+
+    ```text
+    workspace == plugin  → report "already current" and STOP at § 1. Nothing downstream runs —
+                           this is what makes re-running the skill after every session cheap.
+    workspace <  plugin  → the ordinary upgrade. Continue to § 2.
+    workspace >  plugin  → HALT. Report a DOWNGRADE HAZARD and change nothing.
+    ```
+
+  - **The workspace being AHEAD of the plugin is a halt, not a no-op, and not something to "fix" by
+    running anyway.** Every step below assumes `${CLAUDE_PLUGIN_ROOT}` holds the *newer* rulebook. If it
+    holds an older one, § 2 diffs backwards (reading real additions as retirements), § 5 copies the
+    **older** conventions/stages/templates over the newer materialized ones, and § 6 stamps
+    `workspace_version` *down*. After that there is nothing left to reconcile from: the only record of
+    which rulebook the project's content was built against is the field that just got overwritten.
+
+    ```text
+    on workspace > plugin, report and stop:
+      workspace_version <a> is NEWER than the installed plugin <b>
+      resolved ${CLAUDE_PLUGIN_ROOT}: <the path>
+      → almost always a STALE PLUGIN CACHE being resolved instead of the current install.
+        Check which install is being resolved, and prune stale cached copies of this plugin.
+      → nothing was changed. Re-run once ${CLAUDE_PLUGIN_ROOT} resolves to the newer plugin.
+    ```
+
+    A stale cache is not hypothetical: a cached snapshot can be several minor versions behind and
+    missing whole skills, while its copy of a skill that *does* exist carries a contract the current
+    rulebook explicitly forbids. Copying that over a correct workspace is the single most destructive
+    thing any skill in this plugin can do.
+
+  - **`workspace_version` absent or unparseable** → report it and stop. An old project predating the
+    field has no comparable baseline, and § 2's diff has nothing to diff *from*; treat it as
+    `/bigin-new-project` needing to run to establish one, not as "assume it's old".
   - Use the `Grep` **tool** for every scan in this skill, never a shell pipeline — a silently denied
     pipeline under an unattended run reads as "nothing changed" instead of "the scan didn't happen"
     (same reasoning as the ID-scan rule in `_bigin/conventions/conventions.md`).
@@ -122,10 +155,12 @@ Skip this section entirely in `check` mode — report what *would* run instead (
      pending; skip anything already marked (idempotency).
   2. Group pending instances the way the procedure expects (§ Adopting an existing FR groups by
      `feature:` — follow whatever grouping the matched procedure itself specifies).
-  3. **Dispatch one subagent per group** — same write-ownership discipline `/bigin-transform-signal`
-     uses for the same reason (one legitimate writer per destination artifact). Give the subagent
-     the pending instances and one instruction: **run the matched section's steps, exactly, and
-     nothing beyond them.**
+  3. **Dispatch one subagent per group**, pinned to `sonnet` — same write-ownership discipline
+     `/bigin-transform-signal` uses for the same reason (one legitimate writer per destination
+     artifact). This is applying a procedure someone else already wrote against a named set of files,
+     not deciding anything, so it does not need the session default tier. Give the subagent the pending
+     instances and one instruction: **run the matched section's steps, exactly, and nothing beyond
+     them.**
   4. Refresh whatever mirrors the matched procedure names as its own maintenance contract (e.g. a
      feature hub's `## Use Cases` / `uc:` for the FR→UC case) — read that from the procedure, not
      assumed.
@@ -163,7 +198,8 @@ Skip this section entirely in `check` mode — report what *would* run instead (
 ## 7. Report
 
 ```text
-header    workspace_version <old> → <new> (or "already current" if § 1 stopped here)
+header    workspace_version <old> → <new> · "already current" · or "HALTED: workspace <a> is newer
+          than plugin <b> — <resolved ${CLAUDE_PLUGIN_ROOT}>, likely a stale cache; nothing changed"
 migrated  | Prefix | → | Instances | UC/BR/etc. ids minted | Staged, needs review |
 drift     | What changed | Why nothing ran | What a human should decide |
 refresh   file counts for conventions/ stages/ templates/, same shape as /bigin-new-project § 8

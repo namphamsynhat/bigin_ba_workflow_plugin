@@ -1,64 +1,58 @@
 ---
 name: consolidate-prd
-description: Merge prototype design decisions back into the PRD, reconcile any requirement changes the prototype surfaced, and generate Epics and User Stories. Use after a feature's prototype design is reviewed.
-argument-hint: "<feature-id, e.g. FR-003>"
+description: NOT RUNNABLE — halted pending migration. This skill still reads the retired pre-migration `.bigin/PRD.md`, `.bigin/features/FR-<id>-*.md`, and `.bigin/prototypes/` layout, none of which exist in a project on the current `01-Requirements/_ucs/` model, so every invocation halts without doing anything. Do not route to it and do not offer it as a next step. PRD, epic, and story generation is not built on the current model; an approved UC is feature material a human hands off (conventions § Feature material).
+argument-hint: "(not runnable — see the body)"
 ---
 
-# Consolidate PRD
+# Consolidate PRD — HALTED, not runnable
 
-Closes the loop after a prototype review: reconciles what designing revealed back into the PRD, then
-decomposes the feature into buildable work.
+**Stop and say so. This skill cannot run against any current project.**
 
-This is the final Load stage of the extract → transform → load pipeline.
+It reads `.bigin/PRD.md`, `.bigin/features/FR-<id>-*.md`, and `.bigin/prototypes/FR-<id>-prototype.md` —
+the pre-migration flat-file layout, keyed on the retired `FR-###` artifact and on `/prototype-design`,
+which is itself superseded. In a migrated project none of those paths exist.
 
-> **Artifact Standard:** Outputs:
->> **A reconciled PRD section** — requirement changes the prototype surfaced, each called out explicitly, plus a `## Design` subsection summarizing the finalized flows/screens and linking to the prototype.
->> **Epics and User Stories** — one epic per feature in `.bigin/epics.md`, each story traceable to specific requirement numbers through its acceptance criteria.
+Its two upstream inputs are both gone from the live path: nothing writes a `PRD.md` at all today
+(`/approve-uc` approves the UC and stops — `_bigin/conventions/conventions.md` § Feature material), and
+prototypes come from `/bigin-generate-design` as `04-UIUX/UX-<NNN> <Feature>.md`, on a different model.
+
+## What to do when invoked
+
+1. Say this stage is not migrated and cannot run — name the missing inputs, and
+   `_bigin/conventions/conventions.md` § Reconciliation notes as where the gap is tracked.
+2. Point at what is live: `/approve-uc` for sign-off, `/bigin-generate-design` for screens and prototype
+   prompts. Epics and stories are cut by hand from approved UCs until this is migrated.
+3. Stop. **Do not** fall back to reading `01-Requirements/` — the sections and status vocabulary differ,
+   so a best-effort read produces a plausible PRD built on the wrong contract. Reporting "nothing found"
+   is worse: it reads as an empty backlog rather than a missing bridge.
 
 ---
 
-## Non-Negotiable Core Rules
+## The target contract, for whoever migrates this
 
-* **Precondition halts, never degrades:** this skill still reads the pre-migration `.bigin/` layout (§ Precondition).
-* **Never silently rewrite a requirement:** every change the prototype forced is named to the user.
-* **Every story traces:** acceptance criteria cite the requirement numbers they derive from. A story with none is unapproved scope.
-* **Requirement changes need sign-off:** flag them at the end rather than treating the merge as approval.
+Not runnable today. Kept so the design intent survives the gap — a specification, not a procedure to
+attempt.
 
----
+**Inputs become UC-shaped.** One feature carries several `UC-###`; one UC can span several features, and
+`primary_feature` decides which chain owns it. Read each UC's `## 2`/`## 3` flows, its `## 4` rule
+mirror, and its `## 5` **Still open** list — not an FR's `## Functional requirements`. The design input
+is the feature's `04-UIUX/UX-<NNN> …` and its `absorbed:` list of `UC-###@version` stamps, which is what
+makes "this design is stale against the current UC" detectable.
 
-## Precondition — check this first
+**Epics and stories are cut as use-case slices, flows first** — one story per meaningful path through a
+UC's `## 2`/`## 3`, not one story per requirement line
+(`_bigin/conventions/conventions.md` § Traceability chain). Acceptance criteria cite the `S#`/`A#`/`E#`
+and `BR-###` ids they derive from; a story citing none is unapproved scope.
 
-`/bigin-transform-signal` writes the current layout (`01-Requirements/_ucs/`, `_brs/`); this skill still
-reads `.bigin/`, and nothing bridges them yet.
+**Two things still undecided, and they block a clean build** (§ Reconciliation notes):
 
-**If `.bigin/features/` is absent while `01-Requirements/_ucs/` or `_frs/` has files, halt.** Say this
-stage hasn't been migrated onto the `01-Requirements/` layout, name the files that are waiting, and
-stop. Don't fall back to reading `01-Requirements/` — the sections and status vocabulary differ, so a
-best-effort read produces a plausible artifact built on the wrong contract. Reporting "nothing found"
-is the worse failure: it reads as an empty backlog rather than a missing bridge.
+- **File granularity.** Whether `PRD-###`/`EP-###`/`US-###` are each their own file with their own id
+  (what the rulebook assumes) or a flat `epics.md` (what this skill used to write). Pick one before
+  building; don't let both readings coexist.
+- **Where a reconciliation lands.** Design surfacing a requirement change has a live home now — it goes
+  back through `/bigin-transform-signal`'s gate as a staged `## Discussion` entry on the UC, not as a
+  silent PRD rewrite. That is the rule to build against.
 
-`_bigin/conventions/conventions.md` § Reconciliation notes tracks this gap — it is known, not new.
-
-## Input
-
-Read the feature's PRD section (`.bigin/PRD.md`), its feature file
-(`.bigin/features/FR-<id>-*.md`), and its prototype (`.bigin/prototypes/FR-<id>-prototype.md`).
-
-## What to do
-
-* **Goal:** get the PRD and the prototype telling the same story, then break it into stories.
-* **Action:**
-  1. **Reconcile.** Compare the prototype against the existing requirements. Where prototyping surfaced new requirements, changed behavior, or new fields/entities, update the feature file and the PRD section — calling out each change explicitly rather than rewriting silently.
-  2. **Record the design.** Add a `## Design` subsection to the feature's PRD section summarizing the finalized flows/screens, linking to the prototype file.
-  3. **Decompose.** Generate or append to `.bigin/epics.md` — one epic per feature, with one or more user stories:
-
-     ```
-     # Epic: <Feature Name> (FR-<id>)
-
-     ## <Role>: <goal>
-     As a <role>, I want <goal>, so that <benefit>.
-
-     **Acceptance Criteria** (derived from FR-<id>.N):
-     - <criterion>
-     ```
-  4. **Report** what was generated, and flag anything still needing BA sign-off — the step 1 requirement changes above all.
+**Rules that carry over unchanged:** never silently rewrite a requirement — name every change design
+forced; every story traces; requirement changes need explicit sign-off rather than being treated as
+approved by the merge.
