@@ -671,6 +671,14 @@ the literal `not stated`. A guessed rationale is never acceptable. `not stated` 
 such; the ones whose missing reason would change what gets built are raised together in **one** batched
 question rather than one question each — a note carrying dozens of checkboxes gets none of them answered.
 
+`/extract-signal` records that call **on the row**, in `Notes`: `rationale: in question` for a row
+carried in the batched question, `rationale: non-blocking` for one deliberately left unasked
+(`3-filing.md` § Step 5). `/bigin-transform-signal` reads that marker and nothing else to decide
+whether the row blocks (`2-qualification.md` § Gate 1). A `not stated` rationale is **never itself a
+blocker**: a non-blocking row qualifies with the gap carried verbatim onto its staged entry, and an
+unmarked row qualifies the same way and is reported as a filing gap — never parked. Parking on a
+missing reason nobody asked about strands the requirement behind a remedy that cannot clear it.
+
 `Feature` and `Status` make the row's anchor and progress machine-readable — `Status` reuses the same
 vocabulary as the Feature Hub's `## Signal Log` (§ Feature Hub) so a signal reads the same state at both
 levels.

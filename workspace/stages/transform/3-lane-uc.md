@@ -134,6 +134,10 @@ change does not.
 - **Cite the `INT-###`** — whichever stage applies it reads this out of `## Changelog` to recognize a
   completed apply.
 - **Copy the note's `attachments:`** onto the UC's own if not already listed.
+- **Carry a missing rationale into the entry.** When the signal's note row has `Why: not stated`,
+  append to the entry: `— rationale not stated at capture` (and `; no rationale call recorded at
+  filing` when the row carried no marker). The reviewer decides at the gate whether it matters —
+  never re-derive the `Why` here (`2-qualification.md` § Gate 1).
 - Flip the Signal Log row: `Status: staged`, `Destination: UC-###` (`UC-012 S6` when the target is
   specific and already exists).
 

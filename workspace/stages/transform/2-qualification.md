@@ -35,8 +35,10 @@ question is still open can't be drafted from — the answer may change what it s
 ```text
 FAIL if the note's ## Open Questions has an unchecked "- [ ] Q:" referencing this row's number
      or subject matter
-FAIL if the note's ## Extracted signals row is Type: requirement/feedback with Why: not stated
-     and no checked answer supplies the reason
+FAIL if the note's ## Extracted signals row carries Notes: rationale: in question and that
+     question is still unchecked
+     → the marker is the parseable form of the bullet above: filing wrote it when it put the row
+       in the batched rationale question (3-filing.md § Step 5)
 
 → Status: held
   Notes:  awaiting <INT-###> — <the question in five words>
@@ -47,10 +49,23 @@ FAIL if the note's ## Extracted signals row is Type: requirement/feedback with W
 - **Never re-derive the missing `Why`** from the raw source — a `Why` reconstructed at transform time
   is a guess wearing a citation.
 
-A `requirement`/`feedback` signal that is genuinely fine without a stated reason **does not exist**.
-Extraction filing one with `Why: not stated` and *no* companion question is an extraction self-check
-failure → park `held`, `Notes: <INT-###> missing why, no question raised — re-run /extract-signal`,
-and name it in the report.
+A `not stated` rationale is **not itself a blocker**. Filing decides, per row, whether the missing
+reason would change what gets built, and records that decision as a `Notes` marker
+(`3-filing.md` § Step 5). Read the marker; never re-make the call here.
+
+| The row carries | Gate 1 |
+|---|---|
+| `rationale: in question`, its question unchecked | `held` — the FAIL above |
+| `rationale: in question`, its question now checked | **passes**: Stage 3 drafts from the answer |
+| `rationale: non-blocking` | **passes.** Stage 3 carries the gap into the staged entry |
+| no marker at all | **passes**, same as non-blocking, and is **named in the report** as a filing gap |
+
+**Never park a row for a missing marker.** An unmarked row was filed before this rule or filing
+skipped the call — a bookkeeping gap, not a requirement defect. Parking it strands real requirement
+content behind a remedy that cannot clear it: filing declines to raise a question it already
+decided against, and a note at `status: in-review` is not re-queued at all
+(`/extract-signal` Stage 1), so the row would fail every future run forever. The reviewer sees the
+missing rationale on the staged entry, at the gate that already exists for exactly this.
 
 ## Gate 2 — Source materialized
 

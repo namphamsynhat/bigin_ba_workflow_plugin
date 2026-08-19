@@ -236,19 +236,30 @@ false-alarm rate on a real vault, which only a real vault can tell you. If it tu
 
 ## Invocation
 
-Every stage is available two ways: type `/<stage>` yourself, or let the `bigin-ba` agent drive the
-pipeline stage by stage. The agent reads the vault to decide what runs next, continues automatically
-where the next stage needs no decision, and stops at the ones that do — `/approve-uc`'s confirmation,
-and `/bigin-new-project`'s engagement config. `/bigin-transform-signal` is **not** one of them: it never
+Every stage is available three ways: type `/<stage>` yourself, run `/bigin-run` to have the pipeline
+routed for you, or dispatch the `bigin-ba` agent to work one feature unattended. All three read the
+vault to decide what runs next, continue automatically where the next stage needs no decision, and stop
+at the ones that do — `/approve-uc`'s confirmation, and `/bigin-new-project`'s engagement config.
+
+**`/bigin-run` is the home for any run that fans out.** `/extract-signal` dispatches a named worker per
+note, and `/bigin-transform-signal` and `/bigin-generate-design` dispatch a worker per feature past a
+documented scope threshold — all of which need the `Agent` tool, which only the main session has. The
+`bigin-ba` agent is a subagent and has no such tool, so it covers the inline scopes (one feature, small
+batches) and hands anything larger back rather than running a degraded pass that would pull every
+transcript into a single context. `/extract-signal` it never runs at all. That boundary is stated in
+both places — the agent's § What you cannot run from here, and the skill's § Why this runs in the main
+session — because neither can read the other's file at run time. `/bigin-transform-signal` is **not** one of them: it never
 blocks on a human, staging its UC/BR changes as final text and writing a question only where a decision
 is genuinely needed. The human-confirmation requirements live inside the skills that have them, so they
 hold whether a person or the agent invoked them.
 
-The `bigin-ba` agent carries **routing only** — which skill runs when. Each skill's semantics live in
-its own `SKILL.md`, and migration status lives in § Reconciliation notes alone, because an agent body
-restating either goes stale the day a skill changes and then reads as authoritative while being wrong.
-The same brief exists for non-Claude-Code runtimes at `.agents/AGENTS.md`, kept deliberately thin for
-the same reason.
+`/bigin-run` and the `bigin-ba` agent carry **routing only** — which skill runs when. Each skill's
+semantics live in its own `SKILL.md`, and migration status lives in § Reconciliation notes alone, because
+a router restating either goes stale the day a skill changes and then reads as authoritative while being
+wrong. The routing table itself is the one thing deliberately duplicated between them: a subagent cannot
+resolve `${CLAUDE_PLUGIN_ROOT}`, so it cannot read the skill's copy. Change one, change both — and the
+durable fix is materializing routing into `_bigin/` alongside the stage guides. The same brief exists for
+non-Claude-Code runtimes at `.agents/AGENTS.md`, kept deliberately thin for the same reason.
 
 ## Install (local development)
 

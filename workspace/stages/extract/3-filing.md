@@ -247,16 +247,28 @@ Ticking a checkbox and filling an `A:` line on another `INT-###` note is allowed
 and nothing else. A **UC-side** copy of that question is still not yours: report it, and
 `/bigin-transform-signal`'s Stage 1 strikes it (`1-foldin.md` § Reconcile mirrors, item 3).
 
-**Missing rationale is ONE batched question, not one per row:**
+**Missing rationale is ONE batched question, not one per row — and every row gets marked:**
 
 ```text
-pick only the "not stated" rows where not knowing the reason would CHANGE WHAT GETS BUILT
+EVERY requirement/feedback row with Why: not stated gets exactly one Notes marker.
+Decide per row: would not knowing the reason CHANGE WHAT GETS BUILT?
     # a threshold, an exception, a gate — anything deciding between two designs
-→ ONE owner: client question, those rows as short bullets with their #s
-→ leave the rest with no question: recorded, re-askable, not blocking
+
+yes → Notes: rationale: in question
+      AND a short bullet with its # in the ONE batched owner: client question
+no  → Notes: rationale: non-blocking
+      no question: recorded, re-askable, not blocking. Transform qualifies it and carries the
+      gap into the staged UC entry, where the human sees it at the review gate that already
+      exists (2-qualification.md § Gate 1, 3-lane-uc.md § Staging a change)
+
 → a note with 40 checkboxes gets none of them answered
 if >~10 rows qualify → the extraction skipped the Why search. Say so instead of raising 40 questions.
 ```
+
+**The marker is the point, not the question.** Writing it is what makes "this reason is not worth
+chasing" a recorded decision instead of an absence a later stage has to interpret. Transform reads
+these markers and nothing else to decide whether a `not stated` row blocks
+(`2-qualification.md` § Gate 1) — an unmarked row costs it that decision.
 
 - `↦ —` because no UC exists yet; a later stage rewrites it to `↦ UC-###`.
 - `owner: client` when only the client can answer (rationale, ambiguous scope). `owner: team` for an
@@ -283,7 +295,9 @@ then:
       → this replaces comparing row counts, which no longer match by design
   no themed Signal drops a member's claim, and no clause says more than its note row
   every question/concern/conflict row has a mirror in ## Open Questions
-  every design-relevant "not stated" row is in the ONE batched rationale question
+  every requirement/feedback row with Why: not stated carries exactly one rationale marker,
+      and every "rationale: in question" row is a bullet in the ONE batched question
+      # an unmarked row is a filing gap, not a blocker — transform passes it through and reports it
   every pain-point row's Notes carries a PP-### (minted in both places, or matched)
   every "derived from #<n>" row was filed with a client question
   status: in-review if every ## Open Questions box is checked, else needs-clarification

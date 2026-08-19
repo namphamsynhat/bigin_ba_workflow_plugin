@@ -29,6 +29,14 @@ ETL: **extract** intake into per-feature signals → **transform** them into rev
 | — | `prototype-design` | **never.** Retired, superseded by `bigin-generate-design`. Never run both | — |
 | — | `bigin-upgrade-project` | a skill's precondition reported a `workspace_version` mismatch | no |
 
+**Stages that fan out belong to `/bigin-run`.** `extract-signal` dispatches a named worker per intake
+note and has no inline path; `bigin-transform-signal` and `bigin-generate-design` dispatch a worker per
+feature once a run passes a threshold documented in their own `references/agent-dispatch.md` (four or
+more qualified signals on one feature; three or more features). If this runtime cannot dispatch a
+subagent, run `/bigin-run` for those and keep to the inline scopes here — never substitute an inline
+pass over many notes or features, which loads into one context exactly what the fan-out exists to keep
+out of it.
+
 Order is the usual flow, not a rule: 5 runs in parallel with 6, and 7 lags 6 freely.
 
 ## When to invoke

@@ -1,0 +1,148 @@
+---
+name: bigin-run
+description: Drive the Bigin BA pipeline from the main session — read the vault, work out which stage runs next, run it, and keep going while nothing needs a decision. Use when asked to "move this feature forward", "what's next", "what's next on UC-00X", "process the inbox", "drain the intake queue", "run the next stage", "take this feature through to a prototype", or "drive the pipeline". **This is the only home for a run that fans out.** Three stages dispatch named subagents, and a subagent cannot dispatch subagents, so `/extract-signal` and any multi-feature transform or design run must be driven from here — never from inside the `bigin-ba` agent, which has no `Agent` tool and would otherwise pull every transcript into the one context the fan-out exists to protect.
+argument-hint: "[feature slug or UC id — omit to pick up whatever is next]"
+---
+
+# Bigin Run — the pipeline router
+
+Route; don't reimplement. This skill carries **which stage runs when** and nothing else. Every stage's
+own semantics — what it reads, what it writes, what it refuses, what statuses it sets — live in that
+stage's `SKILL.md`, and the shared standard lives in `_bigin/conventions/conventions.md`. When a
+stage's behaviour matters, read its `SKILL.md`; never summarize one back to the user as fact. A
+pipeline description copied into a router goes stale the day a stage changes, and then reads as
+authoritative while being wrong.
+
+Migration status has one source too: **`conventions.md` § Reconciliation notes** says which stages are
+live, which are halted, and what each halted one needs. Read it once per session; never hardcode a
+per-stage verdict here.
+
+**Read `conventions.md` by section, not whole.** It opens with a per-stage section table and runs past
+what one `Read` returns. Read that table, then only the sections the stage you are about to run names.
+
+## Why this runs in the main session
+
+`/extract-signal`, `/bigin-transform-signal`, and `/bigin-generate-design` are each architected around
+subagent fan-out — one worker per note, one pair per feature — specifically to keep raw transcripts and
+per-feature drafting out of the orchestrator's context. Dispatching them needs the `Agent` tool, which
+only this session has: the `bigin-ba` agent's `tools:` list does not include it, and a subagent cannot
+spawn one anyway on the depth budget the stages assume.
+
+```text
+so the split is not a preference, it is a capability boundary:
+
+  needs fan-out → HERE, always
+      /extract-signal                      every run — 2a/2c are mandatory named-worker dispatch
+      /bigin-transform-signal              a run spanning several features, or one feature with
+                                           four or more qualified signals
+      /bigin-generate-design               three or more features in one run
+
+  runs inline anywhere → here or in the bigin-ba subagent, whichever fits
+      /bigin-intake · /approve-uc · /sync-entities · /bigin-new-project · /bigin-upgrade-project
+      /bigin-transform-signal              one feature, three or fewer qualified signals, or an
+                                           FR adoption   (its references/agent-dispatch.md § Skip)
+      /bigin-generate-design               one or two features                    (same file § Skip)
+```
+
+Those inline thresholds are the stages' own, documented in their dispatch references — read them there
+rather than trusting this summary, and never talk yourself past one to avoid a dispatch. A feature over
+the threshold run inline pays a duplicate full-hub read per worker it skipped, in the one context that
+then has to hold every other feature too.
+
+## The pipeline you route through
+
+ETL: **extract** intake into per-feature signals → **transform** them into reviewed use cases and business rules → **load** them into design, approval, and (eventually) a PRD.
+
+| # | Skill | Route to it when | Decision point? |
+|---|---|---|---|
+| 1 | `bigin-new-project` | `_bigin/system/project.md` is absent. Never re-run destructively without explicit confirmation | yes — client/approver details are the user's |
+| 2 | `bigin-intake` | new raw communication needs capturing | no |
+| 3 | `extract-signal` | `00-Inbox/` has notes at `status: raw`, or one with a newly-ticked question | no |
+| 4 | `bigin-transform-signal` | a hub's `## Signal Log` has `new`/`held` rows, or a staged change's question was answered | no — it never blocks on a human |
+| 5 | `bigin-generate-design` | any UC has a drafted main flow and no current design. Needs no approval and no PRD | no — fully headless |
+| 6 | `approve-uc` | the human is ready to sign off one reviewed UC | **yes — never approve on their behalf** |
+| 7 | `sync-entities` | one or more UCs are `approved` with `synced: false`. Run when convenient, not after every approval | no |
+| — | `enrich-feature` · `consolidate-prd` | **never.** Both halt unconditionally — § Reconciliation notes | — |
+| — | `prototype-design` | **never.** Retired, superseded by `bigin-generate-design`. Never run both | — |
+| — | `bigin-upgrade-project` | a skill's precondition reported a `workspace_version` mismatch | no |
+
+Order is the usual flow, not a rule: 5 runs in parallel with 6, and 7 lags 6 freely.
+
+> **Two copies of this table exist**, here and in `agents/bigin-ba.md` § The pipeline you route
+> through, because a subagent cannot read a plugin-relative path — `${CLAUDE_PLUGIN_ROOT}` resolves
+> only in this session. **Change one, change both.** The durable fix is materializing routing into
+> `_bigin/` the way the stage guides already are, so both readers share one home.
+
+## Deciding what runs next
+
+Determine the stage from the artifacts, not by asking. With no argument, sweep; with a slug or a UC id,
+scope to that feature.
+
+```text
+1  _bigin/system/project.md absent                     → /bigin-new-project, stop
+2  workspace_version mismatch reported by a precondition → relay it; behind → /bigin-upgrade-project
+                                                           ahead → STOP, verbatim
+3  00-Inbox/ has a note at status: raw, or one whose
+   "- [ ] Q:" was newly ticked                          → /extract-signal        (fan-out, here)
+4  a hub's ## Signal Log has new/held rows, or a staged
+   change's question now carries an A:                  → /bigin-transform-signal
+5  a UC has a drafted ## 2 main flow and no current
+   design                                               → /bigin-generate-design
+6  a UC is clear and the human is ready to sign off     → the review flow, below — never headless
+7  a UC is approved with synced: false                  → /sync-entities, when convenient
+```
+
+Steps 3–5 are the pipeline's momentum: run them back to back without stopping, because none of them
+needs a human. Step 6 is the only decision point, and step 7 lags it freely.
+
+## How you operate
+
+- **Check state before acting.** Read `_bigin/system/project.md`, the feature hub, and its Signal Log
+  before deciding anything — never assume a stage hasn't run.
+- **Keep momentum, one stage at a time.** Report what you found and what runs next, then continue while
+  the next stage needs no decision. Stop at a decision point, or when an open question blocks you.
+- **A halted stage is not a stop for the pipeline.** § Reconciliation notes lists what's halted; route
+  around it. Three exits from `/bigin-transform-signal` work today — design, approval, and the human —
+  so a halted load stage never means "nothing to do next."
+- **Capture before interpreting.** Never paraphrase raw communication in place of running intake: the
+  unmodified source has to land in `00-Inbox/` before extraction touches it.
+- **Ask, don't guess.** Client names, approvers, contradictory signals, and approval decisions are the
+  user's call — `AskUserQuestion` rather than a plausible default. But never to relay a UC's own
+  `- [ ] Q:` line: those are asked as plain text (review flow, below).
+- **A version mismatch is the stage's call, not yours.** If one warns, mention `/bigin-upgrade-project`.
+  If one **stops** because the workspace is ahead of the installed plugin, relay that verbatim and do
+  not work around it — that state means a stale plugin is being resolved, and pushing past it risks
+  downgrading the vault's rulebook.
+- **Never invent pipeline internals.** Unclear behaviour: re-read that stage's `SKILL.md`.
+
+## Reviewing use cases with a human
+
+A review is the one thing driven turn by turn instead of routed and reported, and its procedure has one
+home: **`agents/bigin-ba.md` § Reviewing use cases with a human** — scope by flow, pool the questions,
+one batched fold-in, scenarios shown only at zero open questions, approval per id. Read it and follow it
+in this session; do not restate it here and do not improvise a shorter version.
+
+Running it here rather than dispatching it is usually right: the beats are a conversation, and a
+subagent gets one turn and returns. Its step 2 fold-in is a single-feature `/bigin-transform-signal`
+run, which sits inside the inline threshold either way.
+
+## Handing work to the `bigin-ba` subagent
+
+One case earns a dispatch: **the human is live on UC-A and a different UC or feature needs a slower
+stage that has no bearing on it.** Don't serialize that behind the conversation — dispatch `bigin-ba`
+unattended and keep reviewing.
+
+```text
+hand over → the scope it may run inline (see the capability boundary above), on ONE feature/UC
+keep here → anything needing fan-out, and every decision point
+tell it   → the slug or id, the stage you want reached, and that nobody is watching the thread
+```
+
+It will park what it cannot answer rather than prompt, and hand back one report. When it reports a
+scope over an inline threshold, that work comes back **here** — do not tell it to run the stage anyway.
+
+## Output format
+
+Report after each stage: what ran, what it wrote, what it parked, and what runs next. Report what the
+vault says, not what the run intended — the stages' own report shapes are the source for their counts,
+so relay those rather than recomputing them.

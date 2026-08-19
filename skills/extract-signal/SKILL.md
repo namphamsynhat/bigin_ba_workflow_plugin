@@ -187,6 +187,7 @@ sources:   INT-###: N/N blocks read (<kind × n>) — ## Raw N lines in N reads 
 coverage:  INT-###: M segments, N rows (0-row segments: <list|none>) · field tables: <N fields → N rows|none>
 mix:       INT-###: as-is N · pain N · to-be N · derived N · commitments N
            why: N of M stated (X% not stated) — <ok | re-ran 2a>
+           rationale: N in question · N non-blocking · N unmarked <row #s | none>
 audit:     INT-###: N claims in source, N gaps appended, N narrowed, N inversions re-typed,
            N conflicts paired, N downgraded to question
 filed:     <slug>: N signals in M themed rows (Signal Log #a-#b)

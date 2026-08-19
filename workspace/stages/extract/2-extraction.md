@@ -98,7 +98,7 @@ that actually reaches the build.
 | `Why` | `requirement`/`feedback` only, blank elsewhere. Exactly one of: the stated reason · `not stated` · `derived from #<n>`. |
 | `Source` | Transcript timestamp · `"<sender> <date>"` · attachment filename + section. Never "somewhere in the note". |
 | `Feature` `Status` | **Leave blank** — 3-filing.md fills them once it has read `{requirements_file}`. |
-| `Notes` | Blank except: `corrected: …` · `canonical wording; restated at #<n>` · `inferred — confirm with client` · `unblocks #<n>`. |
+| `Notes` | Blank except: `corrected: …` · `canonical wording; restated at #<n>` · `inferred — confirm with client` · `unblocks #<n>`. 3-filing.md additionally writes a `PP-###` and one `rationale:` marker into this cell — neither is yours to write at this stage. |
 
 **One row per discrete claim.** A requirement and the constraint qualifying it are two rows. A decision
 and the question it left hanging are two rows. Combining is 3-filing.md's job, never this stage's.
