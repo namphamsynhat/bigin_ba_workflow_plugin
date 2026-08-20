@@ -23,6 +23,8 @@ and subagent runs in.
 | `{scenarios_file}` | `01-Requirements/SCENARIOS.md` | **Retired, read-only.** Pre-UC `SCN-###` cross-feature register. A cross-feature flow is now one `UC-###` whose `features:` lists every slug it touches. Existing rows stay, marked superseded by the UC that absorbed them. |
 | `{pain_points_file}` | `01-Requirements/PAIN-POINTS.md` | Canonical `PP-###` register. Each hub mirrors its own rows from here. |
 | `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | Durable, cross-cutting design constraints. |
+| `{ux_dir}` | `04-UIUX/` | One design spec per feature: `UX-<NNN> <Feature>.md`, from `/bigin-generate-design`. Listed here because `/bigin-generate-prd` **reads** it (its § 9 quotes the screens). **Read-only from this side** — everything about *writing* a screen, and the rest of the design `{variable}` table (`{design_system_dir}`, `{tokens_file}`, `{nav_map_file}`, `{template_ux}`, …), lives in `{design_conventions}` § Paths, not here. |
+| `{prd_dir}` | `02-PRD/` | One PRD per feature: `PRD-<NNN> <Feature>.md`, written by `/bigin-generate-prd` from that feature's **approved** UCs plus its `UX-###` design. Business-flow, not technical (its own hard rules live in that skill's `SKILL.md`). Status: `draft → approved`, `approved` human-only. |
 
 `{entities_file}`, `{pain_points_file}`, and `{design_principles_file}` are **vault-wide**. A per-feature
 subagent never writes them — it reports candidates and the orchestrator applies them sequentially in
@@ -37,7 +39,7 @@ feature**: a `UC-###` is written only by its `primary_feature`'s subagent
 | `{conventions_reference}` | `_bigin/conventions/conventions.md` | The rulebook. Read the sections your stage needs — it has a stage table at the top. Never read it whole. |
 | `{design_conventions}` | `_bigin/conventions/design-conventions.md` | **The design rulebook, deliberately separate** — screens, tokens, prototype prompts. It carries **its own** `{variable}` table (`{ux_dir}`, `{design_system_dir}`, `{template_ux}`, …), so a design-stage worker resolves paths there, not here. Nothing in this file governs design, and nothing in that file governs requirements. |
 | `{paths_reference}` | `_bigin/conventions/paths.md` | This file. |
-| `{stages_dir}` | `_bigin/stages/` | `extract/` (`2-extraction`, `2b-audit`, `3-filing`), `transform/`, and `design/` — one numbered file per stage. The `design/` guides resolve against `{design_conventions}` § Paths. |
+| `{stages_dir}` | `_bigin/stages/` | `extract/` (`2-extraction`, `2b-audit`, `3-filing`), `transform/`, `design/`, and `prd/` (`1-scope`, `2-business`, `3-flows`, `4-design`, `5-close`) — one numbered file per stage. The `design/` guides resolve against `{design_conventions}` § Paths; the `prd/` guides resolve against this file. |
 | `{project_file}` | `_bigin/system/project.md` | The engagement config, and the `workspace_version` every skill's precondition compares against the installed plugin (`{conventions_reference}` § Workspace version check). |
 | `{conventions_file}` | `.claude/bigin-ba-workflow-plugin.local.md` | Optional per-project overrides. A plugin **setting**, not project data — hence `.claude/`. Absent is normal; fall back to built-in defaults per blank section. |
 
@@ -59,6 +61,7 @@ feature**: a `UC-###` is written only by its `primary_feature`'s subagent
 | `{template_pain_points}` | `_bigin/templates/pain-points-register.md` |
 | `{template_design_principles}` | `_bigin/templates/design-principles-register.md` |
 | `{template_project}` | `_bigin/templates/project.md` |
+| `{template_prd}` | `_bigin/templates/prd.md` |
 
 **Instantiate from the template, never compose an artifact from memory.** The template *is* the schema
 the next stage parses; a hand-written variant is how a field a later stage reads goes missing.

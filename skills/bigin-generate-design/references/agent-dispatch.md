@@ -24,6 +24,9 @@ orchestrator can follow `3-screens.md` inline.
                         Name it explicitly in both workers' prompts — the owner designs it,
                         the participant does not.
 4  NAME THE ENGINE      pass the detected engine and one line on how to use it.
+5  NAME THE BOOSTERS     from engine-detection.md § Design quality boosters and § Per-step pattern
+                        references: which apply this run, and whether any craft-quality-pass skill
+                        (§ Stage 3.5) is installed. "none" is a valid answer for either.
 ```
 
 ## The prompt
@@ -45,6 +48,10 @@ UCs NOT YOURS:       <UC-### (designed in <slug>'s spec)> …, or "none"
 DESIGN ENGINE:       <wds | figma | <plugin> | built-in> — <one line on how to use it>
 DESIGN SYSTEM:       04-UIUX/_design-system/design-tokens.md at v<x> — cite these names; propose
                      a new token only when nothing there fits.
+QUALITY BOOSTERS:    <agentic-UX or design-library skill in scope, or "none"> · pattern skills
+                     available this session: <list from designer-skills, or "none"> · craft-quality
+                     pass: <run it after drafting, per engine-detection.md § Stage 3.5, or
+                     "skip — not installed">.
 
 READ FIRST:
 - _bigin/conventions/design-conventions.md — these sections ONLY: § Paths, § Write map,
@@ -74,7 +81,12 @@ THEN, one UC at a time, in the order listed:
    each input renders, and what grounds each element.
 4. Add the states (Part 4) — each traced to a BR, an exception flow, an entity constraint, or a
    post-condition.
-5. NEVER invent a screen, a field, a state, a nav entry, a threshold, or a label the sources did not
+5. If QUALITY BOOSTERS names a craft-quality-pass skill, run it now, on your own just-drafted
+   screens only (engine-detection.md § Stage 3.5): apply a pure craft fix directly; a finding that
+   would change what a screen shows or how a control behaves goes back through the grounding test —
+   grounded → apply it and cite the ground, ungrounded → an Open Question, same as any other. Not
+   named → skip, silently.
+6. NEVER invent a screen, a field, a state, a nav entry, a threshold, or a label the sources did not
    state. Missing detail is a question on § 6, not a plausible guess.
 
 DO NOT WRITE — vault-wide or owned elsewhere, and other features run concurrently. Report
@@ -97,6 +109,8 @@ REPORT, as plain lines:
                         "top-level"> | points to: <screen> | role(s): <actor(s)>
                         | grounded by: <UC-### S<n> | BR-### | pattern <name>>
   directives_reflected: hub row #<n> → <screen> (only rows a screen really implements)
+  boosters_used:        <pattern skill or craft-quality pass> | on: <screen> | why (one line each,
+                        or "none")
   questions:            <the question> | owner: client|team | kind: design|requirement-gap
   designed_ucs:         UC-###@<version> (ONLY UCs that really got screen rows)
   blocked:              UC-### — <why, one line>

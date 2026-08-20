@@ -20,6 +20,14 @@ Two modes, one set of checks:
            and stay quiet on a clean one. This is not a substitute for a real-vault
            run; it only proves the parsers do what they claim.
 
+  --fix-citations [--apply]
+           Find Signal Log rows whose Source cell cites a stale INT-### row number
+           where the SAME row's own Notes cell already recorded the correct numbering
+           (a prior correction that was never applied to the Source cell) and apply
+           it. Never invents a correction — only a hint already on record, and only
+           when that hint's own numbers fully resolve. Prints proposed fixes and does
+           nothing else unless --apply is given.
+
 Design rules this file holds itself to:
 
   * NEVER break a session. Any internal error, missing dependency, or unexpected
@@ -309,6 +317,130 @@ def check_cites_resolve(vault, path, findings):
                         "%s row #%s cites %s #%s, which is not a row in that note"
                         % (rel(vault, path), row_id, int_id, token),
                     )
+
+
+# --- fix mode: apply an already-known citation correction -----------------
+#
+# A recurring, hand-observed pattern: a Signal Log row's Source cell cites a stale
+# INT-### row number (an earlier note got re-audited and its numbering shifted), and
+# a PRIOR pass already worked out the correct numbering and recorded it in the same
+# row's own Notes cell ("Citation correction ...: matches INT-018 #51") — but never
+# applied that correction to the Source cell itself, so `check_cites_resolve` keeps
+# flagging it forever. This mode closes exactly that loop: it never invents a
+# correction, it only applies one a human/pipeline pass already wrote down and left
+# stranded in Notes.
+
+CORRECTION_HINT = re.compile(
+    r"(?:matches|correct(?:ed)?(?:\s+current-numbering)?\s+citations?\s*(?:is|are)?)\s*"
+    r"(INT-\d+)\s+((?:#\d+(?:\s*,\s*#\d+)*))",
+    re.IGNORECASE,
+)
+
+
+def find_signal_log_bounds(lines):
+    """Absolute [start, end) line range of the '## Signal Log' section, or None."""
+    start = None
+    for i, line in enumerate(lines):
+        if start is None:
+            if re.match(r"^##\s+Signal Log", line):
+                start = i + 1
+        elif line.startswith("## "):
+            return start, i
+    return (start, len(lines)) if start is not None else None
+
+
+def propose_citation_fixes(vault, path):
+    """Return a list of (line_no, old_line, new_line, reason) for this hub file."""
+    text = read_text(path)
+    if not text:
+        return []
+    lines = text.splitlines()
+    bounds = find_signal_log_bounds(lines)
+    if not bounds:
+        return []
+    start, end = bounds
+    proposals = []
+    cache = {}
+    for i in range(start, end):
+        cells = split_cells(lines[i])
+        if cells is None or len(cells) < 4 or all(SEPARATOR_CELL.match(c) for c in cells if c):
+            continue
+        source, notes = cells[3], cells[-1]
+        hints = {m.group(1): m.group(2) for m in CORRECTION_HINT.finditer(notes)}
+        if not hints:
+            continue
+        new_source = source
+        changed_for = []
+        for int_id, replacement in hints.items():
+            pos = new_source.find(int_id)
+            if pos == -1:
+                continue  # this hint's note isn't even cited here — nothing to fix
+            if int_id not in cache:
+                cache[int_id] = note_row_numbers(vault, int_id)
+            rows = cache[int_id]
+            if rows is None:
+                continue
+            replacement_nums = [int(n) for n in re.findall(r"#(\d+)", replacement)]
+            if not replacement_nums or any(n not in rows for n in replacement_nums):
+                continue  # the hint itself doesn't fully resolve either — don't guess
+
+            # the cite "head" for this int_id runs from just after its own token to
+            # the next em/en-dash (the note-title/date suffix) or the next INT-###
+            # token, whichever comes first — that head is where its row numbers live.
+            after = new_source[pos + len(int_id):]
+            dash = re.search(r"—|--", after)
+            next_id = re.search(r"INT-\d+", after[1:])
+            boundary = min(
+                dash.start() if dash else len(after),
+                (next_id.start() + 1) if next_id else len(after),
+            )
+            head = after[:boundary]
+            existing_nums = [int(n) for n in re.findall(r"#(\d+)", head)]
+            if not existing_nums or all(n in rows for n in existing_nums):
+                continue  # nothing broken for this int_id specifically — leave it
+
+            rest = after[boundary:].lstrip()
+            new_source = (
+                new_source[:pos + len(int_id)] + " " + replacement + (" " + rest if rest else "")
+            )
+            changed_for.append("%s -> %s" % (int_id, replacement))
+        if new_source != source:
+            new_cells = list(cells)
+            new_cells[3] = new_source.strip()
+            new_line = "| " + " | ".join(new_cells) + " |"
+            proposals.append((i, lines[i], new_line, "; ".join(changed_for)))
+    return proposals
+
+
+def run_fix_citations(root, apply_):
+    vault = os.path.abspath(root or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd())
+    if not is_vault(vault):
+        sys.stdout.write("bigin-lint: %s is not a Bigin vault (no _bigin/system/project.md)\n" % vault)
+        return 0
+
+    total = 0
+    for path in sorted(glob.glob(os.path.join(vault, "01-Requirements", "_features", "*.md"))):
+        proposals = propose_citation_fixes(vault, path)
+        if not proposals:
+            continue
+        text = read_text(path)
+        lines = text.splitlines()
+        for line_no, old_line, new_line, reason in proposals:
+            total += 1
+            sys.stdout.write("%s:%d  (%s)\n  - %s\n  + %s\n" % (rel(vault, path), line_no + 1, reason, old_line, new_line))
+            if apply_:
+                lines[line_no] = new_line
+        if apply_ and proposals:
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write("\n".join(lines) + ("\n" if text.endswith("\n") else ""))
+
+    if total == 0:
+        sys.stdout.write("bigin-lint: no already-known citation corrections found unapplied\n")
+        return 0
+    sys.stdout.write(
+        "\nbigin-lint: %d fix(es) %s\n" % (total, "applied" if apply_ else "proposed (rerun with --apply to write them)")
+    )
+    return 0
 
 
 # --- T4: step and flow ids are unique within a UC -------------------------
@@ -920,6 +1052,9 @@ def main(argv):
             return run_full(argv[2] if len(argv) > 2 else None)
         if mode == "--self-test":
             return run_self_test()
+        if mode == "--fix-citations":
+            return run_fix_citations(argv[2] if len(argv) > 2 and argv[2] != "--apply" else None,
+                                      "--apply" in argv[2:])
         sys.stderr.write(__doc__)
         return 64
     except Exception:

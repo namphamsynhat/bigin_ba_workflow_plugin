@@ -59,6 +59,57 @@ more **PATTERN** input to Stage 3's grounding test (§ Grounding, ground 2) — 
 preference (ground 3) and never as a requirement (ground 1). Say which booster was used, and why, in
 the closeout, the same way the chosen engine is named.
 
+## Per-step pattern references — `designer-skills` (design-process plugin)
+
+Narrower than a booster above: each row is read **only for the matching step**, whichever engine is
+running it, and treated as ground 2 (a **PATTERN**) in Stage 3's grounding test — never ground 3 (a
+preference) and never ground 1 (a requirement). These exist to keep craft consistent; they never
+license a screen, field, or state the sources didn't already call for.
+
+| Built-in-method step | `designer-skills` skill | Reach for it when |
+|---|---|---|
+| 2 STRUCTURE | `user-flow-diagram` | a UC's branches are hard to read straight off `## 2`/`## 3` and a diagram would settle screen boundaries faster than re-reading the flow twice |
+| 2 STRUCTURE · 3 SCREEN TYPE | `wireframe-spec` | laying out content priority and component placement before committing to a screen type |
+| 4 ELEMENTS (form screens) | `form-design` | the screen is "the actor supplies data" and field grouping or validation placement isn't obvious from the entity alone |
+| 5 TOKENS | `design-token`, `color-system`, `typography-scale`, `spacing-system` | `{tokens_file}` is missing a Level 2/3 name a screen needs and nothing existing fits — a naming *convention*, never a value invented in place of a stated preference |
+| 6 STATES | `loading-states`, `error-handling-ux`, `feedback-patterns`, `state-machine` | enumerating which states a control needs, once a BR or exception flow has already said one is required |
+| 7 NAVIGATION | `navigation-patterns`, `information-architecture` | deciding where a new entry nests inside `{nav_map_file}`'s existing tree |
+
+**Never** use one of these to decide *whether* a screen, field, or state exists — that decision is
+Stage 3's grounding test alone. A pattern skill only shapes how something already grounded gets
+built, and only if it is actually installed in this session — absent is a silent skip, not a gap to
+report in the closeout the way a missing engine is.
+
+## Stage 3.5 — an optional craft-quality pass
+
+Runs after a worker drafts a feature's screens, before it reports. `agent-dispatch.md`'s wave
+verification checks **structure** — ids resolve, token names exist, a question is really unchecked —
+but nothing today checks whether the result reads as good UX. Headless, same as everything else in
+this skill: no checkpoint, no question put to a human mid-run.
+
+```text
+consult, on the worker's OWN just-drafted screens only, whichever of these is installed:
+    heuristic-evaluation                    general pass, any screen
+    accessibility-audit                     contrast, labeling, focus order
+    critique-visual-hierarchy /
+    critique-composition / critique-typography    one screen looks off and the cause isn't obvious
+
+a pure craft fix (spacing, contrast, a redundant label, hierarchy)
+    → apply it directly to the screen spec being drafted, same worker, before reporting
+    → no Open Question, no report line — nothing here changed WHAT the screen shows
+
+a finding that would change what the screen must show or how a control must behave
+    → it is no longer craft, it is back to Stage 3's grounding test:
+      already grounded  → apply it and cite the ground
+      not grounded      → an Open Question (D3), same as any other ungrounded decision — never a
+                          silent design call disguised as a "best practice" fix
+```
+
+**Never** let a critique skill's finding license a new screen, field, or state on its own — "the
+audit flagged it" is not one of Stage 3's three grounds (§ Grounding). Run this at most once per
+screen per run; a worker re-critiquing its own fixes in a loop is scope creep, not quality. None of
+these skills installed → skip the pass silently; it was always optional.
+
 ## When nothing is installed
 
 The built-in method is complete — it is what the five stage guides describe. So:
@@ -134,3 +185,6 @@ This is what stages 2–4 already do; it is written out here so a reader can see
   a parallel set guarantees a rebuild later.
 - **Running an engine's interactive loop.** It waits for a human that an unattended run does not have.
 - **Repeating the install suggestion per feature.** Once, in the closeout, as a next step.
+- **Letting a craft-quality finding invent a requirement.** "The accessibility audit flagged it" is
+  not a ground (§ Grounding) — an ungrounded finding is an Open Question, exactly like any other
+  ungrounded decision, never a fix applied on the critique skill's authority alone.

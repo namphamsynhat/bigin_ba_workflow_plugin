@@ -1,6 +1,6 @@
 ---
 name: bigin-run
-description: Drive the Bigin BA pipeline from the main session — read the vault, work out which stage runs next, run it, and keep going while nothing needs a decision. Use when asked to "move this feature forward", "what's next", "what's next on UC-00X", "process the inbox", "drain the intake queue", "run the next stage", "take this feature through to a prototype", or "drive the pipeline". **This is the only home for a run that fans out.** Three stages dispatch named subagents, and a subagent cannot dispatch subagents, so `/extract-signal` and any multi-feature transform or design run must be driven from here — never from inside the `bigin-ba` agent, which has no `Agent` tool and would otherwise pull every transcript into the one context the fan-out exists to protect.
+description: Drive the Bigin BA pipeline from the main session — read the vault, work out which stage runs next, run it, and keep going while nothing needs a decision. Use when asked to "move this feature forward", "what's next", "what's next on UC-00X", "process the inbox", "drain the intake queue", "run the next stage", "take this feature through to a prototype", or "drive the pipeline". **This is the only home for a run that fans out.** Four stages dispatch named subagents, and a subagent cannot dispatch subagents, so `/extract-signal` and any multi-feature transform, design, or PRD run must be driven from here — never from inside the `bigin-ba` agent, which has no `Agent` tool and would otherwise pull every transcript into the one context the fan-out exists to protect.
 argument-hint: "[feature slug or UC id — omit to pick up whatever is next]"
 ---
 
@@ -22,9 +22,9 @@ what one `Read` returns. Read that table, then only the sections the stage you a
 
 ## Why this runs in the main session
 
-`/extract-signal`, `/bigin-transform-signal`, and `/bigin-generate-design` are each architected around
-subagent fan-out — one worker per note, one pair per feature — specifically to keep raw transcripts and
-per-feature drafting out of the orchestrator's context. Dispatching them needs the `Agent` tool, which
+`/extract-signal`, `/bigin-transform-signal`, `/bigin-generate-design`, and `/bigin-generate-prd` are
+each architected around subagent fan-out — one worker per note, one per feature — specifically to keep
+raw transcripts, per-feature drafting, and whole-UC reads out of the orchestrator's context. Dispatching them needs the `Agent` tool, which
 only this session has: the `bigin-ba` agent's `tools:` list does not include it, and a subagent cannot
 spawn one anyway on the depth budget the stages assume.
 
@@ -36,12 +36,14 @@ so the split is not a preference, it is a capability boundary:
       /bigin-transform-signal              a run spanning several features, or one feature with
                                            four or more qualified signals
       /bigin-generate-design               three or more features in one run
+      /bigin-generate-prd                  three or more features in one run
 
   runs inline anywhere → here or in the bigin-ba subagent, whichever fits
       /bigin-intake · /approve-uc · /sync-entities · /bigin-new-project · /bigin-upgrade-project
       /bigin-transform-signal              one feature, three or fewer qualified signals, or an
                                            FR adoption   (its references/agent-dispatch.md § Skip)
       /bigin-generate-design               one or two features                    (same file § Skip)
+      /bigin-generate-prd                  one or two features    (its references/agent-dispatch.md)
 ```
 
 Those inline thresholds are the stages' own, documented in their dispatch references — read them there
@@ -51,7 +53,7 @@ then has to hold every other feature too.
 
 ## The pipeline you route through
 
-ETL: **extract** intake into per-feature signals → **transform** them into reviewed use cases and business rules → **load** them into design, approval, and (eventually) a PRD.
+ETL: **extract** intake into per-feature signals → **transform** them into reviewed use cases and business rules → **load** them into design, approval, and a per-feature PRD. Only epics/stories are still missing from the load side.
 
 | # | Skill | Route to it when | Decision point? |
 |---|---|---|---|
@@ -62,11 +64,14 @@ ETL: **extract** intake into per-feature signals → **transform** them into rev
 | 5 | `bigin-generate-design` | any UC has a drafted main flow and no current design. Needs no approval and no PRD | no — fully headless |
 | 6 | `approve-uc` | the human is ready to sign off one reviewed UC | **yes — never approve on their behalf** |
 | 7 | `sync-entities` | one or more UCs are `approved` with `synced: false`. Run when convenient, not after every approval | no |
-| — | `enrich-feature` · `consolidate-prd` | **never.** Both halt unconditionally — § Reconciliation notes | — |
+| 8 | `bigin-generate-prd` | a feature has `approved` UCs its PRD hasn't folded yet (or folded at an older version). Skips a `built` feature — the CR chain has no PRD | no — fully headless |
+| — | `enrich-feature` · `consolidate-prd` | **never.** Both halt unconditionally — § Reconciliation notes. `consolidate-prd` is **not** the PRD stage; `bigin-generate-prd` is | — |
 | — | `prototype-design` | **never.** Retired, superseded by `bigin-generate-design`. Never run both | — |
 | — | `bigin-upgrade-project` | a skill's precondition reported a `workspace_version` mismatch | no |
 
-Order is the usual flow, not a rule: 5 runs in parallel with 6, and 7 lags 6 freely.
+Order is the usual flow, not a rule: 5 runs in parallel with 6, and 7 and 8 both lag 6 freely — 8
+consumes what 6 approved, so it is worth running once a sitting of approvals is done rather than after
+each one.
 
 > **Two copies of this table exist**, here and in `agents/bigin-ba.md` § The pipeline you route
 > through, because a subagent cannot read a plugin-relative path — `${CLAUDE_PLUGIN_ROOT}` resolves
@@ -90,10 +95,14 @@ scope to that feature.
    design                                               → /bigin-generate-design
 6  a UC is clear and the human is ready to sign off     → the review flow, below — never headless
 7  a UC is approved with synced: false                  → /sync-entities, when convenient
+8  a feature has approved UCs not in its PRD's
+   absorbed: (or in it at an older version)             → /bigin-generate-prd
 ```
 
 Steps 3–5 are the pipeline's momentum: run them back to back without stopping, because none of them
-needs a human. Step 6 is the only decision point, and step 7 lags it freely.
+needs a human. Step 6 is the only decision point; steps 7 and 8 lag it freely. Step 8 is headless too,
+so once a UC is approved there is nothing to wait for — but it reads the UC's own `status:`, so running
+it before the human has approved anything just reports "nothing approved yet".
 
 ## How you operate
 

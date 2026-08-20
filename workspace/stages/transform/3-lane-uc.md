@@ -43,6 +43,33 @@ narration of the flow.
 - **A "UC" that is one validation** ("Validate a tax ID") is a step inside someone else's goal, or a
   `BR-###`. Route it there rather than minting a UC nobody would sit down to perform.
 
+### Recognizing drift — the smell that matters more than step count
+
+A UC does not need to cross ~12 steps to have outgrown one user goal. Across several runs, each adding
+"just one more step" for an *adjacent* goal (a different actor, a different trigger) rather than a
+genuinely new step in the *same* goal, a UC can quietly accumulate two or three distinct workflows well
+under that ceiling — e.g. a Parent's spend goal, an Admin's override goal, and the underlying system's
+own record-keeping, all inside one "UC-011". Step count is the lagging indicator; the leading one is:
+**do every `S#`/`A#`/`E#` on this UC still share one primary actor and one trigger?** Check this every
+time a new step is about to be staged, not only when the count looks large — a signal that reads as "one
+more step for the existing goal" but actually names a different actor or a different triggering event is
+the same smell as the 12-step case, arriving earlier.
+
+**Raising it**: same mechanism as the >12-step case — a `- [ ] Q:` on the UC's `## 5` Still open,
+proposing a concrete boundary: which existing `S#`/`A#`/`E#` ids would move to which new (or other
+existing) use case, a suggested title and primary actor for each, and which `BR-###`/hub each would carry
+along. Never split unilaterally, and never silently keep drafting new steps for the drifted-off goal into
+the original UC while the question sits unanswered — stage those signals `held`, citing the open
+question, exactly as any other decision-gated content would be.
+
+**Executing it**: this lane only ever proposes the split; it never performs one. Once a human answers the
+question, `/restructure-uc` (dispatching the `uc-splitter` subagent) is what mints the new UC(s), moves
+the flagged steps across (marking the originals `removed because — moved to UC-###`, per the permanent-id
+rule below), repoints every affected `BR-###`'s `uc:` field, and dispatches `hub-bookkeeper` per touched
+feature hub. Do not attempt any of that from this lane — identifying the seam and executing the move are
+different skill levels of judgment, the same reason `3-routing.md` keeps "which UC" and "mint the id"
+as separate steps.
+
 ## Creating a new UC
 
 Only when no existing UC covers this goal.

@@ -105,7 +105,12 @@ EP-###/US-### exist). -->
 |--------|-----------|--------|--------------------|--------------|
 
 ## PRD
-<!-- link + status, or "not started." -->
+<!-- link + status, or "not started." Refreshed by /bigin-generate-prd together with the `prd:`
+frontmatter field, one PRD per feature (conventions.md § ID scheme):
+  [[PRD-<NNN> <Feature>]] — draft, N capabilities, M pending
+`N capabilities` is how many approved UCs the PRD folded; `M pending` is how many of this feature's
+UCs are listed in its § 10 Pending Scope because they are not approved yet. Both counts come from
+the PRD file, not from this hub's own tables. -->
 
 ## Epics & Stories
 <!-- table: id | title | status -->

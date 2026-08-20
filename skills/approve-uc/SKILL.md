@@ -8,8 +8,8 @@ argument-hint: "<UC id, e.g. UC-012>"
 
 Marks a use case approved on the human's explicit call — the point where a reviewed requirement
 becomes committed scope. `FR-###` is retired; this skill reads and writes `UC-###` directly under
-`01-Requirements/_ucs/`, generating no PRD of its own (§ Reconciliation notes — PRD generation is
-still **Planned**).
+`01-Requirements/_ucs/`, generating no PRD of its own — the PRD is a separate stage,
+`/bigin-generate-prd`, which folds `approved` UCs into their feature's PRD whenever it next runs.
 
 This is the approval gate of the extract → transform → load pipeline. A human reviewing a UC is free
 to edit the file directly rather than route every change back through `/bigin-transform-signal` — this
@@ -56,9 +56,10 @@ human reviews this UC's flow with the rest of its neighborhood in view, not in i
   back through `/bigin-transform-signal` (its Stage 3 `uc-detector` step already reads this same
   cross-UC context when drafting) — approve-uc stops and waits, it doesn't reach out and make the
   edit itself.
-* **No PRD is generated here.** `approved` means the UC is feature material (§ Feature material) —
-  a human, or a future PRD stage, takes it from there. Writing a `PRD.md` section is out of scope for
-  this skill.
+* **No PRD is generated here.** `approved` means the UC is feature material (§ Feature material);
+  `/bigin-generate-prd` picks it up on its next run and folds it into
+  `02-PRD/PRD-<NNN> <Feature>.md`. Writing PRD content is out of scope for this skill — keep the two
+  separate so an approval never silently rewrites a document the sponsor has already read.
 
 ---
 
@@ -88,7 +89,7 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
 ## What to do
 
 * **Goal:** convert a reviewed use case into committed scope, ready to hand to whatever comes next
-  (design, and eventually a PRD stage), while catching any drift the human's own edit introduced —
+  (design, and the PRD stage), while catching any drift the human's own edit introduced —
   without waiting on, or blocking, the separate entity/feature-hub bookkeeping pass.
 * **Action:**
   1. **Reprocess the UC.** Treat the file's current content as authoritative, not whatever a prior run
@@ -140,9 +141,11 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
        cross-UC context when drafting), and pick this back up once it's resolved.
   3. **On confirmation:** set `status: approved` on the UC, bump `version`, set `synced: false`, and
      add one `## Changelog` line noting the approval and anything this run corrected.
-  4. **Confirm and point to next.** Tell the user the UC is ready for PRD — `/bigin-generate-design`
-     can run off it now (it doesn't wait on approval, or on `/sync-entities`), and a PRD/epics stage,
-     once one exists, picks up `approved` UCs as feature material (§ Feature material). If this UC's
+  4. **Confirm and point to next.** Tell the user the UC is ready for PRD — `/bigin-generate-prd`
+     folds it into its feature's PRD on its next run (worth running once a sitting of approvals ends,
+     not after each one), and `/bigin-generate-design` can run off it now, since design waits on
+     neither approval nor `/sync-entities`. Epics/stories are still cut by hand
+     (§ Reconciliation notes). If this UC's
      `entities: []` isn't empty, mention `/sync-entities` is still pending for it — run it now to catch
      up `ENTITIES.md` and the feature hub, or leave it queued and run it later; nothing here depends on
      it.

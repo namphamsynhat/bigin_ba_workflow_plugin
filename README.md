@@ -37,11 +37,19 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |    HALTED, unmigrated. Not runnable,     |  in DESIGN-PRINCIPLES.md, no UC, no PRD
         |    and nothing gates on it)              |
         |                                          |
+/restructure-uc           (side entry, human-gated, not part of the main run) a UC that has
+        |                  accumulated more than one user goal across several transform runs —
+        |                  caught by /bigin-transform-signal's own granularity check
+        |                  (3-lane-uc.md § Recognizing drift, which only ever proposes) or by a
+        |                  human reviewing live — gets split here: moves existing steps to their
+        |                  new home, repoints BRs, refreshes every touched hub. Never invents a
+        |                  new intake note for the reorganization itself.
+        |
 /approve-uc               [Load] approve the UC once its open questions are resolved:
         |                  reprocess its live content, flip status to approved.
-        |                  Touches only the UC's own file -- no PRD written here
-        |                  yet (still Planned), and entity/hub bookkeeping is
-        |                  deferred to /sync-entities.
+        |                  Touches only the UC's own file -- the PRD is a separate
+        |                  stage (/bigin-generate-prd), and entity/hub bookkeeping
+        |                  is deferred to /sync-entities.
         |
 /sync-entities            [Load] catch up the vault-wide bookkeeping an approval
         |                  implied: promote/update any entity an approved UC
@@ -53,9 +61,16 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |                  (Claude design + Figma Make). Runs off UCs, not the PRD, so it can
         |                  start as soon as a use case has a main flow — and it is headless.
         |
-(/consolidate-prd)        [Load] HALTED, unmigrated — would merge design decisions into a PRD and
-                           generate Epics & User Stories. Nothing writes a PRD today; an approved
-                           UC is feature material a human hands off
+/bigin-generate-prd       [Load] every approved UC of a feature -> one PRD-### per feature:
+        |                  business capabilities, business flows (with the screens each step
+        |                  lands on), rules, information, the generated design, pending scope,
+        |                  and open business decisions. Business flow, never a technical spec.
+        |                  Wraps BMAD's create-PRD workflow in headless mode when BMAD is
+        |                  installed; complete on its own when it isn't. Headless.
+        |
+(/consolidate-prd)        [Load] HALTED, unmigrated — would generate Epics & User Stories from
+                           the PRD. Epics/stories are still cut by hand; the PRD itself is now
+                           written by /bigin-generate-prd above
 ```
 
 `/bigin-transform-signal` runs five stages per invocation: **fold-in** (apply staged changes a human
@@ -113,8 +128,11 @@ _bigin/templates/                 blank scaffolds for every artifact type, same 
 04-UIUX/UX-<NNN> <Feature>.md    one design spec per feature, from /bigin-generate-design: screen
                                   inventory, screen specs, flows, plus the shared append-only design
                                   system under 04-UIUX/_design-system/
-PRD.md                            PLANNED — nothing writes this. /approve-uc approves the UC and
-                                  stops there; no PRD-generation stage is built (migration note below)
+02-PRD/PRD-<NNN> <Feature>.md    one PRD per feature, from /bigin-generate-prd: the feature's
+                                  approved UCs as business capabilities and business flows, its
+                                  rules and information, the UX-### design, pending scope, and open
+                                  business decisions. absorbed: [UC-###@version] is what makes
+                                  "this PRD has drifted from its use cases" detectable
 epics.md                          PLANNED — /consolidate-prd is halted, so nothing generates these
 .bigin/  (legacy)                 the pre-migration flat-file layout /enrich-feature and
                                   /consolidate-prd still read. Absent in any project created on the
@@ -163,6 +181,12 @@ orchestrator's own context, which is the one context the whole fan-out exists to
 handed a decision: a `Status`, `Destination`, id, or lane arrives as settled fact or the dispatch is
 `blocked`.
 
+`/restructure-uc` dispatches `agents/uc-splitter.md` (`sonnet`) once per restructuring operation — given
+an already-decided split plan (never deciding the boundary itself), it moves existing `## 2`/`## 3`
+content to its new home, marks the source's originals `removed because`, and repoints every affected
+`BR-###`. It never touches a feature hub or `FEATURES.md` itself; it reports what changed so the skill
+can dispatch `hub-bookkeeper` per touched hub, same pattern as everywhere else in the pipeline.
+
 The tradeoff is that a project pins the rulebook it was initiated with. `_bigin/system/project.md`
 records `workspace_version`; re-running `/bigin-new-project` after a plugin upgrade refreshes
 `_bigin/conventions/`, `_bigin/stages/`, and `_bigin/templates/` to the new version. All three are
@@ -183,11 +207,11 @@ for it; **needs authentication** cannot be fixed here at all, since OAuth needs 
 tools** is a name collision, reported rather than reinstalled over. The step never blocks initiation —
 `/bigin-intake direct …` works with no provider at all, and only Mode B's sweep depends on one.
 
-Every UC's own frontmatter `status` (`draft` ⇄ `needs-clarification` → `approved`, human-only per `/approve-uc`) is the authoritative gate. `enriched` and `consolidated` remain defined values for pre-migration vaults that already carry them, but nothing writes either today — `/enrich-feature` and `/consolidate-prd` are halted, so `draft → approved` is the live path and nothing may gate on `enriched`. A feature carries one use case per distinct user goal, so several at different stages at once is normal, and a use case that spans features is owned by one of them (`primary_feature:`) while appearing on every participating hub. Each Feature Hub's `## Requirement Readiness` table is a refreshed snapshot for orientation, not the gate itself. Features are matched by slug across stages, so `/extract-signal` and `/bigin-transform-signal` update an existing hub/UC rather than duplicating one when new signals map to the same feature — and a new signal about an existing *goal* is a step, branch, or rule inside that UC, not a second one.
+Every UC's own frontmatter `status` (`draft` ⇄ `needs-clarification` → `approved`, human-only per `/approve-uc`) is the authoritative gate. `enriched` and `consolidated` remain defined values for pre-migration vaults that already carry them, but nothing writes either today — `/enrich-feature` and `/consolidate-prd` are halted, so `draft → approved` is the live path and nothing may gate on `enriched` — `approved` is what `/bigin-generate-prd` folds into a feature's PRD. A feature carries one use case per distinct user goal, so several at different stages at once is normal, and a use case that spans features is owned by one of them (`primary_feature:`) while appearing on every participating hub. Each Feature Hub's `## Requirement Readiness` table is a refreshed snapshot for orientation, not the gate itself. Features are matched by slug across stages, so `/extract-signal` and `/bigin-transform-signal` update an existing hub/UC rather than duplicating one when new signals map to the same feature — and a new signal about an existing *goal* is a step, branch, or rule inside that UC, not a second one.
 
 > **Migration note:** `/enrich-feature` and `/consolidate-prd` are **halted, not merely stale**. Both read the older `.bigin/features/FR-<id>-*.md` single-file model **and key on the retired `FR-###` artifact**, and that directory does not exist in a project on the current layout — so every invocation halts with no input to read. Each now says so in its own first line and keeps its target contract under a heading marked not-runnable, so the design intent survives without either looking live. Three consequences the rest of the plugin respects: `enriched` is unreachable and nothing gates on it; `/approve-uc` mentions enrichment only when `.bigin/features/` actually exists, instead of asking "proceed anyway?" on every approval forever; and the `bigin-ba` agent does not route to either. `/prototype-design` is off the load path too — superseded by `/bigin-generate-design`, kept only so old references resolve.
 >
-> `/bigin-generate-design`, `/approve-uc`, and `/sync-entities` **are** migrated (all three read `_ucs/`/`_entities/` directly), so both the design exit and the human-approval exit from `/bigin-transform-signal` work today, while the PRD/epics exit needs a person. See `_bigin/conventions/conventions.md` § Reconciliation notes for the per-skill breakdown and the target contract for each halted stage.
+> `/bigin-generate-design`, `/approve-uc`, `/sync-entities`, and `/bigin-generate-prd` **are** on the current model (all four read `_ucs/`/`_entities/` directly), so the design exit, the human-approval exit, and the PRD exit from `/bigin-transform-signal` all work today — only epics/stories still need a person. See `_bigin/conventions/conventions.md` § Reconciliation notes for the per-skill breakdown and the target contract for each halted stage.
 
 ### The deterministic checker and its hook
 
@@ -242,8 +266,8 @@ vault to decide what runs next, continue automatically where the next stage need
 at the ones that do — `/approve-uc`'s confirmation, and `/bigin-new-project`'s engagement config.
 
 **`/bigin-run` is the home for any run that fans out.** `/extract-signal` dispatches a named worker per
-note, and `/bigin-transform-signal` and `/bigin-generate-design` dispatch a worker per feature past a
-documented scope threshold — all of which need the `Agent` tool, which only the main session has. The
+note, and `/bigin-transform-signal`, `/bigin-generate-design`, and `/bigin-generate-prd` each dispatch a
+worker per feature past a documented scope threshold — all of which need the `Agent` tool, which only the main session has. The
 `bigin-ba` agent is a subagent and has no such tool, so it covers the inline scopes (one feature, small
 batches) and hands anything larger back rather than running a degraded pass that would pull every
 transcript into a single context. `/extract-signal` it never runs at all. That boundary is stated in

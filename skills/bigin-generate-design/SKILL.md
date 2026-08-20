@@ -75,10 +75,12 @@ none of 1-3 → run the built-in method and REPORT the install command in the cl
 ```
 
 Full detection, install commands, and how to hand work to an engine: **`references/engine-detection.md`**,
-which also covers two optional **quality boosters** layered on top of whichever engine is chosen — an
+which also covers optional **quality boosters** layered on top of whichever engine is chosen — an
 agentic-relationship-UX skill for features that are genuinely about an ongoing AI-agent relationship,
-and a design-library skill for a non-generic starting palette on bootstrap. Neither replaces the
-engine; both are read at Stage 1/3 only when they actually apply.
+a design-library skill for a non-generic starting palette on bootstrap, per-step `designer-skills`
+pattern references for STRUCTURE/ELEMENTS/TOKENS/STATES/NAVIGATION, and an optional Stage 3.5
+craft-quality pass a worker runs on its own drafted screens before reporting. None replaces the
+engine; all are read only when they actually apply, and skipped silently when not installed.
 
 ## Execution order
 
@@ -166,9 +168,9 @@ hub named in `features:` — `## UX Spec`, `uiux:`, directives that a screen rea
 to `reflected`, questions mirrored. Then the nine verification checks; a mismatch is blocking.
 
 ```text
-mode · engine · per-feature screens · tokens added (0 removed, 0 renamed) · prompts written
-nav entries added (0 removed, 0 renamed) · directives reflected · skipped · pending
-questions (design | REQUIREMENT GAP) · next
+mode · engine · boosters used · per-feature screens · tokens added (0 removed, 0 renamed)
+prompts written · nav entries added (0 removed, 0 renamed) · directives reflected · skipped
+pending · questions (design | REQUIREMENT GAP) · next
 ```
 
 ## Failure modes
@@ -203,7 +205,9 @@ work — the same reason `/bigin-transform-signal` fans out on the default model
 ## Additional resources
 
 - **`references/engine-detection.md`** — the provider table, how to detect each one, the install
-  command to report when none is present, how the built-in method works, and the two optional
-  quality boosters (agentic-relationship UX, design-library). Read at Stage 1.
+  command to report when none is present, how the built-in method works, the optional quality
+  boosters (agentic-relationship UX, design-library), the per-step `designer-skills` pattern
+  references, and the optional Stage 3.5 craft-quality pass. Read at Stage 1; the per-step and
+  Stage 3.5 sections are read again by each worker at Stage 3.
 - **`references/agent-dispatch.md`** — the per-feature worker prompt, its report contract, and the
   wave-verification checklist. Read at Stage 3, before fanning out.
