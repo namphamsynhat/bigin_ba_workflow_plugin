@@ -52,10 +52,11 @@ children are implicitly retired with it, not listed again. -->
 
 ## Open Questions
 <!-- A menu placement, nesting depth, or role split that looks wrong, or that a screen's report
-left ungrounded. Raised here, never resolved by a silent edit — a human decides. -->
+left ungrounded. Raised here, never resolved by a silent edit — a human decides.
 
+Format:
 - [ ] Q: <question> (owner: team) (ref: <id>)
-      A:
+      A: -->
 
 ## Changelog
 - 1.0 (YYYY-MM-DD) — navigation map created

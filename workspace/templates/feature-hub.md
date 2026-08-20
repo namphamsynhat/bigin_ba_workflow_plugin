@@ -24,9 +24,9 @@ entities: []    # EN-### id(s) this feature's UC(s)/BR(s) reference — [] until
 updated:
 ---
 
-# <Feature Name>
+# `<Feature Name>`
 
-<one-line description — what this feature is, in plain language>
+`<one-line description — what this feature is, in plain language>`
 
 ## Notes / History
 <!-- Append-only, dated bullets, oldest first — the readable "story" of this feature (why it

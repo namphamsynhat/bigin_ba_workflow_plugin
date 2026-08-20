@@ -9,9 +9,9 @@ features: []     # every feature slug whose UC(s)/BR(s) reference this entity
 updated:
 ---
 
-# EN-<NNN> <Entity Name>
+# `EN-<NNN> <Entity Name>`
 
-<one-line description — what this entity represents, in plain language.>
+`<one-line description — what this entity represents, in plain language.>`
 
 ## Fields
 <!-- Source cites the Signal Log row (or UC-### S<n> / BR-###) that introduced or last changed the field. A
@@ -26,4 +26,4 @@ governs in its own body. -->
 <!-- e.g. "- belongs to EN-002 Customer (many-to-one), drawn from UC-004 S3" -->
 
 ## Changelog
-- (YYYY-MM-DD) — promoted from ENTITIES.md proposed row, via <INT-###>
+- (YYYY-MM-DD) — promoted from ENTITIES.md proposed row, via `<INT-###>`

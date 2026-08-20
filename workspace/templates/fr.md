@@ -19,7 +19,7 @@ owner: team
 updated:
 ---
 
-# FR-<NNN> <Title>
+# `FR-<NNN> <Title>`
 
 <!-- RETIRED TEMPLATE — do not instantiate. FR-### was replaced by UC-### (_bigin/templates/use-case.md):
 a use case carries the same testable content as positioned flow steps, plus the actors, branches, rules
@@ -31,7 +31,7 @@ An FR a use case has taken over carries `absorbed_by: UC-###` and is frozen: nev
 FR. -->
 
 > [!summary]- Summary
-> <2-3 sentences, drafted once /enrich-feature first enriches this FR — leave blank until then.>
+> `<2-3 sentences, drafted once /enrich-feature first enriches this FR — leave blank until then.>`
 
 ## Business goal
 <!-- Why this is being built, in the client's own terms — drawn from the signal(s) that created
@@ -75,4 +75,4 @@ not needs-clarification.
 <!-- /enrich-feature's findings — this skill never writes here. -->
 
 ## Changelog
-- 1.0 (YYYY-MM-DD) — created from <INT-###>
+- 1.0 (YYYY-MM-DD) — created from `<INT-###>`

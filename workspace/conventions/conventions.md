@@ -15,6 +15,9 @@ for `^## ` to list sections, then read the ones named below. Reading it whole co
 | `/bigin-generate-prd` | Feature material · Traceability chain · Absorbed · Status vocabularies · Open Questions wording · Pain Point Register |
 | `/enrich-feature` → `/consolidate-prd` | Traceability chain · Summary block · Feature material |
 
+**Every stage that writes an artifact also reads § Obsidian-safe markdown.** The vault is read in
+Obsidian; a rule broken there is a rule that silently deletes text a human was supposed to see.
+
 **This file is a materialized copy, not project data.** `/bigin-new-project` writes it to
 `_bigin/conventions/conventions.md` so that every skill and every dispatched subagent can reach it at a
 project-relative path (alongside `paths.md`, which resolves the `{variable}` names the stage guides in
@@ -141,6 +144,51 @@ split into two independent decisions that couldn't share a document. A feature c
 genuinely distinct user goals now simply carries several use cases, each with its own id — that is
 normal rather than exceptional, so there is nothing left for the field to mark. A pre-migration FR
 that still has it keeps it as history.
+
+**Quote any free-text scalar.** `title:`, `source_ref:`, `name:`, `scope:` and every other
+human-worded value goes in double quotes unless it is a bare slug, id, number, or date. Unquoted
+YAML loses or rejects ordinary prose, and Obsidian responds by dumping the whole frontmatter into
+the note body as raw text:
+
+```yaml
+source_ref: Kickoff meeting #3 notes     # → "Kickoff meeting"  (everything from # is a comment)
+title: UC-008: Review and approve        # → parse error, frontmatter renders as body text
+title: [Draft] Review flow               # → parse error, read as a list
+```
+```yaml
+source_ref: "Kickoff meeting #3 notes"   # correct
+title: "UC-008: Review and approve"      # correct
+```
+
+## Obsidian-safe markdown (all artifacts)
+
+Every artifact this plugin writes is read in Obsidian. Obsidian renders raw inline HTML and uses
+GitHub-flavoured tables, so four things in ordinary BA prose delete or corrupt content **silently** —
+the note looks finished, and the missing part is invisible rather than obviously broken.
+
+1. **Never leave a bare `<…>` in body text.** Obsidian parses `<name>`, `<NNN>`, `<YYYY-MM-DD>`,
+   `<Goal as a short verb phrase>` as HTML tags and renders **nothing** — in Reading view *and*
+   Live Preview. Backtick every placeholder or angle-bracketed literal: `` `<NNN>` ``. This matters
+   most for a slot an agent left unfilled: bare, it renders as blank and reads as done.
+   (Frontmatter and fenced code blocks are exempt — neither is parsed as markdown.)
+2. **Never put a raw `|` inside a table cell.** It ends the cell, so that one row gains a column and
+   every cell after it shifts. Join alternatives with `/` or ` · `, or escape as `\|`. This is why
+   an unresolvable feature anchor reads `unresolved — candidates: a / b`
+   (§ When a signal can't map).
+3. **One line per table cell.** GFM has no multi-line cell. Long System Response text stays one
+   line and wraps; if it genuinely needs a break, use `<br>`. A literal newline splits the table.
+4. **Only real questions are checkboxes.** A `- [ ] Q:` line in an artifact body is counted by
+   § Open Questions ↔ status consistency, so a *format example* belongs inside the template's
+   guidance comment, never in the body — instantiating it otherwise mints a phantom open question
+   and renders an empty checkbox.
+
+**Instantiate the structure, not the guidance.** A template's `<!-- … -->` blocks are the schema
+spec for whoever writes the artifact; they are not artifact content. Copy the frontmatter keys,
+headings, and table headers — drop the guidance comments. The rules they restate live in
+`_bigin/stages/` and in this file, which is where a later stage looks them up anyway. Carrying them
+into the artifact costs every downstream stage the tokens to re-read them on every open, and leaves
+them visible in Obsidian's Live Preview. Retain only a comment that records something about *this*
+artifact (why a section is deliberately empty, for instance).
 
 ## Use Case
 
@@ -1189,7 +1237,8 @@ match" either. It distinguishes two failure shapes, because they ask a human two
 (full rules: `/extract-signal`'s `3-filing.md` § Step 1 — Anchor):
 
 - **Ambiguous among existing features** — more than one slug's scope plausibly fits: record the
-  candidates on the signal line (`unresolved — candidates: a | b`) and ask which one.
+  candidates on the signal line (`unresolved — candidates: a / b`) and ask which one. Candidates are
+  joined with `/`, never `|`: this value lands in a table cell, and a raw pipe splits the row.
 - **No existing feature fits, and the signal reads like new scope** — record `unresolved — none
   found`, and draft a **suggested slug** (kebab-case, from the signal's own vocabulary, checked
   against the registry for a near-miss first) plus a **one-line scope** statement, so the question

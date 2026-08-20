@@ -19,7 +19,7 @@ workspace_version:        # the plugin version that last materialized _bigin/{co
 updated: <YYYY-MM-DD>
 ---
 
-# Vault settings — <Client Name>
+# Vault settings — `<Client Name>`
 
 > [!info] Single-project vault
 > This is the canonical, machine-readable config for the pipeline commands. There is no
@@ -42,17 +42,17 @@ updated: <YYYY-MM-DD>
 
 Any field the human didn't supply stays `<unknown>` — never inferred.
 
-Client: **<Client Name>** · Approver: **<Approver Name>** (<approver email>)
+Client: **`<Client Name>`** · Approver: **`<Approver Name>`** (`<approver email>`)
 
 ## Client contacts
 | Name | Email | Role |
 |------|-------|------|
-| <name> | <email> | <role> |
+| `<name>` | `<email>` | `<role>` |
 
 ## Team contacts
 | Name | Role | Notes |
 |------|------|-------|
-| <name> | <role> | |
+| `<name>` | `<role>` | |
 
 ## Codebase map
 <!-- project_mode: ongoing only — written by /bigin-new-project § 6, refreshed on re-run. -->
@@ -70,12 +70,12 @@ pointing at the full report in _bigin/system/domain-research.md rather than dupl
 <!-- Written by /bigin-new-project § 7 — one line per configured provider, dated. A snapshot for
 orientation, never a gate: /bigin-intake re-checks at sweep time, and a connector can be revoked the
 day after this was written. Only the two providers this project selected appear here. -->
-- email_provider: <outlook|spark> — <✔ connected | ! needs authentication: <what to do> | ✘ failed to connect: <error> | not installed: <what to install>> (<YYYY-MM-DD>)
-- meeting_provider: <fathom|spark|firefly> — <same states> (<YYYY-MM-DD>)
+- email_provider: `outlook | spark` — one of: `✔ connected` · `! needs authentication: <what to do>` · `✘ failed to connect: <error>` · `not installed: <what to install>` (`YYYY-MM-DD`)
+- meeting_provider: `fathom | spark | firefly` — same states as above (`YYYY-MM-DD`)
 
 ## Notes
 <!-- Anything about the engagement that doesn't fit a field above — e.g. whether `_bigin/` is
 committed to git. -->
 
 ## Changelog
-- Initialized for <Client Name> (<YYYY-MM-DD>)
+- Initialized for `<Client Name>` (`<YYYY-MM-DD>`)

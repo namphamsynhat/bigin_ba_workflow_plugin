@@ -50,10 +50,11 @@ promoted here on its SECOND use, never its first (2-system.md § B3). -->
 
 ## Open Questions
 <!-- Tokens or components that look wrong, duplicated, or unused. Raised here, never fixed here —
-D1 forbids the edit, so a human decides. -->
+D1 forbids the edit, so a human decides.
 
+Format:
 - [ ] Q: <question> (owner: team) (ref: <token/component>)
-      A:
+      A: -->
 
 ## Changelog
 - 1.0 (YYYY-MM-DD) — design system created

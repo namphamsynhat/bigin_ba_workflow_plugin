@@ -35,7 +35,7 @@ updated:
 <!-- Append newest content as a NEW block. Never edit, merge, or trim an existing one. -->
 <!-- SOURCE CONTENT ONLY. Fetch failures, retries, provider fallbacks, re-filings go in ## Capture history below — never here. Anything written here is read by /extract-signal as if the client said it. -->
 
-### SRC-1 · <kind> · <ref>
+### SRC-1 · `<kind>` · `<ref>`
 
 ## Capture history
 <!-- written by /bigin-intake. One line per capture attempt: date, what was tried, what happened. Keeps ## Raw clean. Delete nothing — a failed attempt is the audit trail for why content is missing. -->
@@ -58,7 +58,8 @@ updated:
 <!-- Every claim is classified as-is / pain / to-be BEFORE it is typed: as-is → decision · pain → pain-point/problem · to-be → requirement. See _bigin/stages/extract/2-extraction.md § Classify first. -->
 <!-- Why: required for requirement/feedback rows. One of three values: the client's stated reason (quoted/tightly paraphrased) · the literal "not stated" · "derived from #<n>, #<n>" for a to-be nobody said aloud. Blank for every other type. -->
 <!-- Source: transcript timestamp link (meeting) · "<sender> <date>" (email) · attachment filename. Cite the timestamp block the quoted words actually appear in. Name a speaker only when who said it matters and is unambiguous — transcript speaker labels merge multiple speakers into one block and cannot be trusted. -->
-<!-- Feature: the FEATURES.md slug this signal anchors to (conventions.md § Signal → feature mapping) — "unresolved — candidates: a | b" or "unresolved — none found" if it can't map yet. Never guessed. -->
+<!-- Feature: the FEATURES.md slug this signal anchors to (conventions.md § Signal → feature mapping) — "unresolved — candidates: a / b" or "unresolved — none found" if it can't map yet. Never guessed.
+     Separate candidates with " / ", never "|" — a raw pipe inside a table cell splits the row. -->
 <!-- Status: new · question · conflict · rejected — the only four values /extract-signal writes (_bigin/stages/extract/3-filing.md § Scope). held/staged/applied/superseded describe a signal's relationship to a use case and are written later, not here. -->
 <!-- Notes: staging/destination detail ("staged on UC-001 Discussion"), corrections ("corrected: ..."), cross-refs to other rows, superseded-by, or an open question's ↦ FR-### mirror. -->
 <!-- # is assigned once and never renumbered within this note. Corrections edit the row in place; genuinely new signals append as new rows in arrival order. -->

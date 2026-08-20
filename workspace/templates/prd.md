@@ -28,7 +28,7 @@ owner: team
 updated:
 ---
 
-# PRD-<NNN> <Feature>
+# `PRD-<NNN> <Feature>`
 
 > [!summary]- Summary
 > <2-3 sentences: what this feature lets the business do, for whom, and what changes once it ships.
@@ -56,17 +56,17 @@ metric, a stakeholder, or a constraint the sources did not state (P3). -->
 _bigin/system/project.md. Dense, zero fluff, no more than a short paragraph plus the three lines
 below. Never a restatement of the flows — that's § 6. -->
 
-* **What this feature delivers:** <the business outcome, one sentence>
-* **Who it is for:** <the primary actor(s), as roles>
-* **Why now:** <the stated driver — a pain point, a commitment, a deadline. "not stated" if none>
+* **What this feature delivers:** `<the business outcome, one sentence>`
+* **Who it is for:** `<the primary actor(s), as roles>`
+* **Why now:** `<the stated driver — a pain point, a commitment, a deadline. "not stated" if none>`
 
 ## 2. Business Context & Problem
 <!-- The problem in the client's own words. Pain points mirror 01-Requirements/PAIN-POINTS.md rows
 for this feature by id — the register carries the statement, this table carries it read-only
 (conventions.md § Pain Point Register). Never invent a pain point to justify a capability. -->
 
-* **Current state, as stated:** <how the business does this today, from the sources. "not stated">
-* **What makes it a problem:** <cost, delay, error, risk — only as stated>
+* **Current state, as stated:** `<how the business does this today, from the sources. "not stated">`
+* **What makes it a problem:** `<cost, delay, error, risk — only as stated>`
 
 | PP-### | Pain point (as stated) | Who feels it | Addressed by |
 |--------|------------------------|--------------|--------------|
@@ -79,7 +79,7 @@ said the number. -->
 | # | Business goal | How the business will know it worked | Stated by |
 |---|---------------|--------------------------------------|-----------|
 
-**Explicit non-goals:** <what this feature deliberately does not try to do, as stated. "not stated">
+**Explicit non-goals:** `<what this feature deliberately does not try to do, as stated. "not stated">`
 
 ## 4. Actors & Stakeholders
 <!-- Roles, never named people. Primary and secondary actors are lifted from each folded UC's § 1;
@@ -115,12 +115,12 @@ step. Leave it "—" when no design covers that step yet; never invent one (P6).
 Branches come from the UC's § 3. State each as the business situation that triggers it and how it
 ends. Omit the branch table entirely for a UC with no § 3 — never invent a failure path. -->
 
-### <Capability name> — UC-<NNN>
-* **Trigger:** <the business event that starts this, in plain words>
-* **Before it can start:** <the pre-conditions that matter to the business. "none stated">
-* **Once it succeeds:** <what is true for the business afterwards — records, notifications, money>
-* **If it is abandoned part-way:** <the UC's failure post-condition, in business terms. The most
-  commonly skipped line here, and the one a sponsor most often has an opinion about>
+### `<Capability name>` — `UC-<NNN>`
+* **Trigger:** `<the business event that starts this, in plain words>`
+* **Before it can start:** `<the pre-conditions that matter to the business. "none stated">`
+* **Once it succeeds:** `<what is true for the business afterwards — records, notifications, money>`
+* **If it is abandoned part-way:** `<the UC's failure post-condition, in business terms>`
+  <!-- The most commonly skipped line here, and the one a sponsor most often has an opinion about. -->
 
 | Step | What happens | Actor | Screen |
 |------|--------------|-------|--------|
@@ -161,10 +161,9 @@ spec is not listed here, however obviously needed: that is an entry in § 11.
 Omit the whole section, with one line saying so, when the feature has no UX spec yet. Never
 describe screens from imagination to fill it. -->
 
-* **Design spec:** <UX-<NNN> <Feature> — status, and the version this PRD read>
-* **Platform:** <web / mobile / both, as the design states it. "not stated">
-* **Design intent, as stated to us:** <the DESIGN-PRINCIPLES rows and hub directives the design
-  applied, in the client's own words>
+* **Design spec:** `<UX-<NNN> <Feature>>` — `<status, and the version this PRD read>`
+* **Platform:** `<web / mobile / both, as the design states it. "not stated">`
+* **Design intent, as stated to us:** `<the DESIGN-PRINCIPLES rows and hub directives the design applied, in the client's own words>`
 
 **Screens**
 
@@ -176,9 +175,8 @@ describe screens from imagination to fill it. -->
 | Capability | The path through the screens | Ends on |
 |------------|-----------------------------|---------|
 
-* **Prototype:** <"both prototype prompts are ready in UX-<NNN> § Prototype Prompt" — say where
-  they are, never restate a prompt here>
-* **Known design gaps:** <one line per unchecked question on the UX spec's § 6, in business words>
+* **Prototype:** `<where the prompts are, e.g. "both prototype prompts are ready in UX-<NNN> § Prototype Prompt">` — never restate a prompt here
+* **Known design gaps:** `<one line per unchecked question on the UX spec's § 6, in business words>`
 
 ## 10. Scope & Release Framing
 <!-- What this PRD commits to, and what it explicitly does not. Never invent phasing: if nothing in
@@ -210,20 +208,21 @@ This list is why status stays `draft` — a PRD with open decisions is not appro
 A decision belongs to the artifact that owns it: answering one means going back through
 /bigin-transform-signal (requirements) or /bigin-generate-design (screens), never editing this
 document into agreement with itself. Wording rules: conventions.md § Open Questions wording —
-self-contained, one decision per line, plain business language. -->
+self-contained, one decision per line, plain business language.
 
-- [ ] Q: <the decision, stated so a business reader can answer it without opening another file> (owner: client|team) (ref: UC-<NNN> § 5 | UX-<NNN> § 6 | PRD-<NNN>)
-      A:
+Format:
+- [ ] Q: <the decision, stated so a business reader can answer it without opening another file> (owner: client|team) (ref: UC-<NNN> § 5 / UX-<NNN> § 6 / PRD-<NNN>)
+      A: -->
 
 ## 12. Assumptions, Dependencies & Constraints
 <!-- Only what a source actually stated. An unstated dependency is not a guess to make; an assumed
 one that turns out false is the most expensive kind of PRD error. Leave a subsection as
 "none stated" rather than filling it. -->
 
-* **Assumptions:** <what this PRD takes as true without confirmation, and who assumed it>
-* **Depends on:** <another feature, a third party, a client-side decision or data hand-over>
-* **Constraints:** <a stated deadline, volume, compliance obligation, or channel limit — from a UC's
-  § 6 Special Requirements or the project file>
+* **Assumptions:** `<what this PRD takes as true without confirmation, and who assumed it>`
+* **Depends on:** `<another feature, a third party, a client-side decision or data hand-over>`
+* **Constraints:** `<a stated deadline, volume, compliance obligation, or channel limit>`
+  <!-- From a UC's § 6 Special Requirements or the project file. -->
 
 ## Traceability
 <!-- One row per capability, end to end. This is what makes the PRD auditable: a capability that
@@ -234,4 +233,4 @@ nobody actually asked for. Fill every cell or write "—" (nothing exists yet), 
 |------------|----|-------|-------------|---------|-----------|
 
 ## Changelog
-- 1.0 (YYYY-MM-DD) — created from UC-<NNN>@<version>
+- 1.0 (YYYY-MM-DD) — created from `UC-<NNN>@<version>`

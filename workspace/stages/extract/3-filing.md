@@ -61,7 +61,7 @@ for row in table:                       # ROW BY ROW, on its own content
     NEVER check whether the feature already has a use case
 
     no confident match → NEVER GUESS, and the two failures ask different questions:
-        >1 plausible existing slug  → Feature: "unresolved — candidates: a | b"
+        >1 plausible existing slug  → Feature: "unresolved — candidates: a / b"
                                       ranked by how much of the signal each scope covers
         nothing fits, reads as new  → Feature: "unresolved — none found"
                                       + draft a slug and scope (§ below), for the question

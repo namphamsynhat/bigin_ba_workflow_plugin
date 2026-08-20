@@ -7,9 +7,9 @@ used_by: []             # UX-### <screen> — every screen that uses it
 updated:
 ---
 
-# <Component name>
+# `<Component name>`
 
-**Purpose:** <one line — the job this component does>
+**Purpose:** `<one line — the job this component does>`
 
 **Promoted on second use.** A pattern that appears on one screen stays in that screen's spec
 (`2-system.md` § B3). Once here it is append-only (D1): add variants and states, never rename or
@@ -45,4 +45,4 @@ raise it as a question instead. -->
 adopts it. -->
 
 ## Changelog
-- 1.0 (YYYY-MM-DD) — extracted from <UX-### / screen>, second use
+- 1.0 (YYYY-MM-DD) — extracted from `<UX-### / screen>`, second use

@@ -20,11 +20,12 @@ owner: team
 updated:
 ---
 
-# BR-<NNN> <Title>
+# `BR-<NNN> <Title>`
 
-<the rule itself, stated as a testable constraint — "If <condition>, then <system must/must
-not>..." Not a restatement of the step it constrains; a rule narrows or governs how the workflow
-behaves. A rule about an entity field also names it: "Governs EN-004 Vendor → tax_code.">
+`<the rule itself, stated as a testable constraint: "If CONDITION, then the system must / must not ...">`
+
+Not a restatement of the step it constrains — a rule narrows or governs how the workflow behaves.
+A rule about an entity field also names it: "Governs EN-004 Vendor → tax_code."
 
 ## Discussion
 <!-- Staged, not-yet-applied change proposals, cleared into the rule statement above once the
@@ -36,4 +37,4 @@ _bigin/templates/use-case.md's ## Discussion. -->
 wording, § Open Questions ↔ status consistency). -->
 
 ## Changelog
-- 1.0 (YYYY-MM-DD) — created from <INT-###>
+- 1.0 (YYYY-MM-DD) — created from `<INT-###>`

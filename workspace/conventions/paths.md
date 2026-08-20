@@ -66,6 +66,12 @@ feature**: a `UC-###` is written only by its `primary_feature`'s subagent
 **Instantiate from the template, never compose an artifact from memory.** The template *is* the schema
 the next stage parses; a hand-written variant is how a field a later stage reads goes missing.
 
+**Copy the structure, not the guidance.** Take the frontmatter keys, headings, and table headers;
+drop the template's `<!-- … -->` guidance blocks — they are the spec for the writer, not artifact
+content, and the rules they restate live in `{stages_dir}` and `{conventions_reference}`. Backtick
+any placeholder you leave unfilled: a bare `<like this>` is parsed as an HTML tag and renders as
+nothing in Obsidian (`{conventions_reference}` § Obsidian-safe markdown).
+
 ## When a path doesn't exist
 
 - **A register or template file is missing** — create it from its template (registers) or stop and say

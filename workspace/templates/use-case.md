@@ -31,29 +31,30 @@ owner: team
 updated:
 ---
 
-# UC-<NNN> <Goal as a short active verb phrase>
+# `UC-<NNN> <Goal as a short active verb phrase>`
 
 > [!summary]- Summary
-> <2-3 sentences, drafted once /enrich-feature first enriches this UC — leave blank until then.
-> conventions.md § Summary block.>
+> `<2-3 sentences — leave blank until /enrich-feature has enriched this UC>`
+> <!-- conventions.md § Summary block. -->
 
 ## 1. Context & Metadata
 <!-- BABOK stakeholder-requirements framing. Fill every line or write "not stated" — a blank line
 reads as "nobody looked", and "not stated" is a real, useful fact about the source. Never invent a
 business need, a trigger, or a pre-condition the signals didn't state. -->
 
-* **Primary Actor:** <the role that holds the goal and initiates the flow — a role, never a named person>
-* **Secondary Actor(s):** <other roles or systems the flow relies on: a reviewer, a payment gateway, none>
-* **Business Need / Goal:** <the value delivered or problem solved, in the client's own words>
-* **Trigger:** <the specific event that starts this flow — may be a time event>
+* **Primary Actor:** `<the role that holds the goal and initiates the flow — a role, never a named person>`
+* **Secondary Actor(s):** `<other roles or systems the flow relies on: a reviewer, a payment gateway, none>`
+* **Business Need / Goal:** `<the value delivered or problem solved, in the client's own words>`
+* **Trigger:** `<the specific event that starts this flow — may be a time event>`
 * **Pre-conditions:**
-  * <what must already be true before the flow begins>
+  * `<what must already be true before the flow begins>`
 * **Post-conditions (success):**
-  * <the state of the world once the goal is delivered — records written, notifications sent, audit trail>
+  * `<the state of the world once the goal is delivered — records written, notifications sent, audit trail>`
 * **Post-conditions (failure):**
-  * <what must still hold if the flow is abandoned mid-way — Cockburn's minimal guarantee. The most
-    commonly skipped field on this template, and the one whose absence produces the worst defects:
-    it is what tells a developer whether a half-finished flow leaves a partial record behind.>
+  * `<what must still hold if the flow is abandoned mid-way — Cockburn's minimal guarantee>`
+    <!-- The most commonly skipped field on this template, and the one whose absence produces the
+    worst defects: it is what tells a developer whether a half-finished flow leaves a partial
+    record behind. -->
 
 ## 2. Main Success Scenario
 <!-- The happy path: trigger to goal delivery, plus any cleanup. Nothing goes wrong here — every
@@ -103,17 +104,17 @@ new/changed/removed flow here directly, same run, sweeping every outstanding ## 
 this section the same way it does for § 2. Unlike § 2, a § 3-only change does not by itself flag this
 UC for review — only a § 2 change does (4-sync.md Part 2). -->
 
-### A1: <name>
-* **Branch point:** S<n>
-* **Condition:** <the detected fact that makes this flow apply>
-1. <step>
-2. **Rejoins** S<n> | **Ends:** <the alternative outcome>
+### A1: `<name>`
+* **Branch point:** `S<n>`
+* **Condition:** `<the detected fact that makes this flow apply>`
+1. `<step>`
+2. **Rejoins** `S<n>` — **Ends:** `<the alternative outcome>`
 
-### E1: <name>
-* **Branch point:** S<n>
-* **Failure condition:** <the detected fact>
-1. <step>
-2. **Ends:** <what the actor is left with, and what § 1's failure post-condition guarantees>
+### E1: `<name>`
+* **Branch point:** `S<n>`
+* **Failure condition:** `<the detected fact>`
+1. `<step>`
+2. **Ends:** `<what the actor is left with, and what § 1's failure post-condition guarantees>`
 
 ## 4. Business Rules & Compliance Constraints
 <!-- A MIRROR of 01-Requirements/_brs/, never the source (BABOK § 10.47: rules are captured
@@ -183,4 +184,4 @@ verbatim and cannot re-derive an instruction. Never fold an entry in without the
 <!-- /enrich-feature's findings — /bigin-transform-signal never writes here. -->
 
 ## Changelog
-- 1.0 (YYYY-MM-DD) — created from <INT-###>
+- 1.0 (YYYY-MM-DD) — created from `<INT-###>`
