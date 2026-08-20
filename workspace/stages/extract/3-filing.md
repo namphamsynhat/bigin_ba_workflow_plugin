@@ -188,8 +188,20 @@ pain-point → FIRST match against existing {pain_points_file} rows
              → a pain-point with no id is unfollowable
              → skipping the match check fills the register with the same complaint restated weekly
 
-entity/field → match {entities_file} first, else a `proposed` row there (never an EN-### document)
-               a field table extracted as N rows produces N entity rows, never one summarizing row
+entity/field → resolve the OWNING BUSINESS OBJECT first — the thing the business tracks
+               (Application, Vendor, Wallet), never the attribute
+               → a field is never its own entity: "Application.Certification Status" is a FIELD
+                 of Application, and a row named `<Entity>.<Field>` is the bug this line exists
+                 to prevent. One row per real-world object, however many fields it grows
+               match {entities_file} on that object first, else a `proposed` row there for the
+               OBJECT (never an EN-### document)
+               → either way the field itself lands in that row's `Fields (so far)` cell, with its
+                 stated values spelled out when the source gave them
+                 (`Certification Status: Pending School Review / Certified / Rejected`)
+               a field table extracted as N signal rows adds N FIELDS to the object(s) they belong
+               to — N field entries, not N entity rows, and not one row summarizing several
+               genuinely distinct objects either
+               owning object genuinely unclear → a question, never a row named after the field
 
 durable cross-cutting design/brand/tone/accessibility/content preference
              → a {design_principles_file} row, IN ADDITION to normal Signal Log filing

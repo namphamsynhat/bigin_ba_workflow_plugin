@@ -12,7 +12,25 @@ within a feature → UCs designed sequentially, into ONE UX spec
 **Skip the worker entirely for one or two features** — dispatch costs more than the work, and the
 orchestrator can follow `3-screens.md` inline.
 
-## Before dispatching — the orchestrator does these four things
+## Before dispatching — assemble the brief, per feature that needs it
+
+A feature with **3 or more in-scope UCs, or whose in-scope UCs together cite 4 or more distinct
+`EN-###` entities** gets its own `ux-brief-assembler` dispatch first (same wave as, or immediately
+before, its screens worker) — see `agents/ux-brief-assembler.md`. It combines that feature's UCs,
+cited entities, `BR-###` rule mirrors, open hub directives, and active design principles into one
+Design Brief: known gaps verbatim, a mechanical draft screen-boundary proposal (Part 2's rule
+applied, never finalized), an entity field table per candidate screen, cross-UC merge candidates,
+existing-pattern matches from sibling UX specs, and the raw entity-field material Part 4b's trigger
+test will need later. Below that threshold, the screens worker reads `3-screens.md` Part 1 directly
+— a second dispatch to save a few inline reads costs more than it returns.
+
+Fold the brief into the screens worker's prompt as its `READ FIRST` starting point (§ The prompt,
+below) — the worker still owns confirming or adjusting every proposed screen boundary, still reads
+the source UCs/entities directly whenever it needs to verify a specific claim, and still runs Part
+4b's actual trigger verdict itself; the brief only removes the need to re-derive the mechanical parts
+of Part 1/2 from scratch.
+
+## Before dispatching — the orchestrator does these five things
 
 ```text
 1  MINT THE NUMBER      Grep {ux_dir} for the highest UX-### and assign the next one per feature
@@ -27,6 +45,10 @@ orchestrator can follow `3-screens.md` inline.
 5  NAME THE BOOSTERS     from engine-detection.md § Design quality boosters and § Per-step pattern
                         references: which apply this run, and whether any craft-quality-pass skill
                         (§ Stage 3.5) is installed. "none" is a valid answer for either.
+                        A relationship-UX skill is installed → say so, and say that the WORKER runs
+                        Part 4b's trigger test per feature. Never pre-decide `modelled` here: the
+                        test needs UC step verbs and an entity field list, which Stage 1 never read
+                        (agentic-ux.md § Deciding it applies).
 ```
 
 ## The prompt
@@ -52,11 +74,24 @@ QUALITY BOOSTERS:    <agentic-UX or design-library skill in scope, or "none"> ·
                      available this session: <list from designer-skills, or "none"> · craft-quality
                      pass: <run it after drafting, per engine-detection.md § Stage 3.5, or
                      "skip — not installed">.
+RELATIONSHIP MODEL:  run Part 4b's trigger test on this feature yourself and act on the result —
+                     3 of 3 → write ## 7 and set relationship_model: modelled; any miss → DELETE
+                     ## 7 from the spec, leave relationship_model: none, and name the failed test.
+                     <"a relationship-UX skill IS available — use it for VOCABULARY only: it is an
+                     external pattern (ground 2b), so it can shape how a grounded element is built
+                     and can NEVER ground that a screen, field, or state exists. Its memory/goal/
+                     planning dashboards are whole screens; none of them is a ground." | "no
+                     relationship-UX skill is installed — Part 4b alone is complete.">
+
+DESIGN BRIEF:        <a ux-brief-assembler report is attached below — start there, and treat its
+                     candidate_screens/merges as a DRAFT to confirm or adjust, never as settled |
+                     "none assembled — read Part 1 yourself, this feature was under the dispatch
+                     threshold">
 
 READ FIRST:
 - _bigin/conventions/design-conventions.md — these sections ONLY: § Paths, § Write map,
-  § The six design hard rules, § The UX spec, § Screen spec, § Grounding, § Open questions,
-  § The navigation map
+  § The seven design hard rules, § The UX spec, § Screen spec, § Grounding, § Open questions,
+  § The relationship model, § The navigation map
 - _bigin/stages/design/3-screens.md — your stage guide, in full
 - 01-Requirements/_features/<slug>.md — the hub: ## Design Directives (Status: open), actors
 - each UC above, in full: § 1 actors/trigger/post-conditions, § 2 steps, § 3 branches,
@@ -70,6 +105,10 @@ READ FIRST:
 - every other 04-UIUX/UX-*.md — how a sibling feature already solved a list, a queue, an
   approval, a form. Reusing an existing pattern beats inventing a parallel one.
 
+A DESIGN BRIEF attached above is a pre-digested starting point, not a substitute for the source —
+re-read the actual UC/BR/EN whenever you need to confirm a specific detail it summarized, and never
+treat its candidate screens or merges as final until you've applied Part 2's rule yourself.
+
 THEN, one UC at a time, in the order listed:
 1. Map its flow to screens (3-screens.md Part 2): consecutive steps by the same actor in the same
    place = ONE screen; a validation = a state; an exception flow = a named error state; a
@@ -81,13 +120,19 @@ THEN, one UC at a time, in the order listed:
    each input renders, and what grounds each element.
 4. Add the states (Part 4) — each traced to a BR, an exception flow, an entity constraint, or a
    post-condition.
-5. If QUALITY BOOSTERS names a craft-quality-pass skill, run it now, on your own just-drafted
+5. Run Part 4b's trigger test (once per feature, after every UC is mapped). On a pass, write ## 7:
+   Relationship Context, Memory Architecture (EVERY row names a real EN-### field — no field means
+   a requirement gap, not a row), Trust Map (fill a stage 3 ONLY where a BR-### grants it — D7),
+   and at most three Proposed Measures. Expect more requirement gaps than rows; each goes on § 6
+   marked as a requirement gap. On a miss, delete ## 7 entirely.
+6. If QUALITY BOOSTERS names a craft-quality-pass skill, run it now, on your own just-drafted
    screens only (engine-detection.md § Stage 3.5): apply a pure craft fix directly; a finding that
    would change what a screen shows or how a control behaves goes back through the grounding test —
    grounded → apply it and cite the ground, ungrounded → an Open Question, same as any other. Not
    named → skip, silently.
-6. NEVER invent a screen, a field, a state, a nav entry, a threshold, or a label the sources did not
-   state. Missing detail is a question on § 6, not a plausible guess.
+7. NEVER invent a screen, a field, a state, a nav entry, a threshold, or a label the sources did not
+   state — and never a memory, an autonomous action, or a retention rule (D7). Missing detail is a
+   question on § 6, not a plausible guess.
 
 DO NOT WRITE — vault-wide or owned elsewhere, and other features run concurrently. Report
 candidates instead; the orchestrator applies them:
@@ -109,6 +154,9 @@ REPORT, as plain lines:
                         "top-level"> | points to: <screen> | role(s): <actor(s)>
                         | grounded by: <UC-### S<n> | BR-### | pattern <name>>
   directives_reflected: hub row #<n> → <screen> (only rows a screen really implements)
+  relationship:         modelled | none — <the failed test, when none: judges|persists|repeats>
+  relationship_rows:    context <N> | memory <N> | trust <N> | measures <N> | gaps <N>
+                        (omit entirely when relationship: none)
   boosters_used:        <pattern skill or craft-quality pass> | on: <screen> | why (one line each,
                         or "none")
   questions:            <the question> | owner: client|team | kind: design|requirement-gap
@@ -137,6 +185,12 @@ per feature in the wave:
                             or any file under 01-Requirements/ (the design system and nav map move
                             in Stage 4, in the orchestrator, not here)
 8  absorbed: still empty  → Stage 5 stamps it, after check 1 has passed
+9  relationship claim    → reported `modelled`: ## 7 exists AND carries rows, every Memory row names
+                            a field that really exists in that EN-###, and no stage-3 cell is filled
+                            without a real BR-### (D7). Reported `none`: ## 7 is GONE from the file,
+                            not left empty. Either mismatch is blocking — Stage 5's checks 10-12
+                            re-run this, and a claim that survives to there is one the orchestrator
+                            has to unpick from the file rather than the report.
 
 mismatch → BLOCKING. Dispatch one scoped repair worker, re-check that feature, then move on.
 ```

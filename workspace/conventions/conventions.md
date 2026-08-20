@@ -298,9 +298,12 @@ per feature, written by `/bigin-generate-prd`, which only ever writes `draft` �
 the same way a human approves a UC (hard rule 4). Epic/Story are still **Planned** as their own files
 (see § Reconciliation notes).
 
-**EN** (entities): its own three-state vocab, `proposed → draft → approved` — see § Entity Data
-Model. Simpler because an entity doc is a field list assembled from already-approved-adjacent
-signals, not a thing that itself needs an `enriched`/`consolidated` pipeline pass.
+**EN** (entities): its own vocab, `proposed → draft → approved`, plus one side-state — see § Entity
+Data Model. Simpler because an entity doc is a field list assembled from already-approved-adjacent
+signals, not a thing that itself needs an `enriched`/`consolidated` pipeline pass. The side-state is
+`merged`: an attribute-shaped doc whose fields have been folded into the business object that owns
+them, carrying `merged_into: EN-###` and a one-line pointer body. Never deletion — the id stays
+resolvable for anything that already cites it (§ Entity Data Model, A fragment already on disk).
 
 **INT** (intake notes): `raw | needs-clarification | in-review | consumed` — see § Intake capture
 & the question loop and `/bigin-intake`'s own queue logic. Unrelated to the UC/BR list above;
@@ -986,6 +989,30 @@ above, and was still unreadable to the human who had to answer it):
 > which limit the wallet enforces when a student spends on a subscription. (owner: client)
 > (ref: BR-039, BR-138, BR-139, INT-014)*
 
+### Answering a question (the human side of the loop)
+
+A question is written to be answered **cold, in the file** — a BA opens the UC, BR, or INT note on
+their own time, types on the `A:` lines, and comes back later. Everything downstream reads that line
+and nothing else, so:
+
+- **The answer goes on the question's own `A:` line, verbatim.** An answer given in chat, in a comment,
+  or in prose above the question is invisible to every skill: the fold-in's three-way read
+  (`transform/1-foldin.md`) looks at the `A:` line to tell "unanswered" from "answered, not applied".
+  Whoever relays such an answer moves it onto the `A:` line first; that is the one edit allowed.
+- **Tick the box only if the answer genuinely settles the question.** "Ask the client", "TBD after the
+  demo", a reply restating the disagreement, or one that answers a *different* question, all leave the
+  box unchecked — the box is what the status invariant counts (§ Open Questions ↔ status consistency),
+  so ticking an unsettled one is what makes a parked artifact read as approvable.
+- **An answer still needing a client round-trip stays unchecked but is still worth writing.** A partial
+  answer set is normal: the fold-in applies what settled and leaves the rest.
+- **Don't hand-edit the numbered sections to match your own answer.** The fold-in applies the answer
+  into the content and moves the question into the decision log; editing both is how the same change
+  lands twice, or how a staged change silently overwrites the reviewer's wording (`1-foldin.md`
+  § The human may have edited the section first).
+- **Then say "process UC-###".** That pass reads the answers instead of re-asking them, folds in once,
+  and returns either the follow-up questions it produced or the flow and an approval ask
+  (`agents/bigin-ba.md` § Answers already written: the process-the-UC pass).
+
 ## Signal → artifact mapping
 
 Every `[requirement]`/`[feedback]` signal `/bigin-transform-signal` folds in lands in exactly one
@@ -1063,11 +1090,57 @@ fields it governs in its own body. An earlier draft of this document described a
 `BR-###` sequence with `EN-###`; that was never built — `BR-###` is its own independent sequence
 (§ ID scheme's Next-ID rule), and there is no per-entity BR subsection.
 
+### The doc is a data dictionary, not a diff of the last approval
+
+What a developer, a PRD reader, or a designer opens an `EN-###` for is **the whole shape of one
+business object** — every field it carries, each field's type, whether it's required, and what values
+it may take. Three rules make it that, and each one exists because the obvious incremental behaviour
+produces a document that is worse than useless: an authoritative-looking file that is quietly a
+fragment.
+
+- **One doc per real-world business object — never per field.** `Application`, `Vendor`, `Wallet`.
+  An attribute is a **row inside** its owner's `## Fields`, never its own `EN-###`: a doc named
+  `Application.Private-School Certification Status`, whose `## Fields` holds exactly the one row it
+  was named after, is this rule broken — the field belongs in `EN-001 Application`. Resolve a
+  `<Entity>.<Field>` name (in an `ENTITIES.md` row, a UC's `entities:`, or an existing doc) to the
+  owning object before writing anything, and cluster aggressively when in doubt: a field wrongly
+  filed under a neighbouring object is one row to move, while a fragment doc splits an entity's
+  definition across files nobody knows to open together.
+- **Every known field, every time — not just the ones the UC being synced happened to touch.**
+  `/sync-entities` runs per approved UC, but the doc it writes is not scoped to that UC: before
+  writing, gather the union of every field any source has stated for this object — the
+  `ENTITIES.md` row's `Fields (so far)`, this doc's existing rows, and every UC/BR listed in its
+  `features:` that references it — and write the full set, each row keeping its own `Source`.
+  A doc rebuilt from one UC's view is how an entity ends up documented as whatever was approved
+  last Tuesday.
+- **Spell out the values.** A `Type` cell reading a bare `enum`, `status`, or `code` documents
+  nothing. Enumerate the states inline, separated by ` / ` because a `|` would break the table
+  (`enum: Pending School Review / Certified / Rejected`), and give a format where one was stated
+  (`date: YYYY-MM-DD`, `money: USD`). Values genuinely never stated → write
+  `enum: values not stated` rather than a plausible list, and raise the gap as a `- [ ] Q:` on a UC
+  that references the field, where the status invariant will actually track it.
+
+**Never invent a field, a type, a value, or a required-ness the sources didn't state** (hard rule 1).
+"Complete" here means complete over what the vault actually knows, with the gaps visible as gaps —
+not a developer's guess at what an Application record probably needs.
+
+### A fragment already on disk: merge, never delete
+
+Attribute-shaped docs exist in vaults created before this contract. `/sync-entities` repairs one when
+it next touches the owning object: every row from the fragment moves into the owner's `## Fields` with
+its `Source` cite intact, and the fragment is stamped `status: merged` + `merged_into: EN-###`, its
+body replaced by a one-line pointer. **The id is never reused and the file is never deleted** (hard
+rule 1) — a `PRD-###`, `UX-###`, or UC frontmatter that still cites it must keep resolving. Every
+`ENTITIES.md` row, `entities:` list, and hub `## Entities` line pointing at the fragment is repointed
+at the owner in the same pass.
+
 **Registry:** `01-Requirements/ENTITIES.md` (`type: entities-register`, singleton,
 `_bigin/templates/entities-register.md`) —
 `EN-### | Entity | Status | Fields (so far) | Features | Notes`, created by `/extract-signal` the
 moment a signal describes a data field or entity attribute, with a `proposed` row per entity.
-Cluster aggressively — one row per real-world business object, not per field.
+Cluster aggressively — **one row per real-world business object, not per field**: a signal about a
+new field on a tracked object adds to that object's `Fields (so far)` cell, and never earns a row of
+its own. A row named `<Entity>.<Field>` is always the bug, not the exception.
 `/sync-entities` promotes a row to its own `EN-###` document; the register keeps the row afterward as
 the vault-wide index (mirroring how `FEATURES.md` stays the index once a feature hub exists).
 

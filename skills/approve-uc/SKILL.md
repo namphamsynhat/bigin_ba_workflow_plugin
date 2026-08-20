@@ -98,6 +98,14 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
        are still open and stop; don't ask to approve a UC with an open question
        (§ Open Questions ↔ status consistency's invariant — this holds regardless of what `status`
        currently reads).
+       * **Separate "unanswered" from "answered but not folded in".** A line whose `A:` already
+         carries an answer is not waiting on the human — it is waiting on a fold-in, because a
+         reviewing BA is expected to type answers straight into the file (§ Answering a question) and
+         the content only changes when `/bigin-transform-signal` Stage 1 harvests them. Still stop,
+         but say which it is: name the answered-not-applied lines and point at "process UC-###" (the
+         `bigin-ba` agent's process-the-UC pass, or `/bigin-run`) rather than reporting them back as
+         questions the human still owes an answer to. Never fold the answer in from here, and never
+         tick the box to clear the count.
      * Find this UC's last human touchpoint: scan `## Changelog` bottom-to-top for the most recent line
        that documents an approval (or, with none yet, treat the `1.0` creation line as the start).
        Collect every line strictly after it — nothing a human has confirmed since — and pull out the
@@ -146,6 +154,7 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
      not after each one), and `/bigin-generate-design` can run off it now, since design waits on
      neither approval nor `/sync-entities`. Epics/stories are still cut by hand
      (§ Reconciliation notes). If this UC's
-     `entities: []` isn't empty, mention `/sync-entities` is still pending for it — run it now to catch
-     up `ENTITIES.md` and the feature hub, or leave it queued and run it later; nothing here depends on
-     it.
+     `entities: []` isn't empty, mention `/sync-entities` is still pending for it — that is what writes
+     each referenced entity up as its **data dictionary** (every field the vault knows for that
+     business object, enum values spelled out, § Entity Data Model) and catches up `ENTITIES.md` and
+     the feature hub. Run it now, or leave it queued and run it later; nothing here depends on it.

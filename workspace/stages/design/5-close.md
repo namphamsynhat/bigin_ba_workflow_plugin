@@ -3,7 +3,7 @@
 ```text
 runs: orchestrator, LAST
 in:   every UX spec, design-system file, nav map file, and hub this run touched
-out:  absorbed: stamped · statuses set from a live count · hubs refreshed · nine checks · the report
+out:  absorbed: stamped · statuses set from a live count · hubs refreshed · twelve checks · the report
 never: a status decided in Stages 1-4 · an absorbed: entry for a UC with no screen
 ```
 
@@ -18,6 +18,9 @@ per UX spec:
     design_system: = {tokens_file}'s version, as it stands now
     nav_map:       = {nav_map_file}'s version, as it stands now
     engine:        = the engine Stage 1 detected (wds | figma | <plugin> | built-in)
+    relationship_model: = modelled ONLY IF ## 7 exists AND carries rows. Read the section on disk;
+                          a worker that reported `modelled` and wrote an empty ## 7 gets `none`
+                          and its ## 7 deleted (checks 10-12)
     sources:       = every UC/BR/EN id, DESIGN-PRINCIPLES row #, and hub directive # used
     features:      = the owning slug first, then every other slug these screens touch
 ```
@@ -70,7 +73,7 @@ per UC designed this run:
 
 Nothing else on the UC, ever (D4). Not a step, not a rule, not a question, not a version bump.
 
-## Part 5 — Nine checks, every run
+## Part 5 — Twelve checks, every run
 
 Each is a real failure that otherwise reports as success. **A mismatch is blocking:** repair,
 re-check, then report.
@@ -86,6 +89,9 @@ re-check, then report.
 | 7 | each UX spec's `status` matches its live unchecked-question count | the invariant Part 2 exists to hold |
 | 8 | both prompt blocks exist and contain no `UC-`/`BR-`/`EN-`/`UX-`/`INT-`/`PRD-` id | D6 — an id in a prompt renders as a heading in the prototype |
 | 9 | `{nav_map_file}` lost nothing (no entry removed/renamed); every entry's `Points to` (when not "—") names a screen that really exists in an actual UX spec; every entry whose `id` has a dot has a parent `id` that also exists in the table | D1, and either an orphaned menu entry (dead link) or an orphaned branch (a child with no parent row) reaches a client looking like real IA |
+| 10 | `relationship_model:` matches `## 7` **on disk**: `modelled` ⟺ `## 7` exists with ≥1 row in any of its four tables; `none` ⟺ `## 7` is absent or was deleted | an empty `## 7` reads as "the relationship was considered and there is none" when nobody looked — and a `modelled` flag over no rows makes the next run skip the work |
+| 11 | every **Memory Architecture** row names an `EN-###` field that really exists in that entity's field list, and every filled **stage 3 — autonomous** cell cites a `BR-###` that really exists | D7. A memory over no stored field is a relationship the system cannot have; an ungranted autonomous cell reaches a prototype as the agent acting alone, with nobody having decided it may |
+| 12 | every gap `## 7` produced (an unstated autonomy ceiling, retention rule, memory owner, wrong-answer path, or learning disclosure) is an unchecked `- [ ] Q:` in `## 6` marked as a requirement gap | the gaps are the section's main output. Found and not written down, they are worse than never looked for — the run reports a relationship model that quietly assumed all five |
 
 Also confirm **every feature Stage 1 put on the work-list was reached**: designed, or skipped with a
 stated reason. A feature the run never got to prints as **pending**, never disappears — otherwise the
@@ -102,7 +108,10 @@ Stage 3:   <slug> UX-### created|updated — <N> screens (<N> new), <N> states
                   serving UC-### S<n>… (one line per feature)
 Stage 2B:  <N> token(s) added, <N> component(s) added — total <N> tokens / <N> components
            <N> nav entr(y/ies) added — total <N> entries; 0 removed, 0 renamed (tokens or nav)
-Stage 4:   <slug> UX-### — Claude design ✓  Figma Make ✓
+Stage 4:   <slug> UX-### — Claude design ✓  Figma Make ✓ (+ relationship block, when modelled)
+relationship: <slug> UX-### modelled — context <N> / memory <N> / trust <N> / measures <N>,
+              <N> requirement gap(s); or "<slug>: none — failed <judges|persists|repeats>"
+              (one line per feature in scope; "none" everywhere is the normal result)
 directives: <slug> #<n> → reflected (one line each); <N> still open
 skipped:   <slug>/UC-### — <no main flow | already current | owned by <slug> | removed>
 pending:   <slug> — on the work-list, not reached this run
@@ -126,3 +135,10 @@ next:      human review of UX-### → paste a Prototype Prompt into Claude desig
 - **Dropping a feature out of the report because the run ran out of room.** Pending is a result.
 - **Leaving a nav entry pointing at a screen check 9 never confirmed.** It reaches a client as a
   menu item with nothing real behind it.
+- **Stamping `relationship_model: modelled` from the worker's report.** Same failure as stamping
+  `absorbed:` from a report: the flag says the relationship was modelled, no future run re-opens it,
+  and `## 7` is empty. Read the section, count the rows.
+- **Passing check 11 by eye.** "Grounded by: the customer entity" is not a field. Open the `EN-###`
+  and find the field name, or the row is a requirement gap.
+- **Letting `## 7`'s gaps stay in `## 7`.** A gap named only in the relationship model is invisible
+  to the human review, to the hub, and to `/bigin-transform-signal`. It has to be a `## 6` question.

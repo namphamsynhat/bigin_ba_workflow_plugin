@@ -18,9 +18,9 @@ Read only the sections your stage needs.
 |---|---|
 | `1-scope` | Paths · Write map · Design status · Staleness |
 | `2-system` | The design system · Token architecture · The navigation map |
-| `3-screens` | The UX spec · Screen spec · Grounding · Open questions · The navigation map |
-| `4-prompt` | Prototype prompt |
-| `5-close` | Design status · Write map · Staleness · The navigation map |
+| `3-screens` | The UX spec · Screen spec · Grounding · The relationship model · Open questions · The navigation map |
+| `4-prompt` | Prototype prompt · The relationship model |
+| `5-close` | Design status · Write map · Staleness · The navigation map · The relationship model |
 
 ## Paths
 
@@ -81,7 +81,7 @@ NEVER   a UC's ## 1-## 6 · a BR's rule statement · an EN field list
 `## Discussion` citing the UX spec as supporting visual evidence. Nothing else, ever, and nothing at
 all on an `approved` UC.
 
-## The six design hard rules
+## The seven design hard rules
 
 ```text
 D1  The design system is APPEND-ONLY. Never delete or rename a token, component, or nav entry.
@@ -90,6 +90,9 @@ D3  Every screen, element, and state is GROUNDED (see § Grounding). Ungrounded 
 D4  Requirement content is READ-ONLY. Design never edits a UC, a BR, or an entity.
 D5  Never write status: accepted. A human accepts a design; an agent never does.
 D6  A prototype prompt STANDS ALONE. No UC-/BR-/EN-/PP-/UX-/INT- id inside the prompt body.
+D7  A relationship model never grants MEMORY, AUTONOMY, or RETENTION the requirements did not
+    state. What an agent keeps, decides alone, or forgets is behaviour — a requirement gap, never
+    a design call (see § The relationship model).
 ```
 
 ## Design status vocabulary
@@ -139,8 +142,13 @@ in the UC's `features:` gets the same `## UX Spec` pointer on its hub. Same writ
 UC itself follows.
 
 Sections: `## 1 Design Brief` · `## 2 Screen Inventory` · `## 3 Screen Specs` · `## 4 Flows` ·
-`## 5 Design System Usage` · `## 6 Open Questions` · `## Prototype Prompt — Claude design` ·
+`## 5 Design System Usage` · `## 6 Open Questions` · `## 7 Relationship Model` *(conditional —
+§ The relationship model)* · `## Prototype Prompt — Claude design` ·
 `## Prototype Prompt — Figma Make` · `## Changelog`.
+
+`## 7` is **appended after `## 6`, never inserted before it.** Renumbering `## 6 Open Questions`
+would silently invalidate every hub mirror, stage guide, and verification check that cites it by
+number — the section list is append-only for the same reason the design system is (D1).
 
 ## The design system
 
@@ -232,15 +240,90 @@ exactly one of:
 
 ```text
 1  a REQUIREMENT   a UC step / branch, a BR, or an EN field         → cite the id
-2  a PATTERN       an existing screen or component in this vault    → name it
+2a a VAULT PATTERN an existing screen or component in this vault    → name it
+2b an EXTERNAL     a pattern from an installed design/UX skill      → name the skill and the pattern
+   PATTERN
 3  a PREFERENCE    a DESIGN-PRINCIPLES row or a hub directive       → cite the row #
 ```
+
+**2a and 2b are not interchangeable.** A vault pattern is evidence that this product already works
+that way. An external pattern is only evidence that the pattern exists somewhere:
+
+```text
+2a can ground THAT a screen, field, or state exists — a sibling feature already ships it here
+2b can only shape HOW something already grounded by 1, 2a, or 3 gets built
+2b ALONE                → not a ground. It is an Open Question, or a requirement gap.
+```
+
+An external catalog that grounds existence is how a whole screen nobody asked for arrives carrying a
+citation. The citation makes it *look* grounded, which is strictly worse than an obvious guess.
 
 None of the three → **it is not yours to settle**. Write an Open Question (D3). An invented screen
 is scope nobody asked for, and it looks exactly like a designed one.
 
 An entity that is still `proposed`/`draft` grounds a decision as a **known gap**, not settled fact —
 say so next to the field list rather than treating it as final.
+
+## The relationship model
+
+`## 7 Relationship Model` on a UX spec. **Conditional** — it exists only on a feature that passes the
+relationship trigger (`3-screens.md` Part 4b). Most features never get one, and an *empty* one is
+worse than none: it reads as "the relationship was considered and there isn't one" when nobody looked.
+
+It exists because one thing an agent feature's design must say has nowhere else to live:
+
+```text
+a STATE        within ONE session    empty · loading · error · success        → ## 3, per screen
+a TRUST STAGE  across MONTHS         what the agent shows, suggests, or does  → ## 7
+                                     alone at relationship month 1 vs 12
+```
+
+`## 3`'s `States` table is within-session by construction. A screen that discloses its full reasoning
+to a new user and acts quietly for a year-old one is not in two states — it is the same state at two
+points in a relationship, and squeezing that into `States` produces a spec that reads as a bug.
+
+### The three parts, and what grounds each
+
+| Part | Rows | Grounded by |
+|---|---|---|
+| **Relationship Context** | expected duration · interaction frequency · the autonomy **ceiling** · memory sensitivity | a UC's trigger/post-conditions, a BR, an active DESIGN-PRINCIPLES row, or a hub directive |
+| **Memory Architecture** | what the agent carries between sessions · where that lives · who can see, correct, or clear it | **an `EN-###` field, always.** A system cannot remember what nothing stores |
+| **Trust Map** | per screen or per agent decision: what stage 1 / 2 / 3 shows vs does, and the correction path | a `BR-###` about who may do this, a confidence or threshold rule, or a UC exception flow |
+| **Proposed Measures** | at most **three**, each naming what would be observed and which row above it tests | owner: **team**. Never a requirement, never a screen |
+
+### The rules that make this safe
+
+```text
+a Memory Architecture row with no EN-### field behind it   → a REQUIREMENT GAP, not a design row.
+                                                             The field is the design's only evidence
+                                                             the memory exists at all.
+an autonomy stage no BR-### granted                        → a REQUIREMENT GAP (D7). Design may
+                                                             describe how autonomy is DISCLOSED;
+                                                             it never decides that it exists.
+a retention or forgetting rule nothing stated              → a REQUIREMENT GAP. "The user can clear
+                                                             their history" is a behaviour promise.
+a Proposed Measure                                         → stays a measure. It never licenses a
+                                                             screen, a field, or an event to track —
+                                                             instrumentation is behaviour too.
+a memory, goal, or trust SCREEN from a pattern catalog     → 2b alone (§ Grounding). Not a ground.
+```
+
+The gaps are the point. A UC almost never states an autonomy ceiling, a retention rule, or who owns
+the memory — so a well-run relationship model on a real agent feature produces **more requirement
+gaps than design rows**, and that is the section working, not failing. `/bigin-transform-signal` owns
+every one of them; this stage writes none of them onto a UC (D4).
+
+### What this section is not
+
+```text
+NOT a persona            the UCs already carry actors. Never invent a user to have a relationship with.
+NOT an architecture      no schema, no storage design, no retention implementation. A field name and
+                         an owner, nothing past that.
+NOT a metrics plan       three proposed measures, team-owned. Dashboards, instrumentation, and
+                         targets are product work happening somewhere else.
+NOT a reason to add      it describes the relationship the requirements already imply. It never
+    screens             discovers that the product needs a memory dashboard.
+```
 
 ## Open questions
 

@@ -20,6 +20,11 @@ absorbed: []            # UC-<NNN>@<version> — THE staleness record. Only UCs 
 design_system:          # the {tokens_file} version these screens were specced against
 nav_map:                # the {nav_map_file} version these screens were specced against
 engine:                 # which design engine produced this: wds | figma | <plugin> | built-in
+relationship_model: none  # none | modelled — set by Stage 3 Part 4b's trigger test, verified in
+                        # Stage 5 (check 10). `modelled` REQUIRES a filled ## 7; `none` requires
+                        # ## 7 to be absent or empty. An empty ## 7 with `modelled` reads as
+                        # "considered, nothing found" when nobody looked
+                        # (design-conventions.md § The relationship model).
 updated:
 ---
 
@@ -98,6 +103,51 @@ Mark a question whose answer would change what the SYSTEM DOES as a requirement 
 Format:
 - [ ] Q: <self-contained question, plain business language> (owner: client|team) (ref: UX-<NNN>)
       A: -->
+
+## 7. Relationship Model
+<!-- CONDITIONAL. Delete this whole section unless the feature passed the relationship trigger
+(_bigin/stages/design/3-screens.md Part 4b) — an empty ## 7 claims the relationship was considered.
+Read design-conventions.md § The relationship model first.
+
+This section describes the relationship the requirements ALREADY imply. It never discovers that the
+product needs memory, autonomy, or a dashboard (D7). Expect more requirement gaps here than rows:
+a UC almost never states an autonomy ceiling, a retention rule, or who owns the memory. Every gap
+goes in § 6 marked as a requirement gap and belongs to /bigin-transform-signal — never to a UC edit.
+-->
+
+### Relationship Context
+<!-- One line each, each grounded or dropped. "Not stated" is a legitimate value and becomes a
+requirement gap in § 6 — never a plausible number. -->
+
+| Aspect | This feature | Grounded by |
+|--------|--------------|-------------|
+| Expected duration | `<how long a user stays in this relationship>` | |
+| Interaction frequency | `<daily / weekly / sporadic>` | |
+| Autonomy ceiling | `<the MOST the agent may do unprompted — from a BR, never assumed>` | |
+| Memory sensitivity | `<what would be harmful to remember, per a rule or a stated preference>` | |
+
+### Memory Architecture
+<!-- What the agent carries between sessions. EVERY row cites an EN-### field: a system cannot
+remember what nothing stores, so a row with no field behind it is a requirement gap, not a design
+row. `Who controls it` is who may see, correct, or clear it — from a BR or the UC's actors. -->
+
+| What it remembers | Entity field | Surfaced on | Who controls it | Grounded by |
+|-------------------|--------------|-------------|-----------------|-------------|
+
+### Trust Map
+<!-- The longitudinal counterpart to § 3's within-session States. Per screen or per agent decision:
+what the agent SHOWS versus what it DOES at each stage, and how a user corrects it. Only fill a
+stage a BR actually grants (D7) — an ungranted stage 3 is a requirement gap, not a design choice. -->
+
+| Screen / decision | Stage 1 — transparent | Stage 2 — selective | Stage 3 — autonomous | Correction path | Grounded by |
+|-------------------|----------------------|---------------------|----------------------|-----------------|-------------|
+
+### Proposed Measures
+<!-- At most THREE. Owner: team, always. A measure never licenses a screen, a field, or an event to
+track — instrumentation is behaviour. Not a requirement, not a target, not a dashboard. -->
+
+| Measure | What would be observed | Which row above it tests |
+|---------|------------------------|--------------------------|
 
 ## Prototype Prompt — Claude design
 <!-- Self-contained (D6): no UC-/BR-/EN-/PP-/UX-/INT-/PRD- id, no step id, anywhere below.

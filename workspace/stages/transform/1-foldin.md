@@ -4,6 +4,7 @@
 runs: orchestrator, FIRST, every invocation
 in:   every UC/BR whose feature has a `staged` Signal Log row pointing at it
       + every `conflict`/`question` row whose linked question has since been answered (§ Re-entry)
+      + every answered question with no Signal Log row behind it (§ Orphan answers)
 out:  the staged change folded into the artifact · mirrors reconciled · re-entered rows back to `new`
 never: status — Stage 5 sets it, from a live re-count
 ```
@@ -16,13 +17,19 @@ on disk.
 `_bigin/conventions/conventions.md` § Resumable unattended apply — the procedure here is complete on
 its own.
 
-A UC/BR with no `staged` row pointing at it is not this stage's business, whatever its status.
+A UC/BR with no `staged` row pointing at it and no filled `A:` line is not this stage's business,
+whatever its status.
 
 **Build the worklist grep-first, never by reading the vault.** `Grep` `{hub_dir}` for
 `Status.*staged` and for `Status.*conflict|Status.*question`, and open only the hubs that hit; open only
-the UC/BR ids those rows' `Destination` cells name. Reading every hub and every UC to discover that
-nothing is pending makes "nothing to fold in" cost the whole vault, and that cost grows with every
-append-only Signal Log row forever. Two greps and an early exit make the same answer a two-second one.
+the UC/BR ids those rows' `Destination` cells name. Third grep, same discipline: `{uc_dir}` and
+`{br_dir}` for `^\s*A: \S` — a filled `A:` line only ever exists under a question that is still open
+(a settled one moves into the decision log and takes its `A:` with it), so that one grep is the exact
+set of answers waiting on this stage, including the ones no hub row points at (§ Orphan answers).
+
+Reading every hub and every UC to discover that nothing is pending makes "nothing to fold in" cost the
+whole vault, and that cost grows with every append-only Signal Log row forever. Three greps and an
+early exit make the same answer a two-second one.
 
 ## The three-way read
 
@@ -165,12 +172,53 @@ Stage 2 then collects the row in its ordinary `new` worklist **this same run**, 
 - **Report every re-entry explicitly** — it is the one case where a row's `Status` moves backwards, and
   a reader who doesn't see it named will read it as a stage that lost track of its own bookkeeping.
 
+## Orphan answers — an answered question no row points at
+
+Most `## 5` questions arrive with a Signal Log row behind them, so the worklist above reaches them.
+Two kinds don't: the `## 4` inconsistency question **this stage itself** raises (its row is `applied`
+by the time anyone answers), and a gap question a human or the `bigin-ba` review wrote directly onto a
+UC. Answer one of those and no row changes anywhere — without this section the answer sits on disk
+forever, the box stays unchecked, `status` stays `needs-clarification`, and `/approve-uc` blocks on a
+question that was in fact answered days ago.
+
+The third grep finds them. Take each filled `A:` the first two greps did not already account for —
+judge it per question, not per artifact: a UC can carry a `staged` row for one question and an orphan
+alongside it. Then read what the answer actually decides:
+
+```text
+the answer CONFIRMS what the artifact already says, or decides something that needs no new content
+    (a clarification, a "yes, as written", a choice between two readings of text already there)
+    → resolve it here: move the line into the decision log per § The atomic write step 2, bump
+      version, changelog. No content write — there is nothing to apply.
+      a BR has no decision log: drop the resolved line from its ## Open Questions and put the
+      decision in the ## Changelog line instead, so the settled history still exists somewhere.
+
+the answer ADDS content the artifact does not have — a step, a branch, a rule, a changed trigger
+    → NOT this stage's write, and NOT a Stage 3 draft either: there is no signal behind it, so
+      there is nothing qualified and nothing to trace it to. Leave the question open, leave the
+      answer where it is, and report it as needing /bigin-intake — capture what was said as its
+      own note (citing the UC and the question), then extraction files it and the next transform
+      run drafts it with a row, a source, and a citation like every other requirement.
+      Never draft it inline to save a round trip; a step in a UC with no traceable source is the
+      one thing this vault's chain is built to prevent (conventions.md § Traceability chain).
+
+the answer does not settle the question at all — it restates it, defers it ("ask the client"),
+    or asks a new one
+    → leave it exactly as it is, unchecked. Report it as answered-but-unresolved, saying why, so
+      whoever answered gets told rather than re-answering it the same way next round.
+```
+
+A ticked box over an answer of the second or third kind is a mis-tick, not a resolution: report it,
+never untick it silently, and never let the tick alone clear the count.
+
 ## Hand-off
 
 Report per artifact: `<slug>: UC-### | BR-### — folded in (INT-###) | already applied, mirrors
 reconciled | waiting on a human | drift question raised (§ The human may have edited…)`, plus
-`re-entered: <slug> #<n> — <the decision>` per row § Re-entry moved back to `new`. Stage 2 never
-re-collects a row this stage just set to `applied`; it always collects one this stage just set to `new`.
+`re-entered: <slug> #<n> — <the decision>` per row § Re-entry moved back to `new`, plus `orphan
+answer: UC-### — <the question> → settled into the decision log | needs /bigin-intake | answered but
+unresolved` per § Orphan answers. Stage 2 never re-collects a row this stage just set to `applied`; it
+always collects one this stage just set to `new`.
 
 ## Failure modes
 
@@ -182,6 +230,9 @@ re-collects a row this stage just set to `applied`; it always collects one this 
   started".
 - **Setting `status` here.** Stage 3 may edit the same artifact after; Stage 5 re-counts.
 - **Ticking a box to make the count zero.** An answer that doesn't resolve the question stays unchecked.
+- **Ignoring a filled `A:` because no row points at it.** § Orphan answers exists because the two
+  commonest review-time questions — this stage's own `## 4` inconsistency question and a gap question
+  written straight onto a UC — never had a row to begin with.
 - **Skipping § Re-entry because "nothing is staged on that feature".** A hub can carry a dozen answered
   `conflict`/`question` rows and zero `staged` ones. Those rows are the whole reason this section runs
   on its own scan rather than as a sub-step of the fold-in worklist.

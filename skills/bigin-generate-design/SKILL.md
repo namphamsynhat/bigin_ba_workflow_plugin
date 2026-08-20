@@ -15,6 +15,7 @@ in    UC-###  (new, or changed since it was last designed)
     + BR-### states  + EN-### fields
 
 out   UX-### per feature      screen inventory + screen specs + flows
+                               + ## 7 Relationship Model, on a feature that earns one
     + _design-system/         one vault-wide, append-only token/component system
                                + navigation-map.md — the platform's menu/navigation system
     + two prototype prompts   Claude design and Figma Make, self-contained
@@ -42,7 +43,7 @@ an unattended batch. The review happens on the artifacts afterwards, not mid-run
 
 | Variable | Path | Notes |
 | :--- | :--- | :--- |
-| `{design_conventions}` | `_bigin/conventions/design-conventions.md` | the design rulebook — paths, the six hard rules, statuses, grounding |
+| `{design_conventions}` | `_bigin/conventions/design-conventions.md` | the design rulebook — paths, the seven hard rules, statuses, grounding, the relationship model |
 | `{design_stages_dir}` | `_bigin/stages/design/` | `1-scope`, `2-system`, `3-screens`, `4-prompt`, `5-close` |
 | `{ux_dir}` | `04-UIUX/UX-<NNN> <Feature>.md` | one spec per feature |
 | `{design_system_dir}` | `04-UIUX/_design-system/` | `design-tokens.md` + `components/<component>.md` + `navigation-map.md` |
@@ -79,8 +80,14 @@ which also covers optional **quality boosters** layered on top of whichever engi
 agentic-relationship-UX skill for features that are genuinely about an ongoing AI-agent relationship,
 a design-library skill for a non-generic starting palette on bootstrap, per-step `designer-skills`
 pattern references for STRUCTURE/ELEMENTS/TOKENS/STATES/NAVIGATION, and an optional Stage 3.5
-craft-quality pass a worker runs on its own drafted screens before reporting. None replaces the
+craft-quality pass — Perception-First Design's checklist mode (Mode 1 only, never its solve or
+analyze modes) when installed, or a generic heuristic-evaluation/accessibility-audit/critique-*
+skill otherwise — a worker runs on its own drafted screens before reporting. None replaces the
 engine; all are read only when they actually apply, and skipped silently when not installed.
+
+The agentic booster is the one with a real output surface: a feature that passes Stage 3's
+**relationship trigger** gets a `## 7 Relationship Model` — the memory, autonomy, and trust the
+requirements already imply, plus the gaps they never settled. See **`references/agentic-ux.md`**.
 
 ## Execution order
 
@@ -139,6 +146,14 @@ a worker NEVER writes:  {design_system_dir} (incl. {nav_map_file}) · another fe
 a worker DOES write:    its own feature's UX spec (created from a number the orchestrator minted)
 ```
 
+**A feature with 3+ in-scope UCs, or 4+ distinct cited entities, gets a `ux-brief-assembler`
+dispatch first** (`agents/ux-brief-assembler.md`) — it combines that feature's UCs and the `EN-###`
+entities they cite (plus `BR-###` mirrors, open hub directives, active design principles) into one
+Design Brief, so the screens worker starts from a pre-digested bundle instead of re-reading
+everything raw. It never decides a final screen boundary, a token, a state, or the Part 4b
+relationship verdict — every one of those stays the screens worker's call. Below that threshold,
+skip it; the worker reads `3-screens.md` Part 1 directly.
+
 The mapping that matters: **a run of consecutive steps by the same actor in the same place is one
 screen**; a validation is a state, not a screen; an exception flow is a named error state. A 3–9 step
 UC normally yields 1–4 screens.
@@ -147,6 +162,14 @@ UC normally yields 1–4 screens.
 an existing screen pattern, or a stated preference. Grounded in none of those → an Open Question
 (D3), and if the answer would change what the system *does*, it is flagged as a requirement gap for
 `/bigin-transform-signal` — never written onto the UC here.
+
+**Part 4b — the relationship model, on the few features that earn one.** Three mechanical tests: the
+system *judges* rather than processes, an `EN-###` field *persists* something per-user between
+sessions, and the trigger *repeats* for the same actor. Three of three → `## 7`; any miss → the
+section is deleted, not left empty. It is the only home for a **trust stage**, which is longitudinal
+(the same screen at relationship month 1 versus month 12) where `## 3`'s States are within-session.
+A real agent feature yields **more requirement gaps than rows** here — retention, visibility, and
+disclosure are almost never stated — and that is the section working (D7).
 
 ## Stage 4 — Extend the system, then write both prompts
 
@@ -165,11 +188,15 @@ heading in the prototype.
 Stamp `absorbed:` with `UC-###@version` for **only the UCs that really got a screen row this run**,
 re-stamped whole. Set each status from a live count of unchecked questions on disk. Refresh every
 hub named in `features:` — `## UX Spec`, `uiux:`, directives that a screen really implements flipped
-to `reflected`, questions mirrored. Then the nine verification checks; a mismatch is blocking.
+to `reflected`, questions mirrored. Then the twelve verification checks; a mismatch is blocking. The
+last three read `## 7` from disk: the `relationship_model:` flag must match the section that is
+really there, every memory row must name a field that really exists, and every gap the section found
+must have become a `## 6` question.
 
 ```text
 mode · engine · boosters used · per-feature screens · tokens added (0 removed, 0 renamed)
 prompts written · nav entries added (0 removed, 0 renamed) · directives reflected · skipped
+relationship: modelled|none per feature (+ gaps raised) · skipped
 pending · questions (design | REQUIREMENT GAP) · next
 ```
 
@@ -194,6 +221,15 @@ Each produces a run that looks clean. Ordered by cost to discover later.
   entry for it is a second, drifting way into the same place.
 - **Flipping a directive to `reflected` because it was read.** It is reflected when a screen
   implements it.
+- **Letting an external pattern catalog ground a screen.** Ground 2a is a pattern *in this vault*;
+  2b is one from an installed skill, and 2b alone grounds nothing. An agentic skill's memory and goal
+  dashboards are whole screens — used as a source, they reach a client carrying a citation, which
+  reviews as designed where an obvious guess would have been caught.
+- **A relationship model over nothing stored.** No `EN-###` field means the system cannot remember
+  it, so the row is a requirement gap. Filling a stage-3 autonomous cell no `BR-###` granted is the
+  same error one step worse: the prototype shows the agent acting alone and the client agrees to it.
+- **Leaving `## 7` in place and empty.** It reads as "the relationship was considered and there is
+  none" — a claim nobody made.
 - **Setting status early.** Count the open questions from disk, last, every time.
 
 ## Model
@@ -206,8 +242,19 @@ work — the same reason `/bigin-transform-signal` fans out on the default model
 
 - **`references/engine-detection.md`** — the provider table, how to detect each one, the install
   command to report when none is present, how the built-in method works, the optional quality
-  boosters (agentic-relationship UX, design-library), the per-step `designer-skills` pattern
-  references, and the optional Stage 3.5 craft-quality pass. Read at Stage 1; the per-step and
-  Stage 3.5 sections are read again by each worker at Stage 3.
+  boosters (agentic-relationship UX, design-library), the ground 2a/2b split that bounds them, the
+  per-step `designer-skills` pattern references, and the optional Stage 3.5 craft-quality pass
+  (Perception-First Design's checklist mode, or a generic critique skill). Read at Stage 1; the
+  per-step and Stage 3.5 sections are read again by each worker at Stage 3.
+- **`references/agentic-ux.md`** — the relationship model: what the agentic booster does and does not
+  contribute, how the trigger is decided (and why Stage 1 cannot decide it), the five pillars mapped
+  onto `## 7` and `## 3` with one clipped as out of scope, a worked example, and the five recurring
+  requirement gaps. Read at Stage 1, by the orchestrator, when the skill is installed. A worker reads
+  `3-screens.md` Part 4b instead — it cannot reach this directory.
 - **`references/agent-dispatch.md`** — the per-feature worker prompt, its report contract, and the
-  wave-verification checklist. Read at Stage 3, before fanning out.
+  wave-verification checklist. Read at Stage 3, before fanning out. It also names the dispatch
+  threshold for `agents/ux-brief-assembler.md` — the read-only subagent that combines a feature's
+  UCs and entities into that worker's starting Design Brief.
+- **`agents/ux-brief-assembler.md`** (plugin-root `agents/`, not this skill's `references/`) — the
+  named subagent dispatched per qualifying feature at Stage 3, ahead of the screens worker. It never
+  writes a file and never finalizes a screen boundary; it only assembles.

@@ -2,7 +2,8 @@
 
 ```text
 runs: per feature (orchestrator inline, or one worker per feature)
-in:   {ux_dir}/UX-<NNN> <Feature>.md (§ 1-§ 6) · {design_principles_file} rows it applied ·
+in:   {ux_dir}/UX-<NNN> <Feature>.md (§ 1-§ 6, and § 7 when present) · {design_principles_file}
+      rows it applied ·
       the hub's ## Design Directives · the PENDING list from Stage 1 · every folded UC's § 5 and § 6
 out:  §§ 9-12 of {prd_dir}/PRD-<NNN> <Feature>.md, plus § 6's Screen column backfilled
 never: inventing a screen, a state, or a visual decision (P6) · a token name, hex, or px (P1) ·
@@ -31,6 +32,7 @@ UX spec exists                → fill § 9 from it, and record UX-###@version f
 | **Journeys** table | § 4 Flows: `Path` → `The path through the screens`, `Success` → `Ends on` |
 | `Prototype` | say the prompts are in `UX-<NNN> § Prototype Prompt — Claude design` / `— Figma Make`. **Point, never restate** |
 | `Known design gaps` | § 6 Open Questions, unchecked lines only, translated to business words |
+| `What the system does for the actor` *(only when § 7 exists)* | § 7 Relationship Model: what it remembers between visits, and what it does unprompted versus only suggests — **in business words, two or three lines.** Cite the `BR-###` that granted it. Never reproduce the Trust Map table, never carry the Proposed Measures, and never describe an autonomy no BR granted (`{design_conventions}` D7) |
 
 **What never crosses from the design side into this document** (`{design_conventions}` D2, and P1
 here): a token name, a hex value, a px value, a font, a component name, a region layout, an

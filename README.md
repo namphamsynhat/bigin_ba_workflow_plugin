@@ -187,6 +187,14 @@ content to its new home, marks the source's originals `removed because`, and rep
 `BR-###`. It never touches a feature hub or `FEATURES.md` itself; it reports what changed so the skill
 can dispatch `hub-bookkeeper` per touched hub, same pattern as everywhere else in the pipeline.
 
+`/bigin-generate-design`'s Stage 3 dispatches `agents/ux-brief-assembler.md` per feature that clears
+a size threshold (3+ in-scope UCs, or 4+ distinct cited entities) — a read-only pass that combines a
+feature's UCs, the `EN-###` entities they cite, their `BR-###` rule mirrors, open hub directives, and
+active design principles into one Design Brief for that feature's screens-writing worker. It never
+writes a file and never finalizes a screen boundary, a token, or the Part 4b relationship verdict —
+those stay the screens worker's judgment; the assembler only removes the need to re-derive the
+mechanical parts of the read from scratch in the same context that then has to design the screens.
+
 The tradeoff is that a project pins the rulebook it was initiated with. `_bigin/system/project.md`
 records `workspace_version`; re-running `/bigin-new-project` after a plugin upgrade refreshes
 `_bigin/conventions/`, `_bigin/stages/`, and `_bigin/templates/` to the new version. All three are
@@ -284,6 +292,25 @@ wrong. The routing table itself is the one thing deliberately duplicated between
 resolve `${CLAUDE_PLUGIN_ROOT}`, so it cannot read the skill's copy. Change one, change both — and the
 durable fix is materializing routing into `_bigin/` alongside the stage guides. The same brief exists for
 non-Claude-Code runtimes at `.agents/AGENTS.md`, kept deliberately thin for the same reason.
+
+## Answering open questions offline
+
+A BA does not have to sit in a chat session to clear a use case's open questions. Every `- [ ] Q:` line
+is written to be answered cold: open `01-Requirements/_ucs/UC-### <Title>.md`, find `## 5 Open Questions
+& Decision Log`, and type the answer on that question's own `A:` line — in the file, in your own words.
+Leave the checkbox unticked unless the answer fully settles the question; "we'll ask the client" and
+"TBD after the demo" are not settled, and ticking one anyway is what makes a parked use case read as
+approvable. Don't edit the numbered sections to match your own answer — the pipeline applies it, and
+doing both is how the same change lands twice.
+
+Then say **"process UC-###"** (or the feature's name) to `/bigin-run` or the `bigin-ba` agent. That pass
+reads what you wrote instead of re-asking it, folds every filled `A:` in with one
+`/bigin-transform-signal` run, re-counts what is still open, and comes back **once** with whichever
+outcome each UC earned: the follow-up questions that pass actually produced — a question the drafting
+raised, an answer that didn't settle its question, two answers that collide — or, at zero open questions,
+the flow itself and an approval ask. Questions you already answered cleanly are never shown again. The
+procedure has one home, `agents/bigin-ba.md` § Answers already written: the process-the-UC pass, and the
+conventions side is § Answering a question.
 
 ## Install (local development)
 

@@ -1,6 +1,6 @@
 ---
 name: bigin-run
-description: Drive the Bigin BA pipeline from the main session — read the vault, work out which stage runs next, run it, and keep going while nothing needs a decision. Use when asked to "move this feature forward", "what's next", "what's next on UC-00X", "process the inbox", "drain the intake queue", "run the next stage", "take this feature through to a prototype", or "drive the pipeline". **This is the only home for a run that fans out.** Four stages dispatch named subagents, and a subagent cannot dispatch subagents, so `/extract-signal` and any multi-feature transform, design, or PRD run must be driven from here — never from inside the `bigin-ba` agent, which has no `Agent` tool and would otherwise pull every transcript into the one context the fan-out exists to protect.
+description: Drive the Bigin BA pipeline from the main session — read the vault, work out which stage runs next, run it, and keep going while nothing needs a decision. Use when asked to "move this feature forward", "what's next", "what's next on UC-00X", "process the inbox", "drain the intake queue", "run the next stage", "take this feature through to a prototype", "process UC-00X" / "process the UC" after a team BA typed their answers straight into the file, or "drive the pipeline". **This is the only home for a run that fans out.** Four stages dispatch named subagents, and a subagent cannot dispatch subagents, so `/extract-signal` and any multi-feature transform, design, or PRD run must be driven from here — never from inside the `bigin-ba` agent, which has no `Agent` tool and would otherwise pull every transcript into the one context the fan-out exists to protect.
 argument-hint: "[feature slug or UC id — omit to pick up whatever is next]"
 ---
 
@@ -63,7 +63,7 @@ ETL: **extract** intake into per-feature signals → **transform** them into rev
 | 4 | `bigin-transform-signal` | a hub's `## Signal Log` has `new`/`held` rows, or a staged change's question was answered | no — it never blocks on a human |
 | 5 | `bigin-generate-design` | any UC has a drafted main flow and no current design. Needs no approval and no PRD | no — fully headless |
 | 6 | `approve-uc` | the human is ready to sign off one reviewed UC | **yes — never approve on their behalf** |
-| 7 | `sync-entities` | one or more UCs are `approved` with `synced: false`. Run when convenient, not after every approval | no |
+| 7 | `sync-entities` | one or more UCs are `approved` with `synced: false`. Run when convenient, not after every approval. Also the repair path for entity docs — `EN-###`/`rebuild` rewrites a doc as the full data dictionary and merges an attribute-shaped fragment into its owner | no |
 | 8 | `bigin-generate-prd` | a feature has `approved` UCs its PRD hasn't folded yet (or folded at an older version). Skips a `built` feature — the CR chain has no PRD | no — fully headless |
 | — | `enrich-feature` · `consolidate-prd` | **never.** Both halt unconditionally — § Reconciliation notes. `consolidate-prd` is **not** the PRD stage; `bigin-generate-prd` is | — |
 | — | `prototype-design` | **never.** Retired, superseded by `bigin-generate-design`. Never run both | — |
@@ -91,6 +91,11 @@ scope to that feature.
    "- [ ] Q:" was newly ticked                          → /extract-signal        (fan-out, here)
 4  a hub's ## Signal Log has new/held rows, or a staged
    change's question now carries an A:                  → /bigin-transform-signal
+4b a human says "process UC-###" — they answered the
+   questions in the file offline                        → the review flow's process-the-UC pass,
+                                                          below: inventory the answers, ONE fold-in,
+                                                          re-count, then follow-ups OR the approval
+                                                          ask — never a replay of what they answered
 5  a UC has a drafted ## 2 main flow and no current
    design                                               → /bigin-generate-design
 6  a UC is clear and the human is ready to sign off     → the review flow, below — never headless
@@ -130,6 +135,11 @@ A review is the one thing driven turn by turn instead of routed and reported, an
 home: **`agents/bigin-ba.md` § Reviewing use cases with a human** — scope by flow, pool the questions,
 one batched fold-in, scenarios shown only at zero open questions, approval per id. Read it and follow it
 in this session; do not restate it here and do not improvise a shorter version.
+
+That home also carries the **process-the-UC pass** (§ Answers already written), which is what step 4b
+routes to: the questions were already answered in the file, so that pass reads them instead of asking,
+folds in once, and comes back with only the follow-ups it produced — or, at zero open questions, with
+the scenario and the approval ask. Same rule as above: follow it there, don't paraphrase it here.
 
 Running it here rather than dispatching it is usually right: the beats are a conversation, and a
 subagent gets one turn and returns. Its step 2 fold-in is a single-feature `/bigin-transform-signal`

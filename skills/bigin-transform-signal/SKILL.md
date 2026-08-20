@@ -101,8 +101,10 @@ only the lanes this run's signals actually hit.
 ```text
 GREP-FIRST, never a vault read: Grep {hub_dir} for `Status.*staged`, and for
     `Status.*conflict|Status.*question` — open only the hubs that hit
+                       + Grep {uc_dir}/{br_dir} for `^\s*A: \S` — every answer waiting on disk
 per staged artifact  → three-way read: unanswered | already applied | apply now   [1-foldin.md]
 per conflict/question row whose question now has a filled A: → RE-ENTER it as `new`
+per answered question NO row points at → § Orphan answers: settle it, or send it to /bigin-intake
 ```
 
 - **Re-enter an answered `conflict`/`question` row** (`1-foldin.md` § Re-entry). This is the one path
@@ -110,6 +112,12 @@ per conflict/question row whose question now has a filled A: → RE-ENTER it as 
   and not `new`/`held`, so Stage 2 skips it. Flipping it back to `new` here is what puts an answered
   disagreement back into this same run's Stage 2 worklist. Draft it from the **decision**, never by
   re-staging whichever side lost.
+- **Harvest an answered question no row points at** (`1-foldin.md` § Orphan answers). A `## 4`
+  inconsistency question this stage raised, or a gap question a reviewer wrote straight onto a UC, has
+  no Signal Log row behind it — so the two greps above never see it and the answer would sit unread
+  forever, holding the UC at `needs-clarification` and blocking `/approve-uc`. Settle it into the
+  decision log when it needs no new content; send it to `/bigin-intake` when it adds some. Never draft
+  content for it here — with no signal behind it there is nothing to trace it to.
 - **Reconcile mirrors unconditionally, every run** — including artifacts already applied, and
   **every** hub a cross-feature UC names. Re-setting a correct field is a no-op; skipping it leaves a
   hub reading `staged` against a folded-in UC forever.

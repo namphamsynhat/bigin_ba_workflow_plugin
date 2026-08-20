@@ -143,6 +143,15 @@ language for owner: client, one decision per line.
 - [ ] Q: <question> (owner: client|team) (ref: <INT-###>)
       A:
 
+ANSWERING — this is where a reviewing BA writes, and the only place they need to. Type the answer on
+that question's own A: line, in your own words; an answer written anywhere else (a comment, a line
+above the question, a chat message) is not read by anything. Leave the box UNCHECKED unless the answer
+fully settles the question — "we'll ask the client", "TBD after the demo", or a reply that raises a
+new question is not settled, and ticking it anyway is what makes a parked use case read as
+approvable. Don't edit the numbered sections to match your own answer: say "process UC-###" and the
+pipeline folds every filled A: in, then comes back with the follow-ups that pass produced — or the
+flow to approve when there are none (conventions.md § Answering a question).
+
 SETTLED — move a question here once its A: line is filled and the change is folded in. This is where
 the speaker context goes: who raised it, what they said, what was decided. Append-only; never delete
 a settled row, and never re-ask a question that has a row here. -->

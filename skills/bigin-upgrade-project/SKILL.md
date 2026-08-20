@@ -119,7 +119,11 @@ Requires `_bigin/system/project.md` to exist. Missing → say `/bigin-new-projec
   3. **Template drift.** For every template present in both snapshots, diff its `^## ` section
      headers. A changed, added, or removed section is drift to report (§ 5) — this skill never
      rewrites an existing artifact's structure to match a new template on its own; that transform
-     isn't safe to assume.
+     isn't safe to assume. When reporting one, `Grep` the **new** stage guides for
+     `## Adopting an existing <the template's artifact name>` and name that file in the report if it
+     exists: a section added with a documented self-healing path (the owning skill fills it on its
+     next run) is very different news from one with no path at all, and a drift line that cannot
+     tell them apart gets read as "something is broken" either way.
 * **Rules:**
   - **A retirement is only a migration candidate if the project actually has content in the old
     prefix's folder.** A vault with an empty `_frs/` (or none at all) has nothing to migrate — don't
