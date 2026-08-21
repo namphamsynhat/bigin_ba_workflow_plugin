@@ -533,6 +533,37 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   appears on every participating hub with the same id — that is the artifact working, not duplication
   to fix. **No step numbers or ranges**: the UC file is the only place the flow is written out
   (§ Business Scenarios (retired) for why). Written by `/bigin-transform-signal` Stage 4.
+- `## Coverage Gaps` — what this feature's use-case set does **not** account for:
+
+  | # | Gap | Lens | Raised | Status | Notes |
+  |---|-----|------|--------|--------|-------|
+
+  The other half of the conflict check. `## Signal Log` records what somebody said; this records what
+  **nobody** said and the business plainly needs — the absence that leaves no trace anywhere else. A
+  feature can carry four individually sound, individually `approved` use cases (record a gift, issue a
+  certificate, audit a change) while nothing describes how the donor those gifts hang off is created,
+  found, corrected, or retired; no signal ever arrived saying so, so no row, question, or conflict ever
+  appears, and it surfaces at build. Written by `/bigin-transform-signal`'s Stage 4 Part 4
+  (`_bigin/stages/transform/4b-coverage.md`), which is the **only** pass that reads a feature's UC set
+  *as a set*, against six lenses: entity lifecycle, dangling `## 1` pre-conditions, an actor with no
+  goal of its own, the feature's own stated purpose and open `PP-###` rows, data a step or rule reads
+  that no UC writes, and a `BR-###` no UC's `## 4` enforces.
+  - **A gap is a finding, never a work order.** The `Gap` cell says what nobody has described, in one
+    sentence of plain business language a client can answer out loud, and **never proposes the
+    answer** — a plausible-shaped guess on this table gets read as something the client said. The
+    content comes from the answer, arriving as `/bigin-intake` → `/extract-signal` like every other
+    requirement; nothing is ever drafted from a hub cell.
+  - **A gap never parks a UC.** It is feature-level by nature, so a UC that is otherwise ready stays
+    ready, and a gap is never written as a `- [ ] Q:` on a UC's `## 5`. That separation is the whole
+    reason this table exists instead of reusing the question mechanism.
+  - `#` is permanent and append-only, like the Signal Log's. `Status`: `open` (nobody has answered) ·
+    `answered` (a human said what should happen; it still has to arrive through intake) · `covered` (a
+    UC now covers it — cite the id) · `rejected` (out of scope — cite who decided). `Lens` names which
+    of the six tests found it, so a reader can see why anyone thinks it is missing.
+  - **Empty and missing mean different things.** An empty table is a real result — the set adds up. A
+    hub with **no such section** has never been checked, and that is the backfill trigger the coverage
+    pass keys off (§ its own guide's When it runs); it is inserted from `{template_hub}` the first time
+    the pass touches such a hub, so no migration is needed.
 - `## Requirement Readiness` — a refreshed **snapshot for orientation, not the gate itself**:
 
   | Artifact | Status | Ready for next step? | Blocking |
@@ -578,8 +609,10 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
 - `## Prototype` — link + status, or "not started." (The hub template calls this section
   `## UX Spec`; treat the two names as the same section until one of them is renamed.)
 - `## Open Questions / Gates` — every Signal Log row with `Status: question` or `Status: conflict`,
-  plus every open UC's `## 5` **Still open** lines and every open BR's `## Open Questions` — what's
-  actually blocking progress right now. A settled decision-log row is not an open item. An
+  plus every open UC's `## 5` **Still open** lines, every open BR's `## Open Questions`, and every
+  `## Coverage Gaps` row still `open` or `answered` — what's actually blocking progress right now.
+  A coverage gap is mirrored here **in the same sentence** as its own row (§ One question, two places),
+  and it is the one item here that blocks no single artifact — it is the feature's own hole. A settled decision-log row is not an open item. An
   `approved` UC normally contributes nothing here — its questions were resolved before approval —
   but a later edit can reopen it (hard rule 7, § Feedback handling) and reintroduce questions the
   same as any other UC update.
@@ -603,8 +636,11 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   sequential Stage 4 pass. Also appends to `## Design Directives` for
   every presentation-only signal it routes down the Design chain, and fills each processed Signal
   Log row's `Destination` cell (the column `/extract-signal` leaves blank) with where the signal
-  actually landed. It never sets a hub's own `status:` — that mirrors the `FEATURES.md` row's scope
-  state, not a workflow state, and there is no "ready for PRD" feature status.
+  actually landed. **Appends to `## Coverage Gaps`** (and re-statuses its existing rows) on every
+  feature whose UC set it changed, mirroring the `open`/`answered` ones into
+  `## Open Questions / Gates` — its Stage 4 Part 4. It never sets a hub's own `status:` — that mirrors
+  the `FEATURES.md` row's scope state, not a workflow state, and there is no "ready for PRD" feature
+  status.
 - `/enrich-feature`: refreshes `## Requirement Readiness`/`## Related Documents`/
   `## Open Questions / Gates`, and **`## Pain Points`** whenever it folds a pain-point signal into the
   UC's `pain_points:` list.

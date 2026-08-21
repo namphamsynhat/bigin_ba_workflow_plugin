@@ -18,7 +18,7 @@ ETL: **extract** intake into per-feature signals → **transform** them into rev
 
 | # | Skill | Route to it when | Decision point? |
 |---|---|---|---|
-| 1 | `bigin-new-project` | `_bigin/system/project.md` is absent. Never re-run destructively without explicit confirmation | yes — client/approver details are the user's |
+| 1 | `bigin-new-project` | `_bigin/system/project.md` is absent. Never re-run destructively without explicit confirmation | yes — client/contact details are the user's |
 | 2 | `bigin-intake` | new raw communication needs capturing | no |
 | 3 | `extract-signal` | `00-Inbox/` has notes at `status: raw`, or one with a newly-ticked question | no |
 | 4 | `bigin-transform-signal` | a hub's `## Signal Log` has `new`/`held` rows, or a staged change's question was answered | no — it never blocks on a human |
@@ -58,7 +58,7 @@ consumes what 6 approved.
 - **Check state before acting.** Read `_bigin/system/project.md`, the feature hub, and its Signal Log before deciding anything — never assume a stage hasn't run.
 - **A halted stage is not a stop for the pipeline.** § Reconciliation notes lists what's halted; route around it. Three exits from `bigin-transform-signal` work today — design, approval, and the human — so a halted load stage never means "nothing to do next."
 - **Capture before interpreting.** Never paraphrase raw communication in place of running intake — the unmodified source has to land in `00-Inbox/` before extraction touches it.
-- **Ask, don't guess.** Client names, approvers, contradictory signals, and approval decisions are the user's call. Use `ask_question` (or the interactive query available to you) there instead of a plausible default.
+- **Ask, don't guess.** Client names, contacts, contradictory signals, and approval decisions are the user's call. Use `ask_question` (or the interactive query available to you) there instead of a plausible default.
 - **One stage at a time, but keep momentum.** Report what you found and what runs next, then continue when the next stage needs no decision (intake → extract-signal). Stop and ask at a decision point, or when an open question blocks you.
 - **A version mismatch is the skill's call, not yours.** Each skill checks `workspace_version` at its precondition. If one warns, mention `bigin-upgrade-project`; if one **stops** because the workspace is ahead of the installed plugin, relay that verbatim and do not work around it — that state means a stale plugin is being resolved, and pushing past it risks downgrading the vault's rulebook.
 - **Never invent pipeline internals.** Unclear behavior: re-read that skill's `SKILL.md`.
@@ -73,7 +73,7 @@ Report after each run:
 
 ## Edge cases
 
-- **No `_bigin/system/project.md`, or no `_bigin/conventions/` and `_bigin/stages/`**: run `bigin-new-project` first and stop — don't guess client/approver details to skip ahead. A missing `_bigin/stages/` is the more dangerous case: later stages dispatch subagents that read their stage file from there, and a subagent that can't find one improvises instead of failing.
+- **No `_bigin/system/project.md`, or no `_bigin/conventions/` and `_bigin/stages/`**: run `bigin-new-project` first and stop — don't guess client/contact details to skip ahead. A missing `_bigin/stages/` is the more dangerous case: later stages dispatch subagents that read their stage file from there, and a subagent that can't find one improvises instead of failing.
 - **Intake with no clear feature**: let `extract-signal` raise a feature-mapping question rather than force it into an existing use case.
 - **Research surfaces a blocking domain risk**: record it as an open question on the UC and let it hold at `approve-uc` for an explicit accept-or-resolve decision. Don't adjudicate it yourself.
 - **A design contradicts an existing use case**: route the change back through `bigin-transform-signal`'s staging, never a silent rewrite of the UC.

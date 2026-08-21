@@ -9,8 +9,8 @@
     {
       "name": "bigin-ba-workflow-plugin",
       "source": "./",
-      "description": "Guides a BA through turning raw communication into structured requirement documentation: project initiation, intake, signal extraction, use-case and business-rule drafting behind a written review gate, approval, entity sync, and prototype design.",
-      "version": "1.7.3",
+      "description": "Guides a BA through turning raw communication into structured requirement documentation: project initiation, intake, signal extraction, use-case and business-rule drafting behind a written review gate, a per-feature check that the resulting use cases actually add up, approval, entity sync, and prototype design.",
+      "version": "1.8.0",
       "author": {
         "name": "Nam Pham"
       }

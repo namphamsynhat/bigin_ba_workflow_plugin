@@ -30,7 +30,7 @@ The orchestrator supplies: the feature slug, the UCs in scope this run (NEW, or 
 
 ## What you do, in order
 
-1. **The hub.** `{hub_dir}/<slug>.md` → `## Design Directives` rows at `Status: open`, and the actors it names.
+1. **The hub.** `{hub_dir}/<slug>.md` → `## Design Directives` rows at `Status: open`, the actors it names, and `## Coverage Gaps` rows at `Status: open`/`answered` — each one a **known gap** for the report below, never something to design around or resolve yourself. A gap saying nothing describes how a record gets created is exactly the thing a screens pass would otherwise silently invent a form for.
 2. **Every UC in scope, in full.** `## 1` actors/trigger/pre+post-conditions, `## 2` steps, `## 3` branches, `## 4` rule mirror, `## 5` Still open — each unchecked line there is a **known gap**, not something to resolve yourself.
 3. **Every `BR-###` named in a `## 4` mirror**, in full — the real rule text, since the mirror is deliberately short.
 4. **Every `EN-###` the UCs cite** — the field list, types, required flags, enum values. Note, as a plain fact and never a verdict, any field that holds per-user history, a preference, a learned pattern, or a score — the screens-writing worker needs this to run Part 4b's relationship trigger later, but running that trigger is its call, not yours (it also needs the UC's step verbs and trigger recurrence, which you are not asked to judge here).
@@ -59,7 +59,7 @@ Then, **per UC, in the order listed**, walk `## 2` in row order per `3-screens.m
 feature:              <slug>
 brief:                <one paragraph — actors, platform, principles applied (row #s), directives
                        applied (hub row #s)>
-known_gaps:           <UC-### §5 — the question, verbatim> (one line each)
+known_gaps:           <UC-### §5 | <slug> ## Coverage Gaps #<n> — the question, verbatim> (one line each)
 candidate_screens:    <proposed name> | serves: UC-### S<n>, S<n> | entities: EN-### (fields: …)
                       | pattern: <existing UX-### screen it resembles, or "none found">
                       (draft only — the screens-writing worker confirms or adjusts)

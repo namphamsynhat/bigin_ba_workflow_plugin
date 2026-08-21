@@ -1,4 +1,4 @@
-# Stage 4 — Sync the shared writes, draft § 2 / § 3, then conflict-check
+# Stage 4 — Sync the shared writes, draft § 2 / § 3, then conflict- and coverage-check
 
 ```text
 runs: orchestrator, after every Stage 3 subagent has reported
@@ -10,7 +10,7 @@ out:  shared registers written · every new UC id minted · cross-feature UC cha
       participating hub pointed · § 2 Main Success Scenario and § 3 Alternative/Exception Flows
       drafted for any UC carrying an unapplied entry for either · a review flag written whenever
       § 2 changed · coverage diffed against what was dispatched · each touched feature
-      conflict-checked
+      conflict-checked, then coverage-checked as a whole UC set
 never: an id minted inside a per-feature subagent — two concurrent features Grep the same highest id
        and both mint the same new UC-### number, or one append to a shared register overwrites
        the other
@@ -191,14 +191,39 @@ on finding one:
 3  STOP THERE. Stage 5 sets the status from the live question count.
 ```
 
+## Part 4 — Coverage-check each touched feature
+
+Part 3 asked whether this feature's requirements contradict each other. Part 4 asks the other half —
+whether they **add up**: whether the actor could get this feature's job done with only what is written
+down. Its whole procedure, the six lenses, the guard that keeps silence from becoming a guess, and the
+`## Coverage Gaps` row format live in `4b-coverage.md`. Run it per in-scope feature, after Part 3.
+
+```text
+run it when: a UC on this feature was created this run or its § 2 changed
+             · the hub has no `## Coverage Gaps` section yet (never checked — backfill once)
+             · $ARGUMENTS named this slug (so an EMPTY Stage 2 worklist does not skip it)
+skip it when: the feature has no UC at all — there is no set to reason about
+writes:      `## Coverage Gaps` rows on that feature's hub, plus the open ones mirrored into
+             `## Open Questions / Gates`
+never:       a UC, a step, a Signal Log row, a `- [ ] Q:` on any UC, or another feature's hub
+```
+
+A coverage gap **never parks a UC**. It is a feature-level finding, so a UC that is otherwise ready
+stays ready — which is exactly why gaps get their own register instead of borrowing `## 5`'s question
+mechanism (`4b-coverage.md` § What this stage never does).
+
 ## Hand-off
 
 Report: `<N> design-principle row(s), <N> UC id(s) minted, <N> cross-feature UC change(s), <N>
 UC(s) with § 2 and/or § 3 drafted, <N> of those flagged for review, <N> drift question(s) raised
-instead of applied, <N> dispatched/<N> accounted for (Part 2b), <N> in-feature conflict(s)` — or
-`none this run`. Stage 5 re-counts questions on every artifact this stage touched, including any UC
-that just gained a conflict question or dropped back from `approved`/`enriched` because its main flow
-changed.
+instead of applied, <N> dispatched/<N> accounted for (Part 2b), <N> in-feature conflict(s),
+<N> coverage gap(s) raised and <N> closed across <N> feature(s)` — or `none this run`. Name the
+features whose coverage came back clean rather than omitting them (`4b-coverage.md` § Report line):
+"clean" and "nobody looked" are different results and the report is the only place they differ.
+
+Stage 5 re-counts questions on every artifact this stage touched, including any UC that just gained a
+conflict question or dropped back from `approved`/`enriched` because its main flow changed. A coverage
+gap is **not** one of those counts — it lives on the hub, not on a UC, and it moves no UC's status.
 
 ## Failure modes
 
@@ -216,6 +241,12 @@ changed.
   the UC that references it.
 - **Skipping the conflict check because the run "only updated" a UC.** An update is exactly how a new
   step lands next to a rule that forbids it.
+- **Skipping the coverage check for the same reason.** A new step is exactly how a pre-condition
+  nothing satisfies gets introduced — and a feature whose four use cases each look sound is exactly
+  the shape of a feature nobody can use (`4b-coverage.md`).
+- **Turning a coverage gap into a UC, a step, or a question on a UC.** A gap is a finding: the content
+  comes from the answer, through `/bigin-intake`, like every other requirement. Writing it as a
+  `- [ ] Q:` parks a UC that was ready over something that isn't its fault.
 - **Stretching Part 2's exception to § 1/§ 4/§ 5/§ 6.** Only § 2 and § 3 entries skip the wait — a
   rule, `## 1` metadata, an open question, or a special requirement still stages in `## Discussion`
   and waits for Stage 1.

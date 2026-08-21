@@ -57,7 +57,7 @@ ETL: **extract** intake into per-feature signals → **transform** them into rev
 
 | # | Skill | Route to it when | Decision point? |
 |---|---|---|---|
-| 1 | `bigin-new-project` | `_bigin/system/project.md` is absent. Never re-run destructively without explicit confirmation | yes — client/approver details are the user's |
+| 1 | `bigin-new-project` | `_bigin/system/project.md` is absent. Never re-run destructively without explicit confirmation | yes — client/contact details are the user's |
 | 2 | `bigin-intake` | new raw communication needs capturing | no |
 | 3 | `extract-signal` | `00-Inbox/` has notes at `status: raw`, or one with a newly-ticked question | no |
 | 4 | `bigin-transform-signal` | a hub's `## Signal Log` has `new`/`held` rows, or a staged change's question was answered | no — it never blocks on a human |
@@ -120,7 +120,7 @@ it before the human has approved anything just reports "nothing approved yet".
   so a halted load stage never means "nothing to do next."
 - **Capture before interpreting.** Never paraphrase raw communication in place of running intake: the
   unmodified source has to land in `00-Inbox/` before extraction touches it.
-- **Ask, don't guess.** Client names, approvers, contradictory signals, and approval decisions are the
+- **Ask, don't guess.** Client names, contacts, contradictory signals, and approval decisions are the
   user's call — `AskUserQuestion` rather than a plausible default. But never to relay a UC's own
   `- [ ] Q:` line: those are asked as plain text (review flow, below).
 - **A version mismatch is the stage's call, not yours.** If one warns, mention `/bigin-upgrade-project`.

@@ -20,6 +20,7 @@ $ARGUMENTS is empty         → every file in {hub_dir}
 ```
 
 Read only each hub's **frontmatter** here (`uc:`, `uiux:`, `prd:`) plus its `## Use Cases` table.
+Its `## Coverage Gaps` rows are read later, by Stage 4's § 11 — not here.
 Full UC bodies are Stage 3's job — a scan that opens every UC in full burns the run before a single
 capability is written.
 

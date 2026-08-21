@@ -72,7 +72,7 @@ Per slug in the PRD's `features:` (owner first):
 |---|---|
 | `prd:` frontmatter | the `PRD-###` id |
 | `## PRD` | the link + status: `[[PRD-<NNN> <Feature>]] — draft, N capabilities, M pending` |
-| `## Open Questions / Gates` | mirror § 11's lines, **same sentence** as the UC/UX they came from — never a reworded second copy |
+| `## Open Questions / Gates` | mirror § 11's lines, **same sentence** as the UC/UX they came from — never a reworded second copy. A § 11 line that came from this hub's own `## Coverage Gaps` is **already** mirrored here (`{conventions_reference}` § Feature Hub): confirm it, never add a second copy. Never write to `## Coverage Gaps` itself |
 | `## Notes / History` · `## Changelog` | one line each: what this run folded |
 
 **Nothing else on the hub.** Not the Signal Log, not `## Requirement Readiness`, not `## Use Cases`,

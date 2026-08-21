@@ -1,6 +1,6 @@
 ---
 name: bigin-new-project
-description: Initiate a new BA project in the current repo — materialize the rulebook and templates into `_bigin/`, capture the engagement config (client, approver, contacts, new vs. ongoing product), import a proposal or, for a greenfield project with none yet, ask what's being built and run domain research on it, materialize a repo-root CLAUDE.md as the project's standing agent brief, map the existing codebase when there is one, and verify the configured email/meeting providers are reachable, installing a missing MCP server where an install command is known. Use once per repo before the first /bigin-intake, and again after a plugin upgrade to refresh the materialized rulebook, regenerate CLAUDE.md, or re-check provider access.
+description: Initiate a new BA project in the current repo — materialize the rulebook and templates into `_bigin/`, capture the engagement config (client, contacts, new vs. ongoing product), import a proposal or, for a greenfield project with none yet, ask what's being built and run domain research on it, materialize a repo-root CLAUDE.md as the project's standing agent brief, map the existing codebase when there is one, and verify the configured email/meeting providers are reachable, installing a missing MCP server where an install command is known. Use once per repo before the first /bigin-intake, and again after a plugin upgrade to refresh the materialized rulebook, regenerate CLAUDE.md, or re-check provider access.
 argument-hint: "[client name]"
 ---
 
@@ -15,14 +15,14 @@ plugin context, so a path into the install directory is unreachable to them.
 
 > **Artifact Standard:** Outputs:
 >> **The materialized workspace** — `_bigin/conventions/`, `_bigin/stages/`, `_bigin/templates/`: plugin-owned, overwritten every run, reachable to every subagent.
->> **The engagement config** — `_bigin/system/project.md`: client, approver, contacts, providers, greenfield vs. ongoing, plus the project brief, domain-research pointer, and provider-readiness snapshot.
+>> **The engagement config** — `_bigin/system/project.md`: client, contacts, providers, greenfield vs. ongoing, plus the project brief, domain-research pointer, and provider-readiness snapshot.
 >> **The project agent** — repo-root `CLAUDE.md`: a delimited, plugin-owned section orienting any Claude Code session to the engagement, the workspace map, and the skill sequence, regenerated every run.
 
 ---
 
 ## Non-Negotiable Core Rules
 
-* **Record, never guess:** client name, approver, and email addresses come from the human. Unknowns stay `<unknown>` and get asked. Only the git remote (§ 3) and the codebase map (§ 6) may be derived, both read from the repo rather than from intent.
+* **Record, never guess:** client name, contacts, and email addresses come from the human. Unknowns stay `<unknown>` and get asked. Only the git remote (§ 3) and the codebase map (§ 6) may be derived, both read from the repo rather than from intent.
 * **Plugin-owned vs. project data:** overwrite `_bigin/{conventions,stages,templates}/` every run; never touch `_bigin/system/project.md`, `00-Inbox/`, `01-Requirements/`, `PRD.md`, `prototypes/`, `epics.md`. Project overrides belong in `.claude/bigin-ba-workflow-plugin.local.md`. `CLAUDE.md` is a special case — see § 5.4: only the plugin's own delimited section inside it is overwritten; whatever else is in that file, including a pre-existing codebase CLAUDE.md, is never touched.
 * **Verify, don't assume:** a partial copy surfaces later as a subagent silently unable to read its lane guide — reported as a clean run. Confirm the file count before continuing.
 * **Use the template, not memory:** `_bigin/templates/project.md` *is* the schema `/bigin-intake` parses. A hand-written variant is how a field it reads goes missing.
@@ -56,7 +56,9 @@ plugin context, so a path into the install directory is unreachable to them.
   | `project.md` exists | Already initiated. Materialize anyway (§ 2 is safe to repeat, and is how a plugin upgrade reaches an existing project), then show the current config and ask whether to (a) update specific fields, (b) leave it alone, or (c) re-initiate from scratch |
   | `project.md` exists, `FEATURES.md` missing | Create it from `_bigin/templates/feature-map.md` in either branch |
 
-* **Rules:** Only (c) rewrites `project.md`, only on explicit confirmation, and it still appends to the existing `## Changelog` rather than starting a new one. A config with no feature registry is broken — `/extract-signal` has nothing to anchor to.
+* **Rules:**
+  - Only (c) rewrites `project.md`, only on explicit confirmation, and it still appends to the existing `## Changelog` rather than starting a new one. A config with no feature registry is broken — `/extract-signal` has nothing to anchor to.
+  - **A pre-`1.7.4` config carries `approver` / `approver_email`.** Nothing reads them any more — approval is the call of whichever human is in the session, not a configured person. Leave them where they are on a refresh (they're project data, and stale-but-harmless), and drop both lines on an (a) field update or a (c) re-initiate. Never re-add them, and never ask for an approver.
 
 ## 2. Materialize the workspace
 
@@ -93,7 +95,6 @@ plugin context, so a path into the install directory is unreachable to them.
   | Field | How to get it |
   |---|---|
   | `client` | `$ARGUMENTS`, or ask |
-  | `approver` / `approver_email` | Ask — the one human who signs off requirements (`/approve-uc` gates on this person) |
   | `client_emails` | Ask — every address on the client side that might appear on an intake |
   | `team_emails` | Ask — your own team's addresses for this engagement |
   | `email_provider` | `AskUserQuestion`: **outlook** (default) or **spark** |

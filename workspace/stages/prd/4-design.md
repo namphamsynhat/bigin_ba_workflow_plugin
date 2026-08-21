@@ -85,17 +85,23 @@ Pool, into one list, in this order:
 
 1. every unchecked `- [ ] Q:` line in each folded UC's § 5 **Still open**
 2. every unchecked line in the UX spec's § 6 that is marked a **requirement gap**
-3. anything this run could not answer from the artifacts — a § 3 goal with no measure, a `BR-###`
+3. every `open` or `answered` row on the feature hub's `## Coverage Gaps` — what nobody has described
+   at all, found by `/bigin-transform-signal`'s coverage pass reading the feature's UC set as a set
+   (`{conventions_reference}` § Feature Hub). **These matter more here than anywhere else:** a gap
+   blocks no single UC, so a feature can reach this stage with every folded UC clean and still be
+   missing how its central record gets created, found, corrected, or retired. Left off this list, the
+   PRD reads as complete scope.
+4. anything this run could not answer from the artifacts — a § 3 goal with no measure, a `BR-###`
    with no enforcement point, two rules that contradict, a `PP-###` no capability addresses
 
 Rules for the list:
 
 ```text
-- keep the ORIGINAL SENTENCE for 1 and 2 — the same question, worded identically, so a human
-  answering it here and a human answering it on the UC are answering one question, not two
+- keep the ORIGINAL SENTENCE for 1, 2, and 3 — the same question, worded identically, so a human
+  answering it here and a human answering it on the UC or the hub are answering one question, not two
   ({conventions_reference} § One question, two places)
-- (ref: …) always names where it lives: UC-<NNN> § 5, or UX-<NNN> § 6, or PRD-<NNN> for a
-  gap this run found
+- (ref: …) always names where it lives: UC-<NNN> § 5, or UX-<NNN> § 6, or <slug> ## Coverage Gaps
+  #<n>, or PRD-<NNN> for a gap this run found
 - one decision per line, self-contained, plain business language
   ({conventions_reference} § Open Questions wording)
 - never write an A: line here. A decision is answered on the artifact that owns it and folded in by

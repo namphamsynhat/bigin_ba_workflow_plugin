@@ -75,10 +75,10 @@ settled decision-log row in a UC's § 5 that closed scope. Never derive a non-go
 | From | Take |
 |---|---|
 | each folded UC's § 1 | `Primary Actor`, `Secondary Actor(s)` |
-| `{project_file}` | the client-side approver and any named contact **role** |
+| `{project_file}` | any named client-side or team contact's **role** |
 | a UC's § 4 rule mirror | a role that only appears as a rule's approver (a reviewer, a supervisor) |
 
-Roles, never named people — including in the approver row. `Appears in` cites the UC ids the actor
+Roles, never named people — including the ones lifted from `{project_file}`'s contact tables. `Appears in` cites the UC ids the actor
 shows up in, which is how a reader spots an actor who only touches one flow.
 
 ## Before moving on

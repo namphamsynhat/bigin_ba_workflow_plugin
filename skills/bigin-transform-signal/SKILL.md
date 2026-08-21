@@ -1,6 +1,6 @@
 ---
 name: bigin-transform-signal
-description: This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's staged UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), and Design Directives. Stages every UC/BR update as final text in the artifact's `## Discussion` first, with a written question when a decision is genuinely needed — resumable, never blocking on a live human. It never promotes an Entity (EN) doc — it only cites the ENTITIES.md register; /sync-entities is the only skill that promotes one.
+description: This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's staged UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), and Design Directives, then checks each touched feature's use-case set as a set — whether it actually adds up against the business goal and the lifecycle of the things the feature manages — recording what nobody has described as a `## Coverage Gaps` row on the hub. Stages every UC/BR update as final text in the artifact's `## Discussion` first, with a written question when a decision is genuinely needed — resumable, never blocking on a live human. It never promotes an Entity (EN) doc — it only cites the ENTITIES.md register; /sync-entities is the only skill that promotes one.
 argument-hint: "[feature slug, or omit for all pending, or resume]"
 ---
 
@@ -52,7 +52,7 @@ folds a change in on the strength of one answered mid-run.
 | :--- | :--- | :--- |
 | `{conventions_reference}` | `_bigin/conventions/conventions.md` | ID scheme, § Use Case, frontmatter, status vocabularies |
 | `{paths_reference}` | `_bigin/conventions/paths.md` | resolves every `{variable}` the stage files use — what a subagent reads instead of this table |
-| `{stages_dir}` | `_bigin/stages/transform/` | `1-foldin`, `2-qualification`, `3-routing`, `3-lane-{uc,br,design}`, `4-sync`, `5-status` |
+| `{stages_dir}` | `_bigin/stages/transform/` | `1-foldin`, `2-qualification`, `3-routing`, `3-lane-{uc,br,design}`, `4-sync`, `4b-coverage`, `5-status` |
 | `{requirements_file}` | `01-Requirements/FEATURES.md` | the feature slug registry |
 | `{hub_dir}` | `01-Requirements/_features/<slug>.md` | one Feature Hub per slug |
 | `{uc_dir}` | `01-Requirements/_ucs/UC-<NNN> <Title>.md` | **Use Cases** — the requirement artifact |
@@ -86,7 +86,7 @@ scope = $ARGUMENTS slug, else every {hub_dir} file
 2  qualify   build the worklist, gate each signal                            [2-qualification.md]
 3  route     send each qualified signal down its lane                        [3-routing.md → 3-lane-*.md]
 4  sync      shared registers + cross-feature UC changes, draft § 2/§ 3, flag,
-             conflict-check                                                 [4-sync.md]
+             conflict-check, then coverage-check the whole UC set    [4-sync.md → 4b-coverage.md]
 5  status    set every status from a live re-count, verify, report            [5-status.md]
 ```
 
@@ -132,7 +132,9 @@ per answered question NO row points at → § Orphan answers: settle it, or send
 ```text
 worklist = every Signal Log row with Status: new or held      # re-check `held` every run —
                                                               # what blocked it may now be resolved
-empty → say so, stop
+empty → say so, stop — EXCEPT when $ARGUMENTS named a slug: run Stage 4's coverage pass on it
+        first (4b-coverage.md § When it runs), because "/bigin-transform-signal <slug>" with no new
+        signals is someone asking whether that feature is COMPLETE, not whether it has mail
 each row passes four gates, in order, stopping at the first failure:
     1 blocked-on-answer · 2 source-materialized · 3 fidelity · 4 dedup        [2-qualification.md]
 ```
@@ -192,7 +194,7 @@ a subagent NEVER writes:  {design_principles_file}                              
 a subagent DOES write:    its own feature's hub, its own UCs, its BRs
 ```
 
-## Stage 4 — Sync, draft § 2/§ 3, and conflict-check
+## Stage 4 — Sync, draft § 2/§ 3, conflict-check, coverage-check
 
 ```text
 orchestrator, after every Stage 3 subagent has reported                      [4-sync.md]
@@ -207,6 +209,10 @@ orchestrator, after every Stage 3 subagent has reported                      [4-
         every `<a> + <b>` row · no qualified row still `new`.  Mismatch is BLOCKING.
     flag any UC whose ## 2 changed this pass for /approve-uc re-review
     conflict-check each touched feature, scoped to that feature
+    COVERAGE-CHECK each touched feature as a whole UC SET (Part 4 → 4b-coverage.md): does it ADD UP —
+        every entity's lifecycle, every dangling pre-condition, every actor's own goal, the feature's
+        stated purpose, data nothing writes, a BR no UC enforces. Gaps land as `## Coverage Gaps`
+        rows on the HUB. Never a UC, never a step, never a question on a UC.
 ```
 
 A cross-feature UC change is **staged, not applied** — it is UC content, so it passes the same gate.
@@ -243,6 +249,12 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 
 - **Drafting from an unqualified signal** — a flow built on an incomplete source reaches `/approve-uc`
   looking identical to a sound one.
+- **Never asking whether the feature's use cases ADD UP** — the most expensive failure here, because
+  every individual artifact looks right. A donor feature can carry sound, approved use cases for
+  recording a gift, issuing a certificate, and auditing changes while **nothing describes how a donor
+  is created, found, corrected, or retired** — nobody said it out loud, so no signal exists, so no row,
+  question, or conflict ever appears. It surfaces at build or UAT, as a module that cannot be used.
+  Stage 4 Part 4 is the only pass that reads a feature's UC set as a set (`4b-coverage.md`).
 - **Skipping `uc-detector`, or re-deciding new-vs-update inside `uc-drafter` anyway** — the whole
   reason the lookup got its own step is that a busy drafting pass under-reads a cross-feature hub and
   either mints a duplicate UC or drafts into the wrong one.

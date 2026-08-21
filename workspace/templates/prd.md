@@ -83,7 +83,7 @@ said the number. -->
 
 ## 4. Actors & Stakeholders
 <!-- Roles, never named people. Primary and secondary actors are lifted from each folded UC's § 1;
-an approver or sponsor comes from _bigin/system/project.md. -->
+a sponsor or other stakeholder role comes from _bigin/system/project.md's contact tables. -->
 
 | Actor / stakeholder | Role in this feature | Appears in |
 |---------------------|----------------------|------------|
@@ -201,7 +201,9 @@ scope (P2). Re-run this skill once it is approved and it moves up into §§ 5-9.
 ## 11. Open Business Decisions
 <!-- Every unresolved decision this PRD is exposed to, in one place, so a sponsor can clear them in
 one sitting. Sourced from: each folded UC's § 5 Still open, the UX spec's § 6 questions marked as
-requirement gaps, and anything this run found unanswerable in §§ 1-10.
+requirement gaps, the feature hub's open ## Coverage Gaps rows (what nobody has described at all —
+these block no single UC, so they reach here with every folded UC looking clean), and anything this
+run found unanswerable in §§ 1-10.
 
 This list is why status stays `draft` — a PRD with open decisions is not approvable.
 
@@ -211,7 +213,7 @@ document into agreement with itself. Wording rules: conventions.md § Open Quest
 self-contained, one decision per line, plain business language.
 
 Format:
-- [ ] Q: <the decision, stated so a business reader can answer it without opening another file> (owner: client|team) (ref: UC-<NNN> § 5 / UX-<NNN> § 6 / PRD-<NNN>)
+- [ ] Q: <the decision, stated so a business reader can answer it without opening another file> (owner: client|team) (ref: UC-<NNN> § 5 / UX-<NNN> § 6 / <slug> ## Coverage Gaps #<n> / PRD-<NNN>)
       A: -->
 
 ## 12. Assumptions, Dependencies & Constraints

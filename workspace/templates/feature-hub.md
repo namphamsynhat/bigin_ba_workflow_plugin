@@ -61,6 +61,26 @@ step was inserted. Refreshed by /bigin-transform-signal Stage 4. -->
 | UC | Goal | Role | Status |
 |----|------|------|--------|
 
+## Coverage Gaps
+<!-- What this feature's use-case set does NOT account for — the half a conflict check can't see.
+Written by /bigin-transform-signal's coverage pass (_bigin/stages/transform/4b-coverage.md), which
+reads the feature's whole UC set as a SET and tests it against six lenses: entity lifecycle (created,
+found, corrected, state-changed, retired, merged), dangling ## 1 pre-conditions, actors with no goal
+of their own, the feature's own stated purpose and open PP-### rows, data a step or rule reads that
+no UC writes, and a BR-### no UC's ## 4 enforces.
+A gap is a FINDING, never a work order: the Gap cell states what nobody has described, in plain
+business language a client can answer out loud, and NEVER proposes the answer. It is not a UC's open
+question and must never park a UC that is otherwise ready — a gap is feature-level by nature.
+# is permanent, append-only, never renumbered or deleted — same discipline as the Signal Log.
+Status: open (nobody has answered) · answered (a human said what should happen; it still has to
+arrive through /bigin-intake before it can become content) · covered (a UC now covers it — cite the
+id in Notes) · rejected (explicitly out of scope — cite who decided). Open and answered rows mirror
+into ## Open Questions / Gates, same sentence. Empty is a real and good result for a feature whose
+set adds up; a MISSING section means nobody has checked yet. -->
+
+| # | Gap | Lens | Raised | Status | Notes |
+|---|-----|------|--------|--------|-------|
+
 ## Requirement Readiness
 <!-- A refreshed snapshot for orientation — NOT the authoritative gate. The authoritative gate is always the UC/BR's own frontmatter status, checked live by /bigin-transform-signal, /prd, /uiux at run time (see conventions.md § Feature material). This table just saves a human (or agent) from opening every UC/BR to see what's ready. An approved UC can still receive new signals later (hard rule 7 — approval doesn't freeze it); when that happens it's staged and re-applied via /bigin-transform-signal's normal discussion round, not held in a separate backlog — note it here the same way as any other pending change (e.g. "approved — 2 new signal(s) since approval, not yet run through /bigin-transform-signal"). -->
 

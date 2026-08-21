@@ -45,6 +45,11 @@ whose own signals were processed:
 refresh ## Requirement Readiness   # a snapshot for orientation, re-derived from each UC's/BR's own
                                    # status. NOT the gate — each artifact's own status is
 confirm ## Use Cases and uc: match the UC's features:   # Stage 4 Part 1b wrote them; this is read-back
+confirm every `open`/`answered` ## Coverage Gaps row is mirrored in ## Open Questions / Gates
+LEAVE ## Coverage Gaps ITSELF ALONE  # Stage 4 Part 4 owns it (4b-coverage.md). Never re-derive,
+                                   # re-status, or add a row here — and never delete the section
+                                   # because it is empty: empty means the set adds up, MISSING means
+                                   # nobody has checked, which is the coverage pass's backfill trigger
 append one ## Notes / History bullet
 DO NOT change the hub's status:    # it mirrors the {requirements_file} row — a SCOPE state, not a
                                    # workflow state. There is no "ready for PRD" feature status.
@@ -89,6 +94,13 @@ where Part 3 runs anyway. Don't hand the command to a dispatched agent.
 
 The checker is an accelerator, not a replacement. It cannot see intent, and it cannot see history.
 
+**Coverage gaps are deliberately not a tenth check.** The nine are consistency invariants — a
+statement the vault either satisfies or doesn't. "This feature's use-case set doesn't add up" is a
+judgment about the business, made once per touched feature in Stage 4 Part 4 with the whole set in
+view, and it moves no artifact's status. The one thing Part 2 above does assert is the *mirror*: an
+`open` gap row that never reached `## Open Questions / Gates` is invisible to the human, which is a
+bookkeeping failure and does belong here.
+
 | # | Check | Why |
 | :--- | :--- | :--- |
 | 1 | every `staged` row has a matching `## Discussion` entry citing its `INT-###` | a `staged` row with nothing staged is stranded — it no longer reads as pending, so no future run collects it |
@@ -114,9 +126,12 @@ Stage 3 (draft):   <N> UC created, <N> updated, <N> BR created, <N> BR updated
                    design: <N> directive(s) — <slug> ## Design Directives, <N> DESIGN-PRINCIPLES row(s)
 Stage 4 (sync):    <N> UC id(s) minted, <N> cross-feature UC change(s),
                    <N> UC(s) with § 2/§ 3 drafted, <N> flagged for review, <N> conflict(s) — or none
-                   coverage: <N> dispatched / <N> accounted for                      # 4-sync § Part 2b
+                   dispatch coverage: <N> dispatched / <N> accounted for              # 4-sync § Part 2b
+                   set coverage: <slug> — <N> new gap(s) (<lens>, <lens>), <N> closed,
+                       <N> held back | <slug> — clean                              # 4b-coverage.md
 cross-feature:     UC-### spans <slug> · <slug> — pointers written on both
 remaining:         <slug>: UC-###/BR-### — N open question(s), owner client|team
+                   <slug>: N coverage gap(s) open — for the next client conversation, not a UC blocker
 next:              <slug> ready for /approve-uc | <slug> ready for /bigin-generate-design (design-only)
 ```
 
@@ -133,6 +148,11 @@ produces a large diff.
   run that skips them is indistinguishable from the run that passes them, until a signal goes missing.
 - **Reading check 9 as "the human hasn't answered yet".** Check the `A:` line, not the checkbox: an
   answer written without ticking the box is still an answer, and the row still has to re-enter.
+- **Re-deriving or tidying `## Coverage Gaps` in the hub refresh.** It is not a derived table; erasing
+  a real gap and inventing a wrong one are the same mistake, and deleting the empty section resets the
+  feature to "never checked".
+- **Reporting a coverage gap as if it blocked a UC.** It blocks the feature, not the artifact — a UC
+  with zero open questions is still ready while its feature carries three gaps.
 - **Changing a hub's `status:`.** It mirrors scope from `{requirements_file}`; overwriting it desyncs
   the registry with nothing to reconcile them.
 - **Flipping an artifact off `needs-clarification` with a question still unchecked** — including one

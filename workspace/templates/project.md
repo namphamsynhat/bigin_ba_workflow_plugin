@@ -1,8 +1,6 @@
 ---
 type: config
 client: <client name>
-approver: "<approver name>"
-approver_email: "<approver email>"
 client_emails:
   - <client contact email>
 team_emails:
@@ -42,7 +40,7 @@ updated: <YYYY-MM-DD>
 
 Any field the human didn't supply stays `<unknown>` — never inferred.
 
-Client: **`<Client Name>`** · Approver: **`<Approver Name>`** (`<approver email>`)
+Client: **`<Client Name>`**
 
 ## Client contacts
 | Name | Email | Role |

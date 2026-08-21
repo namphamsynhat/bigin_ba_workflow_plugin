@@ -28,7 +28,11 @@ what governs a stage is findable from the stage, and a run loads only the files 
                            drafted/updated Use Cases (a user goal with its flow, branches, rules
                            mirror and open questions) and the BRs governing them, human-gate every
                            UC/BR change first. Cites an Entity's proposed row by name -- never
-                           promotes one; that waits for /sync-entities, after approval
+                           promotes one; that waits for /sync-entities, after approval.
+                           Then checks each touched feature's use cases AS A SET: does it add up --
+                           every entity's lifecycle, every pre-condition somebody produces, every
+                           actor's own goal? What nobody has described lands as a Coverage Gap on
+                           the hub -- never invented into a use case
         |
         |------------------------------------------.
         |                                          |
@@ -88,7 +92,7 @@ All state is written into the current repo — `_bigin/` for engagement config p
 rulebook, `00-Inbox`/`01-Requirements` for the requirements vault:
 
 ```
-_bigin/system/project.md         engagement config: client, approver, contacts, providers,
+_bigin/system/project.md         engagement config: client, contacts, providers,
                                   new vs. ongoing product, codebase map, provider readiness
 _bigin/conventions/               the shared standard, copied in by /bigin-new-project —
                                   conventions.md (ID scheme, schemas, status vocabularies) and
@@ -113,8 +117,8 @@ _bigin/templates/                 blank scaffolds for every artifact type, same 
 ├── PAIN-POINTS.md               canonical PP-### register
 ├── ENTITIES.md                  candidate EN-### rows a signal reveals (proposed only)
 ├── DESIGN-PRINCIPLES.md         durable, cross-cutting design constraints
-├── _features/<slug>.md          one Feature Hub per slug — Signal Log, Use Cases, Entities,
-│                                 Requirement Readiness, Pain Points
+├── _features/<slug>.md          one Feature Hub per slug — Signal Log, Use Cases, Coverage Gaps,
+│                                 Requirement Readiness, Entities, Pain Points
 ├── _ucs/UC-<NNN> <Title>.md      one Use Case doc per user goal — THE requirement artifact:
 │                                 actors, flow, branches, rules mirror, open questions. May span
 │                                 features (features: [], owned by primary_feature:)
