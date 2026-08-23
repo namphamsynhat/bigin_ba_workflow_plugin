@@ -100,12 +100,17 @@ sequence; use the `Grep` **tool**, never a Bash pipeline — a denied pipeline s
 | `owner` / `updated` | `team`, today |
 
 Leave `links:`, `brs:`, `entities:`, `pain_points:`, `absorbs:` empty unless this run fills them. Leave
-the `> [!summary]-` block blank — it belongs to `/enrich-feature`, which is **halted** today
-(`conventions.md` § Reconciliation notes), so in practice it stays blank. That is correct: a summary
-written by this lane would be this lane's paraphrase of content the human hasn't reviewed yet.
+the `> [!summary]-` block blank — nothing writes it any more (`conventions.md` § Reconciliation notes:
+it was `/enrich-feature`'s under its old per-UC design; enrichment is feature-scoped now and never
+touches a UC), so it stays permanently blank. That is fine: a summary written by this lane would be
+this lane's paraphrase of content the human hasn't reviewed yet.
 
-Then add the id to the hub's `uc:` list and a pointer row to its `## Use Cases` — the same write, the
-same actor (the orchestrator), in the same sequential pass that minted the id.
+Then add the id to the hub's `uc:` list, a pointer row to its `## Use Cases`, **and the id to
+`{requirements_file}`'s `UC` column for this feature's row** — the same write, the same actor (the
+orchestrator), in the same sequential pass that minted the id (`conventions.md` § Feature Map
+format). Skip that third write and `{requirements_file}` silently goes stale the moment this UC is
+minted — nothing else ever refreshes it, and a later reader who trusts that column instead of the
+hub's own `uc:`/`## Use Cases` will scope their work to the wrong, smaller set of UCs.
 
 **Never write into `## 1`–`## 6` on creation.** A new UC is created with its numbered sections empty and
 its first content staged in `## Discussion`, like every later change. The gate applies to the first step
@@ -304,7 +309,9 @@ rather than the note): answered → re-entered by Stage 1, never left sitting.
 - Write a rule statement into `## 4`, or any `BR-###` content beyond adding this UC to its `uc:` list.
 - Renumber, reuse, or delete an `S#`, `A#`, or `E#`.
 - Write `status: approved`, `removed`, `enriched`, or `consolidated` — approval and removal are
-  human-gated; the other two belong to their own skills.
-- Write `## Domain Concerns` or the summary block — `/enrich-feature` owns both, and it is halted, so
-  both stay empty rather than getting filled by whoever noticed the gap.
+  human-gated; `consolidated` belongs to `/consolidate-prd`; `enriched` is permanently unreachable
+  (enrichment moved off the UC — § Feature Hub).
+- Write the summary block — nothing sets it any more; leave it blank/omitted (§ Reconciliation
+  notes). There is no `## Domain Concerns` section on the UC any more either — enrichment findings
+  land on the feature hub's `## Domain Research` instead.
 - Edit an `FR-###`'s body, or set it `removed`. An absorbed FR is frozen history.

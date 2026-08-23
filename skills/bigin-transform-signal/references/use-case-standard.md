@@ -149,7 +149,8 @@ forced to write it down opposite the action. Both columns still follow the inten
 
 The draft format that started this work had open items as an `OPEN-01` table. This vault has a
 load-bearing invariant — zero unchecked `- [ ] Q:` lines ⟺ status is not `needs-clarification` —
-that `/extract-signal`, `/enrich-feature`, and this skill all enforce by counting checkboxes. A
+that `/extract-signal` and this skill both enforce by counting checkboxes (`/enrich-feature` is
+feature-scoped now and never writes a UC's questions). A
 second question format would either break that count or duplicate every question into two places,
 which `conventions.md` § One question, two places exists to prevent.
 

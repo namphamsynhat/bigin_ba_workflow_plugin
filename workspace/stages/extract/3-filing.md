@@ -22,6 +22,7 @@ present, overrides anything here.
 |---|---|
 | the table's `Feature`, `Status`, `Notes`; the note's `## Open Questions`, `status`, `tags` | any `UC-###`/`BR-###` content |
 | a hub's `## Signal Log`, `## Pain Points`, `sources`, `updated` | any `EN-###` document, or a hub's `## Entities` / `## Requirement Readiness` / `## Business Scenarios` |
+| a new hub's `## Domain Research` (§ Step 2a only, new hub) + `01-Requirements/_research/<slug>/domain-research.md` | a `## Domain Research` entry on an already-existing hub — that's `/enrich-feature`'s refresh, not this stage's |
 | `{pain_points_file}`, `{entities_file}`, `{design_principles_file}` rows | the `#`, `Type`, `Signal`, or `Why` of any table row — 2-extraction.md owns those |
 | a **checked box + `A:` line** on another `INT-###`'s `## Open Questions`, when a row of this note answers it (§ Step 5b) — nothing else on that note | a `{requirements_file}` row **from your own reading** — a new slug is a human's call. Sole exception: a slug the human themselves declared at capture (§ The declared-slug exception) |
 
@@ -160,6 +161,38 @@ still on the page but no longer legible as separate obligations.
 (that row's, mirrored once), `sources: [<INT-###>]`, `updated`. Leave `fr`, `code_areas`, `prd`,
 `epics`, `stories`, `uiux`, `entities` at template defaults. Existing hub: add this `INT-###` to
 `sources` if absent, bump `updated`, touch nothing else.
+
+## Step 2a — Domain research (new hub only)
+
+Fires exactly once per feature: the same run Step 2 created the hub from `{template_hub}` because
+the slug had none. **Never** on a run that only added a signal to an already-existing hub.
+
+```text
+in:   the feature name (the {requirements_file} Feature column) + a one-line scope — from the
+      confirmed new-feature-proposal's scope line (§ Drafting a new-feature proposal), the
+      declared-slug's scope, or the proposal document's own wording (§ The declared-slug exception,
+      and /bigin-new-project § 5.1 imports)
+out:  a full report at 01-Requirements/_research/<slug>/domain-research.md, and one pointer entry
+      appended to the hub's own ## Domain Research section
+never: block hub creation or Signal Log filing on this — a failed/skipped research pass is
+       recorded, not fatal
+```
+
+Read `_bigin/conventions/domain-research-method.md` for how the pass actually runs — scope is
+"the `<feature-name>` feature," input text is the name + one-line scope gathered above. Follow it
+through, then:
+
+1. Write the full findings to `01-Requirements/_research/<slug>/domain-research.md` (new file, one
+   per feature, no template — same freeform-prose shape `/bigin-new-project` § 5.3 uses for its own
+   report).
+2. Append one entry to the hub's `## Domain Research` section: `- **<date>** — initial domain
+   grounding — <one-line summary of the single most decision-relevant finding> ([full
+   report](01-Requirements/_research/<slug>/domain-research.md))`.
+3. If the research pass failed or was skipped (no method resolved, dispatch error), append the same
+   entry shape with `— research skipped: <why>` in place of the summary, and no report link. This is
+   what `/enrich-feature` later checks to know a feature never actually got grounded.
+
+Report which slugs got a fresh `## Domain Research` entry this run, same as any other hub write.
 
 ## Step 3 — Conflicts inside one note
 

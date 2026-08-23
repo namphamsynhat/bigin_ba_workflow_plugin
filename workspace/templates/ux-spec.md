@@ -11,9 +11,24 @@ feature:                # the ONE FEATURES.md slug that OWNS this spec. One UX s
                         # a re-run updates it in place, never forks it.
 features: []            # every slug these screens touch, owner first (a cross-feature UC is
                         # designed here, in its primary_feature's spec)
+platform: web           # web | mobile | both — COPIED from the project config
+                        # (_bigin/system/project.md frontmatter). Absent there reads as `web`, the
+                        # compatibility default. A different value here is only ever a PER-FEATURE
+                        # OVERRIDE that a UC, a hub ## Design Directives row, or a DESIGN-PRINCIPLES
+                        # row EXPLICITLY stated for this feature — cite it on § 1's Platform line.
+                        # Never inferred from a step's wording
+                        # (design-conventions.md § Platform). Verified in Stage 5 (check 13).
 uc: []                  # UC-### id(s) designed here
 brs: []                 # BR-### id(s) that produced a state or a validation
 entities: []            # EN-### id(s) the screens render fields from
+actors: []              # every role § 1's Actor & Scope table carries, each as
+                        # "<role>:<own|assigned|unit|all>:<one|few|many>" — e.g.
+                        # ["Member:own:one", "Administrator:all:many"]. Read from the in-scope UCs'
+                        # § 1 actors, never invented (design-conventions.md § Actor scope).
+                        # A spec with two actors at different volume bands must carry SEPARATE
+                        # screens for them, not one screen serving both. Verified in Stage 5
+                        # (check 15). Absent on a spec written before this key existed —
+                        # 3-screens.md § Adopting an existing UX spec builds it on the next run.
 sources: []             # UC-###/BR-###/EN-### ids + DESIGN-PRINCIPLES row #s + hub directive #s
 absorbed: []            # UC-<NNN>@<version> — THE staleness record. Only UCs that really got
                         # screens this run. Re-stamped WHOLE every run (§ Staleness).
@@ -34,18 +49,58 @@ updated:
 <!-- Assembled in Stage 3 Part 1. Never invented: every line traces to something already written. -->
 
 * **Users:** `<the actors from each UC's § 1 — roles, never named people>`
-* **Platform:** `<web / mobile / both — only if a UC, a directive, or a principle says so>`
+  <!-- The flat roll-call. The Actor & Scope table below is the same roles with the three facts that
+  decide their screens — same list, never a different one. Neither replaces the other: this line is
+  what the feature's audience is, the table is what each of them can reach. -->
+* **Platform:** `<web / mobile / both — the project config's value, carried down by Stage 1>`
+  <!-- The config decides it. A UC, a directive, or a principle matters here only when it EXPLICITLY
+  states a platform for THIS feature — then write that value and cite the row that stated it
+  ("mobile — hub ## Design Directives #3: the courier's job list is phone-only"). "At a desk" is
+  where an actor is, not a stated platform; ambiguous → the config value plus a § 6 question.
+  "not stated" is not a value: absent everywhere means the config, and absent there means `web`. -->
 * **Principles applied:** `<DESIGN-PRINCIPLES row # — the principle, in the client's words>`
 * **Directives applied:** `<hub ## Design Directives row # — the directive>`
 * **Known gaps:** `<one line per open question already on a UC's § 5, or per entity still proposed/draft>`
   <!-- These are gaps the screens work around, not gaps to guess at. -->
 
+**Actor & Scope**
+<!-- One row per actor the in-scope UCs name in their § 1 — no more, no fewer. This table is what
+stops the run designing one screen for two actors whose work is not the same work: a member reading
+their own record and an administrator working a directory of ten thousand read identically in a UC
+and are two different products (design-conventions.md § Actor scope).
+
+EVERY cell is READ, never assumed. Unresolvable → the narrowest reading, plus a § 6 question.
+  Sees whose   own | assigned subset | their unit's | all
+               ground: a BR-### on visibility/permission, the UC's § 1 pre-conditions, or how the
+               UC defines the actor
+  How many     one | few | many (unbounded — it grows with the business)
+               ground: the EN-### relationship cardinality, a BR-### cap, or a UC step
+  May act on   read one · act on one · act on MANY at once
+               ground: a UC step or a BR-###. NEVER the volume (D8) — an unstated bulk action is a
+               requirement gap in § 6, owner: client, not a design call. -->
+
+| Actor | Sees whose records | How many | May act on | Grounded by |
+|-------|--------------------|----------|------------|-------------|
+
 ## 2. Screen Inventory
 <!-- One row per screen. `Serves` is the step id(s) the screen delivers — every S# must exist in
-that UC and not be removed. Two UCs landing on the same place share ONE row. -->
+that UC and not be removed.
 
-| Screen | Purpose | Serves | Entities | Key actions |
-|--------|---------|--------|----------|-------------|
+Two UCs landing on the same place share ONE row ONLY when their actors' scope agrees. Compare the
+Actor & Scope rows above (design-conventions.md § Actor scope):
+    the VOLUME BAND differs      → TWO rows, each naming its own actor
+    the CAPABILITY differs       → TWO rows
+    both agree, only WHICH       → ONE row; carry the difference in the § 3 element table's
+    FIELDS are visible differs     `Visible to` cell, citing the BR-### that restricts it
+Two rows means two names that make the actor legible — `Member Directory (Admin)` beside
+`My Profile`, never `Member Record` written twice.
+
+`Volume` is the band from the Actor & Scope table — it decides the machinery the § 3 spec must
+carry: a `many` screen needs a find mechanism and the volume states, a `one` screen must not have
+them (there is nothing to find). -->
+
+| Screen | Actor | Volume | Purpose | Serves | Entities | Key actions |
+|--------|-------|--------|---------|--------|----------|-------------|
 
 ## 3. Screen Specs
 <!-- One block per inventory row. SEMANTIC STRUCTURE ONLY: token names, never values (D2). Every
@@ -56,12 +111,42 @@ directive (D3). An element grounded in nothing is a question in § 6, not a gues
 
 * **Purpose:** `<one line>`
 * **Serves:** `UC-<NNN> S<n>, S<n>`
-* **Regions:** `<header / nav / main / aside / footer — semantic elements, not a pixel layout>`
+* **Actor:** `<the ONE role this screen is for — from the Actor & Scope table>`
+* **Scope:** `<whose records · how many · what they may do, each cited — e.g. "all · many (EN-004,
+  many Orders per Account) · read one, act on one (UC-030 S2)">`
+  <!-- A `many` screen MUST carry a find mechanism (search, filter, or sort) and the volume states
+  below; a `one` screen must carry neither. Anything past finding — bulk action, export, a saved
+  view — needs its own UC step or BR-### or it is a requirement gap in § 6 (D8). -->
+* **Regions:** `<this platform's vocabulary only — web: header / nav / main / aside / footer ·
+  mobile: header / content / tab-bar / sheet / fab — semantic elements, not a pixel layout>`
+  <!-- A `nav` region on a phone screen, or a `tab-bar` on a web one, is the wrong vocabulary: it
+  asks a tool to build a shell the platform does not have (design-conventions.md § Platform;
+  Stage 5 check 14). -->
 
-| Element | Content / copy | Token(s) | Field | Grounded by |
-|---------|----------------|----------|-------|-------------|
+<!-- PER-PLATFORM LAYOUT SPLIT — on `platform: both` ONLY, and ONLY for a screen whose two shells
+genuinely differ. Everything else in this block stays SHARED: one Purpose, one Serves, one Element
+table, one States table, one Interactions table — the inventory and the behaviour are the user's
+goals, only the layout is the platform's. Replace the single **Regions** line above with:
+
+* **Layout — Web:** `<header / nav / main / aside / footer>`
+* **Layout — Mobile:** `<header / content / tab-bar / sheet / fab>`
+
+Identical on both platforms → keep the one **Regions** line and write NO split. Two identical
+Layout lines are worse than none: they read as a considered difference and leave the next run
+maintaining two copies of one layout (check 14). -->
+
+| Element | Content / copy | Token(s) | Field | Visible to | Grounded by |
+|---------|----------------|----------|-------|------------|-------------|
+<!-- `Visible to` is filled ONLY when a BR-### restricts an element to some of this screen's actors
+(`Admin only — BR-018`). Blank means every actor of this screen sees it. It is not a place to
+smuggle a second actor into a screen the split rule says should be two. -->
 
 **States**
+<!-- On a `many` screen the VOLUME states are required and grounded by the volume fact itself
+(cite it like any other ground: "EN-004 many-per-Account · UC-030 S2"):
+empty · few · many at real scale · loading · error. The `many` row says the real number the
+prototype should render — "≈10,000 records, page 1 of 400" — because a prototype seeded with three
+rows tests nothing the client is worried about. -->
 
 | State | Trigger | What the user sees | Grounded by |
 |-------|---------|--------------------|-------------|
@@ -91,7 +176,12 @@ references the shared system; it never forks it. -->
 * **Components used:** `<name, name, …>`
 * **Added this run:** `<token/component — why nothing existing fitted>`
 * **Nav map version:** `<version>`
-* **Nav entries added:** `<id (e.g. settings.team) — label — screen, or "none — reached only via another screen">`
+* **Nav entries added:** `<[structure] id (e.g. settings.team) — label — screen, or "none — reached
+  only via another screen">`
+  <!-- On `both`, name which structure each entry went into — `[Web] settings.team` /
+  `[Mobile] more.team` — because the two shells are two trees: the same feature legitimately carries
+  a different id in each, and an entry added to one shell only is normal, not an omission. On `web`
+  or `mobile` there is one structure, so the prefix is unnecessary. -->
 
 ## 6. Open Questions
 <!-- The canonical list. Zero unchecked lines ⟺ status is not needs-clarification
@@ -149,13 +239,40 @@ track — instrumentation is behaviour. Not a requirement, not a target, not a d
 | Measure | What would be observed | Which row above it tests |
 |---------|------------------------|--------------------------|
 
-## Prototype Prompt — Claude design
-<!-- Self-contained (D6): no UC-/BR-/EN-/PP-/UX-/INT-/PRD- id, no step id, anywhere below.
-Built in Stage 4 from these screens plus the design system's real values. -->
+<!-- HOW MANY BLOCKS IS A PLATFORM FACT (design-conventions.md § Prototype prompt; Stage 5 check 8):
 
-## Prototype Prompt — Figma Make
+    platform: web     2 blocks — the two (Web) headings.    Delete the (Mobile) pair.
+    platform: mobile  2 blocks — the two (Mobile) headings. Delete the (Web) pair.
+    platform: both    4 blocks — all four, same screens, same states, same copy in every one.
+
+A spec carrying the UNSUFFIXED `## Prototype Prompt — Claude design` / `— Figma Make` headings was
+written before the suffix existed. That is a `web` spec by definition — `web` is the absent-platform
+default — and it self-heals on its feature's next design run (3-screens.md § Adopting an existing
+UX spec). Nothing downstream requires the suffix.
+
+The platform's design engine renders the actual prototype artifacts. These blocks are the DURABLE,
+TOOL-PORTABLE RECORD: they stay in the spec so the prototype is reproducible by hand, in any tool,
+after the engine has changed or gone. Record where an engine's artifacts landed as a pointer in the
+Stage 5 report — never paste rendered output in here. -->
+
+## Prototype Prompt — Claude design (Web)
+<!-- Self-contained (D6): no UC-/BR-/EN-/PP-/UX-/INT-/PRD- id, no step id, anywhere below.
+Built in Stage 4 from these screens plus the design system's real values. Addressed to a builder:
+behaviour, states, working HTML. Desktop width, a persistent sidebar / nav-bar shell. -->
+
+## Prototype Prompt — Figma Make (Web)
 <!-- Same screens, same tokens, same copy as the block above — addressed to a design tool
 (frames, components, variants) instead of a builder. Self-contained (D6). -->
+
+## Prototype Prompt — Claude design (Mobile)
+<!-- Same screens, same states, same copy as the Web blocks — only the chrome changes: a 390px phone
+frame, a bottom tab bar, safe-area insets, touch-target minimums. A screen present in one block and
+missing from another, or copy reworded "because it's a phone", is the failure the suffix exists to
+prevent: whichever block the BA pastes, the others silently become wrong. Self-contained (D6). -->
+
+## Prototype Prompt — Figma Make (Mobile)
+<!-- The mobile prompt in design-tool language — mobile-first viewport (390×844, which Figma Make
+previews natively), bottom tab navigation, safe-area insets. Self-contained (D6). -->
 
 ## Changelog
 - 1.0 (YYYY-MM-DD) — created from `UC-<NNN>@<version>`

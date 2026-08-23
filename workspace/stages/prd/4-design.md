@@ -26,11 +26,11 @@ UX spec exists                → fill § 9 from it, and record UX-###@version f
 | § 9 element | Source in the UX spec |
 |---|---|
 | `Design spec` + version | its frontmatter `id`, `status`, `version` |
-| `Platform` | § 1 Design Brief `Platform` |
+| `Platform` | § 1 Design Brief `Platform` — copy it as stated. A spec written before the field existed carries none: that is a `web` spec (`{design_conventions}` § Platform), not a gap to raise |
 | `Design intent, as stated to us` | § 1 `Principles applied` + `Directives applied` — the client's words, not the row numbers alone |
-| **Screens** table | § 2 Screen Inventory: `Screen`, `Purpose` → `What the actor does there`, `Serves` → the § 5 capability whose UC owns those `S#` ids |
+| **Screens** table | § 2 Screen Inventory: `Screen`, `Purpose` → `What the actor does there`, `Serves` → the § 5 capability whose UC owns those `S#` ids. Carry the `Actor` cell too, and the `Volume` band **in business words** where it is `many` ("the administrator's view of all ~10,000 members") — two screens the design split by actor are two rows here, never collapsed back into one: which actor a screen is for, and how much they are looking at, is business content a reader can verify, unlike anything else on the design side. A spec written before those columns existed carries neither; leave them out rather than inferring an actor |
 | **Journeys** table | § 4 Flows: `Path` → `The path through the screens`, `Success` → `Ends on` |
-| `Prototype` | say the prompts are in `UX-<NNN> § Prototype Prompt — Claude design` / `— Figma Make`. **Point, never restate** |
+| `Prototype` | say the prompts are in `UX-<NNN>`, naming **the prompt-block headings that spec actually carries** — the headings are platform-suffixed, so a `web` or `mobile` spec has 2 (`§ Prototype Prompt — Claude design (Web)` / `— Figma Make (Web)`, or the `(Mobile)` pair) and a `both` spec has all 4. A pre-suffix spec carries the unsuffixed `— Claude design` / `— Figma Make` pair. Read the spec's own headings; never assume a fixed pair. **Point, never restate** |
 | `Known design gaps` | § 6 Open Questions, unchecked lines only, translated to business words |
 | `What the system does for the actor` *(only when § 7 exists)* | § 7 Relationship Model: what it remembers between visits, and what it does unprompted versus only suggests — **in business words, two or three lines.** Cite the `BR-###` that granted it. Never reproduce the Trust Map table, never carry the Proposed Measures, and never describe an autonomy no BR granted (`{design_conventions}` D7) |
 

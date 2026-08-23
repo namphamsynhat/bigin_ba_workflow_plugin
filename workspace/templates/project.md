@@ -11,6 +11,7 @@ intake_lookback_days: 14
 email_provider: outlook   # outlook | spark — which tool /intake pulls client email from
 meeting_provider: fathom  # fathom | spark | firefly — which tool /intake pulls meeting transcripts from
 project_mode: new        # new | ongoing
+platform: web             # web | mobile | both — drives design screen composition, nav shape, and prototype prompts
 codebase_path:            # absolute path to the product repo — required when project_mode: ongoing
 repo:                     # git remote or repo name — blank if this isn't a git repo
 workspace_version:        # the plugin version that last materialized _bigin/{conventions,stages,templates}
@@ -33,6 +34,11 @@ updated: <YYYY-MM-DD>
 >   default), `spark` (Spark Desktop's `meetings`/`meeting` commands), or `firefly` (a Firefly MCP,
 >   if one is connected to this session — none ships with this vault by default).
 > - `project_mode` — `new` (greenfield) or `ongoing` (existing product).
+> - `platform` — what's being built: `web` (a browser app), `mobile` (a phone app), or `both`. Read by
+>   `/bigin-generate-design`: it decides the regions vocabulary a screen spec uses, the shape of the
+>   navigation map (sidebar shell vs. tab bar), how many prototype-prompt blocks get written, and which
+>   design engine is required. It never reaches a use case — a UC stays platform-blind by design.
+>   Absent on a project initiated before this field existed → treated as `web`.
 > - `codebase_path` — absolute path to the product repo (only relevant when `project_mode: ongoing`).
 > - `workspace_version` — written by `/bigin-new-project`; the plugin version whose rulebook and
 >   templates are currently materialized under `_bigin/`. Re-run `/bigin-new-project` after a plugin
@@ -67,9 +73,20 @@ pointing at the full report in _bigin/system/domain-research.md rather than dupl
 ## Provider readiness
 <!-- Written by /bigin-new-project § 7 — one line per configured provider, dated. A snapshot for
 orientation, never a gate: /bigin-intake re-checks at sweep time, and a connector can be revoked the
-day after this was written. Only the two providers this project selected appear here. -->
+day after this was written. Only the two providers this project selected appear here.
+
+The design-engine line(s) are the exception: /bigin-generate-design DOES gate on them (it halts
+rather than designing against no engine), so an engine left `not installed` is a real blocker for
+the design stage, not just an orientation note. One line per engine this project's `platform`
+requires — `web` and `mobile` require one each, `both` requires both.
+
+Which engine each platform requires is NOT named here on purpose: it is resolved at write time from
+the plugin's own design-engine adapter, so swapping an engine stays a one-file edit there and never
+means re-editing this template or a project's config. Fill `<engine>` with whatever that adapter
+names for this project's platform. -->
 - email_provider: `outlook | spark` — one of: `✔ connected` · `! needs authentication: <what to do>` · `✘ failed to connect: <error>` · `not installed: <what to install>` (`YYYY-MM-DD`)
 - meeting_provider: `fathom | spark | firefly` — same states as above (`YYYY-MM-DD`)
+- design_engine (`web | mobile`): `<engine>` — one of: `✔ installed` · `not installed: <install command>` · `skipped — waived in project settings` (`YYYY-MM-DD`)
 
 ## Notes
 <!-- Anything about the engagement that doesn't fit a field above — e.g. whether `_bigin/` is

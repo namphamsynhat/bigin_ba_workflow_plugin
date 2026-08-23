@@ -135,6 +135,10 @@ per `new (unminted)`, in report order, one completing before the next starts:
 3  instantiate {template_uc} at {uc_dir}/UC-<NNN> <Title>.md with exactly the frontmatter the
    detector reported, ## 1-## 6 and the summary block empty
 4  add the id to the owning hub's uc: list and a pointer row to its ## Use Cases
+4b add the id to {requirements_file}'s UC column for the owning feature's row too — same write,
+   same pass (conventions.md § Feature Map format). Skipping this is what lets FEATURES.md's UC
+   column go stale relative to the hub's own uc: list/## Use Cases table, which is otherwise the
+   only place that later gets read
 5  record the mapping <hub row #> -> UC-<NNN> — that is what 3b is handed as a resolved target
 ```
 

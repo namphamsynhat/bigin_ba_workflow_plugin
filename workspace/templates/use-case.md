@@ -4,8 +4,10 @@ type: use-case
 title:              # the goal, as a short ACTIVE VERB PHRASE ("Enrol a student", not "Enrolment")
 status: draft       # draft | needs-clarification | enriched | approved | consolidated | removed
                     # (_bigin/conventions/conventions.md § Status vocabularies). /bigin-transform-signal
-                    # only ever writes draft/needs-clarification; enriched belongs to /enrich-feature,
-                    # consolidated to /consolidate-prd, and approved/removed are human-only (hard rule 4).
+                    # only ever writes draft/needs-clarification; enriched is permanently unreachable
+                    # (enrichment moved off the UC to a feature-scoped pass — nothing sets this any
+                    # more), consolidated to /consolidate-prd, and approved/removed are human-only
+                    # (hard rule 4).
 version: 1.0
 synced: true        # false the moment /approve-uc flips status to approved, until /sync-entities has
                     # promoted/extended any entities: [] this UC references and refreshed its feature
@@ -33,8 +35,9 @@ updated:
 
 # `UC-<NNN> <Goal as a short active verb phrase>`
 
-> [!summary]- Summary
-> `<2-3 sentences — leave blank until /enrich-feature has enriched this UC>`
+> [!summary]- Summary (retired)
+> `<nothing writes this any more — enrichment moved off the UC to a feature-scoped pass
+> (conventions.md § Reconciliation notes). Leave blank; omit the block entirely on a new UC.>`
 > <!-- conventions.md § Summary block. -->
 
 ## 1. Context & Metadata
@@ -188,9 +191,6 @@ Format:
 
 Write the proposal as FINAL TEXT, not as a description of what to write — Stage 1 copies it in
 verbatim and cannot re-derive an instruction. Never fold an entry in without the gate. -->
-
-## Domain Concerns
-<!-- /enrich-feature's findings — /bigin-transform-signal never writes here. -->
 
 ## Changelog
 - 1.0 (YYYY-MM-DD) — created from `<INT-###>`

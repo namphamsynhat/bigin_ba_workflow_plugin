@@ -69,6 +69,13 @@ For each UC this run created or changed, re-derive its pointers from the UC's ow
   whose whole contract is re-deriving a hub's own tables from facts already decided. Hand it the UC ids
   touched and let it re-read their frontmatter itself. Never two hubs at once: concurrent appends to two
   hubs is fine, but concurrent *dispatches for the same UC* is how one hub's pointer row goes missing.
+- **`{requirements_file}`'s `UC` column stays the orchestrator's own write, never `hub-bookkeeper`'s**
+  (`agents/hub-bookkeeper.md` never writes `{requirements_file}`). After every hub's `uc:` list is
+  re-derived above, the orchestrator re-derives the `UC` column of each touched feature's
+  `{requirements_file}` row the same way — from that hub's now-current `uc:` list, not by tracking
+  what changed this run. Missing this step is how the registry's UC column quietly drifts behind the
+  hub's own `uc:`/`## Use Cases`, which stays correct — until some later reader trusts the stale
+  registry column instead of the hub and scopes their work to the wrong set of UCs.
 
 ## Part 2 — Draft § 2 and § 3, then flag review
 
@@ -174,8 +181,10 @@ UC(s) together with its BRs and look for a genuine contradiction — two stateme
                          exist, or that names a row marked removed
 ```
 
-A vault-wide sweep costs quadratically more, and nothing runs one today (it was `/enrich-feature`'s, and
-that stage is halted — `conventions.md` § Reconciliation notes). Do **not** promote this scoped check into
+A vault-wide sweep costs quadratically more, and nothing runs one today — the per-UC contradiction
+sweep was never `/enrich-feature`'s job even under its old design, and its retargeted, feature-scoped
+form (`conventions.md` § Reconciliation notes) doesn't read UC content at all. Do **not** promote this
+scoped check into
 a vault-wide one to compensate: per-feature every run is what keeps an unattended run's cost proportional
 to what changed. A wording difference, a narrower restatement, or two rules about different conditions are
 **not** contradictions.

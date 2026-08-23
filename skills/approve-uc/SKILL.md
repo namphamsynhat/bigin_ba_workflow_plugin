@@ -115,16 +115,12 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
      * Check `## 4`'s rule mirror against each cited `BR-###`'s current statement and enforcement
        point. `## 4` is a read-only mirror (§ Use Case) — if a human edit left it drifted from the BR
        file, refresh the mirror to match; never invent a rule that isn't already in a `BR-###` file.
-     * **Enrichment: mention it only if it could actually have run.** Check whether
-       `.bigin/features/` exists on disk.
-       * **It doesn't exist** (every migrated project) → say nothing about enrichment. `/enrich-feature`
-         is halted, so `enriched` is an unreachable status and `draft → approved` is the live path
-         (§ Reconciliation notes). Asking "enrichment hasn't run — proceed anyway?" here would fire on
-         every approval forever, and a question whose only possible answer is "yes" trains the human to
-         click past the summary this whole step exists to make them read.
-       * **It does exist** (a pre-migration vault) and `status` isn't `enriched` → note that
-         `/enrich-feature` hasn't run against this UC and ask whether to proceed anyway — enrichment is
-         expected there, not enforced.
+     * **Say nothing about enrichment.** It's a feature-level pass now (`/enrich-feature`, § Reconciliation
+       notes), not a UC-level gate — `enriched` is permanently unreachable as a UC status and
+       `draft → approved` is the only live path. Asking "enrichment hasn't run — proceed anyway?" would
+       fire on every approval forever for a status this UC will never reach, and a question whose only
+       possible answer is "yes" trains the human to click past the summary this whole step exists to
+       make them read.
      * **Collect related UCs, read-only.** Read `primary_feature`'s hub `## Use Cases` / `uc:` list
        for sibling ids on the same feature. For each id in `brs:`, read that `BR-###` file's `uc: []`
        to find every other UC the same rule governs. If `features:` names more than one slug, read

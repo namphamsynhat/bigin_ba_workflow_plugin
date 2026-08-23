@@ -124,7 +124,13 @@ run killed between the artifact write and the hub refresh is exactly what this r
                                        ("resolved by INT-041"). A note whose question was answered
                                        elsewhere otherwise sits `needs-clarification` forever with
                                        an unticked box, and reads as still blocking when it isn't.
-4  {requirements_file}             → if the fold-in changed anything a row there mirrors
+4  {requirements_file}             → re-derive the touched feature's UC column from its hub's
+                                     CURRENT uc: list/## Use Cases table, not from what this
+                                     fold-in itself changed — a UC minted or moved in an earlier
+                                     run (Stage 3/4's own mint-time write, or /restructure-uc) can
+                                     already have left the registry row behind this hub, and this
+                                     is the backstop that catches it even when the immediate write
+                                     site missed it
 ```
 
 Never renumber, delete, or rewrite the `Signal`/`Source` text of a Signal Log row.

@@ -61,11 +61,12 @@ ETL: **extract** intake into per-feature signals → **transform** them into rev
 | 2 | `bigin-intake` | new raw communication needs capturing | no |
 | 3 | `extract-signal` | `00-Inbox/` has notes at `status: raw`, or one with a newly-ticked question | no |
 | 4 | `bigin-transform-signal` | a hub's `## Signal Log` has `new`/`held` rows, or a staged change's question was answered | no — it never blocks on a human |
-| 5 | `bigin-generate-design` | any UC has a drafted main flow and no current design. Needs no approval and no PRD | no — fully headless |
+| 5 | `bigin-generate-design` | any UC has a drafted main flow and no current design. Needs no approval and no PRD | no — headless, but it **halts up front** when the platform's required design engine is absent. That is an install to report, not a decision to put to the human — pass on its install command and move to the next stage |
 | 6 | `approve-uc` | the human is ready to sign off one reviewed UC | **yes — never approve on their behalf** |
 | 7 | `sync-entities` | one or more UCs are `approved` with `synced: false`. Run when convenient, not after every approval. Also the repair path for entity docs — `EN-###`/`rebuild` rewrites a doc as the full data dictionary and merges an attribute-shaped fragment into its owner | no |
 | 8 | `bigin-generate-prd` | a feature has `approved` UCs its PRD hasn't folded yet (or folded at an older version). Skips a `built` feature — the CR chain has no PRD | no — fully headless |
-| — | `enrich-feature` · `consolidate-prd` | **never.** Both halt unconditionally — § Reconciliation notes. `consolidate-prd` is **not** the PRD stage; `bigin-generate-prd` is | — |
+| — | `enrich-feature` | a feature's domain research needs a manual refresh — scope changed materially since the automatic run `/extract-signal` § Step 2a ran at registration, or that run failed/was skipped | no |
+| — | `consolidate-prd` | **never.** Halts unconditionally — § Reconciliation notes. Not the PRD stage; `bigin-generate-prd` is | — |
 | — | `prototype-design` | **never.** Retired, superseded by `bigin-generate-design`. Never run both | — |
 | — | `bigin-upgrade-project` | a skill's precondition reported a `workspace_version` mismatch | no |
 

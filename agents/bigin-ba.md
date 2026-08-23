@@ -34,11 +34,12 @@ ETL: **extract** intake into per-feature signals → **transform** them into rev
 | 2 | `bigin-intake` | new raw communication needs capturing | no |
 | 3 | `extract-signal` | `00-Inbox/` has notes at `status: raw`, or one with a newly-ticked question | no |
 | 4 | `bigin-transform-signal` | a hub's `## Signal Log` has `new`/`held` rows, or a staged change's question was answered | no — it never blocks on a human |
-| 5 | `bigin-generate-design` | any UC has a drafted main flow and no current design. Needs no approval and no PRD | no — fully headless |
+| 5 | `bigin-generate-design` | any UC has a drafted main flow and no current design. Needs no approval and no PRD | no — headless, but it **halts up front** when the platform's required design engine is absent. That is an install to report, not a decision to put to the human — pass on its install command and move to the next stage |
 | 6 | `approve-uc` | the human is ready to sign off one reviewed UC | **yes — never approve on their behalf** |
 | 7 | `sync-entities` | one or more UCs are `approved` with `synced: false`. Run when convenient, not after every approval. Also the repair path for entity docs — `EN-###`/`rebuild` rewrites a doc as the full data dictionary and merges an attribute-shaped fragment into its owner | no |
 | 8 | `bigin-generate-prd` | a feature has `approved` UCs its PRD hasn't folded yet (or folded at an older version). Skips a `built` feature — the CR chain has no PRD | no — fully headless |
-| — | `enrich-feature` · `consolidate-prd` | **never.** Both halt unconditionally — § Reconciliation notes. `consolidate-prd` is **not** the PRD stage; `bigin-generate-prd` is | — |
+| — | `enrich-feature` | a feature's domain research needs a manual refresh — scope changed materially since the automatic run `/extract-signal` § Step 2a ran at registration, or that run failed/was skipped | no |
+| — | `consolidate-prd` | **never.** Halts unconditionally — § Reconciliation notes. Not the PRD stage; `bigin-generate-prd` is | — |
 | — | `prototype-design` | **never.** Retired, superseded by `bigin-generate-design`. Never run both | — |
 | — | `bigin-upgrade-project` | a skill's precondition reported a `workspace_version` mismatch | no |
 | — | `restructure-uc` | a UC visibly mixes more than one primary actor/trigger (live review, or an answered `bigin-transform-signal` granularity question) | **yes — never split the boundary on their behalf** |
@@ -77,7 +78,7 @@ one, change both.
 
 - **New raw input arrives** (transcript, email thread, dictated note). Run `bigin-intake`, then continue straight into `extract-signal` — and `bigin-transform-signal` once signals are filed — so nothing sits unprocessed.
 - **"What's next" / "move this forward".** Read the relevant `01-Requirements/_features/<slug>.md` hub (Signal Log, Use Cases, Requirement Readiness, the `_ucs/`/`_brs/` docs it lists) and `00-Inbox/` note statuses, then run whichever stage comes next. Determine the stage from the artifacts; don't ask.
-- **Gaps or open questions need research.** Do the research yourself with `WebSearch`/`WebFetch` and record what you found, tied to this UC's specific steps, rules, and pain points. Do **not** route to `enrich-feature` for it — that skill is halted, so routing there produces a halt message instead of research.
+- **Gaps or open questions need research.** For something tied to one UC's specific steps, rules, or pain points, do the research yourself with `WebSearch`/`WebFetch` and record what you found — that's finer-grained than a domain-research pass and `enrich-feature` doesn't do it. For "this feature's grounding is stale" or "the automatic research at registration never landed," route to `enrich-feature` instead of redoing it inline.
 - **Reviewing a UC live and it reads as more than one goal.** A Parent's action and an Admin's action sharing one flow, or a step that quietly belongs to a different trigger entirely. Hand back for `restructure-uc` (§ What you cannot run from here) rather than drafting a fix inline — it needs the human-confirmed boundary and multi-file mechanics that skill owns.
 - **A feature is ready to design.** Any UC with a drafted main flow is ready — approval is not required. Run `bigin-generate-design` (no argument designs every feature whose UCs have no current design), then hand the human the `UX-###` and its prototype prompts.
 - **The human wants to review use cases.** "Review feature A's UC", "walk me through the payout flow", "is UC-012 ready to sign off?" — never review one UC in isolation. Pull that feature's whole live UC set, order it as the flow, and run § Reviewing use cases with a human: for a feature, that's one batched pass — every question you *can't* answer yourself asked at once (§ Answer it yourself before you ask), folded in with a single `bigin-transform-signal` run, the clear scenarios displayed together for a batched approval, and every headless downstream stage the fold-in made runnable already run (§ Drive to done).
@@ -108,13 +109,15 @@ run everything it made runnable: every stage whose **Decision point?** column sa
 (§ The pipeline you route through) is yours to run without asking. A report that names one as a next
 step you didn't take has handed the human your work.
 
-- **A UC you changed made its design stale.** `bigin-generate-design` is fully headless and works
+- **A UC you changed made its design stale.** `bigin-generate-design` is headless and works
   out staleness itself — it compares each UC's live version against the `UX-###`'s `absorbed:` list
   and redesigns what changed, and a `needs-clarification` UC is *in* scope with its open questions
   carried as known gaps. So re-run it (one or two features inline; hand back at three). Don't report
   the spec as stale, and above all **don't annotate the stale artifact** — a warning banner you
   hand-write into a `UX-###` is a hand-edit of a file the stage owns and will overwrite, and it buys
-  the human nothing the re-run wouldn't have.
+  the human nothing the re-run wouldn't have. If it halts because the platform's required design
+  engine is missing, that is the one thing here you cannot run past: report its install command as a
+  blocker and carry on with the rest of the run — never design around it by hand.
 - **Approvals landed.** `sync-entities` once the sitting ends, then `bigin-generate-prd` on each
   feature carrying newly-`approved` UCs. Both headless, both safe the moment the sitting is over.
 - **A parked UC doesn't park its feature.** Design and PRD each take what's ready and list the rest
@@ -438,7 +441,12 @@ Report after each run:
 - **Decisions waiting on the human** — bucket-5 questions, signals parked on them, `approve-uc`
   confirmations, and the writes a convention reserves for a human. Nothing you could have done
   yourself belongs here (§ Drive to done).
-- **Next step** — the specific next stage, or what you need to continue.
+- **Next step** — the specific next stage, or what you need to continue. When this names a
+  `/bigin-run` (or other) command you couldn't run from here (§ What you cannot run from here), that
+  is a hand-back to the session that dispatched you, addressed to it directly — not a suggestion for
+  the human. That session has the `Agent` tool you don't; unless it's mid-decision-point or genuinely
+  blocked, it should run the named command itself in the same turn instead of relaying this line and
+  stopping.
 
 ## Edge cases
 

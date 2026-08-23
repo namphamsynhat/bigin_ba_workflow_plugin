@@ -1,13 +1,15 @@
 ---
 name: bigin-new-project
-description: Initiate a new BA project in the current repo — materialize the rulebook and templates into `_bigin/`, capture the engagement config (client, contacts, new vs. ongoing product), import a proposal or, for a greenfield project with none yet, ask what's being built and run domain research on it, materialize a repo-root CLAUDE.md as the project's standing agent brief, map the existing codebase when there is one, and verify the configured email/meeting providers are reachable, installing a missing MCP server where an install command is known. Use once per repo before the first /bigin-intake, and again after a plugin upgrade to refresh the materialized rulebook, regenerate CLAUDE.md, or re-check provider access.
+description: Initiate a new BA project in the current repo — materialize the rulebook and templates into `_bigin/`, capture the engagement config (client, contacts, new vs. ongoing product, web vs. mobile vs. both platform), import a proposal or, for a greenfield project with none yet, ask what's being built and run domain research on it, materialize a repo-root CLAUDE.md as the project's standing agent brief, map the existing codebase when there is one, and verify the configured email/meeting providers are reachable — installing a missing MCP server where an install command is known — plus whether the design engine the chosen platform requires is installed. Use once per repo before the first /bigin-intake, and again after a plugin upgrade to refresh the materialized rulebook, regenerate CLAUDE.md, or re-check provider and design-engine access.
 argument-hint: "[client name]"
+disable-model-invocation: true
 ---
 
 # Bigin New Project
 
 Step 0. Sets up `_bigin/` in the current repo, writes the config every later stage reads, and checks
-that the providers that config names can actually be reached.
+that the tools that config names — the two intake providers, and the design engine its `platform`
+requires — can actually be reached.
 
 The plugin ships its rulebook and templates inside itself; this skill **copies them into the project**
 so every later skill and dispatched subagent can reach them project-relatively. Subagents carry no
@@ -15,7 +17,7 @@ plugin context, so a path into the install directory is unreachable to them.
 
 > **Artifact Standard:** Outputs:
 >> **The materialized workspace** — `_bigin/conventions/`, `_bigin/stages/`, `_bigin/templates/`: plugin-owned, overwritten every run, reachable to every subagent.
->> **The engagement config** — `_bigin/system/project.md`: client, contacts, providers, greenfield vs. ongoing, plus the project brief, domain-research pointer, and provider-readiness snapshot.
+>> **The engagement config** — `_bigin/system/project.md`: client, contacts, providers, greenfield vs. ongoing, web vs. mobile vs. both, plus the project brief, domain-research pointer, and provider/design-engine readiness snapshot.
 >> **The project agent** — repo-root `CLAUDE.md`: a delimited, plugin-owned section orienting any Claude Code session to the engagement, the workspace map, and the skill sequence, regenerated every run.
 
 ---
@@ -26,9 +28,9 @@ plugin context, so a path into the install directory is unreachable to them.
 * **Plugin-owned vs. project data:** overwrite `_bigin/{conventions,stages,templates}/` every run; never touch `_bigin/system/project.md`, `00-Inbox/`, `01-Requirements/`, `PRD.md`, `prototypes/`, `epics.md`. Project overrides belong in `.claude/bigin-ba-workflow-plugin.local.md`. `CLAUDE.md` is a special case — see § 5.4: only the plugin's own delimited section inside it is overwritten; whatever else is in that file, including a pre-existing codebase CLAUDE.md, is never touched.
 * **Verify, don't assume:** a partial copy surfaces later as a subagent silently unable to read its lane guide — reported as a clean run. Confirm the file count before continuing.
 * **Use the template, not memory:** `_bigin/templates/project.md` *is* the schema `/bigin-intake` parses. A hand-written variant is how a field it reads goes missing.
-* **Never improvise an install:** § 7.3's table or nothing. `claude mcp add` only, never `sudo`, never re-add a server that already has a row.
+* **Never improvise an install:** § 7.3's table for a provider, § 7.6's adapter for a design engine, or nothing. `claude mcp add` is the only install this skill ever runs itself — never `sudo`, never a package manager, never re-add a server that already has a row, and never install a design engine (§ 7.6: a plugin install and a third-party desktop app are the user's call).
 * **Never handle credentials:** OAuth needs a browser and a human. Never ask for a token, authorization code, client secret, or callback URL.
-* **Providers never block:** a provider gap doesn't invalidate the config — record the state, remedy what's remedyable, report the rest, finish the run.
+* **Providers never block:** a provider gap doesn't invalidate the config — record the state, remedy what's remedyable, report the rest, finish the run. **The design engine is different in kind, not an exception to this run finishing:** a missing engine is a real blocker for `/bigin-generate-design`, which halts on it, so § 7.6 records it as a blocker and § 8 reports it as one — and this run still finishes.
 
 ---
 
@@ -38,11 +40,13 @@ plugin context, so a path into the install directory is unreachable to them.
 |---|---|---|
 | 1 | Check what's already there | every run |
 | 2 | Materialize the workspace | every run |
+| 2.5 | Ensure the domain-research skill is available | every run |
 | 3–4 | Gather and write the engagement config | fresh initiation, or an explicit re-initiate |
 | 5.1–5.3 | Import a proposal, capture the brief, research the domain | § 5.3 on `project_mode: new` only |
 | 5.4 | Materialize the project agent (`CLAUDE.md`) | every run |
 | 6 | Map the codebase | `ongoing` only — currently deferred |
-| 7 | Check the configured providers | every run |
+| 7.1–7.5 | Check the two configured providers | every run |
+| 7.6 | Check the platform's design engine | every run — one engine on `web`/`mobile`, both on `both` |
 | 8 | Report | every run |
 
 ## 1. Check what's already there
@@ -59,6 +63,7 @@ plugin context, so a path into the install directory is unreachable to them.
 * **Rules:**
   - Only (c) rewrites `project.md`, only on explicit confirmation, and it still appends to the existing `## Changelog` rather than starting a new one. A config with no feature registry is broken — `/extract-signal` has nothing to anchor to.
   - **A pre-`1.7.4` config carries `approver` / `approver_email`.** Nothing reads them any more — approval is the call of whichever human is in the session, not a configured person. Leave them where they are on a refresh (they're project data, and stale-but-harmless), and drop both lines on an (a) field update or a (c) re-initiate. Never re-add them, and never ask for an approver.
+  - **A pre-`1.8.0` config carries no `platform:` at all.** The absent key reads as `web` everywhere (`_bigin/conventions/design-conventions.md` § Platform), so the project keeps designing exactly as it always did — nothing is broken, and a plain (b) refresh leaves the key absent rather than stamping a value nobody stated. Ask for it and stamp it on an (a) field update or a (c) re-initiate; otherwise `/bigin-upgrade-project` is what stamps an existing project onto the new schema.
 
 ## 2. Materialize the workspace
 
@@ -87,6 +92,30 @@ plugin context, so a path into the install directory is unreachable to them.
   - **Report the refresh** (§ 8) so anyone who edited a plugin-owned file finds out it was overwritten.
   - **Remove a legacy `_bigin/rules/` — only after the copy above has verified.** Projects initiated on plugin `≤ 1.2.0` have the flat layout this replaced. Left in place it's a second, stale copy of the rulebook at a path older prose may still cite, so a subagent can read a rule that no longer governs.
 
+## 2.5. Ensure the domain-research skill is available
+
+* **Goal:** every domain-research pass — this project's own (§ 5.3) and every feature's later, automatic
+  one (`/extract-signal` § Step 2a) — should default to a real domain-research skill instead of the
+  plugin's built-in WebSearch fallback, without a human having to install anything by hand.
+* **Action:**
+  1. Check whether `bmad-domain-research` is already available — in this session's skill list, or on
+     disk at `.claude/skills/`.
+  2. If absent, and `.claude/bigin-ba-workflow-plugin.local.md` § Domain research method does not
+     record `domain_research_skill_install: false`, run once:
+     `npx -y skills add bmad-code-org/bmad-method --skill bmad-domain-research --agent claude-code`
+  3. On success: if § Domain research method in that settings file is still blank, write
+     `skill: bmad-domain-research` into it. **Never overwrite an explicit override already there** —
+     a project that already named a different skill or agent, or `built-in`, keeps its own choice.
+  4. On failure (offline, `npx` unavailable, install error): leave the method unset and move on —
+     `_bigin/conventions/domain-research-method.md` falls back to the built-in method automatically.
+* **Rules:**
+  - **This is not `claude mcp add`.** § 7.3's "never improvise an install" rule is about MCP servers;
+    this is a one-shot `npx` install of a skill file into this project's own `.claude/skills/`, the
+    same class of action a human would run by hand — still never a package manager, never `sudo`.
+  - **A failed or skipped install never blocks this run**, same reasoning as § 7's providers: research
+    quality degrades to built-in, nothing halts.
+  - **Report the outcome in § 8** — installed, already present, skipped by opt-out, or failed and why.
+
 ## 3. Gather the engagement config
 
 * **Goal:** put on record what only the human knows, before any stage depends on it.
@@ -101,6 +130,7 @@ plugin context, so a path into the install directory is unreachable to them.
   | `outlook_folder` | `email_provider: outlook` only. Default `["Inbox"]`; ask if client mail lands elsewhere |
   | `meeting_provider` | `AskUserQuestion`: **fathom** (default), **spark**, or **firefly** |
   | `project_mode` | `AskUserQuestion`: **new** (greenfield) or **ongoing** (an existing product this repo contains or accompanies) |
+  | `platform` | `AskUserQuestion`: **web** (default — something people use in a browser, on a computer) · **mobile** (a phone app people install) · **both** (the same product in both places) |
   | `codebase_path` | `ongoing` only. Default the repo root (absolute); ask if the product lives elsewhere |
   | `intake_lookback_days` | Default `14`; don't ask unless the user raises it |
   | `repo` | **Detect, don't ask** — `git remote -v`. Blank if not a git repo |
@@ -112,6 +142,7 @@ plugin context, so a path into the install directory is unreachable to them.
 * **Rules:**
   - **`client_emails` matters more than it looks:** `/bigin-intake`'s sweep **halts** on an empty list, having no way to tell client correspondence from internal mail. If the addresses aren't to hand, say plainly that `/bigin-intake direct …` still works and the sweep stays unavailable.
   - **Ask both provider fields rather than defaulting silently.** `/bigin-intake` is forbidden from falling back to an unconfigured provider, so an unasked field becomes a run that skips a source without saying so.
+  - **Ask `platform`; never infer it from what the product sounds like.** Before this field existed every design run silently produced a desktop web app, so a phone product got designed as a browser one — the right screens in the wrong shell, and nobody finds out until a client opens the prototype. It is also a separate question from `project_mode`: that one is new-vs-ongoing, this one is browser-vs-phone, and a greenfield mobile product answers both. `platform` never reaches a use case — a UC stays platform-blind by design — it drives `/bigin-generate-design` only: the regions vocabulary, the navigation shell, how many prototype-prompt blocks get written, and which design engine § 7.6 checks for.
   - **Intake holds verbatim client email and transcripts,** so whether `_bigin/` is tracked is the user's call, never a default.
 
 ## 4. Write the config
@@ -193,11 +224,17 @@ come from client signals via `/extract-signal`, never from reading code. Only re
 verified; an unclear directory goes under "Not covered" rather than getting a plausible guess. Keep it
 to roughly a screen. -->
 
-## 7. Check the configured providers are actually reachable
+## 7. Check the configured providers and the platform's design engine are actually reachable
 
 The two provider fields written in § 4 name tools this repo doesn't own. `/bigin-intake` Mode B refuses
 to sweep against an unreachable provider — but it fails at the moment a BA wanted a sweep, days later,
 having already typed the command. This moves that discovery to initiation, where it costs nothing to fix.
+
+`platform` (§ 3) names one more tool this repo doesn't own: the design engine
+`/bigin-generate-design` renders prototypes with. Same reasoning, sharper consequence — that skill
+**halts** without its engine, so the discovery is worth having now rather than in the middle of a
+design run. §§ 7.1–7.5 do the two providers; § 7.6 does the engine, and its remedies are deliberately
+different.
 
 ### 7.1 Probe
 
@@ -262,28 +299,63 @@ applies to it directly.
 
   ```markdown
   ## Provider readiness
-  <!-- Written by /bigin-new-project § 7. A snapshot, not a gate — /bigin-intake re-checks at sweep time. -->
+  <!-- Keep the template's own comment here verbatim; § 7.6's engine lines join these two. -->
   - email_provider: outlook — ✔ connected (2026-08-13)
   - meeting_provider: fathom — ! needs authentication: authorize in claude.ai connector settings (2026-08-13)
   ```
 
-* **Rules:** It's a snapshot and it goes stale — a connector can be revoked the next day. `/bigin-intake` still runs its own pre-flight check; this never replaces it.
+* **Rules:** For these two providers it's a snapshot and it goes stale — a connector can be revoked the next day. `/bigin-intake` still runs its own pre-flight check; this never replaces it.
+
+### 7.6 Check the design engine the platform requires
+
+* **Goal:** find out now, at zero cost, whether `/bigin-generate-design` can actually run — because unlike an email or meeting provider, it **halts** without its engine rather than degrading.
+* **Action:** Read the engine, its install-check, and its install command from **`${CLAUDE_PLUGIN_ROOT}/skills/bigin-generate-design/references/design-engines.md`** — that file is the adapter and the single source for all three. Check only what `platform` (§ 3) requires:
+
+  | `platform` | Engine to check | Install-check |
+  |---|---|---|
+  | `web` | `frontend-design` (Anthropic, first-party, `claude-plugins-official`) | is a skill named `frontend-design` in this session's available-skills list? |
+  | `mobile` | OpenDesign (`nexu-io/open-design`) | an MCP server row matching `open-design` (case-insensitive substring) in the `claude mcp list` output § 7.1 already has, state `✔ Connected` — plus, when the CLI is on `PATH`, `od project list --json` succeeding |
+  | `both` | both of the above | both checks, reported as two lines |
+
+  On missing, report the install command **from the adapter, verbatim**:
+
+  | Missing | Command |
+  |---|---|
+  | `frontend-design` | `/plugin install frontend-design@claude-plugins-official` — and, if the official marketplace isn't configured, `/plugin marketplace add anthropics/claude-plugins-official` first |
+  | OpenDesign | `od mcp install claude` — or `curl -fsSL https://open-design.ai/install.sh \| sh -s claude`, a thin wrapper around the same command. On a macOS desktop install prefer the app's **Settings → MCP server** snippet, as its README says |
+
+  Then write a dated line per checked engine into `## Provider readiness`, in the template's format:
+
+  ```markdown
+  - design_engine (web): frontend-design — ✔ installed (2026-08-21)
+  - design_engine (mobile): open-design — not installed: od mcp install claude (2026-08-21)
+  ```
+
+* **Rules:**
+  - **`not installed` here is a real blocker, not a courtesy note.** "Providers never block" holds for the email and meeting providers — a gap there costs Mode B's sweep and `/bigin-intake direct …` still works. A missing design engine is different in kind: `/bigin-generate-design` genuinely halts on it and designs nothing. So record it as a blocker on the design stage and say so in § 8 in those words — *and still finish this run*. It blocks the design stage; it never blocks `/bigin-new-project`, which has nothing to do with rendering a prototype.
+  - **Never auto-install a design engine — report the command and stop.** § 7.3's automatic remedy is scoped to `claude mcp add` for a missing MCP provider precisely because that one command is repo-local and undone by `claude mcp remove`. A `/plugin install` changes what this session and every future one loads, and OpenDesign is a third-party desktop app that installs software on the machine — both are the user's call, needing their explicit go-ahead for that specific command. Never `sudo`, never a package manager, never a credential (§ Non-Negotiable Core Rules, unchanged).
+  - **Never improvise an install command.** The adapter's table or nothing — the same rule § 7.3 states for providers, and the adapter states it back for engines. A guessed installer either fails noisily or installs something that is not the engine.
+  - **`command -v od` proves nothing.** `/usr/bin/od` is the BSD octal-dump utility and wins on `PATH` on a stock macOS, so a resolving `od` is not evidence OpenDesign is there and a bare `od mcp install claude` typed into a terminal may run the wrong program. The probe is `od project list --json` — octal-dump errors out, OpenDesign returns JSON. This is exactly the class of false result this section exists to catch.
+  - **Match the MCP row by substring, case-insensitively,** for the same reason § 7.1 does.
+  - **A recorded opt-out is not a blocker.** `design_engine_required: false` under `## Design engine` in `.claude/bigin-ba-workflow-plugin.local.md` is a decision a human wrote down (see the adapter's "recorded opt-out"): record the line as `skipped — waived in project settings` and report it as a choice, not a gap. Never infer the waiver from a failed check.
 
 ## 8. Report
 
 1. **Workspace** — the three directories materialized or refreshed at version `<version>`, with file count. On a refresh add: local edits to plugin-owned files were overwritten, `.claude/bigin-ba-workflow-plugin.local.md` is where overrides belong, and whether a legacy `_bigin/rules/` was removed.
-2. **Config** — paths created or updated, and whether `_bigin/` is tracked or ignored.
+2. **Config** — paths created or updated, the captured `project_mode` and `platform` (both, and as two separate facts — new-vs-ongoing and browser-vs-phone), and whether `_bigin/` is tracked or ignored.
 3. **Unknowns** — fields still `<unknown>`, editable in `_bigin/system/project.md`. Call out an empty `client_emails` specifically, with its consequence for the sweep.
 4. **Settings** — `.claude/bigin-ba-workflow-plugin.local.md` scaffolded, or already existed and left alone.
-5. **Features** — `proposed` rows imported from a proposal, if any, so wrong slugs get corrected now.
-6. **Codebase map** — for `ongoing`, that mapping is deferred and the section is intentionally empty.
-7. **Project brief & domain research** — for `new`: where the brief came from, which method ran the research, and the dated `## Domain Research` summary with a pointer to the full report. New grounding, not a housekeeping line — don't bury it under Features.
-8. **Project agent (`CLAUDE.md`)** — whether it was created fresh, merged into an existing file (say so explicitly on `ongoing`, since that means a pre-existing codebase CLAUDE.md is now sharing the file), or regenerated on a rerun.
-9. **Providers** — one line per configured provider, its state, what happened, and every command run verbatim. For anything unresolved give the exact next action — "authorize Fathom in claude.ai connector settings", "install the `spark` CLI and re-run this" — not "provider unavailable". An unactionable warning gets ignored until the first failed sweep.
-10. **Next step** — `/bigin-intake` to capture the first meeting, email, or note. If a provider is unresolved, say plainly that `/bigin-intake direct …` works regardless and only Mode B's sweep is affected.
+5. **Domain-research skill** — `bmad-domain-research` already present, freshly installed, install skipped (opt-out or an existing method override), or install failed and why. Say plainly which method future domain-research passes (this project's and every feature's) will actually use.
+6. **Features** — `proposed` rows imported from a proposal, if any, so wrong slugs get corrected now.
+7. **Codebase map** — for `ongoing`, that mapping is deferred and the section is intentionally empty.
+8. **Project brief & domain research** — for `new`: where the brief came from, which method ran the research, and the dated `## Domain Research` summary with a pointer to the full report. New grounding, not a housekeeping line — don't bury it under Features.
+9. **Project agent (`CLAUDE.md`)** — whether it was created fresh, merged into an existing file (say so explicitly on `ongoing`, since that means a pre-existing codebase CLAUDE.md is now sharing the file), or regenerated on a rerun.
+10. **Providers** — one line per configured provider, its state, what happened, and every command run verbatim. For anything unresolved give the exact next action — "authorize Fathom in claude.ai connector settings", "install the `spark` CLI and re-run this" — not "provider unavailable". An unactionable warning gets ignored until the first failed sweep.
+11. **Design engine** — its own item, not a line under Providers, because a gap here is a gate rather than a degraded sweep. Name the platform, the engine(s) checked, and the state. Installed → one line, done. Missing → say it plainly as a blocker with the exact next action: "`/bigin-generate-design` will halt until `frontend-design` is installed — run `/plugin install frontend-design@claude-plugins-official`, then it runs." Same for OpenDesign with its own command. Never bury it as a warning, and never soften it to "engine unavailable"; waived in project settings → say it was waived, and that the prompt blocks are the deliverable.
+12. **Next step** — `/bigin-intake` to capture the first meeting, email, or note. If a provider is unresolved, say plainly that `/bigin-intake direct …` works regardless and only Mode B's sweep is affected. A missing design engine affects neither: it stops `/bigin-generate-design`, and nothing before it.
 
 ## Additional resources
 
-- **`references/domain-research.md`** — the § 5.3 research method, and how to swap it for another skill or agent. Read before running § 5.3.
+- **`references/domain-research.md`** — the § 5.3 project-level research step; defers to `_bigin/conventions/domain-research-method.md` for the actual dispatch mechanics, shared with the feature-level research `/extract-signal` runs automatically. Read before running § 5.3.
 - **`references/claude-md.md`** — the § 5.4 spec for what `CLAUDE.md` must contain and how to merge it into an existing one. Read before running § 5.4.
 - **`template/settings.local.md`** — the § 4.2 scaffold for project-level plugin overrides.

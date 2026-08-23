@@ -79,7 +79,8 @@ moves with its content, unchanged) or to a genuinely new decision that needs its
    you are already touching the file for this reason.
 5. **Changelog, every file you touch** — source UC, every destination UC, every repointed BR: what moved,
    why (cite the human decision or the answered Stage 3 question), and flag every touched UC for
-   `/enrich-feature` + `/approve-uc` review (a restructuring is a `## 2` change by definition).
+   `/approve-uc` review (a restructuring is a `## 2` change by definition). Enrichment is feature-level
+   now, not UC-level, so a UC split has nothing to flag it for.
 6. **Never touch a feature hub or `FEATURES.md`.** Report exactly what each touched hub needs — new
    `uc:`/`br:` entries, `## Use Cases`/`## Requirement Readiness` rows, an `## Open Questions / Gates`
    resolution note, a `## Pain Points` pointer move — so the orchestrator can dispatch `hub-bookkeeper`
@@ -117,6 +118,6 @@ hub_bookkeeper_dispatches_needed:
   resolved, Pain Points pointer moved> (one line per hub)
 features_md_edit_needed: <slug> UC column: <old> -> <new> (one line each, or "none")
 lint: clean | fixed <n> issue(s) caused by this split (one line each) | blocked: <what remains>
-flagged_for_review: <UC-### ids>, all flagged for /enrich-feature + /approve-uc
+flagged_for_review: <UC-### ids>, all flagged for /approve-uc
 blocked: <what fact was missing or ambiguous, and from whom it needs to come> (or "none")
 ```

@@ -2,6 +2,7 @@
 name: bigin-generate-prd
 description: This skill should be used when the user asks to "generate the PRD", "write the PRD", "create a product requirements document", "run the PRD stage", "feed the use cases into the PRD", "PRD for this feature", "which features are ready for a PRD", "refresh the PRD", or after /approve-uc has approved one or more use cases on a feature. Consolidates every approved UC-### of a feature — plus its business rules, entities, pain points, and the UX-### design already generated for it — into one business-flow PRD per feature, headlessly, by driving the BMAD create-PRD workflow in headless mode when BMAD is installed.
 argument-hint: "[feature slug | UC-### | omit for every feature with approved UCs and no current PRD]"
+disable-model-invocation: true
 ---
 
 # Bigin Generate PRD

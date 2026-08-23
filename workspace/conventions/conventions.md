@@ -13,7 +13,8 @@ for `^## ` to list sections, then read the ones named below. Reading it whole co
 | `/extract-signal` | ID scheme · Feature Hub · Signal → feature mapping · Open Questions wording · Pain Point / Design Principles / Entity registers |
 | `/bigin-transform-signal` | ID scheme · Use Case · Frontmatter schema · Status vocabularies · Feature Hub · Open Questions wording · Open Questions ↔ status consistency · Feedback handling · Resumable unattended apply |
 | `/bigin-generate-prd` | Feature material · Traceability chain · Absorbed · Status vocabularies · Open Questions wording · Pain Point Register |
-| `/enrich-feature` → `/consolidate-prd` | Traceability chain · Summary block · Feature material |
+| `/enrich-feature` | Feature Hub |
+| `/consolidate-prd` | Traceability chain · Summary block · Feature material |
 
 **Every stage that writes an artifact also reads § Obsidian-safe markdown.** The vault is read in
 Obsidian; a rule broken there is a rule that silently deletes text a human was supposed to see.
@@ -215,7 +216,7 @@ approvable.
 | `## 4. Business Rules & Compliance Constraints` | A **read-only mirror** of `BR-###` files: id, short statement, and the enforcement point (which `S#` the rule bites at) |
 | `## 5. Open Questions & Decision Log` | The canonical `- [ ] Q:` list for what is still open, plus a decision-log table of settled items with speaker context |
 | `## 6. Special Requirements & Related Information` | Optional. Workflow-scoped non-functional constraints, priority, frequency, performance target |
-| `## Discussion` · `## Domain Concerns` · `## Changelog` | The staging gate, `/enrich-feature`'s findings, and history |
+| `## Discussion` · `## Changelog` | The staging gate and history |
 
 **Goal level.** `level:` is `user-goal` (the default — real work, one sitting, 3–9 main-flow steps,
 passing Cockburn's *boss test*), `summary` (several user goals composed, only ever to group UCs that
@@ -278,9 +279,9 @@ four:
 
 | Status | Meaning |
 |---|---|
-| `draft` | Content exists — created or last folded in by `/bigin-transform-signal` — but hasn't been through `/enrich-feature` yet. The default resting state. |
-| `needs-clarification` | At least one unresolved `- [ ] Q:` line in the artifact's question list — a UC's `## 5` **Still open**, a BR's `## Open Questions` (§ Open Questions ↔ status consistency's invariant — unchanged, just now one value in this list rather than sitting alongside a separate `in-review`). Once every question resolves, status moves to whatever it would otherwise be — `draft` if it hasn't been enriched yet, `enriched`/`approved`/`consolidated` if a later-stage edit is what raised the question. Never a fixed placeholder. |
-| `enriched` | `/enrich-feature` has run: domain research + entity mapping done, concerns resolved or accepted as risk. |
+| `draft` | Content exists — created or last folded in by `/bigin-transform-signal`. The default resting state until a human approves it. |
+| `needs-clarification` | At least one unresolved `- [ ] Q:` line in the artifact's question list — a UC's `## 5` **Still open**, a BR's `## Open Questions` (§ Open Questions ↔ status consistency's invariant — unchanged, just now one value in this list rather than sitting alongside a separate `in-review`). Once every question resolves, status moves to whatever it would otherwise be — `draft`, or `approved`/`consolidated` if a later-stage edit is what raised the question. Never a fixed placeholder. |
+| `enriched` | Permanently unreachable on a UC — enrichment moved off the UC entirely to a feature-scoped, hub-level pass (§ Reconciliation notes, § Feature Hub). Kept only as a defined value for a pre-migration vault that already carries it. |
 | `approved` | A human has approved it via `/approve-uc`; it's feature material (§ Feature material) and `/bigin-generate-prd` will fold it into its feature's PRD on the next run. Epics/stories still wait on a migrated stage (§ Reconciliation notes). |
 | `consolidated` | `/consolidate-prd` has merged prototype-driven changes back and generated its epic/story. The UC's pipeline is complete — until new feedback lands. |
 | `removed` | A human decided this UC/BR is no longer relevant/wanted (§ Feedback handling's "Removing scope") — human-gated like `approved`, never set by an agent. Not deletion (hard rule 1): the file, id, and history stay intact. |
@@ -433,9 +434,10 @@ Approval converts a UC from *work in progress* into **staged material on its fea
   requirement — approval stays the only gate. `/bigin-generate-design` needs no approval at all and
   runs off any UC with a main flow.
 - **Planned** — a richer engagement (a front-end dashboard, a workflow picker per feature) may
-  eventually replace the fixed `/enrich-feature → /approve-uc → /bigin-generate-design →
-  /consolidate-prd` pipeline described here with something that dispatches per-feature by need.
-  Not built today; the fixed order is what every feature runs.
+  eventually replace the fixed `/approve-uc → /bigin-generate-design → /consolidate-prd` pipeline
+  described here with something that dispatches per-feature by need. Not built today; the fixed
+  order is what every feature runs. (`/enrich-feature` no longer sits in this UC-level chain at all
+  — it's a feature-scoped pass that runs earlier, at registration, and never gates approval.)
 
 ## Feature Hub
 
@@ -571,7 +573,7 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
 
   One row per UC/BR touching this feature — a feature with four distinct user goals gets four UC rows,
   oldest first, which is normal rather than fragmentation (§ Use Case). The
-  authoritative gate for `/enrich-feature`/`/approve-uc`/`/bigin-generate-design` is always each UC's
+  authoritative gate for `/approve-uc`/`/bigin-generate-design` is always each UC's
   own live frontmatter `status` (§ Feature material) — this table just saves a human or agent from
   having to open every UC to see what's ready; a skill still checks the UC directly before
   proceeding, never trusts a possibly-stale table alone. An `approved` UC can still receive new
@@ -580,13 +582,13 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   not held in a separate backlog — note it here the same way as any other pending change
   ("approved — N new signal(s) since approval, not yet run through `/bigin-transform-signal`").
 - `## Related Documents` — the UC(s)' `attachments:` list.
-- `## Domain Research` (**Planned**) — one entry per domain-research run for this feature,
-  appended only by `/enrich-feature` when the feature's enrichment needed external grounding it
-  can't get from client signals alone (a regulated/compliance domain, a named third-party
-  platform/API's real behavior, industry-standard practice) — most features never populate this.
-  Each entry: date, topic, one-line summary of key findings, link to the full report under
-  `01-Requirements/_research/<slug>/`. Not built yet — `/enrich-feature` currently appends its
-  findings straight into the UC file's own `## Domain Concerns` section instead of a hub-level log.
+- `## Domain Research` — one entry per domain-research run for this feature. The first lands
+  automatically, the run `/extract-signal` § Step 2a first creates this hub — the feature's stated
+  scope researched (industry context, comparable products, compliance concerns, common failure
+  modes, typical entities/integrations — `_bigin/conventions/domain-research-method.md`) before any
+  signal has to rediscover it. Refreshable later on demand via `/enrich-feature`. Each entry: date,
+  topic, one-line summary of key findings, link to the full report under
+  `01-Requirements/_research/<slug>/`.
 - `## Business Scenarios` (**retired**) — pre-UC `SCN-###` pointers, kept as history. Cross-feature
   flows are use cases now and live in `## Use Cases` above (§ Business Scenarios (retired)). Never add
   a row; omit the section entirely on a new hub.
@@ -626,7 +628,9 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   Refresh `## Requirement Readiness` and `## Open Questions / Gates` to match. **Refresh
   `## Pain Points`** to mirror any `PP-###` row this run minted or updated in
   `01-Requirements/PAIN-POINTS.md` for this feature — a pain point can land here even before any
-  UC exists.
+  UC exists. **On a brand-new hub only** (§ Step 2a), also appends the first `## Domain Research`
+  entry — the one and only time this stage writes that section; a signal filed to an already-existing
+  hub never touches it.
 - `/bigin-transform-signal`: drafts/updates UC/BR files under `_ucs`/`_brs` (§ Feedback handling),
   after each confirmed human-gate fold-in flips the affected Signal Log row from `staged` to
   `applied`, and refreshes `## Use Cases`, `## Requirement Readiness`, `uc:`/`br:` frontmatter. It
@@ -641,9 +645,9 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   `## Open Questions / Gates` — its Stage 4 Part 4. It never sets a hub's own `status:` — that mirrors
   the `FEATURES.md` row's scope state, not a workflow state, and there is no "ready for PRD" feature
   status.
-- `/enrich-feature`: refreshes `## Requirement Readiness`/`## Related Documents`/
-  `## Open Questions / Gates`, and **`## Pain Points`** whenever it folds a pain-point signal into the
-  UC's `pain_points:` list.
+- `/enrich-feature`: appends to `## Domain Research` only, on manual re-run. (The automatic first
+  run at hub creation is `/extract-signal` § Step 2a — same section, same output shape.) Touches
+  nothing else on the hub, and never a UC.
 - `/approve-uc`: writes nothing to the hub at all — it only flips the UC's own `status`/`version`/
   `## Changelog` and sets `synced: false` (§ Entity Data Model). `/sync-entities` does the hub refresh
   that used to run inline here, separately, whenever it runs: `## Requirement Readiness` to reflect
@@ -714,11 +718,22 @@ shows up in first, before its hub exists) — but it should not be any consumer'
 five columns. **`Status` is the one exception, read live from `FEATURES.md`'s table**, not from
 the hub's `status:` mirror — Status is the column a human hand-edits directly (`proposed` →
 `committed`/`built`/`out-of-scope`) and that edit is meant to take effect immediately, not wait for
-the next `/extract-signal`/`/enrich-feature` run to catch the hub's mirror up. Practically, this
+the next `/extract-signal` run to catch the hub's mirror up. Practically, this
 means `/extract-signal` writes every row's `Feature`/`UC`/`Code areas`/`Sources` value onto that
 feature's hub frontmatter at the same time it writes the `FEATURES.md` row (creating the hub from
 the template first if it doesn't exist yet) — the two copies must never drift, since the hub copy
 is what's actually read.
+
+That "never drift" rule applies past the row's creation, too: whenever a later run adds a `UC-###`
+to a hub's `uc:` list — `/bigin-transform-signal` minting a new UC (`3-lane-uc.md` § Minting new
+UCs, `4-sync.md` § Part 1b) or `/restructure-uc` moving one between hubs — the same actor writes
+the matching id onto that feature's `FEATURES.md` `UC` column in the same pass, never leaving it
+for a later run to notice. This is always the orchestrating skill's own write, never
+`hub-bookkeeper`'s (`agents/hub-bookkeeper.md` never writes `FEATURES.md`) — mirroring a hub's own
+tables and mirroring the registry are different writers by design. Skip it and `FEATURES.md`'s `UC`
+column goes stale relative to the hub's own `uc:`/`## Use Cases`, silently, with nothing else ever
+catching the drift — which is how a reader (human or agent) ends up trusting the registry's
+stale, smaller UC set instead of the hub's current one.
 
 ## Intake sources
 
@@ -862,7 +877,7 @@ alike. **A use case's decision-log rows are not open items**: they are settled h
 them would park a finished UC at `needs-clarification` forever.
 
 Every skill that writes to a question list or sets `status` on such an artifact
-(`/extract-signal`, `/bigin-transform-signal`, `/enrich-feature`) must make the status line the
+(`/extract-signal`, `/bigin-transform-signal`) must make the status line the
 **last** write-back step, derived by re-counting the section **after** every accepted change has
 been applied to it that run — never decided earlier in the run and then left stale by a later
 edit to the same section:
@@ -940,7 +955,7 @@ mode: a question that only makes sense to whoever just wrote it, because it refe
 number without restating what that number means — e.g. "Does UC4's Organization Experience
 narrative-question set *replace* UC-004 S23's single" (which "UC4"? the fourth item in *this* note,
 or the `UC-###` artifact id? "S23's single" — single *what*?). This
-applies wherever `/extract-signal`, `/bigin-transform-signal`, or `/enrich-feature` write a
+applies wherever `/extract-signal` or `/bigin-transform-signal` write a
 `- [ ] Q: …` line, on an INT note or a UC.
 
 **Format:**
@@ -1215,9 +1230,10 @@ per-feature mirror a human reads; a third table on the UC would be a third thing
 facts that are one grep away. The pre-UC `FR-###` model did carry that table, which is why an absorbed
 FR still shows it.
 
-**Created** by `/extract-signal` the moment a `[pain-point]` signal is extracted. **Solution +
-`Resolved by` backfilled** by `/enrich-feature` (UC-level solution) and `/consolidate-prd`
-(epic/story backfill). **Status flipped to `addressed`** only by a human.
+**Created** by `/extract-signal` the moment a `[pain-point]` signal is extracted. **`Resolved by`
+(epic/story) backfilled** by `/consolidate-prd`. **Solution** is no longer backfilled by
+`/enrich-feature` — enrichment moved off the UC (§ Reconciliation notes), so a human fills it
+directly, or it's left blank. **Status flipped to `addressed`** only by a human.
 
 ## Design Principles Register
 
@@ -1435,9 +1451,10 @@ document:
 ```
 
 It's a **synthesis, never new content** — same contract as any diagram/visual aid a skill adds: it
-illustrates what the note already states, it doesn't add to it. Drafted by `/enrich-feature` when
-the UC is first enriched, refreshed by any `/bigin-transform-signal` fold-in that changes the UC's
-content (version bump), so it never goes stale relative to the sections below it.
+illustrates what the note already states, it doesn't add to it. **Retired in practice**: nothing
+writes it any more — it was `/enrich-feature`'s under that skill's old per-UC design, and
+enrichment is feature-scoped now and never touches a UC (§ Reconciliation notes). Leave the block
+blank, or omit it entirely on a new UC.
 
 **Write it for a client/PO skimming the note, not for an auditor tracing artifact lineage.**
 2-3 short sentences, plain business language:
@@ -1562,39 +1579,49 @@ scattered inline caveats — resolve and delete each line as the corresponding s
   means "feature material" (§ Feature material) and the PRD picks it up on its next run rather than
   the approval producing one inline. `/approve-fr` is
   kept only so old references resolve; do not run both.
-- **`enrich-feature` and `consolidate-prd` are HALTED, not merely stale.** Both are on the old
-  `.bigin/` flat-file layout AND on the retired `FR-###` artifact (`.bigin/features/FR-<id>-*.md`,
-  `.bigin/PRD.md`, `.bigin/epics.md`, inline `Status:` headings) — not the
-  `01-Requirements/_ucs/`/`_brs/` model with `status:` frontmatter that `bigin-intake`,
-  `bigin-new-project`, `extract-signal`, `bigin-transform-signal`, `bigin-generate-design`,
-  `approve-uc`, and `sync-entities` use. In any migrated project `.bigin/features/` does not exist, so
-  **their preconditions halt unconditionally: there is no input they can read, and no run of either
-  can succeed.** Each now says so in its own first line rather than looking runnable.
-  Three consequences that were live bugs and are now closed:
-  - the `enriched` status is **unreachable**, so nothing may gate on it. `/approve-uc` asks about
-    enrichment only when `.bigin/features/` actually exists — otherwise it doesn't mention it, instead
-    of asking "enrichment hasn't run, proceed anyway?" on every approval forever.
+- **`consolidate-prd` is HALTED, not merely stale.** It's on the old `.bigin/` flat-file layout AND
+  on the retired `FR-###` artifact (`.bigin/features/FR-<id>-*.md`, `.bigin/PRD.md`,
+  `.bigin/epics.md`, inline `Status:` headings) — not the `01-Requirements/_ucs/`/`_brs/` model with
+  `status:` frontmatter that `bigin-intake`, `bigin-new-project`, `extract-signal`,
+  `bigin-transform-signal`, `bigin-generate-design`, `approve-uc`, `sync-entities`, and
+  `enrich-feature` use. In any migrated project `.bigin/features/` does not exist, so **its
+  precondition halts unconditionally: there is no input it can read, and no run can succeed.** It
+  says so in its own first line rather than looking runnable.
+  Consequences that were live bugs and are now closed:
+  - the `enriched` status is **unreachable on a UC**, so nothing may gate on it — not because
+    `consolidate-prd` is halted (it never set this value anyway) but because enrichment moved off
+    the UC entirely when `enrich-feature` was retargeted (below). `/approve-uc` doesn't mention
+    enrichment at all any more, for the same reason.
   - `draft → approved` is the live path. § Status vocabularies keeps `enriched` as a defined value
     because a pre-migration vault has UCs already carrying it; nothing writes it today.
-  - `/bigin-ba` does not route to either skill. Its pipeline list marks both as halted.
+  - `/bigin-ba` does not route to `consolidate-prd`. Its pipeline list marks it halted.
 
-  **The migration is the largest open item in this plugin**, and it is a two-axis gap: both skills need
-  the path migration *and* the FR→UC migration. Concretely, each of them:
-  - reads `.bigin/features/FR-<id>-*.md` and must read `01-Requirements/_ucs/UC-<NNN> <Title>.md`;
-  - keys its whole run on a single FR id per feature and must accept a feature carrying **several**
-    UCs, plus a UC spanning **several** features (`primary_feature` decides the chain);
-  - expects an FR's `## Functional requirements` list and must read a UC's `## 2`/`## 3` flows, its
-    `## 4` rule mirror, and its `## 5` **Still open** list (not `## Open Questions`);
-  - in `/consolidate-prd`'s case, should cut epics/stories as **use-case slices** (§ Traceability
-    chain), flows first, rather than one story per FR line.
+  **The migration is the largest open item in this plugin.** It's a two-axis gap: `consolidate-prd`
+  needs the path migration *and* the FR→UC migration. Concretely:
+  - it reads `.bigin/features/FR-<id>-*.md` and must read `01-Requirements/_ucs/UC-<NNN> <Title>.md`;
+  - it keys its whole run on a single FR id per feature and must accept a feature carrying
+    **several** UCs, plus a UC spanning **several** features (`primary_feature` decides the chain);
+  - it expects an FR's `## Functional requirements` list and must read a UC's `## 2`/`## 3` flows,
+    its `## 4` rule mirror, and its `## 5` **Still open** list (not `## Open Questions`);
+  - it should cut epics/stories as **use-case slices** (§ Traceability chain), flows first, rather
+    than one story per FR line.
 
-  `/enrich-feature`'s target shape is settled even though it isn't built: per-**UC** enrichment writing
-  `## Domain Concerns` onto the UC itself (§ Feature Hub's `## Domain Research` bullet), not per-feature
-  enrichment writing a hub section. Each skill's own body carries its target contract under a heading
-  saying it isn't runnable, so the design intent survives without either skill looking live.
+  Its own body carries this target contract under a heading saying it isn't runnable, so the design
+  intent survives without the skill looking live.
 
-  Until then, § Feature Hub's "Maintenance contract" rows for those two describe the target, not
-  the current read/write paths. **Four exits from `/bigin-transform-signal` work:** the design one
+- **`enrich-feature` was retargeted, not migrated on the old axes — it's live.** It never reads
+  `.bigin/features/` and was never on the FR→UC axis; it was rescoped from a *per-UC* design (never
+  built) to a *per-feature* one (built, live): research the feature's stated scope automatically the
+  moment its hub is first created — `/extract-signal` § Step 2a — and let a human re-run it later,
+  on demand, via `/enrich-feature` itself. Its only footprint is the feature hub's
+  `## Domain Research` section and a report under `01-Requirements/_research/<slug>/`; it never
+  touches a UC, `## Domain Concerns` no longer exists as a UC section, and the summary block is
+  permanently retired rather than something this skill fills. `/bigin-ba` routes to it for a manual
+  refresh, same as any other live stage.
+
+  Until `consolidate-prd` migrates, § Feature Hub's "Maintenance contract" row for it describes the
+  target, not the current read/write path — `enrich-feature`'s row there is already current.
+  **Four exits from `/bigin-transform-signal` work:** the design one
   (`/bigin-generate-design`, live), the approval one (`/approve-uc`, live), the PRD one
   (`/bigin-generate-prd`, live — it consumes what `/approve-uc` approved), and the human. Only the
   epics/stories exit is missing.

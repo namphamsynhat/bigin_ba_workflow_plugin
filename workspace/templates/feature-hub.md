@@ -92,13 +92,12 @@ set adds up; a MISSING section means nobody has checked yet. -->
 <!-- UC(s)'/BR(s)' attachments: list, vault-relative paths -->
 
 ## Domain Research
-<!-- PLANNED, and currently unwritten: /enrich-feature is halted (conventions.md § Reconciliation
-notes), so this section stays empty — omit it on a new hub rather than leaving an empty heading that
-reads as "no research needed". One entry per domain-research run for this feature, once it exists.
-Appended by /enrich-feature (step 3,
-Phase 2.5) only when the feature's enrichment needed external grounding (regulatory/compliance
-facts, a named third-party platform/API's real behavior, industry-standard practice) — never
-hand-authored, and empty for most features, since most enrichment needs nothing external.
+<!-- One entry per domain-research run for this feature. The first lands automatically, the run
+this hub is first created — /extract-signal § Step 2a (_bigin/stages/extract/3-filing.md)
+researches the feature's stated scope and appends the finding here, plus a full report at
+01-Requirements/_research/<slug>/domain-research.md. Refreshable later on demand via
+/enrich-feature (e.g. scope changed materially, or the automatic run failed/was skipped). Never
+hand-authored.
 Entry format: `- **<date>** — <topic> — <one-line summary of key findings> ([full report](<path>))` -->
 
 ## Business Scenarios

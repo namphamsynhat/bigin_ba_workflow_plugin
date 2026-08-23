@@ -3,9 +3,27 @@
 Read at Stage 1, by the orchestrator only. A worker never detects anything — it is **told** which
 engine to use, in its dispatch prompt.
 
+**This file is the OPTIONAL layer, and nothing in it may stop a run.** Two questions, deliberately
+kept apart — `design-engines.md` § Relationship to `engine-detection.md` is this same split written
+from the other side:
+
+```text
+design-engines.md   WHICH engine is REQUIRED for this platform, and the HALT when it is absent. It
+                    renders the prototype artifact, and it is the one thing that can stop this skill.
+this file           WHICH optional METHOD / QUALITY layer is available to derive the screens with —
+                    BMAD WDS, Figma MCP, a design plugin, the built-in method, plus the quality
+                    boosters, the per-step `designer-skills` references, and the Stage 3.5 craft
+                    pass. Every one of them is a SILENT SKIP, or one reported install line, when
+                    absent.
+```
+
+The two **compose**: the required engine renders the screens, and whatever method layer is in play is
+what decided *what those screens are*. Only the required engine can halt a run.
+
 ```text
 an ENGINE changes HOW the screens get made.
-it never changes WHAT gets written: a UX spec, a design system, two prompts, the same shape either way.
+it never changes WHAT gets written: a UX spec, a design system, and the prompt blocks the platform
+calls for (2, or 4 on `both`) — the same shape either way.
 ```
 
 ## Detect, in this order, and stop at the first hit
@@ -51,7 +69,7 @@ the output shape and the write paths (§ Using an engine, below):**
 | WDS phase | What it does | Lands here instead |
 |---|---|---|
 | Phase 3 (Scenarios) | derive a linear happy-path scenario exposing every page, from a strategic input (Product Brief + Trigger Map) | `3-screens.md` Part 2's UC→screen walk. **A UC already is the scenario** — it has actors, a trigger, and an ordered flow — so skip Phase 3's own elicitation entirely; do not re-derive a scenario from scratch when the UC on disk already is one. Feed Freya's scenario method the UC's `## 2`/`## 3` directly. |
-| Phase 4 (Design Loop) | discuss → page spec → wireframe → approve → iterate → extract tokens, **per page, with a human at every step** | `3-screens.md` Parts 3–4 (screen spec + states) and Stage 4's token extraction. Run the same sequence of thinking **headlessly, in one pass per screen**: draft the page spec and its states directly from the grounded sources (§ Grounding) instead of discussing them with a human first, skip the "approve" checkpoint (this skill never halts — the human reviews the finished `UX-###` afterward, not mid-loop), and extract tokens on the same "second use" discipline Freya uses (the first screen or two that need a color/spacing decision seed the token; the next screen that needs the same thing cites it by name instead of inventing a sibling) |
+| Phase 4 (Design Loop) | discuss → page spec → wireframe → approve → iterate → extract tokens, **per page, with a human at every step** | `3-screens.md` Parts 3–4 (screen spec + states) and Stage 4's token extraction. Run the same sequence of thinking **headlessly, in one pass per screen**: draft the page spec and its states directly from the grounded sources (§ Grounding) instead of discussing them with a human first, skip the "approve" checkpoint (this skill never pauses mid-run — the human reviews the finished `UX-###` afterward, not mid-loop), and extract tokens on the same "second use" discipline Freya uses (the first screen or two that need a color/spacing decision seed the token; the next screen that needs the same thing cites it by name instead of inventing a sibling) |
 | Phase 7 (Design System) | consolidate extracted tokens/components into one shared system | Stage 2 (seed) and Stage 4 (extend) exactly as already described in `SKILL.md` — WDS's consolidation discipline (dedup, never rename, version + changelog) is what `2-system.md` and D1 already encode. Nothing extra to port here beyond confirming the token levels match. |
 | Phase 1–2 (Product Brief, Trigger Map) | establish strategy and personas before any screen work starts | **out of scope, always.** The UC's `## 1` actors/trigger/pre+post-conditions already are that foundation — re-eliciting it duplicates work an approved (or in-review) requirement already did, and risks a persona or strategic framing that contradicts what the UC actually says. Never run these phases, present or absent. |
 | Phase 0/5/6 (Alignment sign-off, agentic dev, asset generation) | out of scope by this skill's own design — wireframes + tokens only, no code, no polished visual assets | never invoked, whether or not the installed WDS module ships them |
@@ -74,7 +92,7 @@ override them.
 
 ```text
 the engine supplies METHOD          how to derive screens, name tokens, structure a system
-this plugin supplies CONTRACT       where files go, what a UX spec contains, the seven hard rules
+this plugin supplies CONTRACT       where files go, what a UX spec contains, the eight hard rules
 conflict → the CONTRACT wins.
 ```
 
@@ -83,7 +101,7 @@ Concretely:
 | The engine wants to… | Do this instead |
 |---|---|
 | write to `_bmad-output/`, `docs/ux/`, or its own tree | write to `{ux_dir}` and `{design_system_dir}` |
-| run an interactive design loop with checkpoints | run its method headlessly; this skill never halts |
+| run an interactive design loop with checkpoints | run its method headlessly; this skill puts no question to a human mid-run |
 | re-elicit strategy, personas, or a product brief | the UCs already have actors and goals. Never invent a persona; use the roles on record, or a neutral one ("the reviewer") |
 | create a fresh design system per run | extend the one at `{design_system_dir}` (D1) |
 | generate icons, images, or polished visual assets | out of scope — the prototype prompt produces the visuals |
@@ -98,7 +116,7 @@ already exists in the client's Figma library and is re-invented here guarantees 
 
 These never replace the engine or the built-in method above — they are consulted **in addition**,
 and only when they actually apply. Neither changes the CONTRACT: output is still a UX spec, a design
-system (tokens/components/nav map), and two prompts, written to the usual paths.
+system (tokens/components/nav map), and the platform's prompt blocks, written to the usual paths.
 
 | Booster | Check for it | Use it when | Never |
 |---|---|---|---|
@@ -234,6 +252,13 @@ report, in the closeout: which engines were looked for, that none was found, and
 never halt, never ask mid-run           # this skill is headless
 ```
 
+**One carve-out, and only one.** "Complete" and "never halt" are true of everything in *this* file:
+every engine, booster, and pattern skill above is optional, and its absence is a silent skip or a
+single reported install line. They are **not** true of the platform's **required renderer** — that
+one does gate the run, and its absence halts at Stage 1 before any work is done
+(`design-engines.md` § Required means required, or the recorded `design_engine_required: false`
+waiver). "Never halt" here means never halt over a missing *method*.
+
 **Report exactly these, and nothing improvised** — the same discipline `/bigin-new-project` § 7.3
 uses. A guessed installer either fails noisily or installs the wrong thing.
 
@@ -260,14 +285,37 @@ This is what stages 2–4 already do; it is written out here so a reader can see
                  validation                               → a state
                  exception flow                           → a named error state
                  then merge screens that two UCs both land on.
+                 on MOBILE the same steps need MORE, SMALLER surfaces — the splitting guidance
+                 (one primary action per screen, a long form as stepped sheets, list-and-detail as
+                 two screens, and the per-platform screen-count bands) lives in `3-screens.md`
+                 Part 2. Read it there; it is deliberately not restated here.
 
-3  SCREEN TYPE   pick the plainest type the step needs, and reuse a sibling feature's version of it:
-                 many records, filterable         → list / table
-                 one record, read-mostly          → detail
-                 the actor supplies data          → form (one screen; a wizard only when the UC
-                                                    itself splits the input across steps)
-                 the actor decides yes/no         → review + disposition
-                 the flow ends                    → confirmation
+3  SCREEN TYPE   pick the plainest type the step needs, and reuse a sibling feature's version of it.
+                 The catalog is per PLATFORM — a type from the other platform's list builds a shell
+                 this one does not have:
+
+                 web     many records, filterable    → list / table
+                         one record, read-mostly     → detail
+                         the actor supplies data     → form (one screen; a wizard only when the UC
+                                                        itself splits the input across steps)
+                         the actor decides yes/no    → review + disposition
+                         the flow ends               → confirmation
+
+                 mobile  many records, scanned       → feed / list (one card or row per record, the
+                                                        detail behind a tap — never a wide table)
+                         one record, read-mostly     → detail
+                         the actor supplies data     → form-sheet (one field group; a long form
+                                                        becomes stepped sheets, named in order)
+                         a destination the actor     → tab root (one of at most 5 — § 7 below)
+                           opens from the tab bar
+                         a multi-step input the UC   → full-screen wizard step, one per step
+                           itself splits
+                         review + disposition and confirmation carry over unchanged in intent —
+                         one decision per screen, and the confirmation as a screen or a sheet
+
+                 both    ONE inventory, both catalogs: the same user goal picks a web type AND a
+                         mobile type (a web list/table IS the mobile feed), never two screens
+
                  A type nothing in the flow calls for is a screen nobody asked for.
 
 4  ELEMENTS      fields come from the EN-### entity: its names, its types, its required flags,
@@ -283,6 +331,12 @@ This is what stages 2–4 already do; it is written out here so a reader can see
 
 7  NAVIGATION    only a screen the actor opens directly from a menu gets a nav-map entry — a
                  detail, wizard step, or modal reached through another screen does not.
+                 web     the tree already in {nav_map_file} — a sidebar / nav-bar shell, any depth
+                 mobile  a TAB BAR: at most 5 top-level entries, plus per-screen headers and
+                         sheets. Depth below a tab is still arbitrary; a 6th top-level candidate is
+                         an Open Question on the nav map (owner: team), never a silent 6th row
+                 both    one line per shell — the two shells are two trees, so the same feature is
+                         legitimately named twice (`settings.team` on web, `more.team` on mobile)
 
 8  GROUND OR ASK every decision cites a requirement, an existing pattern, or a stated preference.
                  None of the three → an Open Question. This is the line between a design decision
@@ -293,8 +347,12 @@ This is what stages 2–4 already do; it is written out here so a reader can see
 
 - **Letting the engine choose the output paths.** Half the design lands somewhere nothing reads, and
   the run still reports success.
-- **Halting because no engine is installed.** The built-in method exists precisely so a run never
-  dead-ends; a halt turns a working design stage into a blocked one.
+- **Halting because one of THIS FILE'S engines, boosters, or pattern skills is missing.** The
+  built-in method exists precisely so a run never dead-ends on a missing *method*; a halt over one
+  turns a working design stage into a blocked one. Absence here is a silent skip, or one reported
+  install line in the closeout — never a stop. **The platform's required renderer is the opposite
+  case, and is not this bullet:** that one does gate the run, halting for it is correct, and the halt
+  belongs to `design-engines.md` at the Stage 1 precondition — never improvised from here.
 - **Inventing tokens while a real Figma library is connected.** The client already has these values;
   a parallel set guarantees a rebuild later.
 - **Running an engine's interactive loop.** It waits for a human that an unattended run does not have.
@@ -315,6 +373,7 @@ This is what stages 2–4 already do; it is written out here so a reader can see
 - **Re-running WDS's Phase 1–2 elicitation because the module ships it.** The UC's `## 1` already is
   the strategic input Freya normally gathers first; re-eliciting it risks a persona or framing that
   contradicts the requirement on record instead of designing from it.
-- **Waiting for WDS's "approve" checkpoint.** This skill never halts. Draft the page spec, wireframe,
+- **Waiting for WDS's "approve" checkpoint.** This skill never pauses mid-run for a human (its one
+  halt is a precondition, before any work — `design-engines.md`). Draft the page spec, wireframe,
   and token extraction in one headless pass per screen, grounded exactly as strictly as an
   interactive pass would be — an ungrounded call becomes an Open Question, not a paused conversation.

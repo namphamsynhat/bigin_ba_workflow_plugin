@@ -7,8 +7,9 @@ title:
 status: draft   # draft | needs-clarification | enriched | approved | consolidated | removed
                 # (_bigin/conventions/conventions.md § Status vocabularies — in-review and superseded are
                 # retired for FR/BR). /bigin-transform-signal only ever writes
-                # draft/needs-clarification; enriched belongs to /enrich-feature, consolidated to
-                # /consolidate-prd, and approved/removed are human-only (hard rule 4).
+                # draft/needs-clarification; enriched is permanently unreachable (enrichment is
+                # feature-scoped now, never FR/UC-level), consolidated to /consolidate-prd, and
+                # approved/removed are human-only (hard rule 4).
 version: 1.0
 feature:         # the FEATURES.md slug this FR belongs to
 sources: []      # INT-### id(s) this FR traces to
@@ -30,8 +31,8 @@ An FR a use case has taken over carries `absorbed_by: UC-###` and is frozen: nev
 `removed` (human-gated, hard rule 4). See _bigin/stages/transform/3-lane-uc.md § Adopting an existing
 FR. -->
 
-> [!summary]- Summary
-> `<2-3 sentences, drafted once /enrich-feature first enriches this FR — leave blank until then.>`
+> [!summary]- Summary (retired — nothing writes this)
+> `<enrichment is feature-scoped now and never touches an FR; leave blank.>`
 
 ## Business goal
 <!-- Why this is being built, in the client's own terms — drawn from the signal(s) that created
@@ -70,9 +71,6 @@ not needs-clarification.
 
 - [ ] Q: ... (owner: client|team) (ref: <INT-###>)
       A: -->
-
-## Domain Concerns
-<!-- /enrich-feature's findings — this skill never writes here. -->
 
 ## Changelog
 - 1.0 (YYYY-MM-DD) — created from `<INT-###>`

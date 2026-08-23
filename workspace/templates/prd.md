@@ -162,7 +162,7 @@ Omit the whole section, with one line saying so, when the feature has no UX spec
 describe screens from imagination to fill it. -->
 
 * **Design spec:** `<UX-<NNN> <Feature>>` — `<status, and the version this PRD read>`
-* **Platform:** `<web / mobile / both, as the design states it. "not stated">`
+* **Platform:** `<web / mobile / both — copied from the design's § 1, never decided here (P6). The design always states one; absent on a spec written before the field existed means web>`
 * **Design intent, as stated to us:** `<the DESIGN-PRINCIPLES rows and hub directives the design applied, in the client's own words>`
 
 **Screens**
@@ -175,7 +175,7 @@ describe screens from imagination to fill it. -->
 | Capability | The path through the screens | Ends on |
 |------------|-----------------------------|---------|
 
-* **Prototype:** `<where the prompts are, e.g. "both prototype prompts are ready in UX-<NNN> § Prototype Prompt">` — never restate a prompt here
+* **Prototype:** `<where the prompts are — point at the headings the spec actually carries, e.g. "the prototype prompts are ready in UX-<NNN> § Prototype Prompt — Claude design (Web) / — Figma Make (Web)"; 2 headings on a web or mobile spec, 4 on both, unsuffixed on a pre-suffix web spec>` — never restate a prompt here
 * **Known design gaps:** `<one line per unchecked question on the UX spec's § 6, in business words>`
 
 ## 10. Scope & Release Framing

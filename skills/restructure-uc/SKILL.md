@@ -23,7 +23,7 @@ said — not "this UC mixes two goals" but "actually, here's a third thing the c
 > **Artifact Standard:** Outputs:
 >> **The source UC**, narrowed, `## 2`/`## 3` rows marked `removed because — moved to UC-###` where
 >> content left, retitled if its remaining scope no longer matches its old title, flagged for
->> `/enrich-feature` + `/approve-uc` review.
+>> `/approve-uc` review.
 >> **One or more destination UCs**, new or existing, each `status: draft` if newly created (or
 >> re-recounted if existing), carrying the moved content and its original citations, also flagged for
 >> review.
@@ -119,7 +119,8 @@ for the same reason: no restructuring decision should be made blind to the UC's 
 
 7. **Summarize** — every UC touched (source + destinations) and its new `status`, every BR repointed,
    every hub refreshed, and the explicit next step: all touched UCs are `draft`/`needs-clarification`,
-   never auto-approved, flagged for `/enrich-feature` + `/approve-uc`.
+   never auto-approved, flagged for `/approve-uc`. (Enrichment is feature-level now — a UC split alone
+   never calls for a `/enrich-feature` refresh unless the split itself changed the feature's scope.)
 
 ## Additional Resources
 

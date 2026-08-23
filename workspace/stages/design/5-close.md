@@ -3,7 +3,7 @@
 ```text
 runs: orchestrator, LAST
 in:   every UX spec, design-system file, nav map file, and hub this run touched
-out:  absorbed: stamped · statuses set from a live count · hubs refreshed · twelve checks · the report
+out:  absorbed: stamped · statuses set from a live count · hubs refreshed · seventeen checks · the report
 never: a status decided in Stages 1-4 · an absorbed: entry for a UC with no screen
 ```
 
@@ -18,6 +18,11 @@ per UX spec:
     design_system: = {tokens_file}'s version, as it stands now
     nav_map:       = {nav_map_file}'s version, as it stands now
     engine:        = the engine Stage 1 detected (wds | figma | <plugin> | built-in)
+    platform:      = the project config's platform, as Stage 1 announced it (web | mobile | both;
+                     absent in the config → web) — UNLESS a UC, a hub ## Design Directives row, or an
+                     active DESIGN-PRINCIPLES row EXPLICITLY stated a platform for THIS feature, in
+                     which case that value, and the citation goes on ## 1's Platform line. Never
+                     re-read the config to decide it, never infer it from a step's wording (check 13)
     relationship_model: = modelled ONLY IF ## 7 exists AND carries rows. Read the section on disk;
                           a worker that reported `modelled` and wrote an empty ## 7 gets `none`
                           and its ## 7 deleted (checks 10-12)
@@ -73,7 +78,7 @@ per UC designed this run:
 
 Nothing else on the UC, ever (D4). Not a step, not a rule, not a question, not a version bump.
 
-## Part 5 — Twelve checks, every run
+## Part 5 — Seventeen checks, every run
 
 Each is a real failure that otherwise reports as success. **A mismatch is blocking:** repair,
 re-check, then report.
@@ -87,11 +92,16 @@ re-check, then report.
 | 5 | no raw colour/size/font value in any screen spec | D2 — one hex in a spec and the system stops being the source |
 | 6 | every question in `## 6` is mirrored on the hub, same sentence, and is not already open on the UC's `## 5` | one question, two places — never two questions |
 | 7 | each UX spec's `status` matches its live unchecked-question count | the invariant Part 2 exists to hold |
-| 8 | both prompt blocks exist and contain no `UC-`/`BR-`/`EN-`/`UX-`/`INT-`/`PRD-` id | D6 — an id in a prompt renders as a heading in the prototype |
-| 9 | `{nav_map_file}` lost nothing (no entry removed/renamed); every entry's `Points to` (when not "—") names a screen that really exists in an actual UX spec; every entry whose `id` has a dot has a parent `id` that also exists in the table | D1, and either an orphaned menu entry (dead link) or an orphaned branch (a child with no parent row) reaches a client looking like real IA |
+| 8 | the prompt blocks present **match the platform** — 2 for `web`, 2 for `mobile`, 4 for `both` — each under its own suffixed heading (`— Claude design (Web)` / `— Figma Make (Web)` / `— Claude design (Mobile)` / `— Figma Make (Mobile)`), and none of them contains a `UC-`/`BR-`/`EN-`/`UX-`/`INT-`/`PRD-` id | D6 — an id in a prompt renders as a heading in the prototype. And a `both` spec carrying two blocks leaves the BA with nothing to paste for one of the two platforms, which surfaces only when somebody goes looking for it |
+| 9 | `{nav_map_file}` lost nothing (no entry removed/renamed); every entry's `Points to` (when not "—") names a screen that really exists in an actual UX spec; every entry whose `id` has a dot has a parent `id` that also exists **in the same `## Structure` section** (on `both`, the two shells are two trees — an `id` is unique within its own section, not across both) | D1, and either an orphaned menu entry (dead link) or an orphaned branch (a child with no parent row) reaches a client looking like real IA |
 | 10 | `relationship_model:` matches `## 7` **on disk**: `modelled` ⟺ `## 7` exists with ≥1 row in any of its four tables; `none` ⟺ `## 7` is absent or was deleted | an empty `## 7` reads as "the relationship was considered and there is none" when nobody looked — and a `modelled` flag over no rows makes the next run skip the work |
 | 11 | every **Memory Architecture** row names an `EN-###` field that really exists in that entity's field list, and every filled **stage 3 — autonomous** cell cites a `BR-###` that really exists | D7. A memory over no stored field is a relationship the system cannot have; an ungranted autonomous cell reaches a prototype as the agent acting alone, with nobody having decided it may |
 | 12 | every gap `## 7` produced (an unstated autonomy ceiling, retention rule, memory owner, wrong-answer path, or learning disclosure) is an unchecked `- [ ] Q:` in `## 6` marked as a requirement gap | the gaps are the section's main output. Found and not written down, they are worse than never looked for — the run reports a relationship model that quietly assumed all five |
+| 13 | the spec's `platform:` **and** its `## 1` **Platform** line hold the same value, and that value is the project config's — or both name the same per-feature override and cite the UC, directive, or principle that **explicitly stated** it | a spec silently on the wrong platform produces a prototype in the wrong shell: right screens, right copy, wrong product. Nothing else in the run catches it — every check above passes on a phone spec built for a web project — and it reaches the client as a decision somebody appears to have made |
+| 14 | every screen spec's `Regions` (or its `Layout — …` lines) uses **that platform's** vocabulary — web `header / nav / main / aside / footer`, mobile `header / content / tab-bar / sheet / fab` — and on `both`, every `Layout — Web` / `Layout — Mobile` split is a real difference, not the same block written twice | the wrong vocabulary asks a tool to build a shell the platform does not have (a `tab-bar` on a web screen, a `nav` on a phone one), and a duplicated split reads as a considered difference — so the next run maintains two copies of one layout and they drift |
+| 15 | the frontmatter `actors:` list and the `## 1` **Actor & Scope** table hold the same roles, in the same bands; every row names an actor that really appears in an in-scope UC's `## 1`; and every one of its three cells carries a ground that really exists (a `BR-###`, a UC step, or an `EN-###` cardinality) — no row for an actor no UC names | an invented actor is an invented persona, and every screen designed for them is scope nobody asked for wearing an owner nobody appointed. A guessed `all` in a scope cell is worse: it hands an actor reach no rule granted, and the client approves it by looking at a prototype |
+| 16 | every screen spec carries an `Actor` and a `Scope` line whose actor appears in the Actor & Scope table; every screen at volume `many` carries **at least one find mechanism** (search, filter, or sort) and all five volume states — `empty`, `few`, `many at real scale` (with the real number named, not "several"), `loading`, `error`; and no screen at volume `one` carries find machinery | a `many` screen without find machinery reviews as finished and collapses on the client's real table — and no other check catches it, because every element on it is properly grounded. A `many` state that never names a number gets prototyped at three rows, which tests nothing the client is worried about |
+| 17 | no screen spec carries a bulk action, an export, a "select all matching", a saved view, or a subscription unless a `UC-### S<n>` or a `BR-###` **really grants it** — and every one that was left out because nothing granted it is an unchecked `- [ ] Q:` in `## 6` marked as a requirement gap | D8, the data-side counterpart of check 11. An ungranted bulk affordance reaches the client in a working prototype, they agree it looks right, and it becomes a requirement nobody wrote or costed — except this one deletes five hundred records at a time |
 
 Also confirm **every feature Stage 1 put on the work-list was reached**: designed, or skipped with a
 stated reason. A feature the run never got to prints as **pending**, never disappears — otherwise the
@@ -101,6 +111,8 @@ next run's scan and the human both assume it was covered.
 
 ```text
 mode:      bootstrap | extend — design system v<x> (<N> tokens, <N> components), nav map v<x> (<N> entries)
+platform:  <web | mobile | both> (project config) [ · override: <slug> → <web|mobile|both>, grounded
+           by <UC-### / directive #n / DESIGN-PRINCIPLES #n> (one per overriding feature) ]
 engine:    <engine> | built-in — <install command, if none was found>
 boosters:  <agentic-ux-design | design-library | none> — <one line: where it applied and why, or "none — did not apply this run">
 Stage 1:   <N> feature(s) in scope — <slug>: <N> NEW, <N> CHANGED, <N> CURRENT (skipped)
@@ -108,7 +120,18 @@ Stage 3:   <slug> UX-### created|updated — <N> screens (<N> new), <N> states
                   serving UC-### S<n>… (one line per feature)
 Stage 2B:  <N> token(s) added, <N> component(s) added — total <N> tokens / <N> components
            <N> nav entr(y/ies) added — total <N> entries; 0 removed, 0 renamed (tokens or nav)
-Stage 4:   <slug> UX-### — Claude design ✓  Figma Make ✓ (+ relationship block, when modelled)
+Stage 4:   <slug> UX-### — <2|4> prompt block(s) for platform <web|mobile|both>:
+           Claude design (<Web|Mobile>) ✓  Figma Make (<Web|Mobile>) ✓ [ + the (Mobile) pair, on
+           `both` ] (+ relationship block, when modelled)
+render:    <the platform's design engine> — <N> artifact(s) at <pointer to where they landed>
+           | skipped — waived in project settings
+           (the pointer only, never the rendered contents; one line per engine that ran, so `both`
+            reports two)
+actors:    <slug> UX-### — <N> actor(s): <role> (sees <own|assigned|unit|all>, <one|few|many>);
+           … (one line per feature)
+           splits: <place> → <screen A> (<actor>) + <screen B> (<actor>), on <volume|capability>
+                   | none — no place served two actors with differing scope
+           capability gaps: <N> raised (bulk/export/saved view nothing granted) | none
 relationship: <slug> UX-### modelled — context <N> / memory <N> / trust <N> / measures <N>,
               <N> requirement gap(s); or "<slug>: none — failed <judges|persists|repeats>"
               (one line per feature in scope; "none" everywhere is the normal result)
@@ -142,3 +165,20 @@ next:      human review of UX-### → paste a Prototype Prompt into Claude desig
   and find the field name, or the row is a requirement gap.
 - **Letting `## 7`'s gaps stay in `## 7`.** A gap named only in the relationship model is invisible
   to the human review, to the hub, and to `/bigin-transform-signal`. It has to be a `## 6` question.
+- **Stamping a `platform:` the spec's screens do not actually reflect.** The same class of failure as
+  stamping `absorbed:` from a report: the frontmatter says `mobile`, the regions say
+  `nav / main / aside`, and the prompt block builds a sidebar. Read the screens, then stamp
+  (checks 13-14), or the wrong actor's screen (checks 15-17).
+- **Reporting two prompt blocks on a `both` project.** It reads as a complete Stage 4, and the
+  missing platform is only discovered by the BA who goes to paste it. Four blocks or a stated reason.
+- **Leaving a stale check count after adding one.** The header, Part 5's heading, and every other
+  place this file says how many checks there are must agree with the table's last row. A header
+  claiming one number over a table holding another teaches the next run to stop early, and nothing
+  fails — it just quietly never runs the checks that were appended. Grep the count before closing.
+- **Passing checks 15-17 by eye.** "Actor: Admin" in a spec proves nothing on its own — open the UC
+  and confirm that actor is really in its `## 1`, and open the `EN-###` and confirm the cardinality
+  that put the screen in the `many` band. A scope table is exactly as trustworthy as the grounds in
+  its last column, and a guessed `all` looks identical to a read one.
+- **Counting a `many` screen as compliant because it has a filter.** Check 16 wants the find
+  mechanism *and* all five volume states, with the real number named in the `many` one. A filter
+  over a list whose only rendered state is three sample rows is machinery over nothing.

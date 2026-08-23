@@ -43,10 +43,16 @@ a duplicate copy that can drift out of sync with the source.
    command is running: every requirement traces to a stated signal, never an invented one; feature
    slugs are permanent once artifacts reference them; `_bigin/{conventions,stages,templates}` are
    plugin-owned and overwritten on every `/bigin-new-project` run — a real override belongs in
-   `.claude/bigin-ba-workflow-plugin.local.md`, never edited in place.
-6. **Engagement snapshot** — client and project mode (`new`/`ongoing`), pulled from `project.md`'s
-   frontmatter. Enough for a session to know who the engagement is for and whether it's greenfield
-   without opening a second file.
+   `.claude/bigin-ba-workflow-plugin.local.md`, never edited in place; and a hand-back naming a
+   specific next command (from the `bigin-ba` agent, or from `/bigin-run` itself) is an action to take
+   in the same turn, not a suggestion to relay — run it yourself immediately unless it names a
+   decision-point stage (`approve-uc`, `bigin-new-project`, `restructure-uc`) or an actual blocker.
+   Only a subagent is capability-restricted from fan-out stages like `extract-signal`; this session
+   is not, so a note that reads "run `/bigin-run` next" means run it now, not report it and stop.
+6. **Engagement snapshot** — client, project mode (`new`/`ongoing`), and platform
+   (`web`/`mobile`/`both`; absent → `web`), pulled from `project.md`'s frontmatter. Three facts on one
+   line: who the engagement is for, whether it's greenfield, and whether it's a browser app, a phone
+   app, or both — without opening a second file.
 
 Leave out anything a generic template would ask for that doesn't apply here: there's no build/test/
 lint command, no runtime environment, no package manifest. Don't pad the file to match an unrelated

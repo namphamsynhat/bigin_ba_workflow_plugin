@@ -21,7 +21,9 @@ cited entities, `BR-###` rule mirrors, open hub directives, and active design pr
 Design Brief: known gaps verbatim, a mechanical draft screen-boundary proposal (Part 2's rule
 applied, never finalized), an entity field table per candidate screen, cross-UC merge candidates,
 existing-pattern matches from sibling UX specs, and the raw entity-field material Part 4b's trigger
-test will need later. Below that threshold, the screens worker reads `3-screens.md` Part 1 directly
+test will need later. **Its brief carries the platform too** — supplied to it in its own dispatch,
+exactly as it is to the screens worker, and never inferred by it (`agents/ux-brief-assembler.md`
+§ What you're handed). Below that threshold, the screens worker reads `3-screens.md` Part 1 directly
 — a second dispatch to save a few inline reads costs more than it returns.
 
 Fold the brief into the screens worker's prompt as its `READ FIRST` starting point (§ The prompt,
@@ -30,7 +32,7 @@ the source UCs/entities directly whenever it needs to verify a specific claim, a
 4b's actual trigger verdict itself; the brief only removes the need to re-derive the mechanical parts
 of Part 1/2 from scratch.
 
-## Before dispatching — the orchestrator does these five things
+## Before dispatching — the orchestrator does these six things
 
 ```text
 1  MINT THE NUMBER      Grep {ux_dir} for the highest UX-### and assign the next one per feature
@@ -49,6 +51,19 @@ of Part 1/2 from scratch.
                         Part 4b's trigger test per feature. Never pre-decide `modelled` here: the
                         test needs UC step verbs and an entity field list, which Stage 1 never read
                         (agentic-ux.md § Deciding it applies).
+6  RESOLVE THE PLATFORM read `platform:` ONCE, from _bigin/system/project.md's frontmatter, at
+                        Stage 1 (absent → `web`). Resolve a PER-FEATURE OVERRIDE only from a source
+                        that EXPLICITLY STATES a platform for that feature — a hub ## Design
+                        Directives row, an active DESIGN-PRINCIPLES row — and pass the resolved
+                        value, with its ground, into EVERY worker prompt. A worker never re-derives
+                        it: two workers inferring a platform differently produces one product with
+                        two navigation shells. (A worker that meets an explicit statement inside a
+                        UC it reads still acts on it and cites it, per 3-screens.md Part 1 — an
+                        explicit statement is an override; an inference from step wording or from
+                        where an actor sits never is.)
+                        The platform's REQUIRED ENGINE was resolved with it, at the same Stage 1
+                        precondition — a worker cannot check either one: it cannot read this
+                        plugin's install directory.
 ```
 
 ## The prompt
@@ -67,6 +82,14 @@ DESIGN TOKENS BY NAME, never raw values.
 YOUR UX SPEC:        <UX-### (new — create it) | UX-### (exists — update it in place)>
 UCs TO DESIGN:       <UC-### (NEW) | UC-### (CHANGED 1.2 → 1.4)> …
 UCs NOT YOURS:       <UC-### (designed in <slug>'s spec)> …, or "none"
+PLATFORM:            <web | mobile | both> — source: <project config | override: hub directive
+                     #<n> | DESIGN-PRINCIPLES row #<n>, which states it for this feature>.
+                     Use it as given; do not re-derive it and do not open the project config.
+                     regions vocabulary: <web: header / nav / main / aside / footer
+                                        | mobile: header / content / tab-bar / sheet / fab>
+                     <on both: "ONE screen inventory — the same user goals, never a web list and a
+                     mobile list. Only the LAYOUT splits, inside a screen's own block, and only
+                     where the two genuinely differ. regions: BOTH vocabularies, one per layout.">
 DESIGN ENGINE:       <wds | figma | <plugin> | built-in> — <one line on how to use it>
 DESIGN SYSTEM:       04-UIUX/_design-system/design-tokens.md at v<x> — cite these names; propose
                      a new token only when nothing there fits.
@@ -90,13 +113,15 @@ DESIGN BRIEF:        <a ux-brief-assembler report is attached below — start th
 
 READ FIRST:
 - _bigin/conventions/design-conventions.md — these sections ONLY: § Paths, § Write map,
-  § The seven design hard rules, § The UX spec, § Screen spec, § Grounding, § Open questions,
-  § The relationship model, § The navigation map
+  § The eight design hard rules, § The UX spec, § Screen spec, § Grounding, § Open questions,
+  § Actor scope, § The relationship model, § The navigation map
 - _bigin/stages/design/3-screens.md — your stage guide, in full
 - 01-Requirements/_features/<slug>.md — the hub: ## Design Directives (Status: open), actors
 - each UC above, in full: § 1 actors/trigger/post-conditions, § 2 steps, § 3 branches,
   § 4 rule mirror, § 5 Still open (KNOWN GAPS — work around them, never guess past them)
-- every BR-### named in those § 4 mirrors, and every EN-### in the UCs' entities:
+- every BR-### named in those § 4 mirrors — noting any rule about WHO MAY SEE OR DO WHAT — and
+  every EN-### in the UCs' entities:, noting each RELATIONSHIP CARDINALITY (one Account has many
+  Orders): those two are where Part 2a's actor scope is read from, and nowhere else
 - 01-Requirements/DESIGN-PRINCIPLES.md — rows with Status: active
 - 04-UIUX/_design-system/design-tokens.md and components/ — what already exists
 - 04-UIUX/_design-system/navigation-map.md — its ## Structure (a dot-path `id` per row, so it can
@@ -109,17 +134,44 @@ A DESIGN BRIEF attached above is a pre-digested starting point, not a substitute
 re-read the actual UC/BR/EN whenever you need to confirm a specific detail it summarized, and never
 treat its candidate screens or merges as final until you've applied Part 2's rule yourself.
 
+FIRST, across all the UCs at once, fill § 1's ACTOR & SCOPE table (3-screens.md Part 2a): one row
+per actor the UCs name in their § 1, and for each — whose records they see (own | assigned | their
+unit's | all), how many (one | few | many, unbounded), and what they may do (read one | act on one |
+act on MANY at once). Every cell is READ from a BR-###, a UC step, a § 1 pre-condition, or an EN-###
+cardinality, and carries that ground. Nothing settles a cell → the NARROWEST reading plus a § 6
+question; never the convenient one. Do this BEFORE mapping screens: it is the input to the merge
+rule below, not a summary written afterwards.
+
 THEN, one UC at a time, in the order listed:
 1. Map its flow to screens (3-screens.md Part 2): consecutive steps by the same actor in the same
    place = ONE screen; a validation = a state; an exception flow = a named error state; a
-   system-only step = not a screen. Merge screens two UCs both land on.
+   system-only step = not a screen. Merge screens two UCs both land on ONLY WHEN THEIR ACTORS'
+   SCOPE AGREES (Part 2a): a differing volume band or a differing capability means TWO screens,
+   each naming its own actor — a member reading their own record and an administrator working ten
+   thousand of them are two products, not one screen with a filter bar. Differing only in WHICH
+   FIELDS are visible → still ONE screen, with a `Visible to` cell citing the BR-### that restricts
+   it.
 2. Decide which of those screens gets a nav entry (Part 2b): only one the actor opens DIRECTLY from
    a menu — never a detail, a wizard step, or a modal reached through another screen. Most features
-   contribute 0-2 entries, not one per screen.
-3. Write the screen spec (Part 3): regions, elements, real copy, TOKEN NAMES, the entity field
-   each input renders, and what grounds each element.
+   contribute 0-2 entries, not one per screen. On MOBILE the shell is a TAB BAR of at most 5
+   top-level entries: a 6th top-level candidate is an Open Question on the nav map (owner: team),
+   never a silent 6th row. On BOTH, say where the feature lives on EACH shell — one line per shell,
+   because the two shells are two trees; an entry on one and not the other is normal and grounded,
+   never mirrored for symmetry.
+3. Write the screen spec (Part 3), starting with its `Actor` and `Scope` lines from the table
+   above: regions in YOUR PLATFORM'S vocabulary (web: header/nav/main/
+   aside/footer · mobile: header/content/tab-bar/sheet/fab — a `nav` region on a phone screen or a
+   `tab-bar` on a web one asks the tool to build a shell the platform does not have), elements, real
+   copy, TOKEN NAMES, the entity field each input renders, and what grounds each element. On BOTH,
+   write purpose/serves/elements/states/interactions ONCE as shared behaviour, then split only what
+   actually differs into `Layout — Web` / `Layout — Mobile`; no real difference → one regions line
+   in each vocabulary, no split.
 4. Add the states (Part 4) — each traced to a BR, an exception flow, an entity constraint, or a
-   post-condition.
+   post-condition. A screen at volume `many` ALSO carries the five volume states — empty, few, many
+   AT REAL SCALE (name the real number: "≈10,000 records, page 1 of 200", never "several"),
+   loading, error — plus at least one find mechanism (search, filter, or sort). All of that is
+   grounded by the volume fact itself, cited like any other ground. A screen at volume `one` carries
+   no find machinery: there is nothing to find.
 5. Run Part 4b's trigger test (once per feature, after every UC is mapped). On a pass, write ## 7:
    Relationship Context, Memory Architecture (EVERY row names a real EN-### field — no field means
    a requirement gap, not a row), Trust Map (fill a stage 3 ONLY where a BR-### grants it — D7),
@@ -131,28 +183,49 @@ THEN, one UC at a time, in the order listed:
    grounded → apply it and cite the ground, ungrounded → an Open Question, same as any other. Not
    named → skip, silently.
 7. NEVER invent a screen, a field, a state, a nav entry, a threshold, or a label the sources did not
-   state — and never a memory, an autonomous action, or a retention rule (D7). Missing detail is a
-   question on § 6, not a plausible guess.
+   state — and never a memory, an autonomous action, or a retention rule (D7). NEVER add a bulk
+   edit, a bulk delete, a "select all matching", an export, a saved view, or a subscription that no
+   UC step and no BR-### grants: volume licenses FINDING, never a CAPABILITY (D8), and an
+   administrator who "obviously needs bulk delete" is a requirement gap on § 6, owner client — not
+   a control you put on the screen. Missing detail is a question on § 6, not a plausible guess.
 
 DO NOT WRITE — vault-wide or owned elsewhere, and other features run concurrently. Report
 candidates instead; the orchestrator applies them:
   04-UIUX/_design-system/ (tokens AND components AND navigation-map.md) · another feature's UX spec
   or hub · 01-Requirements/DESIGN-PRINCIPLES.md · FEATURES.md
 DO NOT edit any UC, BR, or entity — they are read-only here, in every section.
-DO NOT fill absorbed:, do not set status: accepted, do not write either Prototype Prompt block —
+DO NOT fill absorbed:, do not set status: accepted, do not write any Prototype Prompt block —
 the orchestrator does all three after your report.
+DO set the spec's `actors:` frontmatter key from § 1's Actor & Scope table — one entry per row,
+"<role>:<own|assigned|unit|all>:<one|few|many>" (e.g. ["Member:own:one", "Administrator:all:many"]).
+Same rows, same order, never a role the table does not carry. Stage 5 check 15 blocks on the two
+agreeing, and a spec with no `actors:` key reads as one written before actor scope existed.
 Leave the spec at status: draft.
 
 REPORT, as plain lines:
   feature:              <slug>
+  platform:             web|mobile|both — source: dispatched (project config)
+                        | override: <UC-### S<n> | hub directive #<n> | DESIGN-PRINCIPLES row #<n>>
   ux:                   UX-### created|updated — <N> screens (<N> new, <N> updated)
-  screens:              <screen> | serves: UC-### S<n>, S<n> | states: <N> (one line each)
+  screens:              <screen> | actor: <role> | volume: one|few|many <(real number, when many)>
+                        | serves: UC-### S<n>, S<n> | states: <N> (one line each)
+  actor_scope:          <actor> | sees: own|assigned|unit|all | volume: one|few|many
+                        | may: read one|act on one|act on many
+                        | grounded by: <BR-### | UC-### S<n> | EN-### cardinality>
+                        (one line per actor in § 1's table)
+  actor_splits:         <place> → <screen A> (<actor>, <band>) + <screen B> (<actor>, <band>)
+                        | split on: volume|capability   (one line each, or "none")
+  capability_gaps:      <the bulk/export/saved-view affordance NOT designed> | suggested by: <what
+                        made it tempting> | requirement gap raised (one line each, or "none")
   tokens_used:          <existing token name> (one line each)
   token_candidates:     <proposed name> | level: 2|3 | value: <raw> | means: <meaning> | on: <screen>
   component_candidates: <name> | variants: <…> | states: <…> | used on: <screen>, <screen>
-  nav_candidates:       <entry label> | parent: <existing id it nests under, or "new: <path>", or
-                        "top-level"> | points to: <screen> | role(s): <actor(s)>
+  nav_candidates:       <entry label> | shell: web|mobile (one line per shell on both — the two
+                        shells are two trees) | parent: <existing id it nests under, or
+                        "new: <path>", or "top-level"> | points to: <screen> | role(s): <actor(s)>
                         | grounded by: <UC-### S<n> | BR-### | pattern <name>>
+                        | tab-bar cap: <"6th top-level candidate — Open Question, owner team",
+                        when a mobile shell hits it>
   directives_reflected: hub row #<n> → <screen> (only rows a screen really implements)
   relationship:         modelled | none — <the failed test, when none: judges|persists|repeats>
   relationship_rows:    context <N> | memory <N> | trust <N> | measures <N> | gaps <N>
@@ -178,6 +251,21 @@ per feature in the wave:
 4  no raw value           → Grep the spec for "#" hex codes, "px", and font names. Any hit is D2
                             broken and must be replaced with a token name (or a candidate)
 5  every question         → an unchecked "- [ ] Q:" in ## 6, and not already open on the UC's ## 5
+5a actor scope claims     → the frontmatter `actors:` list and ## 1's Actor & Scope table hold the
+                            same roles in the same bands; every actor named there really appears in
+                            an in-scope UC's ## 1 (an invented actor is an invented persona, and
+                            every screen built for them is invented scope); and every ## 2 row and
+                            ## 3 block carries an Actor and a Volume from that table
+5b the split held         → no ## 2 row serves two UCs whose actors differ in VOLUME BAND or in
+                            CAPABILITY. Reported `actor_splits: none` on a feature whose Actor &
+                            Scope table holds two bands is the claim to check hardest — it is the
+                            one-screen-fits-all failure, and it reads as a clean report
+5c many-screen machinery  → every screen at volume `many` has at least one find mechanism and all
+                            five volume states, with the `many` one naming a REAL NUMBER, not
+                            "several"; and no screen at volume `one` carries find machinery
+5d ungranted capability   → Grep the spec for bulk, select all, export, saved view, subscribe. Any
+                            hit must cite a UC step or a BR-### that really grants it; otherwise it
+                            is D8 broken and belongs in ## 6 as a requirement gap, not on a screen
 6  every reported nav candidate → NOT a screen reached only through another screen (re-check
                             against Part 2b's test); a violation is dropped, not applied
 7  shared files untouched → git diff --stat shows NO change to 04-UIUX/_design-system/ (tokens,
@@ -191,6 +279,16 @@ per feature in the wave:
                             not left empty. Either mismatch is blocking — Stage 5's checks 10-12
                             re-run this, and a claim that survives to there is one the orchestrator
                             has to unpick from the file rather than the report.
+10 regions vocabulary    → every ## 3 block's regions line uses the vocabulary of the platform this
+                            worker was DISPATCHED with — web: header/nav/main/aside/footer, mobile:
+                            header/content/tab-bar/sheet/fab. A `nav` on a phone screen or a
+                            `tab-bar` on a web one is the wrong shell, and the prompt built from it
+                            asks a tool to build chrome the platform does not have. Grep for the
+                            other platform's region names
+11 one inventory on both → a `both` spec has ONE ## 2 Screen Inventory, not a web table and a mobile
+                            table, and its per-platform difference lives as a `Layout — Web` /
+                            `Layout — Mobile` split INSIDE a ## 3 block. Two inventories is
+                            blocking: the second goes stale the first time a UC changes
 
 mismatch → BLOCKING. Dispatch one scoped repair worker, re-check that feature, then move on.
 ```
