@@ -17,7 +17,7 @@ platform: web           # web | mobile | both — COPIED from the project config
                         # OVERRIDE that a UC, a hub ## Design Directives row, or a DESIGN-PRINCIPLES
                         # row EXPLICITLY stated for this feature — cite it on § 1's Platform line.
                         # Never inferred from a step's wording
-                        # (design-conventions.md § Platform). Verified in Stage 5 (check 13).
+                        # (design-conventions.md § Platform). Verified in Stage 6 (check 13).
 uc: []                  # UC-### id(s) designed here
 brs: []                 # BR-### id(s) that produced a state or a validation
 entities: []            # EN-### id(s) the screens render fields from
@@ -26,7 +26,7 @@ actors: []              # every role § 1's Actor & Scope table carries, each as
                         # ["Member:own:one", "Administrator:all:many"]. Read from the in-scope UCs'
                         # § 1 actors, never invented (design-conventions.md § Actor scope).
                         # A spec with two actors at different volume bands must carry SEPARATE
-                        # screens for them, not one screen serving both. Verified in Stage 5
+                        # screens for them, not one screen serving both. Verified in Stage 6
                         # (check 15). Absent on a spec written before this key existed —
                         # 3-screens.md § Adopting an existing UX spec builds it on the next run.
 sources: []             # UC-###/BR-###/EN-### ids + DESIGN-PRINCIPLES row #s + hub directive #s
@@ -34,9 +34,14 @@ absorbed: []            # UC-<NNN>@<version> — THE staleness record. Only UCs 
                         # screens this run. Re-stamped WHOLE every run (§ Staleness).
 design_system:          # the {tokens_file} version these screens were specced against
 nav_map:                # the {nav_map_file} version these screens were specced against
-engine:                 # which design engine produced this: wds | figma | <plugin> | built-in
+engine:                 # the METHOD layer that decided these screens: wds | figma | <plugin> |
+                        # built-in. NOT a renderer — /bigin-generate-design renders nothing. What
+                        # actually rendered this spec, if anything has, is ## 8's table.
+rendered: false         # false | true — flipped by /bigin-render-design when it appends a ## 8 row.
+                        # A design run never touches this key, so a spec re-designed after a render
+                        # keeps it: ## 8's `Against` column is what shows the render went stale.
 relationship_model: none  # none | modelled — set by Stage 3 Part 4b's trigger test, verified in
-                        # Stage 5 (check 10). `modelled` REQUIRES a filled ## 7; `none` requires
+                        # Stage 6 (check 10). `modelled` REQUIRES a filled ## 7; `none` requires
                         # ## 7 to be absent or empty. An empty ## 7 with `modelled` reads as
                         # "considered, nothing found" when nobody looked
                         # (design-conventions.md § The relationship model).
@@ -121,7 +126,7 @@ directive (D3). An element grounded in nothing is a question in § 6, not a gues
   mobile: header / content / tab-bar / sheet / fab — semantic elements, not a pixel layout>`
   <!-- A `nav` region on a phone screen, or a `tab-bar` on a web one, is the wrong vocabulary: it
   asks a tool to build a shell the platform does not have (design-conventions.md § Platform;
-  Stage 5 check 14). -->
+  Stage 6 check 14). -->
 
 <!-- PER-PLATFORM LAYOUT SPLIT — on `platform: both` ONLY, and ONLY for a screen whose two shells
 genuinely differ. Everything else in this block stays SHARED: one Purpose, one Serves, one Element
@@ -166,6 +171,36 @@ feature (no UC). -->
 * **Path:** `<Screen>` → `<Screen>` → `<Screen>`
 * **Success:** `<what the user is left with>`
 * **Failures:** `<exception>` → `<screen/state the user is left on>`
+
+### Coverage
+<!-- Written by Stage 4 (_bigin/stages/design/4-verify.md), re-written WHOLE every run — a partial
+table claims a coverage nobody checked. Read design-conventions.md § Coverage verification.
+
+This is the FORWARD direction, and the only thing in this pipeline that can find an OMISSION. Every
+other check runs backward — element to ground — and backward passes cleanly on a spec with a whole
+exception flow missing, because nothing on a screen that was never drawn can be traced.
+
+One row per: non-removed S#/A#/E# of every in-scope UC · each BR-### they cite that constrains what
+an actor sees or may do · each EN-### field their steps read or write (NOT every field the entity
+owns) · each open hub ## Design Directives row · each active DESIGN-PRINCIPLES row.
+
+Three verdicts, no fourth:
+  covered                        `Covered by` names the SCREEN AND THE STATE. A `covered` verdict
+                                 over a `—` is the table claiming what nobody checked (Stage 6
+                                 check 18 blocks on it)
+  gap → ## 6 Q<n>                genuinely not designed. Points at a question that really exists and
+                                 is unchecked
+  out of scope — <reason>         excluded by something ON RECORD, and the record is cited. An
+                                 uncited exclusion is a gap wearing a decision's clothes -->
+
+| Item | Kind | Covered by | Verdict |
+| :--- | :--- | :--- | :--- |
+| `UC-<NNN> S<n>` | step | `<Screen> · <state>` | `covered` |
+| `UC-<NNN> E<n>` | exception | `—` | `gap → ## 6 Q<n>` |
+| `BR-<NNN>` | rule | `<Screen> · <state>` | `covered` |
+| `EN-<NNN>.<field>` | field | `—` | `out of scope — <hub ## Design Directives #n>` |
+| `directive #<n>` | directive | `<Screen> · <element>` | `covered` |
+| `principle #<n>` | principle | `<where it applied>` | `covered` |
 
 ## 5. Design System Usage
 <!-- What these screens take from 04-UIUX/_design-system/, and what they added to it. The feature
@@ -239,7 +274,21 @@ track — instrumentation is behaviour. Not a requirement, not a target, not a d
 | Measure | What would be observed | Which row above it tests |
 |---------|------------------------|--------------------------|
 
-<!-- HOW MANY BLOCKS IS A PLATFORM FACT (design-conventions.md § Prototype prompt; Stage 5 check 8):
+## 8. Rendered Artifacts
+<!-- ABSENT until somebody renders. Written by `/bigin-render-design` ALONE — no stage of
+`/bigin-generate-design` touches this section, and a design run neither creates it nor clears it.
+
+POINTERS ONLY. Rendered HTML, images, and PDFs are outputs the engine owns; pasting their contents
+in makes this spec a second, drifting copy of something else, stale the next time anything renders.
+
+| Rendered | Engine | Platform | Screens | Artifacts at | Against |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `<YYYY-MM-DD>` | `<engine>` | `<web \| mobile>` | `<N> of <N>` | `<path / project id>` | `UX-<NNN>@<version>` |
+
+`Against` is what makes a render's staleness visible: a spec at v1.4 whose only render was against
+v1.2 has screens nobody has ever looked at. Re-rendering appends a row; it never edits one. -->
+
+<!-- HOW MANY BLOCKS IS A PLATFORM FACT (design-conventions.md § Prototype prompt; Stage 6 check 8):
 
     platform: web     2 blocks — the two (Web) headings.    Delete the (Mobile) pair.
     platform: mobile  2 blocks — the two (Mobile) headings. Delete the (Web) pair.
@@ -250,14 +299,14 @@ written before the suffix existed. That is a `web` spec by definition — `web` 
 default — and it self-heals on its feature's next design run (3-screens.md § Adopting an existing
 UX spec). Nothing downstream requires the suffix.
 
-The platform's design engine renders the actual prototype artifacts. These blocks are the DURABLE,
-TOOL-PORTABLE RECORD: they stay in the spec so the prototype is reproducible by hand, in any tool,
-after the engine has changed or gone. Record where an engine's artifacts landed as a pointer in the
-Stage 5 report — never paste rendered output in here. -->
+These blocks are the DURABLE, TOOL-PORTABLE RECORD, written on EVERY design run whether or not
+anybody intends to render: they stay in the spec so the prototype is reproducible by hand, in any
+tool, after today's engines have changed or gone. Rendering itself is a separate, human-invoked step
+(/bigin-render-design) and it records POINTERS in ## 8 — never paste rendered output in here. -->
 
 ## Prototype Prompt — Claude design (Web)
 <!-- Self-contained (D6): no UC-/BR-/EN-/PP-/UX-/INT-/PRD- id, no step id, anywhere below.
-Built in Stage 4 from these screens plus the design system's real values. Addressed to a builder:
+Built in Stage 5 from these screens plus the design system's real values. Addressed to a builder:
 behaviour, states, working HTML. Desktop width, a persistent sidebar / nav-bar shell. -->
 
 ## Prototype Prompt — Figma Make (Web)

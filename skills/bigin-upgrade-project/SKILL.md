@@ -274,6 +274,21 @@ nothing**: see the last rule below.
     regardless of whether this project uses it yet). This skill doesn't duplicate that section's
     authority over the copy — it's the same operation, run from here because here is where the
     before/after diff also happens.
+  - **Prune stage files the new version no longer has.** The copy overwrites and adds; it never
+    removes. So a stage guide that was **renamed** between versions leaves its old copy behind, and
+    `_bigin/stages/design/` ends up holding both `5-close.md` (a stale file calling itself "Stage 5 —
+    Close") and `6-close.md` (the real Stage 5's successor) — two files claiming one stage number,
+    with nothing marking which is live. After the copy, list each `_bigin/stages/*/` against its
+    `${CLAUDE_PLUGIN_ROOT}/workspace/stages/*/` source and **delete every `.md` the source does not
+    have**, naming each deletion in § 6's report. These are plugin-owned files with no project content
+    in them — the same class the copy just overwrote wholesale — so removing one loses nothing a human
+    wrote. Do not extend this prune to `_bigin/conventions/` or `_bigin/templates/` without the same
+    reasoning: a template a project still has content instantiated from is not dead just because the
+    plugin stopped shipping it.
+    - **1.8 → 1.9 is exactly this case:** `design/4-prompt.md` and `design/5-close.md` became
+      `design/5-prompt.md` and `design/6-close.md`, with a new `design/4-verify.md` between them. An
+      upgrade that skips the prune leaves a project reading a stale "Stage 4 — The prototype prompts"
+      that still tells it to render.
   - **This copy runs strictly after § 4, and § 4's inputs are why.** § 1 takes its "current" snapshot
     of `_bigin/templates/*.md` — section headers *and* frontmatter keys — before anything is
     overwritten, and § 4 then reads a template's currently *materialized* state again to decide what a
@@ -332,6 +347,7 @@ migrated  one row per § 3 match, in whichever of the two shapes fits it:
           place of the result — never dropped, and never left implied by the drift table
 drift     | What changed | Why nothing ran | What a human should decide |
 refresh   file counts for conventions/ stages/ templates/, same shape as /bigin-new-project § 8
+          pruned    <N> stale stage file(s) removed, by name (0 is the normal result)
 agent     CLAUDE.md: created | merged into existing file | regenerated (delimited section only)
 next      point at /bigin-transform-signal (or the relevant review skill) for every id in the
           "migrated" table's Staged column — this run staged content, it approved nothing

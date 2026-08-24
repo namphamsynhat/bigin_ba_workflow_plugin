@@ -595,7 +595,7 @@ Set `relationship_model:` from Part 4b — `modelled` with `## 7` filled, or `no
 deleted. An **existing spec created before `## 7` existed** simply has no such section: add it if the
 trigger passes now, and otherwise leave the spec without it (§ Adopting an existing UX spec below).
 
-Leave `status: draft`. Leave `absorbed:` **empty** — the orchestrator stamps it in Stage 5, after it
+Leave `status: draft`. Leave `absorbed:` **empty** — the orchestrator stamps it in Stage 6, after it
 has checked which UCs really got screens.
 
 ---
@@ -641,6 +641,12 @@ questions:          <the question>, owner client|team, kind: design|requirement-
 designed_ucs:       UC-###@<version>  (one line each — ONLY UCs that really got screens)
 blocked:            UC-### — <why, one line>
 ```
+
+**The orchestrator's next move is `4-verify.md`, on what you actually wrote.** It re-reads your spec
+from disk and matches every in-scope requirement item forward to the screen and state that carries it.
+So a screen that really serves `S4` must *say* it serves `S4` — an under-recorded `Serves` cell is
+repaired there, but a step you skipped becomes an Open Question with your feature's name on it. Report
+what you designed; do not report coverage you did not write down.
 
 ## Failure modes
 
@@ -704,7 +710,7 @@ blocked:            UC-### — <why, one line>
 - **Splitting a screen the client will never see split.** Two actors with the same volume band and
   the same capability, differing only in which fields they see, are ONE screen with a `Visible to`
   cell. Two near-identical specs drift the first time a shared element changes.
-- **Stamping `absorbed:` yourself.** Stage 5 stamps it, after verifying the screens exist.
+- **Stamping `absorbed:` yourself.** Stage 6 stamps it, after verifying the screens exist.
 
 ## Adopting an existing UX spec
 

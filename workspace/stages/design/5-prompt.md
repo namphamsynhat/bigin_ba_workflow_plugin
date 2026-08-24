@@ -1,13 +1,13 @@
-# Stage 4 — The prototype prompts: blocks that stand alone
+# Stage 5 — The prototype prompts: blocks that stand alone
 
 ```text
-runs: orchestrator, after Stage 2 Part B has finalised every token name
+runs: orchestrator, after Stage 2 Part B has finalised every token name and Stage 4 has verified
+      coverage and render readiness
 in:   the UX spec's screens, states, flows, copy + the design system's real values + the nav map
       + the platform, as Stage 1 announced it (never re-read from the project config here)
-out:  this platform's prompt blocks — 2 on `web`, 2 on `mobile`, 4 on `both` — plus the prototype
-      artifacts the platform's design engine renders, recorded as pointers
+out:  this platform's prompt blocks — 2 on `web`, 2 on `mobile`, 4 on `both`
 never: a vault id inside a prompt body · a prompt that says "see the use case" · a concrete engine
-       name anywhere in this file
+       name anywhere in this file · a render — /bigin-render-design owns that, on a human's schedule
 ```
 
 Read `{design_conventions}` § Prototype prompt, § Platform, and § Actor scope first, and
@@ -31,10 +31,17 @@ variants) and **by platform** (the shell and the viewport). Nothing else. A scre
 block and missing from another, or copy reworded "because it's a phone", is the failure this stage
 exists to prevent: whichever block the BA pastes, the others silently become wrong.
 
-**This file names no design engine, deliberately.** Part 5 invokes *the platform's design engine* and
-resolves which one it is — plus its install command and its brief→input mapping — from
-`references/design-engines.md`. That keeps an engine swap a one-file edit; a stage guide that
-hardcoded a tool name is the thing that makes the next swap expensive.
+**This stage does not render, and this file names no design engine.** The blocks are the durable,
+tool-portable record; turning one into something a client can look at is `/bigin-render-design`, a
+separate skill a human invokes when they want it, on whichever engine they choose. So nothing here
+halts for a missing tool, nothing here checks an install, and no engine has a name in this file — its
+catalog, install commands, and brief→input mappings live in that skill's own
+`references/design-engines.md`. A stage guide that hardcoded a tool name is the thing that makes the
+next swap expensive.
+
+**Which is exactly why the blocks are written every run, unconditionally.** Nobody may ever render
+this feature, or they may render it in six months on a tool that does not exist today. The block is
+what survives that: reproducible by hand, in any tool, from the words in it alone.
 
 ## Part 1 — De-identify
 
@@ -120,7 +127,7 @@ never forks per platform (`{design_conventions}` § Platform, D4).
 
 **Actor scope multiplies SCREENS, never BLOCKS.** A feature serving two actors with different
 scope has more screens in its inventory, and every one of them goes in the same block. The block
-count stays a platform fact — 2 on `web` or `mobile`, 4 on `both` (§ Prototype prompt, Stage 5
+count stays a platform fact — 2 on `web` or `mobile`, 4 on `both` (§ Prototype prompt, Stage 6
 check 8). A per-actor prompt block is a fifth artifact nobody maintains, and the moment one screen
 changes the others are silently wrong.
 
@@ -383,68 +390,46 @@ prototype can promise the client a memory, an autonomy, or a retention rule nobo
 it from the newer mobile templates because they were written later is the same breach as never having
 written it — the phone prototype is the one the client holds in their hand.
 
-## Part 5 — Render it with the platform's design engine
+## Part 5 — Hand off to the render step, do not render
 
-The blocks above are the record. This step is what turns them into something a client can actually
-look at.
-
-For each feature designed this run, the orchestrator invokes **the platform's design engine** with the
-composed brief — `## 1 Design Brief`, `## 2 Screen Inventory`, `## 3`'s regions, elements, real copy
-and states, `## 4` Flows, the real token names and values, this platform's `## Structure` from the nav
-map, and `## 7` when `relationship_model:` is `modelled`. **Which** engine that is, how it is invoked,
-and exactly how each piece of the brief maps onto its inputs all live in `references/design-engines.md`
-— resolve them there and nowhere else. This stage runs in the orchestrator, which can read that file;
-a worker never resolves an engine, it is told which one is in play.
+The blocks above are the record. Turning them into something a client can look at is a **separate,
+human-invoked step** — `/bigin-render-design` — and this stage's whole remaining job is to leave that
+step nothing to guess at.
 
 ```text
-the blocks   are written REGARDLESS of what the engine does. They are the durable, tool-portable
-             record and the engine's fallback: reproducible by hand, in any tool, years after this
-             engine is gone. A good render never excuses a missing block, and a block never waits
-             on a render.
-the engine   produces ARTIFACTS ON DISK, in its own project / output location
-the spec     records a POINTER — the artifact paths, carried into the Stage 5 report. Never the
-             contents. Pasting rendered HTML into the UX spec makes the spec a second, drifting
-             copy of something the engine owns.
-on `both`    each platform's engine renders ITS OWN platform's screens — the web screens through
-             the web one, the phone screens through the mobile one. Neither renders the other's,
-             and neither's output stands in for the other's.
+this stage      writes the blocks, ALWAYS, whatever anyone intends to render
+                names the render step in the closeout as the next thing available
+                checks NO install, invokes NO tool, halts for NOTHING
+
+the render step chooses the ENGINE (the human's choice — the platform only supplies a default),
+                halts if that engine is absent, renders, and records artifact POINTERS in the spec's
+                ## 8. It reads this spec and the design system; it re-designs nothing
+
+the spec        holds the blocks and, later, ## 8's pointers. NEVER the rendered contents — pasting
+                generated HTML in makes the spec a second, drifting copy of something the engine owns
 ```
 
-A render is a materialisation of the spec, never a second design pass:
+**Why the split.** Rendering is a taste-and-timing decision that belongs to the person showing the
+client, not to an unattended pipeline: which tool, which platform, which feature, and when. Binding it
+to this run forced one engine per platform, made a missing install stop a requirements-side stage that
+needed no tool at all, and re-rendered features nobody had asked about. Splitting it means this skill
+is now **fully headless with no halt of its own**, and a render is a deliberate act with a person
+behind it.
+
+**What this stage owes the render step** — verified at Stage 4 Part 5, restated here because this is
+where the last of it gets written:
 
 ```text
-NEVER let it   add a screen `## 2 Screen Inventory` does not carry   → § Grounding. An invented
-                                                                      screen arrives looking
-                                                                      designed, which is worse
-                                                                      than an obvious guess
-               substitute placeholder copy for the real words       → copy is content, and real
-                                                                      copy is how the words get
-                                                                      found to be wrong
-               override a DESIGN-PRINCIPLES row with its own taste   → the row is ground 3, an
-                                                                      engine's aesthetic is
-                                                                      ground 2b, and 3 wins
-                                                                      every time
-               rename or replace an existing token                   → D1, append-only
-               write into 04-UIUX/ or 01-Requirements/               → § Write map. Artifacts land
-                                                                      in the engine's own place;
-                                                                      we record pointers
+□ every screen's regions, elements, real copy, real field names, and every state it reaches
+□ every token cited by name AND value, in every block
+□ this platform's nav shell, in every block
+□ every `many` screen's real scale, in words, with its find controls
+□ every mobile screen's device facts — frame, safe-area, tap targets, one primary action, sheets
+□ `## 7`'s memory rows, concrete, whenever `relationship_model: modelled`
 ```
 
-**A missing engine was already handled, upstream.** Stage 1 halts when the platform's required engine
-is absent — the pipeline's one sanctioned halt, taken before a single screen is designed. So this step
-does **not** re-check the install, does not degrade to a built-in render, and does not invent a
-fallback: a run that reached Part 5 has its engine.
-
-**The one exception is a recorded waiver.** A project that set `design_engine_required: false` in
-`.claude/bigin-ba-workflow-plugin.local.md` skips this step entirely — and **says** it skipped, in the
-report, every run:
-
-```text
-engine render: skipped — waived in project settings
-```
-
-A skipped render that goes unmentioned reads as a completed one, which is the exact failure the
-upstream halt exists to prevent.
+A render engine given all of that produces the spec. Given less, it produces something plausible —
+and a plausible prototype is reviewed as a specified one.
 
 ## Part 6 — Check before saving
 
@@ -479,9 +464,9 @@ upstream halt exists to prevent.
   traces to a `## 7` row (which traces to a real entity field). Nothing in any prompt promises the
   system remembers, decides, or forgets anything `## 7` does not carry (D7)
 □ `relationship_model: none` → NO block mentions memory, learning, or autonomous action
-□ Part 5 ran: the platform's design engine rendered this feature, and the artifact paths are held
-  as pointers for the Stage 5 report — or the run states `skipped — waived in project settings`.
-  On `both`, both platforms rendered
+□ every block is complete enough to hand to ANY render engine cold — the Part 5 handoff list, in
+  the block itself, not merely somewhere in the spec. This is what `/bigin-render-design` reads,
+  possibly months from now, on a tool nobody has picked yet
 □ someone who has never read this vault could build it
 ```
 
@@ -509,9 +494,16 @@ A prompt failing the last line is the only real test; the others are how it fail
 - **Lorem ipsum.** Real copy is the cheapest way to find out the words are wrong.
 - **Leaving navigation out.** The tool then improvises its own menu per screen, and the prototype
   reads as several disconnected apps instead of one product.
-- **Pasting engine-rendered artifact contents into the spec.** The spec holds the pointer and the
-  prompt blocks. Generated HTML is an output; copying it in makes the spec a second, drifting copy of
-  something the engine owns, and the copy is stale the next time anything renders.
+- **Pasting engine-rendered artifact contents into the spec.** The spec holds the prompt blocks and,
+  once someone renders, `## 8`'s pointers. Generated HTML is an output; copying it in makes the spec a
+  second, drifting copy of something the engine owns, and the copy is stale the next time anything
+  renders.
+- **Rendering here.** This stage writes the record; `/bigin-render-design` renders, when a human asks
+  for it. A render bolted back onto this stage re-imports the halt that split the two apart — and
+  re-renders features nobody was asking about.
+- **Writing a thinner block because "we will render it from the spec anyway".** The render may happen
+  in six months, from a different tool, run by someone who never read the spec. The block is what
+  stands alone; a block that leans on the spec around it has failed its only test.
 - **Dropping the relationship item from the mobile templates.** They were written later, so item 10
   is the easiest thing to leave out of them — and it is a D7 surface. A phone prototype that quietly
   promises a memory nobody granted is the version the client holds in their hand.

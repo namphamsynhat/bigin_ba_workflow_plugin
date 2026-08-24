@@ -1,10 +1,10 @@
-# Stage 5 — Close: stamp, mirror, verify, report
+# Stage 6 — Close: stamp, mirror, verify, report
 
 ```text
 runs: orchestrator, LAST
 in:   every UX spec, design-system file, nav map file, and hub this run touched
-out:  absorbed: stamped · statuses set from a live count · hubs refreshed · seventeen checks · the report
-never: a status decided in Stages 1-4 · an absorbed: entry for a UC with no screen
+out:  absorbed: stamped · statuses set from a live count · hubs refreshed · eighteen checks · the report
+never: a status decided in Stages 1-5 · an absorbed: entry for a UC with no screen
 ```
 
 ## Part 1 — Stamp `absorbed:`, and only for real work
@@ -17,7 +17,9 @@ per UX spec:
                                                  → named in ## 6 as not yet designed
     design_system: = {tokens_file}'s version, as it stands now
     nav_map:       = {nav_map_file}'s version, as it stands now
-    engine:        = the engine Stage 1 detected (wds | figma | <plugin> | built-in)
+    engine:        = the METHOD layer Stage 1 detected (wds | figma | <plugin> | built-in).
+                     NOT a renderer — nothing in this skill renders. What actually rendered this
+                     spec, if anything ever does, is `/bigin-render-design`'s to write into ## 8
     platform:      = the project config's platform, as Stage 1 announced it (web | mobile | both;
                      absent in the config → web) — UNLESS a UC, a hub ## Design Directives row, or an
                      active DESIGN-PRINCIPLES row EXPLICITLY stated a platform for THIS feature, in
@@ -78,7 +80,7 @@ per UC designed this run:
 
 Nothing else on the UC, ever (D4). Not a step, not a rule, not a question, not a version bump.
 
-## Part 5 — Seventeen checks, every run
+## Part 5 — Eighteen checks, every run
 
 Each is a real failure that otherwise reports as success. **A mismatch is blocking:** repair,
 re-check, then report.
@@ -102,6 +104,7 @@ re-check, then report.
 | 15 | the frontmatter `actors:` list and the `## 1` **Actor & Scope** table hold the same roles, in the same bands; every row names an actor that really appears in an in-scope UC's `## 1`; and every one of its three cells carries a ground that really exists (a `BR-###`, a UC step, or an `EN-###` cardinality) — no row for an actor no UC names | an invented actor is an invented persona, and every screen designed for them is scope nobody asked for wearing an owner nobody appointed. A guessed `all` in a scope cell is worse: it hands an actor reach no rule granted, and the client approves it by looking at a prototype |
 | 16 | every screen spec carries an `Actor` and a `Scope` line whose actor appears in the Actor & Scope table; every screen at volume `many` carries **at least one find mechanism** (search, filter, or sort) and all five volume states — `empty`, `few`, `many at real scale` (with the real number named, not "several"), `loading`, `error`; and no screen at volume `one` carries find machinery | a `many` screen without find machinery reviews as finished and collapses on the client's real table — and no other check catches it, because every element on it is properly grounded. A `many` state that never names a number gets prototyped at three rows, which tests nothing the client is worried about |
 | 17 | no screen spec carries a bulk action, an export, a "select all matching", a saved view, or a subscription unless a `UC-### S<n>` or a `BR-###` **really grants it** — and every one that was left out because nothing granted it is an unchecked `- [ ] Q:` in `## 6` marked as a requirement gap | D8, the data-side counterpart of check 11. An ungranted bulk affordance reaches the client in a working prototype, they agree it looks right, and it becomes a requirement nobody wrote or costed — except this one deletes five hundred records at a time |
+| 18 | `## 4`'s `### Coverage` table exists and is **whole** (`4-verify.md` wrote it): one row per non-removed `S#`/`A#`/`E#` of every in-scope UC, per screen-constraining `BR-###` they cite, per `EN-###` field their steps read or write, per open hub directive, and per active principle — every row carrying `covered` (with a real screen **and** state in `Covered by`), `gap → ## 6 Q<n>` pointing at a question that really exists and is unchecked, or `out of scope — <reason>` citing something that really says so | Stage 4's whole output, and the only check that can catch an **omission**. Every other check on this list runs backward — element to ground — and backward passes cleanly on a spec with an entire exception flow missing: nothing on it was invented, because nothing on it was drawn. A `covered` verdict over an empty `Covered by`, or a `gap` pointing at no question, is the table claiming a coverage nobody checked |
 
 Also confirm **every feature Stage 1 put on the work-list was reached**: designed, or skipped with a
 stated reason. A feature the run never got to prints as **pending**, never disappears — otherwise the
@@ -113,20 +116,22 @@ next run's scan and the human both assume it was covered.
 mode:      bootstrap | extend — design system v<x> (<N> tokens, <N> components), nav map v<x> (<N> entries)
 platform:  <web | mobile | both> (project config) [ · override: <slug> → <web|mobile|both>, grounded
            by <UC-### / directive #n / DESIGN-PRINCIPLES #n> (one per overriding feature) ]
-engine:    <engine> | built-in — <install command, if none was found>
+method:    <wds | figma | <plugin> | built-in> — <install command, if none was found>
+           (the METHOD layer only. Nothing rendered this run; nothing in this skill can)
 boosters:  <agentic-ux-design | design-library | none> — <one line: where it applied and why, or "none — did not apply this run">
 Stage 1:   <N> feature(s) in scope — <slug>: <N> NEW, <N> CHANGED, <N> CURRENT (skipped)
 Stage 3:   <slug> UX-### created|updated — <N> screens (<N> new), <N> states
                   serving UC-### S<n>… (one line per feature)
 Stage 2B:  <N> token(s) added, <N> component(s) added — total <N> tokens / <N> components
            <N> nav entr(y/ies) added — total <N> entries; 0 removed, 0 renamed (tokens or nav)
-Stage 4:   <slug> UX-### — <2|4> prompt block(s) for platform <web|mobile|both>:
+Stage 4:   <slug> UX-### — <N> item(s) checked: <N> covered, <N> gap(s), <N> out of scope;
+           <N> row(s) repaired; render-ready: yes | <N> input gap(s) raised
+           (one line per feature; "0 gaps" is a real result and gets printed)
+Stage 5:   <slug> UX-### — <2|4> prompt block(s) for platform <web|mobile|both>:
            Claude design (<Web|Mobile>) ✓  Figma Make (<Web|Mobile>) ✓ [ + the (Mobile) pair, on
            `both` ] (+ relationship block, when modelled)
-render:    <the platform's design engine> — <N> artifact(s) at <pointer to where they landed>
-           | skipped — waived in project settings
-           (the pointer only, never the rendered contents; one line per engine that ran, so `both`
-            reports two)
+render:    not this skill's job — /bigin-render-design, whenever a human wants it, on the engine
+           they choose. Never reported as done, skipped, or waived here: there was nothing to do
 actors:    <slug> UX-### — <N> actor(s): <role> (sees <own|assigned|unit|all>, <one|few|many>);
            … (one line per feature)
            splits: <place> → <screen A> (<actor>) + <screen B> (<actor>), on <volume|capability>
@@ -139,7 +144,9 @@ directives: <slug> #<n> → reflected (one line each); <N> still open
 skipped:   <slug>/UC-### — <no main flow | already current | owned by <slug> | removed>
 pending:   <slug> — on the work-list, not reached this run
 questions: UX-### — <the question>, owner client|team [design | REQUIREMENT GAP]
-next:      human review of UX-### → paste a Prototype Prompt into Claude design or Figma Make
+next:      human review of UX-### → then, when they want a prototype in front of a client:
+             /bigin-render-design [engine] [<slug>]   — their choice of engine and timing
+             or paste a Prototype Prompt straight into Claude design or Figma Make by hand
            requirement gaps → /bigin-transform-signal
 ```
 
@@ -169,8 +176,14 @@ next:      human review of UX-### → paste a Prototype Prompt into Claude desig
   stamping `absorbed:` from a report: the frontmatter says `mobile`, the regions say
   `nav / main / aside`, and the prompt block builds a sidebar. Read the screens, then stamp
   (checks 13-14), or the wrong actor's screen (checks 15-17).
-- **Reporting two prompt blocks on a `both` project.** It reads as a complete Stage 4, and the
+- **Reporting two prompt blocks on a `both` project.** It reads as a complete Stage 5, and the
   missing platform is only discovered by the BA who goes to paste it. Four blocks or a stated reason.
+- **Reporting a render.** Nothing in this skill renders any more. A `render:` line saying "done",
+  "skipped", or "waived" describes a step that was never part of this run, and a reader takes it as
+  evidence a prototype exists.
+- **Passing check 18 by counting rows.** A `### Coverage` table with the right number of rows and a
+  `covered` verdict over an empty `Covered by` cell is exactly the claim the check exists to refuse.
+  Open the screen it names and find the state.
 - **Leaving a stale check count after adding one.** The header, Part 5's heading, and every other
   place this file says how many checks there are must agree with the table's last row. A header
   claiming one number over a table holding another teaches the next run to stop early, and nothing

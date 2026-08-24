@@ -19,8 +19,9 @@ Read only the sections your stage needs.
 | `1-scope` | Paths · Write map · Design status · Staleness · **Platform** |
 | `2-system` | The design system · Token architecture · The navigation map · **Platform** |
 | `3-screens` | The UX spec · Screen spec · Grounding · The relationship model · Open questions · The navigation map · **Platform** · **Actor scope** |
-| `4-prompt` | Prototype prompt · The relationship model · **Platform** · **Actor scope** |
-| `5-close` | Design status · Write map · Staleness · The navigation map · The relationship model · **Platform** · **Actor scope** |
+| `4-verify` | Coverage verification · Grounding · The UX spec · Open questions · Prototype prompt · **Platform** · **Actor scope** |
+| `5-prompt` | Prototype prompt · Rendering is a separate step · The relationship model · **Platform** · **Actor scope** |
+| `6-close` | Design status · Write map · Staleness · The navigation map · The relationship model · Coverage verification · **Platform** · **Actor scope** |
 
 ## Paths
 
@@ -35,7 +36,7 @@ Project-relative, from the repo root.
 | `{tokens_file}` | `04-UIUX/_design-system/design-tokens.md` | the token file |
 | `{components_dir}` | `04-UIUX/_design-system/components/` | one `<component>.md` per shared component |
 | `{nav_map_file}` | `04-UIUX/_design-system/navigation-map.md` | the vault's menu/navigation system |
-| `{design_stages_dir}` | `_bigin/stages/design/` | `1-scope`, `2-system`, `3-screens`, `4-prompt`, `5-close` |
+| `{design_stages_dir}` | `_bigin/stages/design/` | `1-scope`, `2-system`, `3-screens`, `4-verify`, `5-prompt`, `6-close` |
 | `{design_conventions}` | `_bigin/conventions/design-conventions.md` | this file |
 | `{template_ux}` | `_bigin/templates/ux-spec.md` | |
 | `{template_design_system}` | `_bigin/templates/design-system.md` | |
@@ -60,7 +61,8 @@ screen, just one following no rule.
 ## Write map — what design may touch
 
 ```text
-WRITE   {ux_dir}                      the UX spec (create, or update in place)
+WRITE   {ux_dir}                      the UX spec (create, or update in place) — except `## 8
+                                      Rendered Artifacts`, which only /bigin-render-design writes
         {design_system_dir}           tokens + components — ADD ONLY
         {nav_map_file}                menu entries — ADD ONLY (part of {design_system_dir})
         hub ## UX Spec                link + status
@@ -180,13 +182,33 @@ tab bar, sheets. Platform-specific interaction conventions (a back gesture, a sy
 material-versus-cupertino control) are build-time decisions nothing on record has stated — an
 explicit client statement about one is a `DESIGN-PRINCIPLES` row, not a design call made here.
 
-### The engine is required, per platform
+### Rendering is a separate step
 
-Each platform names a **required design engine**, and `/bigin-generate-design` **halts** when the
-one its platform needs is absent — see `references/design-engines.md` (the adapter) for the engine
-per platform, its install command, and how a brief maps onto it. This is the one place this stage
-is allowed to stop rather than degrade: the engine renders the actual prototype artifacts, and a run
-that quietly skipped rendering reports a design nobody can look at.
+`/bigin-generate-design` produces a **specification** — screens, states, real copy, a token system, a
+nav shell, and the self-contained prompt blocks. It renders nothing, checks for no design tool, and
+has **no halt of its own**.
+
+Turning that specification into something a client can look at is `/bigin-render-design`, invoked by a
+human who has decided they want a prototype:
+
+```text
+/bigin-render-design [engine] [feature slug | UX-###]
+
+the ENGINE is the human's choice, not the platform's.  The platform supplies a DEFAULT and nothing
+more: a web project defaults to one engine and a mobile project to another, and a BA who wants the
+other one for either platform says so and gets it. That was the point of splitting the step out.
+absent engine  → that skill halts, with the install command. Nothing upstream ever does
+```
+
+**Why this is not part of the design run.** Which tool, which feature, which platform, and when are
+timing-and-taste decisions belonging to whoever is going to sit with the client. Binding them to an
+unattended pipeline forced one engine per platform, re-rendered features nobody asked about, and — the
+expensive part — let a missing prototype tool stop a stage that reads use cases and writes markdown.
+
+**What replaced it as the safeguard.** The failure the old halt guarded against was a design nobody
+can look at. What guards against it now is `4-verify`: the run proves the spec is complete enough to
+render *cold*, on any engine, months later (§ Coverage verification). A spec that passes that is a
+spec a render cannot go wrong on for want of input.
 
 ## Actor scope — who a screen is for, and how much they hold
 
@@ -333,9 +355,11 @@ UC itself follows.
 with the three § Actor scope facts and what grounds each. It is what stops the run designing one
 screen for two actors whose work is not the same work.
 
-Sections: `## 1 Design Brief` · `## 2 Screen Inventory` · `## 3 Screen Specs` · `## 4 Flows` ·
-`## 5 Design System Usage` · `## 6 Open Questions` · `## 7 Relationship Model` *(conditional —
-§ The relationship model)* · the **prototype prompt blocks** · `## Changelog`.
+Sections: `## 1 Design Brief` · `## 2 Screen Inventory` · `## 3 Screen Specs` · `## 4 Flows`
+*(carrying `### Coverage` — § Coverage verification)* · `## 5 Design System Usage` ·
+`## 6 Open Questions` · `## 7 Relationship Model` *(conditional — § The relationship model)* ·
+`## 8 Rendered Artifacts` *(pointers only, and written by `/bigin-render-design` alone — absent
+until somebody renders)* · the **prototype prompt blocks** · `## Changelog`.
 
 The prompt-block headings are **platform-suffixed**, and how many there are is a platform fact
 (§ Platform, § Prototype prompt):
@@ -515,6 +539,55 @@ machinery without which the screen only works on demo data. It never grounds a c
 action, export, or a saved view needs its own UC step or BR-###, or it is a requirement gap
 (§ Actor scope, D8).
 
+## Coverage verification — the only check that can find an omission
+
+Grounding above runs **backward**: every element on a screen back to the thing that licensed it. It
+is what stops the design inventing scope, and it is completely blind to the opposite failure — a step,
+a rule, a field, or a whole exception flow that nobody drew. A screen that was never drawn has no
+element to trace, so every backward check passes on a spec with a third of the requirement missing.
+
+`4-verify` runs the **forward** direction, once, per design run:
+
+```text
+every non-removed S# / A# / E# of every in-scope UC        →  the screen AND STATE that carries it
+every BR-### they cite that constrains what an actor
+  sees or may do                                           →  the state, validation, or Visible to
+every EN-### field their steps read or write                →  the element that renders it
+every open hub ## Design Directives row                     →  the screen that implements it
+every active DESIGN-PRINCIPLES row                          →  where it applied
+```
+
+Three verdicts, and no fourth:
+
+```text
+covered                          the screen and the state, both named. A `covered` verdict over an
+                                 empty cell is the table claiming a coverage nobody checked
+gap → ## 6 Q<n>                  genuinely not designed. A design question (owner: team), or a
+                                 REQUIREMENT GAP (owner: client) when the answer would change what
+                                 the system DOES — /bigin-transform-signal's, never written on the UC
+out of scope — <cited reason>    excluded by something ON RECORD, and the record is cited. An
+                                 exclusion with nothing behind it is a gap wearing a decision's
+                                 clothes, and the field the client expected vanishes with an
+                                 explanation nobody made
+```
+
+The table lives in the spec (`## 4 Flows` → `### Coverage`), is re-written **whole** every run — the
+same rule `absorbed:` follows, for the same reason — and is verified on disk by `6-close` check 18.
+
+**It repairs; it does not design.** An item a screen plainly carries whose row failed to say so gets
+the row fixed. An item nothing carries gets a question. Adding the missing screen, state, or control is
+a `3-screens` dispatch on the next run — a verification pass that draws the thing it was checking for
+has no independent verdict left to give (D3).
+
+**Render readiness is verified in the same pass**, and it is the safeguard that replaced the old
+required-engine halt (§ Rendering is a separate step). A render may happen months later, on a tool
+nobody has picked, run by someone who never read the requirements — so the spec must be sufficient
+input *now*: this platform's regions, real copy and real field names, every state named, every token
+carrying a value, the nav shell resolvable, a `many` screen's real scale in words, a phone screen's
+device facts. A box that cannot be ticked from the record is a question, never a plausible fill: a
+render engine given a gap produces something convincing, and a convincing prototype is reviewed as a
+specified one.
+
 ## The relationship model
 
 `## 7 Relationship Model` on a UX spec. **Conditional** — it exists only on a feature that passes the
@@ -628,7 +701,11 @@ Figma Make prompts are **authored here in both modes** — Figma Make previews m
 390×844, so a mobile prompt states mobile-first viewport, bottom tab navigation, and safe-area insets
 rather than needing a different tool.
 
-The prompt blocks are also the **durable, tool-portable record**. The design engine
-(`references/design-engines.md`) renders the actual prototype artifacts, but it is an external
-dependency that can change or break; these blocks stay in the spec so the prototype is reproducible
-by hand, in any tool, years later.
+The prompt blocks are the **durable, tool-portable record**, and they are written on **every** design
+run whether or not anybody intends to render. `/bigin-render-design` turns one into an artifact on
+whichever engine the human picks (§ Rendering is a separate step), but every engine is an external
+dependency that can change, break, or be replaced; the block stays in the spec so the prototype is
+reproducible by hand, in any tool, years after that engine is gone.
+
+A block that leans on the spec around it — "the states listed above", "per the screen inventory" — has
+failed its only test. The render may be run months later, by someone who never opens the spec.

@@ -1,6 +1,6 @@
 ---
 name: bigin-generate-design
-description: This skill should be used when the user asks to "generate the design", "design the screens", "run the design stage", "load the use cases into design", "make a prototype prompt", "give me a Claude design prompt", "give me a Figma Make prompt", "update the design system", "which features still need designing", or after /bigin-transform-signal has drafted or updated a UC. Turns every unprocessed (new or changed) UC-### plus the design principles and directives into per-feature screen specs, a durable vault-wide design system, and the self-contained prototype prompt blocks its platform calls for.
+description: This skill should be used when the user asks to "generate the design", "design the screens", "run the design stage", "load the use cases into design", "make a prototype prompt", "give me a Claude design prompt", "give me a Figma Make prompt", "update the design system", "which features still need designing", or after /bigin-transform-signal has drafted or updated a UC. Turns every unprocessed (new or changed) UC-### plus the design principles and directives into per-feature screen specs, a durable vault-wide design system, a forward coverage check proving nothing in the requirements went undesigned, and the self-contained prototype prompt blocks its platform calls for. It renders nothing and needs no design tool installed — rendering a prototype is /bigin-render-design, invoked by a human on the engine they choose.
 argument-hint: "[feature slug | UC-### | omit for every feature that needs designing]"
 disable-model-invocation: true
 ---
@@ -21,26 +21,28 @@ out   UX-### per feature      an Actor & Scope table + screen inventory + screen
     + _design-system/         one vault-wide, append-only token/component system
                                + navigation-map.md — the shell this platform has: a web tree, a
                                  mobile tab bar, or one file carrying both
+    + a ### Coverage table    every requirement item matched FORWARD to the screen and state that
+                               carries it, or to a written gap — the only check that finds an
+                               OMISSION, and a render-readiness pass in the same sweep
     + 2 or 4 prompt blocks    Claude design + Figma Make, per platform — two on web or mobile,
                                all four on both, each self-contained
-    + rendered artifacts      what the platform's required design engine produced, recorded as a
-                               pointer — never pasted into the spec
 ```
+
+**It renders nothing.** Turning a spec into artifacts a client can look at is `/bigin-render-design`,
+a separate skill a human invokes when they want a prototype, on the engine they choose (§ Rendering is
+a separate step). Nothing here checks for a design tool, and nothing here can halt for one.
 
 This skill is the **procedure**. `{design_conventions}` is the **standard** — a rulebook kept
 deliberately separate from the requirement one, because a rule about how a screen looks must never
 end up deciding what the system does.
 
 **It never edits a requirement.** UCs, BRs, and entities are read-only here (D4). The one exception
-is a single `## Discussion` line on a non-approved UC saying "screens exist now" (Stage 5 Part 4).
+is a single `## Discussion` line on a non-approved UC saying "screens exist now" (Stage 6 Part 4).
 
-**It is headless, with one precondition.** No checkpoints, no confirmation prompts, no question put
-to a human mid-run — the review happens on the artifacts afterwards. The one thing that stops it
-stops it **before any work**: the platform's **required design engine** being absent, unless the
-project waived it (§ Design engines). That is a precondition, checked alongside the workspace-version
-check below, not a mid-run interruption — so it stays safe to call from `/bigin-ba` or an unattended
-batch: it never blocks waiting for input. It either runs to completion or refuses up front with an
-install command.
+**It is headless, with no halt at all.** No checkpoints, no confirmation prompts, no question put to a
+human mid-run, and nothing that stops it before the work either — the required-engine precondition it
+used to carry moved to `/bigin-render-design`. So it is unconditionally safe to call from `/bigin-ba` or
+an unattended batch. Only a missing or ahead-of-plugin workspace stops it, as in every skill here.
 
 ## Platform
 
@@ -62,7 +64,8 @@ drives    screen composition   one web form is legitimately three phone sheets �
                                tab-bar/sheet/fab — the wrong one asks a tool to build a shell
                                the platform does not have
           prompt-block count   2 blocks on web or mobile, 4 on both
-          the required engine  which engine this run halts without (§ Design engines)
+          the render default   which engine /bigin-render-design offers first, LATER, if a human
+                               asks for a prototype — never something this run needs installed
 
 per-feature override   ONLY a UC, a hub ## Design Directives row, or an active DESIGN-PRINCIPLES
                        row that EXPLICITLY STATES a platform for that feature, cited as its ground.
@@ -129,7 +132,7 @@ blocks.
 | Variable | Path | Notes |
 | :--- | :--- | :--- |
 | `{design_conventions}` | `_bigin/conventions/design-conventions.md` | the design rulebook — paths, the eight hard rules, statuses, grounding, actor scope, the relationship model |
-| `{design_stages_dir}` | `_bigin/stages/design/` | `1-scope`, `2-system`, `3-screens`, `4-prompt`, `5-close` |
+| `{design_stages_dir}` | `_bigin/stages/design/` | `1-scope`, `2-system`, `3-screens`, `4-verify`, `5-prompt`, `6-close` |
 | `{ux_dir}` | `04-UIUX/UX-<NNN> <Feature>.md` | one spec per feature |
 | `{design_system_dir}` | `04-UIUX/_design-system/` | `design-tokens.md` + `components/<component>.md` + `navigation-map.md` |
 | `{hub_dir}` | `01-Requirements/_features/<slug>.md` | `## Design Directives` in, `## UX Spec` out |
@@ -147,51 +150,51 @@ Then run `_bigin/conventions/conventions.md` § Workspace version check — one 
 `_bigin/system/project.md` against the installed plugin's version, compared as semver. Behind → warn and
 recommend `/bigin-upgrade-project`; **ahead → stop**.
 
-Then the platform and its **required engine**, in that order — both are preconditions, resolved
-before Stage 1 builds a work-list:
+Then the platform — the one run-wide fact resolved before Stage 1 builds a work-list, and the only
+thing resolved up front now that there is no engine to check:
 
 ```text
-1  Grep _bigin/system/project.md frontmatter for  platform: web | mobile | both
-   field absent  → web        (§ Platform — the compatibility default)
-2  resolve THAT platform's REQUIRED design engine from references/design-engines.md
-   present   → continue
-   absent    → HALT. Report that file's install command VERBATIM. Design nothing, stamp nothing,
-               create or update no UX spec.
-   waived    → design_engine_required: false in .claude/bigin-ba-workflow-plugin.local.md:
-               report the engine as `skipped — waived in project settings` and continue on the
-               built-in method. An explicit recorded decision, never a fallback the run chose.
+Grep _bigin/system/project.md frontmatter for  platform: web | mobile | both
+field absent  → web        (§ Platform — the compatibility default)
 ```
 
-**`references/design-engines.md`** owns the engine per platform, the exact install commands, and the
-halt text. Read them there and improvise nothing — a guessed installer either fails noisily or
-installs the wrong thing.
+## Rendering is a separate step
 
-## Design engines — one required renderer, plus an optional method layer
-
-Two different questions, deliberately kept apart, and **only the first one can stop a run**:
+**Nothing here renders, so nothing here needs a renderer.** A run produces a specification — screens,
+states, real copy, tokens, a nav shell, a coverage table, and the self-contained prompt blocks.
 
 ```text
-REQUIRED — the PLATFORM'S ENGINE. It renders the prototype artifact a client actually looks at, so
-           a run that quietly skipped it reports a design nobody can see.
-             web → its engine · mobile → its engine · both → both of them
-             present  → Stage 1 continues
-             absent   → HALT before any work (the precondition above), with the install command
-             waived   → design_engine_required: false → reported as skipped; the run completes
-           [references/design-engines.md — engine per platform, install commands, the halt text]
+/bigin-render-design [engine] [feature slug | UX-###]     a HUMAN invokes it, when they want one
 
-OPTIONAL — the METHOD / QUALITY layer. It changes HOW screens get derived and how good they read;
-           it renders nothing, and its absence never gates a run. Check in order, first hit wins:
-             1  BMAD WDS (Freya)   `_bmad/wds/` in the repo, or a wds-*-ux-design skill is available
-             2  Figma MCP          a connected figma server (its tools can read a real design system)
-             3  any design plugin  a design/UX skill in this session's skill list
-             4  built-in           always available — the method in the stage guides themselves
-             none of 1-3 → run the built-in method and REPORT the install command in the closeout.
-                           Never halt for THIS one: the built-in method is complete.
-           [references/engine-detection.md]
+  the ENGINE is THEIR choice — the platform supplies a default and nothing more
+  that skill halts when the chosen engine is absent, with the install command. NOTHING HERE DOES
+  it writes only the spec's ## 8 Rendered Artifacts (pointers) and its rendered: flag
 ```
 
-The two **compose**, they do not substitute: the required engine renders the screens, and whichever
-method layer is in play is what decided *what those screens are*.
+The halt this replaced used to sit at the front of *this* skill, stopping a stage that reads use cases
+and writes markdown because a prototype renderer was missing. **Stage 4 is what guards against the
+failure that halt existed for** — a design nobody can look at — by proving each spec is complete enough
+to render *cold*, on any engine, months later. `{design_conventions}` § Rendering is a separate step
+carries the full reasoning.
+
+## The optional method layer — and it can halt nothing
+
+Separate question, and the only engine-shaped question left in this skill. It changes **how** screens
+get derived and how good they read; it renders nothing, and its absence never gates a run.
+
+```text
+check in order, first hit wins:
+  1  BMAD WDS (Freya)   `_bmad/wds/` in the repo, or a wds-*-ux-design skill is available
+  2  Figma MCP          a connected figma server (its tools can read a real design system)
+  3  any design plugin  a design/UX skill in this session's skill list
+  4  built-in           always available — the method in the stage guides themselves
+  none of 1-3 → run the built-in method and REPORT the install command in the closeout.
+                Never halt: the built-in method is complete.
+[references/engine-detection.md]
+```
+
+It **composes across the two skills**: the method layer here decided *what the screens are*, and an
+engine in `/bigin-render-design` renders them, possibly weeks later. Neither substitutes for the other.
 
 Detection of the method layer, its install commands, and how to hand work to it:
 **`references/engine-detection.md`**, which also covers optional **quality boosters** layered on top
@@ -202,8 +205,9 @@ STRUCTURE/ELEMENTS/TOKENS/STATES/NAVIGATION, and an optional Stage 3.5
 craft-quality pass — Perception-First Design's checklist mode (Mode 1 only, never its solve or
 analyze modes) when installed, or a generic heuristic-evaluation/accessibility-audit/critique-*
 skill otherwise — a worker runs on its own drafted screens before reporting. None of them replaces
-the built-in method or the required engine; all are read only when they actually apply, and a missing
-one is a **silent skip**, never a halt. Only the required renderer above can stop a run.
+the built-in method; all are read only when they actually apply, and a missing
+one is a **silent skip**, never a halt. Nothing in this list, and nothing in this skill, can stop a
+run.
 
 The agentic booster is the one with a real output surface: a feature that passes Stage 3's
 **relationship trigger** gets a `## 7 Relationship Model` — the memory, autonomy, and trust the
@@ -214,24 +218,31 @@ requirements already imply, plus the gaps they never settled. See **`references/
 ```text
 scope = $ARGUMENTS slug or UC-###, else every {hub_dir} feature
 
-0  check     platform: + its required engine — halt if absent        [references/design-engines.md]
-1  scope     which UCs are NEW / CHANGED / CURRENT, per feature      [1-scope.md]
-2  system    seed the design system so screens can cite token names  [2-system.md § Part A]
-3  screens   per feature: brief + actor scope → inventory → specs   [3-screens.md]
-4  prompt    fold in new tokens, write 2 or 4 blocks, then render    [2-system.md § Part B, 4-prompt.md]
-5  close     stamp absorbed, set status, refresh hubs, verify, report [5-close.md]
+1  scope     platform, then which UCs are NEW / CHANGED / CURRENT     [1-scope.md]
+2  system    seed the design system so screens can cite token names   [2-system.md § Part A]
+3  screens   per feature: brief + actor scope → inventory → specs     [3-screens.md]
+4  verify    FORWARD coverage: every requirement item → its screen    [4-verify.md]
+             + render readiness, so a later render cannot lack input
+5  prompt    fold in new tokens, write 2 or 4 blocks                  [2-system.md § Part B, 5-prompt.md]
+6  close     stamp absorbed, set status, refresh hubs, 18 checks       [6-close.md]
 ```
 
-The precondition first, then all five stages, in order, every invocation. **Load a stage file on
-reaching that stage**, not up front.
+Six stages, in order, every invocation, and **no precondition ahead of them any more** — there is no
+engine to check. **Load a stage file on reaching that stage**, not up front.
+
+The run ends at a verified specification. A prototype is `/bigin-render-design`, whenever a human wants
+one (§ Rendering is a separate step).
 
 ## Stage 1 — Scope
 
-**First, the two run-wide facts, in this order:** read `platform:` from `_bigin/system/project.md`
-(absent → `web`, § Platform), then confirm that platform's required engine is installed or waived
-(§ Design engines) — absent and not waived, the run halts here and designs nothing. **Announce both**
-in the Stage 1 output and again in the closeout. Read once; every later stage and every worker is
-*told* the value and never re-reads the project config.
+**First, the one run-wide fact:** read `platform:` from `_bigin/system/project.md` (absent → `web`,
+§ Platform). **Announce it** in the Stage 1 output and again in the closeout, saying whether it was
+stated or defaulted. Read once; every later stage and every worker is *told* the value and never
+re-reads the project config.
+
+There is **nothing else to check, and nothing that can stop the run.** The engine precondition that
+used to sit beside this read now belongs to `/bigin-render-design`, so a missing prototype tool can no
+longer halt a stage that does not use one.
 
 ```text
 per feature: compare each UC's live version against the UX spec's absorbed: list
@@ -285,9 +296,10 @@ a worker NEVER writes:  {design_system_dir} (incl. {nav_map_file}) · another fe
                         DESIGN-PRINCIPLES.md · any UC, BR, or entity · FEATURES.md
     → it REPORTS token candidates, component candidates, nav candidates, questions, designed UCs
 a worker DOES write:    its own feature's UX spec (created from a number the orchestrator minted)
-a worker is TOLD:       the PLATFORM and the engine — it resolves neither, and cannot: a subagent
-                        cannot read this plugin's install directory, and two workers inferring a
-                        platform differently produce one product with two navigation shells
+a worker is TOLD:       the PLATFORM and the method layer — it resolves neither, and cannot: a
+                        subagent cannot read this plugin's install directory, and two workers
+                        inferring a platform differently produce one product with two navigation
+                        shells. It resolves no RENDER engine at all — there is none in this run
 ```
 
 **Every worker prompt carries `PLATFORM:`** — the resolved value, where it came from, and that
@@ -333,7 +345,42 @@ section is deleted, not left empty. It is the only home for a **trust stage**, w
 A real agent feature yields **more requirement gaps than rows** here — retention, visibility, and
 disclosure are almost never stated — and that is the section working (D7).
 
-## Stage 4 — Extend the system, write the prompt blocks, render
+## Stage 4 — Verify: coverage and render readiness
+
+`4-verify.md`, in the orchestrator, after every worker has reported and **before** a single prompt block
+is written. It runs the one direction nothing else in this pipeline runs: **forward**, from each
+requirement item to the screen and state that carries it.
+
+```text
+every non-removed S# / A# / E# of every in-scope UC        →  the screen AND STATE that carries it
+every BR-### they cite that constrains what an actor
+  sees or may do                                           →  the state, validation, or Visible to
+every EN-### field their steps read or write                →  the element that renders it
+every open hub ## Design Directives row                     →  the screen that implements it
+every active DESIGN-PRINCIPLES row                          →  where it applied
+```
+
+**Grounding and Stage 6's checks cannot find an omission**, which is the whole reason this stage exists.
+They run backward — every element back to the thing that licensed it — and a screen that was never drawn
+has no element to trace. A spec passes all eighteen checks with an entire exception flow missing: nothing
+on it was invented, because nothing on it was drawn.
+
+Three verdicts land in a `### Coverage` table under `## 4 Flows`, re-written whole every run: `covered`
+(naming the screen **and** the state), `gap → ## 6 Q<n>`, or `out of scope — <cited reason>`. An uncited
+exclusion is a gap wearing a decision's clothes.
+
+**It repairs, it does not design.** A row that under-recorded coverage a screen really has gets fixed; a
+screen, state, or control that does not exist gets a `## 6` question and waits for the next Stage 3 (D3).
+A pass that draws the thing it was checking for has no verdict left to give.
+
+**Part 5 is render readiness.** A render may happen months from now, on a tool nobody has picked, run by
+someone who never reads the requirements — so the spec must be sufficient input *now*: this platform's
+regions, real copy and real field names, every state named, every token carrying a value, a resolvable
+nav shell, a `many` screen's real scale in words, a phone screen's device facts, concrete memory rows
+whenever `relationship_model: modelled`. A box that cannot be ticked from the record is a question, never
+a plausible fill.
+
+## Stage 5 — Extend the system, write the prompt blocks
 
 Part B of `2-system.md` applies the reported candidates one at a time, in the orchestrator: dedup
 first, reuse before adding, add only what is genuinely new, bump the version, changelog it. **Nothing
@@ -348,21 +395,18 @@ that may differ are the tool addressed and the shell/viewport. Every vault id is
 before it goes in (D6): a prompt with `UC-012 S4` in it renders that string as a heading in the
 prototype.
 
-Then **invoke the platform's required engine** to render the artifacts (`4-prompt.md` Part 5) —
-`references/design-engines.md` § the platform's own section carries the brief→input mapping and, for
-an engine that renders one screen per call, the loop that iterates the inventory. On `both`, each
-platform's engine renders its own platform's screens. Record **where** the artifacts landed in the
-closeout; never paste their contents into the spec. The install was already checked at Stage 1, so do
-not re-check it and never fall back to a built-in render: waived in project settings → skip this step
-and say so.
+**The blocks are written every run, unconditionally, and the run ends there.** Nobody may ever render
+this feature, or they may render it in six months on a tool that does not exist today — the block is what
+survives that. `5-prompt.md` Part 5 is the handoff: what the block owes `/bigin-render-design`.
 
-## Stage 5 — Close
+## Stage 6 — Close
 
 Stamp `absorbed:` with `UC-###@version` for **only the UCs that really got a screen row this run**,
 re-stamped whole. Set each status from a live count of unchecked questions on disk. Refresh every
 hub named in `features:` — `## UX Spec`, `uiux:`, directives that a screen really implements flipped
-to `reflected`, questions mirrored. Then `5-close.md` Part 5's verification checks — seventeen today,
-every one blocking on mismatch. The last three read `## 7` from disk: the `relationship_model:` flag
+to `reflected`, questions mirrored. Then `6-close.md` Part 5's verification checks — eighteen today,
+every one blocking on mismatch. Check 18 is Stage 4's: the `### Coverage` table exists, is whole, and
+every `gap` row points at a question that really exists. The last three read `## 7` from disk: the `relationship_model:` flag
 must match the section that is really there, every memory row must name a field that really exists,
 and every gap the section found must have become a `## 6` question.
 
@@ -377,16 +421,18 @@ granting it, with every one left out recorded as a requirement gap.
 per-feature override citing the source that *explicitly stated* it); and every screen spec's regions
 use that platform's vocabulary, with each `Layout — Web` / `Layout — Mobile` split a real difference
 rather than the same block written twice. The block count and the shell inside each block were
-already checked at Stage 4 (`4-prompt.md` Part 6).
+already checked at Stage 5 (`5-prompt.md` Part 6).
 
 ```text
-mode · platform (+ any per-feature override) · engine (required: rendered | waived | halted)
+mode · platform (+ any per-feature override) · method layer (never a renderer — nothing rendered)
 actors per feature (scope + volume band) · actor splits · capability gaps raised
 boosters used · per-feature screens · tokens added (0 removed, 0 renamed)
-prompt blocks written (2 | 4) · rendered artifacts, by path
+coverage per feature: N checked / N covered / N gaps / N out of scope · render-ready y|n
+prompt blocks written (2 | 4)
 nav entries added (0 removed, 0 renamed) · directives reflected · skipped
 relationship: modelled|none per feature (+ gaps raised) · skipped
-pending · questions (design | REQUIREMENT GAP) · next
+pending · questions (design | REQUIREMENT GAP)
+next: human review → /bigin-render-design when they want a prototype (their engine, their timing)
 ```
 
 ## Failure modes
@@ -395,10 +441,22 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 
 - **Regenerating the design system instead of extending it.** Every screen already built against it
   breaks at once, and nothing records that it happened. Same for renaming a token that looked wrong.
-- **Silently falling back when the platform's required engine is missing.** The run reports a
-  finished design with no prototype behind it — the most expensive clean-looking failure this
-  pipeline produces. Halt with the install command, or be waived explicitly in project settings;
-  there is no third path the run may pick for itself.
+- **Skipping or rushing Stage 4's forward pass.** It is the only thing in this skill that can find an
+  omission. Every other check — grounding, all seventeen others in Stage 6 — runs backward and passes
+  cleanly on a spec missing a whole exception flow, because nothing on a screen that was never drawn
+  can be traced to anything. A design reviewed as complete with a third of the flow absent is the most
+  expensive clean-looking failure this pipeline produces.
+- **Ticking a render-readiness box by inventing the input.** Placeholder copy, a guessed scale, a state
+  nobody specified: all three make Stage 4 Part 5 pass, and all three reach the client inside a
+  rendered prototype that looks specified. The render happens later, from a context that is gone.
+- **Turning a coverage gap into an out-of-scope line with no citation.** It reads as a decision
+  somebody made. The field the client expected then disappears with an explanation nobody gave, and the
+  exclusion outlives everyone who could contradict it.
+- **Designing the missing screen inside Stage 4.** The pass then has no independent verdict left: it
+  drew the thing it was checking for. The gap goes in `## 6`; the screen comes from Stage 3 next run.
+- **Rendering, or halting for a renderer.** Neither is this skill's any more. A prototype tool that is
+  not installed must never stop a stage that reads use cases and writes markdown —
+  `/bigin-render-design` checks its own engine, when a human asks it to render.
 - **Stamping `absorbed:` for a UC that got no screen.** The feature reads as designed forever, and no
   future run picks it up.
 - **Inventing a screen, a field, or a state.** It reaches a client looking exactly like a specified
@@ -444,6 +502,9 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 - **Leaving `## 7` in place and empty.** It reads as "the relationship was considered and there is
   none" — a claim nobody made.
 - **Setting status early.** Count the open questions from disk, last, every time.
+- **Reporting a render.** Nothing here renders. A closeout line saying a render was done, skipped, or
+  waived describes a step that was never part of the run, and a reader takes it as evidence a prototype
+  exists.
 
 ## Model
 
@@ -453,14 +514,8 @@ work — the same reason `/bigin-transform-signal` fans out on the default model
 
 ## Additional resources
 
-- **`references/design-engines.md`** — the **required** engine per platform: which one `web`,
-  `mobile`, and `both` each need, its install-check probe and the exact install command, the halt
-  text when it is absent, the recorded `design_engine_required: false` waiver, how a Stage 3 brief
-  maps onto each engine's inputs, and what a swap touches. Read twice, by the orchestrator only: at
-  **Stage 1** as the precondition check, and again at **Stage 4** to render. It is the only thing in
-  this skill that may stop a run.
-- **`references/engine-detection.md`** — the **optional** method/quality layer, none of which can
-  halt anything: the provider table, how to detect each one, the install command to report when none
+- **`references/engine-detection.md`** — the **optional** method/quality layer, and the only
+  engine-shaped question left in this skill. None of it can halt anything: the provider table, how to detect each one, the install command to report when none
   is present, how the built-in method works, the optional quality boosters (agentic-relationship UX,
   design-library), the ground 2a/2b split that bounds them, the per-step `designer-skills` pattern
   references, and the optional Stage 3.5 craft-quality pass (Perception-First Design's checklist
@@ -471,6 +526,9 @@ work — the same reason `/bigin-transform-signal` fans out on the default model
   onto `## 7` and `## 3` with one clipped as out of scope, a worked example, and the five recurring
   requirement gaps. Read at Stage 1, by the orchestrator, when the skill is installed. A worker reads
   `3-screens.md` Part 4b instead — it cannot reach this directory.
+- **`/bigin-render-design`'s own `references/design-engines.md`** — where the engine catalog, the
+  install commands, the halt text, and the spec→input mappings moved. **This skill never reads it**,
+  and that is the point: a design run has no engine to resolve.
 - **`references/agent-dispatch.md`** — the per-feature worker prompt, its report contract, and the
   wave-verification checklist. Read at Stage 3, before fanning out. It also names the dispatch
   threshold for `agents/ux-brief-assembler.md` — the read-only subagent that combines a feature's

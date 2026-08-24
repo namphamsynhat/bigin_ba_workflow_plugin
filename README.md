@@ -18,7 +18,8 @@ what governs a stage is findable from the stage, and a run loads only the files 
                            engagement config (including whether the product is web, mobile, or
                            both), map the codebase if it's an existing product, and check the
                            configured email/meeting providers -- and the design engine that
-                           platform requires -- are reachable
+                           platform would default to for rendering -- are reachable. A missing
+                           render engine blocks nothing on the requirements path
         |
 /bigin-intake             capture raw intake, unmodified (auto: email/meeting, or direct: freeform note)
         |
@@ -63,14 +64,24 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |                  convenient -- not part of the review loop.
         |
 /bigin-generate-design    [Load] every UC with no current design -> one UX-### per feature:
-        |                  screen specs, the shared design system, and a prototype prompt per
-        |                  tool per platform (Claude design + Figma Make; two blocks on a web or
-        |                  mobile product, four on both), plus whatever the platform's required
-        |                  design engine renders. Shaped by `platform:` in the project config --
-        |                  a UC itself stays platform-blind. Runs off UCs, not the PRD, so it can
-        |                  start as soon as a use case has a main flow. Headless, with one
-        |                  precondition: it halts up front if the platform's design engine is
-        |                  missing, rather than reporting a design nothing rendered.
+        |                  screen specs, the shared design system, a forward coverage check, and a
+        |                  prototype prompt per tool per platform (Claude design + Figma Make; two
+        |                  blocks on a web or mobile product, four on both). Shaped by `platform:`
+        |                  in the project config -- a UC itself stays platform-blind. Runs off UCs,
+        |                  not the PRD, so it can start as soon as a use case has a main flow.
+        |                  Fully headless with NO halt: it renders nothing, so no missing design
+        |                  tool can stop it. It ends at a spec proven complete enough to render
+        |                  cold, on any engine, months later.
+        |
+/bigin-render-design      [Load, on request] a finished UX-### -> prototype artifacts, on the
+        |  (a human asks)  engine the HUMAN chooses. `/bigin-render-design [engine] [slug]` --
+        |                  the platform supplies a default and nothing more, so a BA who wants
+        |                  OpenDesign for a web product, or frontend-design for a phone product,
+        |                  says so and gets it. Re-designs nothing, touches no requirement, and
+        |                  records only pointers (the spec's ## 8 Rendered Artifacts). This is the
+        |                  one skill that still halts for a missing external tool -- correctly, at
+        |                  the moment somebody actually wants a prototype. NEVER run unasked, and
+        |                  never across every spec at once.
         |
 /bigin-generate-prd       [Load] every approved UC of a feature -> one PRD-### per feature:
         |                  business capabilities, business flows (with the screens each step
@@ -137,8 +148,11 @@ _bigin/templates/                 blank scaffolds for every artifact type, same 
 └── SCENARIOS.md                  RETIRED — pre-UC SCN-### cross-feature register; a cross-feature
                                   flow is now one UC
 04-UIUX/UX-<NNN> <Feature>.md    one design spec per feature, from /bigin-generate-design: screen
-                                  inventory, screen specs, flows, plus the shared append-only design
-                                  system under 04-UIUX/_design-system/
+                                  inventory, screen specs, flows, the ### Coverage table proving
+                                  nothing in the requirements went undesigned, and the prototype
+                                  prompt blocks -- plus the shared append-only design system under
+                                  04-UIUX/_design-system/. Its ## 8 Rendered Artifacts holds
+                                  pointers, written only by /bigin-render-design
 02-PRD/PRD-<NNN> <Feature>.md    one PRD per feature, from /bigin-generate-prd: the feature's
                                   approved UCs as business capabilities and business flows, its
                                   rules and information, the UX-### design, pending scope, and open
@@ -283,7 +297,9 @@ false-alarm rate on a real vault, which only a real vault can tell you. If it tu
 Every stage is available three ways: type `/<stage>` yourself, run `/bigin-run` to have the pipeline
 routed for you, or dispatch the `bigin-ba` agent to work one feature unattended. All three read the
 vault to decide what runs next, continue automatically where the next stage needs no decision, and stop
-at the ones that do — `/approve-uc`'s confirmation, and `/bigin-new-project`'s engagement config.
+at the ones that do — `/approve-uc`'s confirmation, `/bigin-new-project`'s engagement config, and
+`/bigin-render-design`, which is never routed to at all: a prototype is something a human asks for, on
+the engine and at the moment they choose.
 
 **`/bigin-run` is the home for any run that fans out.** `/extract-signal` dispatches a named worker per
 note, and `/bigin-transform-signal`, `/bigin-generate-design`, and `/bigin-generate-prd` each dispatch a

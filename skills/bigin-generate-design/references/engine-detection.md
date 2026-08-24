@@ -3,22 +3,25 @@
 Read at Stage 1, by the orchestrator only. A worker never detects anything — it is **told** which
 engine to use, in its dispatch prompt.
 
-**This file is the OPTIONAL layer, and nothing in it may stop a run.** Two questions, deliberately
-kept apart — `design-engines.md` § Relationship to `engine-detection.md` is this same split written
-from the other side:
+**This file is the OPTIONAL layer, and nothing in it may stop a run — nor may anything else in this
+skill.** Two questions, in two different skills, deliberately kept apart:
 
 ```text
-design-engines.md   WHICH engine is REQUIRED for this platform, and the HALT when it is absent. It
-                    renders the prototype artifact, and it is the one thing that can stop this skill.
-this file           WHICH optional METHOD / QUALITY layer is available to derive the screens with —
-                    BMAD WDS, Figma MCP, a design plugin, the built-in method, plus the quality
-                    boosters, the per-step `designer-skills` references, and the Stage 3.5 craft
-                    pass. Every one of them is a SILENT SKIP, or one reported install line, when
-                    absent.
+this file                        WHICH optional METHOD / QUALITY layer is available to derive the
+(/bigin-generate-design)         screens with — BMAD WDS, Figma MCP, a design plugin, the built-in
+                                 method, plus the quality boosters, the per-step `designer-skills`
+                                 references, and the Stage 3.5 craft pass. Every one is a SILENT
+                                 SKIP, or one reported install line, when absent.
+
+design-engines.md                WHICH engine RENDERS a finished spec into artifacts, chosen by the
+(/bigin-render-design)           HUMAN, and the halt when THAT engine is absent. A different skill,
+                                 invoked when somebody actually wants a prototype. This skill never
+                                 reads that file, and no design run needs any engine installed.
 ```
 
-The two **compose**: the required engine renders the screens, and whatever method layer is in play is
-what decided *what those screens are*. Only the required engine can halt a run.
+They **compose across the two skills**: whatever method layer is in play here decided *what the
+screens are*, and an engine over there renders them, possibly weeks later. Nothing in either direction
+can halt *this* skill.
 
 ```text
 an ENGINE changes HOW the screens get made.
@@ -252,12 +255,12 @@ report, in the closeout: which engines were looked for, that none was found, and
 never halt, never ask mid-run           # this skill is headless
 ```
 
-**One carve-out, and only one.** "Complete" and "never halt" are true of everything in *this* file:
-every engine, booster, and pattern skill above is optional, and its absence is a silent skip or a
-single reported install line. They are **not** true of the platform's **required renderer** — that
-one does gate the run, and its absence halts at Stage 1 before any work is done
-(`design-engines.md` § Required means required, or the recorded `design_engine_required: false`
-waiver). "Never halt" here means never halt over a missing *method*.
+**No carve-out.** "Complete" and "never halt" are true of everything in this file *and* of the skill
+around it: every engine, booster, and pattern skill above is optional, and its absence is a silent skip
+or a single reported install line. There used to be one exception — the platform's required renderer,
+which halted at Stage 1 before any work — and it is gone: rendering moved to `/bigin-render-design`,
+which owns that halt because a human is standing there asking for a prototype. A design run halts for
+nothing.
 
 **Report exactly these, and nothing improvised** — the same discipline `/bigin-new-project` § 7.3
 uses. A guessed installer either fails noisily or installs the wrong thing.
@@ -350,9 +353,9 @@ This is what stages 2–4 already do; it is written out here so a reader can see
 - **Halting because one of THIS FILE'S engines, boosters, or pattern skills is missing.** The
   built-in method exists precisely so a run never dead-ends on a missing *method*; a halt over one
   turns a working design stage into a blocked one. Absence here is a silent skip, or one reported
-  install line in the closeout — never a stop. **The platform's required renderer is the opposite
-  case, and is not this bullet:** that one does gate the run, halting for it is correct, and the halt
-  belongs to `design-engines.md` at the Stage 1 precondition — never improvised from here.
+  install line in the closeout — never a stop. **And there is no longer an exception:** the required
+  renderer that used to gate a design run is `/bigin-render-design`'s now, so a design run halts for
+  nothing at all. Re-introducing a tool check here re-creates the exact coupling the split removed.
 - **Inventing tokens while a real Figma library is connected.** The client already has these values;
   a parallel set guarantees a rebuild later.
 - **Running an engine's interactive loop.** It waits for a human that an unattended run does not have.
@@ -373,7 +376,7 @@ This is what stages 2–4 already do; it is written out here so a reader can see
 - **Re-running WDS's Phase 1–2 elicitation because the module ships it.** The UC's `## 1` already is
   the strategic input Freya normally gathers first; re-eliciting it risks a persona or framing that
   contradicts the requirement on record instead of designing from it.
-- **Waiting for WDS's "approve" checkpoint.** This skill never pauses mid-run for a human (its one
-  halt is a precondition, before any work — `design-engines.md`). Draft the page spec, wireframe,
+- **Waiting for WDS's "approve" checkpoint.** This skill never pauses for a human at all, and has no
+  halt of any kind. Draft the page spec, wireframe,
   and token extraction in one headless pass per screen, grounded exactly as strictly as an
   interactive pass would be — an ungrounded call becomes an Open Question, not a paused conversation.

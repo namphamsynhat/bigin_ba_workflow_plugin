@@ -43,7 +43,8 @@ of Part 1/2 from scratch.
 3  RESOLVE OWNERSHIP    a cross-feature UC is designed ONLY in its primary_feature's spec.
                         Name it explicitly in both workers' prompts — the owner designs it,
                         the participant does not.
-4  NAME THE ENGINE      pass the detected engine and one line on how to use it.
+4  NAME THE METHOD      pass the detected METHOD layer and one line on how to use it. There is no
+                     render engine in a design run — do not name one, and do not let a worker look.
 5  NAME THE BOOSTERS     from engine-detection.md § Design quality boosters and § Per-step pattern
                         references: which apply this run, and whether any craft-quality-pass skill
                         (§ Stage 3.5) is installed. "none" is a valid answer for either.
@@ -61,9 +62,10 @@ of Part 1/2 from scratch.
                         UC it reads still acts on it and cites it, per 3-screens.md Part 1 — an
                         explicit statement is an override; an inference from step wording or from
                         where an actor sits never is.)
-                        The platform's REQUIRED ENGINE was resolved with it, at the same Stage 1
-                        precondition — a worker cannot check either one: it cannot read this
-                        plugin's install directory.
+                        There is NO render engine to resolve in a design run: rendering is
+                        /bigin-render-design, invoked by a human later. A worker resolves neither the
+                        platform nor the method layer — it cannot read this plugin's install
+                        directory.
 ```
 
 ## The prompt
@@ -90,7 +92,9 @@ PLATFORM:            <web | mobile | both> — source: <project config | overrid
                      <on both: "ONE screen inventory — the same user goals, never a web list and a
                      mobile list. Only the LAYOUT splits, inside a screen's own block, and only
                      where the two genuinely differ. regions: BOTH vocabularies, one per layout.">
-DESIGN ENGINE:       <wds | figma | <plugin> | built-in> — <one line on how to use it>
+DESIGN METHOD:       <wds | figma | <plugin> | built-in> — <one line on how to use it>
+                     (the METHOD layer, which decides what the screens ARE. Not a renderer:
+                      nothing in this run renders, and no worker looks for a render tool.)
 DESIGN SYSTEM:       04-UIUX/_design-system/design-tokens.md at v<x> — cite these names; propose
                      a new token only when nothing there fits.
 QUALITY BOOSTERS:    <agentic-UX or design-library skill in scope, or "none"> · pattern skills
@@ -198,7 +202,7 @@ DO NOT fill absorbed:, do not set status: accepted, do not write any Prototype P
 the orchestrator does all three after your report.
 DO set the spec's `actors:` frontmatter key from § 1's Actor & Scope table — one entry per row,
 "<role>:<own|assigned|unit|all>:<one|few|many>" (e.g. ["Member:own:one", "Administrator:all:many"]).
-Same rows, same order, never a role the table does not carry. Stage 5 check 15 blocks on the two
+Same rows, same order, never a role the table does not carry. Stage 6 check 15 blocks on the two
 agreeing, and a spec with no `actors:` key reads as one written before actor scope existed.
 Leave the spec at status: draft.
 
@@ -240,7 +244,7 @@ REPORT, as plain lines:
 ## Verifying the wave
 
 After each wave, before the next. Check the wave's **claims** — do not re-design anything. This
-catches the failure that matters: a worker reporting screens it never wrote, which Stage 5 would then
+catches the failure that matters: a worker reporting screens it never wrote, which Stage 6 would then
 stamp into `absorbed:`, making the feature read as designed forever.
 
 ```text
@@ -271,12 +275,12 @@ per feature in the wave:
 7  shared files untouched → git diff --stat shows NO change to 04-UIUX/_design-system/ (tokens,
                             components, AND navigation-map.md), DESIGN-PRINCIPLES.md, FEATURES.md,
                             or any file under 01-Requirements/ (the design system and nav map move
-                            in Stage 4, in the orchestrator, not here)
-8  absorbed: still empty  → Stage 5 stamps it, after check 1 has passed
+                            in Stage 5, in the orchestrator, not here)
+8  absorbed: still empty  → Stage 6 stamps it, after check 1 has passed
 9  relationship claim    → reported `modelled`: ## 7 exists AND carries rows, every Memory row names
                             a field that really exists in that EN-###, and no stage-3 cell is filled
                             without a real BR-### (D7). Reported `none`: ## 7 is GONE from the file,
-                            not left empty. Either mismatch is blocking — Stage 5's checks 10-12
+                            not left empty. Either mismatch is blocking — Stage 6's checks 10-12
                             re-run this, and a claim that survives to there is one the orchestrator
                             has to unpick from the file rather than the report.
 10 regions vocabulary    → every ## 3 block's regions line uses the vocabulary of the platform this
@@ -310,7 +314,7 @@ the UC, and do not fill absorbed:. Report the block you added.
 ```text
 a UC in two features' hubs  → designed once, in primary_feature's UX spec
 the participant's worker    → told "UC-### is designed in <slug>'s spec", designs nothing for it
-the orchestrator (Stage 5)  → writes the ## UX Spec pointer + uiux: on BOTH hubs
+the orchestrator (Stage 6)  → writes the ## UX Spec pointer + uiux: on BOTH hubs
 ```
 
 A participant hub with no pointer is the failure here: that feature reads as having no design, and

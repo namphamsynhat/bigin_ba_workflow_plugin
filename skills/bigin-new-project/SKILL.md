@@ -1,6 +1,6 @@
 ---
 name: bigin-new-project
-description: Initiate a new BA project in the current repo — materialize the rulebook and templates into `_bigin/`, capture the engagement config (client, contacts, new vs. ongoing product, web vs. mobile vs. both platform), import a proposal or, for a greenfield project with none yet, ask what's being built and run domain research on it, materialize a repo-root CLAUDE.md as the project's standing agent brief, map the existing codebase when there is one, and verify the configured email/meeting providers are reachable — installing a missing MCP server where an install command is known — plus whether the design engine the chosen platform requires is installed. Use once per repo before the first /bigin-intake, and again after a plugin upgrade to refresh the materialized rulebook, regenerate CLAUDE.md, or re-check provider and design-engine access.
+description: Initiate a new BA project in the current repo — materialize the rulebook and templates into `_bigin/`, capture the engagement config (client, contacts, new vs. ongoing product, web vs. mobile vs. both platform), import a proposal or, for a greenfield project with none yet, ask what's being built and run domain research on it, materialize a repo-root CLAUDE.md as the project's standing agent brief, map the existing codebase when there is one, and verify the configured email/meeting providers are reachable — installing a missing MCP server where an install command is known — plus whether the design engine the chosen platform would default to for rendering is installed. Use once per repo before the first /bigin-intake, and again after a plugin upgrade to refresh the materialized rulebook, regenerate CLAUDE.md, or re-check provider and design-engine access.
 argument-hint: "[client name]"
 disable-model-invocation: true
 ---
@@ -30,7 +30,7 @@ plugin context, so a path into the install directory is unreachable to them.
 * **Use the template, not memory:** `_bigin/templates/project.md` *is* the schema `/bigin-intake` parses. A hand-written variant is how a field it reads goes missing.
 * **Never improvise an install:** § 7.3's table for a provider, § 7.6's adapter for a design engine, or nothing. `claude mcp add` is the only install this skill ever runs itself — never `sudo`, never a package manager, never re-add a server that already has a row, and never install a design engine (§ 7.6: a plugin install and a third-party desktop app are the user's call).
 * **Never handle credentials:** OAuth needs a browser and a human. Never ask for a token, authorization code, client secret, or callback URL.
-* **Providers never block:** a provider gap doesn't invalidate the config — record the state, remedy what's remedyable, report the rest, finish the run. **The design engine is different in kind, not an exception to this run finishing:** a missing engine is a real blocker for `/bigin-generate-design`, which halts on it, so § 7.6 records it as a blocker and § 8 reports it as one — and this run still finishes.
+* **Providers never block, and neither does the design engine any more:** a gap doesn't invalidate the config — record the state, remedy what's remedyable, report the rest, finish the run. The design engine used to be different in kind, because `/bigin-generate-design` halted without it. It no longer does: only `/bigin-render-design` needs an engine, and only when a human asks it to render, so § 7.6 records a missing one as early warning about that optional later step.
 
 ---
 
@@ -46,7 +46,7 @@ plugin context, so a path into the install directory is unreachable to them.
 | 5.4 | Materialize the project agent (`CLAUDE.md`) | every run |
 | 6 | Map the codebase | `ongoing` only — currently deferred |
 | 7.1–7.5 | Check the two configured providers | every run |
-| 7.6 | Check the platform's design engine | every run — one engine on `web`/`mobile`, both on `both` |
+| 7.6 | Check the platform's default render engine | every run — one on `web`/`mobile`, both on `both`. Early warning for `/bigin-render-design`; blocks nothing |
 | 8 | Report | every run |
 
 ## 1. Check what's already there
@@ -224,17 +224,17 @@ come from client signals via `/extract-signal`, never from reading code. Only re
 verified; an unclear directory goes under "Not covered" rather than getting a plausible guess. Keep it
 to roughly a screen. -->
 
-## 7. Check the configured providers and the platform's design engine are actually reachable
+## 7. Check the configured providers and the platform's default render engine are actually reachable
 
 The two provider fields written in § 4 name tools this repo doesn't own. `/bigin-intake` Mode B refuses
 to sweep against an unreachable provider — but it fails at the moment a BA wanted a sweep, days later,
 having already typed the command. This moves that discovery to initiation, where it costs nothing to fix.
 
 `platform` (§ 3) names one more tool this repo doesn't own: the design engine
-`/bigin-generate-design` renders prototypes with. Same reasoning, sharper consequence — that skill
-**halts** without its engine, so the discovery is worth having now rather than in the middle of a
-design run. §§ 7.1–7.5 do the two providers; § 7.6 does the engine, and its remedies are deliberately
-different.
+`/bigin-render-design` renders prototypes with. Same reasoning, milder consequence now — that skill
+**halts** without its engine, so the discovery is worth having now rather than at the moment somebody
+wants to show a client something. It stops nothing else: a design run needs no engine at all.
+§§ 7.1–7.5 do the two providers; § 7.6 does the engine, and its remedies are deliberately different.
 
 ### 7.1 Probe
 
@@ -306,16 +306,16 @@ applies to it directly.
 
 * **Rules:** For these two providers it's a snapshot and it goes stale — a connector can be revoked the next day. `/bigin-intake` still runs its own pre-flight check; this never replaces it.
 
-### 7.6 Check the design engine the platform requires
+### 7.6 Check the design engine the platform would default to
 
-* **Goal:** find out now, at zero cost, whether `/bigin-generate-design` can actually run — because unlike an email or meeting provider, it **halts** without its engine rather than degrading.
-* **Action:** Read the engine, its install-check, and its install command from **`${CLAUDE_PLUGIN_ROOT}/skills/bigin-generate-design/references/design-engines.md`** — that file is the adapter and the single source for all three. Check only what `platform` (§ 3) requires:
+* **Goal:** find out now, at zero cost, whether `/bigin-render-design` will have a tool to render with when somebody eventually wants a prototype. **`/bigin-generate-design` no longer needs one** — it renders nothing, halts for nothing, and produces the spec and its prompt blocks whatever is installed. So this is early warning about a *later, optional* step, not a precondition for anything on the requirements path.
+* **Action:** Read the engine, its install-check, and its install command from **`${CLAUDE_PLUGIN_ROOT}/skills/bigin-render-design/references/design-engines.md`** — that file is the adapter and the single source for all three. Check the **default** for `platform` (§ 3), knowing the human may later pick the other one instead:
 
-  | `platform` | Engine to check | Install-check |
+  | `platform` | Default engine | Install-check |
   |---|---|---|
   | `web` | `frontend-design` (Anthropic, first-party, `claude-plugins-official`) | is a skill named `frontend-design` in this session's available-skills list? |
   | `mobile` | OpenDesign (`nexu-io/open-design`) | an MCP server row matching `open-design` (case-insensitive substring) in the `claude mcp list` output § 7.1 already has, state `✔ Connected` — plus, when the CLI is on `PATH`, `od project list --json` succeeding |
-  | `both` | both of the above | both checks, reported as two lines |
+  | `both` | both of the above | both checks, reported as two lines — `both` has no single default, and a render names its platform per invocation |
 
   On missing, report the install command **from the adapter, verbatim**:
 
@@ -327,17 +327,17 @@ applies to it directly.
   Then write a dated line per checked engine into `## Provider readiness`, in the template's format:
 
   ```markdown
-  - design_engine (web): frontend-design — ✔ installed (2026-08-21)
-  - design_engine (mobile): open-design — not installed: od mcp install claude (2026-08-21)
+  - design_engine (web, render default): frontend-design — ✔ installed (2026-08-21)
+  - design_engine (mobile, render default): open-design — not installed: od mcp install claude (2026-08-21)
   ```
 
 * **Rules:**
-  - **`not installed` here is a real blocker, not a courtesy note.** "Providers never block" holds for the email and meeting providers — a gap there costs Mode B's sweep and `/bigin-intake direct …` still works. A missing design engine is different in kind: `/bigin-generate-design` genuinely halts on it and designs nothing. So record it as a blocker on the design stage and say so in § 8 in those words — *and still finish this run*. It blocks the design stage; it never blocks `/bigin-new-project`, which has nothing to do with rendering a prototype.
+  - **`not installed` here is a note, not a blocker — and that changed.** It used to genuinely block the design stage, because `/bigin-generate-design` halted without its engine. It no longer does: design runs need no engine at all, and only `/bigin-render-design` halts, when a human asks for a prototype it cannot produce. So record it as *the render step's* missing tool — nameable now, installable any time before somebody wants a prototype — and never as a gap on the requirements path.
   - **Never auto-install a design engine — report the command and stop.** § 7.3's automatic remedy is scoped to `claude mcp add` for a missing MCP provider precisely because that one command is repo-local and undone by `claude mcp remove`. A `/plugin install` changes what this session and every future one loads, and OpenDesign is a third-party desktop app that installs software on the machine — both are the user's call, needing their explicit go-ahead for that specific command. Never `sudo`, never a package manager, never a credential (§ Non-Negotiable Core Rules, unchanged).
   - **Never improvise an install command.** The adapter's table or nothing — the same rule § 7.3 states for providers, and the adapter states it back for engines. A guessed installer either fails noisily or installs something that is not the engine.
   - **`command -v od` proves nothing.** `/usr/bin/od` is the BSD octal-dump utility and wins on `PATH` on a stock macOS, so a resolving `od` is not evidence OpenDesign is there and a bare `od mcp install claude` typed into a terminal may run the wrong program. The probe is `od project list --json` — octal-dump errors out, OpenDesign returns JSON. This is exactly the class of false result this section exists to catch.
   - **Match the MCP row by substring, case-insensitively,** for the same reason § 7.1 does.
-  - **A recorded opt-out is not a blocker.** `design_engine_required: false` under `## Design engine` in `.claude/bigin-ba-workflow-plugin.local.md` is a decision a human wrote down (see the adapter's "recorded opt-out"): record the line as `skipped — waived in project settings` and report it as a choice, not a gap. Never infer the waiver from a failed check.
+  - **`design_engine_required: false` is retired — do not scaffold it, and do not honour it.** It existed only to stop a *design* run halting for a *render* tool, and with the two separated there is nothing left to waive (adapter § The retired waiver). A project that never wants to render simply never runs `/bigin-render-design`. A line already present in an existing settings file is harmless and needs no migration; it just does nothing.
 
 ## 8. Report
 
@@ -352,7 +352,7 @@ applies to it directly.
 9. **Project agent (`CLAUDE.md`)** — whether it was created fresh, merged into an existing file (say so explicitly on `ongoing`, since that means a pre-existing codebase CLAUDE.md is now sharing the file), or regenerated on a rerun.
 10. **Providers** — one line per configured provider, its state, what happened, and every command run verbatim. For anything unresolved give the exact next action — "authorize Fathom in claude.ai connector settings", "install the `spark` CLI and re-run this" — not "provider unavailable". An unactionable warning gets ignored until the first failed sweep.
 11. **Design engine** — its own item, not a line under Providers, because a gap here is a gate rather than a degraded sweep. Name the platform, the engine(s) checked, and the state. Installed → one line, done. Missing → say it plainly as a blocker with the exact next action: "`/bigin-generate-design` will halt until `frontend-design` is installed — run `/plugin install frontend-design@claude-plugins-official`, then it runs." Same for OpenDesign with its own command. Never bury it as a warning, and never soften it to "engine unavailable"; waived in project settings → say it was waived, and that the prompt blocks are the deliverable.
-12. **Next step** — `/bigin-intake` to capture the first meeting, email, or note. If a provider is unresolved, say plainly that `/bigin-intake direct …` works regardless and only Mode B's sweep is affected. A missing design engine affects neither: it stops `/bigin-generate-design`, and nothing before it.
+12. **Next step** — `/bigin-intake` to capture the first meeting, email, or note. If a provider is unresolved, say plainly that `/bigin-intake direct …` works regardless and only Mode B's sweep is affected. A missing design engine affects neither, and no longer affects the design stage either: it stops only `/bigin-render-design`, the optional last step, and can be installed any time before somebody wants a prototype.
 
 ## Additional resources
 

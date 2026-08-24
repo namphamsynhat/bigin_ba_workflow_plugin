@@ -52,7 +52,7 @@ can already run.
 | PRD | Product requirements doc | 02-PRD | Implemented — **one file per feature**, `PRD-<NNN> <Feature>.md`, written by `/bigin-generate-prd` from that feature's **`approved`** UCs (§ Feature material) plus its `UX-###` design. Granularity is settled: per feature, not per-UC and not one vault-wide document (§ Reconciliation notes). A business-flow document, never a technical spec — its six hard rules live in that skill's `SKILL.md`, not here, the same way design's live in `design-conventions.md`. Status: `draft → approved`, `approved` human-only (§ Status vocabularies). Carries `absorbed: [UC-###@version]`, which is what makes PRD drift detectable (§ Absorbed) |
 | EP | Epic | 03-Epics-Stories | **Planned** — `/consolidate-prd` today writes one flat `epics.md`, not per-`EP-###` files. Same `draft → approved` status vocab once split out |
 | US | User story | 03-Epics-Stories | **Planned** — stories live nested under their epic in `epics.md` today, not as their own `US-###` files. Same `draft → approved` status vocab once split out |
-| UX | UI/UX spec | 04-UIUX | Implemented — one `UX-<NNN> <Feature>.md` per feature, written by `/bigin-generate-design` from the feature's UC(s). **Its rules are not in this file:** the design rulebook is `_bigin/conventions/design-conventions.md`, deliberately separate, and it carries UX's own status vocabulary (`draft → needs-clarification → accepted`), paths, and hard rules. The retired `/prototype-design` wrote `<feature-id>-prototype.md` with no id |
+| UX | UI/UX spec | 04-UIUX | Implemented — one `UX-<NNN> <Feature>.md` per feature, written by `/bigin-generate-design` from the feature's UC(s). Its `## 8 Rendered Artifacts` is the one section that skill never writes: `/bigin-render-design` appends a pointer row there when a human asks for a prototype. **Its rules are not in this file:** the design rulebook is `_bigin/conventions/design-conventions.md`, deliberately separate, and it carries UX's own status vocabulary (`draft → needs-clarification → accepted`), paths, and hard rules. The retired `/prototype-design` wrote `<feature-id>-prototype.md` with no id |
 
 Next-ID: scan the relevant folder for the highest existing number and increment —
 `01-Requirements/_ucs/`, `_brs/`, `_entities/` for `UC-###`/`BR-###`/`EN-###` respectively. Each is
@@ -663,6 +663,11 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   feedback loop, § Feedback handling). It writes nothing else on a UC/BR, and never touches the
   Signal Log or `## Requirement Readiness`. Its own rules live in
   `_bigin/conventions/design-conventions.md`. (The retired `/prototype-design` held this slot.)
+- `/bigin-render-design`: **touches no hub and no requirement at all.** It renders a finished `UX-###`
+  into prototype artifacts on the engine a human chose, and writes only that spec's `## 8 Rendered
+  Artifacts` (one appended pointer row), its `rendered:` flag, and one `## Changelog` line. A render is
+  not a requirement event, so nothing on a hub changes because one happened. It is also the only place
+  in this plugin that still halts for a missing external tool — a design run no longer does.
 - `/bigin-generate-prd`: refresh `## PRD` (link + status + capability/pending counts) and the `prd:`
   frontmatter field, and mirror its `§ 11 Open Business Decisions` lines into
   `## Open Questions / Gates` **using the same sentence** as the UC/UX they came from (§ One question,

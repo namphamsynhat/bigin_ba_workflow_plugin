@@ -160,7 +160,7 @@ time, in the orchestrator.
 
 ```text
 per candidate token/component:
-    does an existing one MEAN the same thing?         → reuse it. Tell Stage 4 the real name.
+    does an existing one MEAN the same thing?         → reuse it. Tell Stage 5 the real name.
     does an existing one nearly fit, needing a variant? → add the VARIANT to the existing component
     genuinely new?                                     → add it
 ```
@@ -192,7 +192,7 @@ Second use is the trigger. Promoting on first use fills the system with things n
 
 ```text
 per reported nav candidate:
-    does an existing entry already point at the same screen?  → nothing to add, tell Stage 4 the
+    does an existing entry already point at the same screen?  → nothing to add, tell Stage 5 the
                                                                   existing id
     is it a screen reached only through another screen?       → NOT an entry (§ Structure test in
                                                                   design-conventions.md § The
@@ -240,7 +240,7 @@ fewer than 5 top-level entries, candidate is top-level  → add it
 already 5, and the candidate is top-level               → do NOT add a 6th row. Raise an Open Question
                                                           on {nav_map_file} (owner: team): do two of
                                                           these share a tab, or does one belong a level
-                                                          down? Report it, and tell Stage 4 this screen
+                                                          down? Report it, and tell Stage 5 this screen
                                                           has no menu entry yet.
 the candidate nests under an existing tab               → not top-level; the cap does not apply. Mint
                                                           it under its parent as usual.
@@ -300,7 +300,7 @@ feature one, so it does not go on a UX spec or a hub — and it never becomes a 
 - **Giving a sub-screen its own nav entry.** It is reached through its parent; a second way in
   drifts from the real navigation the first time one path changes.
 - **Minting a child id whose parent id resolves to nothing.** `settings.team.members` with no
-  `settings.team` row is an orphan branch — check 9 in `5-close.md` exists to catch it.
+  `settings.team` row is an orphan branch — check 9 in `6-close.md` exists to catch it.
 - **Letting a subagent write the design system or nav map.** Two features run at once and both add
   `--color-warning`, or both add a "Reports" menu entry under different groups.
 - **Bumping either version on a run that added nothing.** The changelog stops meaning anything.
@@ -312,7 +312,7 @@ feature one, so it does not go on a UX spec or a hub — and it never becomes a 
   a shell nothing asked to reach it from, and it looks grounded because its twin is.
 - **Minting a mobile child under a web parent.** On `both`, `id` uniqueness and parent resolution
   are per `## Structure` section. A child whose parent lives in the other tree is an orphan that
-  check 9 in `5-close.md` will find, one run later.
+  check 9 in `6-close.md` will find, one run later.
 - **Putting a `nav` region — or a sidebar row — on a mobile shell.** `header / content / tab-bar /
   sheet / fab` is the phone vocabulary; `header / nav / main / aside / footer` is the web one
   (`{design_conventions}` § Platform). The wrong vocabulary produces a prototype prompt that asks a

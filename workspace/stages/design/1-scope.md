@@ -96,7 +96,7 @@ a value that is none of the three → treat as web, announce it as defaulted, an
 produced, so an unstamped project keeps designing exactly as it always did rather than silently
 changing shape mid-engagement.
 
-**Announce it alongside the mode, then pass it down.** Stages 2–5 and every worker this run
+**Announce it alongside the mode, then pass it down.** Stages 2–6 and every worker this run
 dispatches are *told* the platform in their instructions. No later stage and no worker re-reads the
 project config to decide it — two workers inferring a platform differently produces one product with
 two navigation shells, and neither of them looks wrong on its own.
@@ -107,43 +107,13 @@ feature — is resolved in Stage 3, per feature, against the UC bodies this stag
 not read (Part 1). This stage neither hunts for one nor pre-empts one, and a hub's directive row
 **count** is not evidence of one.
 
-## Part 5b — The engine precondition
-
-The platform decided in Part 5 names a **required design engine**. Resolve it and check it here,
-before the work-list:
-
-```text
-read the skill's references/design-engines.md § Engine per platform
-    → which engine(s) this platform requires, each one's install-check probe, each one's command
-
-the platform's engine present  → continue. Report it: `engine: <name> ✔`
-the platform's engine ABSENT   → HALT. Report that file's install command VERBATIM, design nothing,
-                                 print no work-list, stamp nothing
-.claude/bigin-ba-workflow-plugin.local.md carries `design_engine_required: false`
-                               → continue, reporting the engine as
-                                 `skipped — waived in project settings`
-```
-
-**Never name an engine, and never reproduce an install command, in this guide.** The adapter is the
-only place an engine has a name; this stage says "the platform's design engine" and resolves it
-there, which is what keeps an engine swap a one-file edit. A command copied into a stage guide is
-the copy that goes stale, and a guessed command either fails noisily or installs the wrong thing.
-
-The **orchestrator** does this. It runs in the plugin's own context, so it can read the skill's
-`references/`; a dispatched **worker** cannot, and never resolves an engine itself — it is *told*
-which one is in play, the same way it is told the platform.
-
-**Why an otherwise headless skill is allowed to stop, here and nowhere else.** The engine renders
-the artifact a client actually looks at. A run that quietly skipped rendering reports a finished
-design with no prototype behind it — a clean-looking failure that survives review, which is worse
-than not having run. Every other gap in this pipeline becomes an Open Question; this one becomes a
-halt, and the only way past it is a line a human wrote in a settings file, never a fallback the run
-chose for itself.
-
 ## Part 6 — Print the work-list, then keep going
 
-This stage is **headless**. Print the work-list and continue — no confirmation, no halt. Part 5b's
-engine check is the one exception, and it has already either passed or stopped the run.
+This stage is **headless, with no exception.** Print the work-list and continue — no confirmation, no
+question, and **no halt at all**. There used to be one: a required design engine, checked here, that
+stopped the whole run when it was absent. Rendering is now `/bigin-render-design`, a separate skill a
+human invokes when they want a prototype, so the tool this stage does not use can no longer stop the
+work this stage does. Nothing in this skill renders, so nothing in this skill needs a renderer.
 
 ```text
 work-list:
@@ -152,7 +122,7 @@ work-list:
   skipped <slug>/UC-###                             — <gate that failed>
 mode: bootstrap | extend (design system v<x>)
 platform: web | mobile | both (stated | defaulted)
-engine: <name> ✔ | skipped — waived in project settings
+method: <wds | figma | <plugin> | built-in>          # the OPTIONAL method layer, never a renderer
 ```
 
 `platform:` sits on the announcement line **and** on every work-list line, and the repetition is the
@@ -186,12 +156,16 @@ the run.
 - **Announcing a defaulted platform as a stated one.** `web` because nobody said and `web` because
   the client said are the same design and completely different facts; collapsing them means nobody
   ever comes back to stamp the config.
-- **Halting for anything but the missing engine.** A missing UC flow, an unclear directive, an
-  ungrounded screen: all of those are skips and Open Questions. Part 5b is the only stop in this
-  skill, and widening it turns an unattended pipeline into one that waits.
-- **Naming an engine, or pasting its install command, into this guide.** Every stage guide is
-  engine-agnostic so that swapping one is an edit to the adapter alone. The mention that gets missed
-  in the next swap keeps calling a tool nobody has installed.
+- **Halting for anything.** A missing UC flow, an unclear directive, an ungrounded screen, an
+  uninstalled design tool: every one of those is a skip, an Open Question, or somebody else's step.
+  This skill has no halt, and re-introducing one turns an unattended pipeline into one that waits.
+- **Checking for a render engine here.** It was a real precondition once, and removing it was the
+  point of splitting rendering out: a stage that reads use cases and writes markdown was stopping
+  because a prototype tool was not installed. `/bigin-render-design` checks its own engine, when a
+  human asks it to render.
+- **Naming a design tool, or pasting an install command, into this guide.** Every stage guide is
+  engine-agnostic. The install commands live in `/bigin-render-design`'s own adapter, and a copy
+  here is the copy that goes stale.
 
 ## Adopting an existing project config
 

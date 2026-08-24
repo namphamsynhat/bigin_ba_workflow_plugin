@@ -61,18 +61,20 @@ ETL: **extract** intake into per-feature signals → **transform** them into rev
 | 2 | `bigin-intake` | new raw communication needs capturing | no |
 | 3 | `extract-signal` | `00-Inbox/` has notes at `status: raw`, or one with a newly-ticked question | no |
 | 4 | `bigin-transform-signal` | a hub's `## Signal Log` has `new`/`held` rows, or a staged change's question was answered | no — it never blocks on a human |
-| 5 | `bigin-generate-design` | any UC has a drafted main flow and no current design. Needs no approval and no PRD | no — headless, but it **halts up front** when the platform's required design engine is absent. That is an install to report, not a decision to put to the human — pass on its install command and move to the next stage |
+| 5 | `bigin-generate-design` | any UC has a drafted main flow and no current design. Needs no approval and no PRD | no — fully headless, and **no halt at all** any more: it renders nothing, so no missing design tool can stop it |
 | 6 | `approve-uc` | the human is ready to sign off one reviewed UC | **yes — never approve on their behalf** |
 | 7 | `sync-entities` | one or more UCs are `approved` with `synced: false`. Run when convenient, not after every approval. Also the repair path for entity docs — `EN-###`/`rebuild` rewrites a doc as the full data dictionary and merges an attribute-shaped fragment into its owner | no |
 | 8 | `bigin-generate-prd` | a feature has `approved` UCs its PRD hasn't folded yet (or folded at an older version). Skips a `built` feature — the CR chain has no PRD | no — fully headless |
 | — | `enrich-feature` | a feature's domain research needs a manual refresh — scope changed materially since the automatic run `/extract-signal` § Step 2a ran at registration, or that run failed/was skipped | no |
 | — | `consolidate-prd` | **never.** Halts unconditionally — § Reconciliation notes. Not the PRD stage; `bigin-generate-prd` is | — |
+| 5b | `bigin-render-design` | **only when a human asks for a prototype.** Never on your own initiative, never "because a spec is ready", and never for every spec at once. It halts when the engine they chose is absent — that is an install to report, not a decision to put to them | **yes — the engine, the feature, and the timing are all theirs.** The platform supplies a default; a BA who wants the other engine says so |
 | — | `prototype-design` | **never.** Retired, superseded by `bigin-generate-design`. Never run both | — |
 | — | `bigin-upgrade-project` | a skill's precondition reported a `workspace_version` mismatch | no |
 
 Order is the usual flow, not a rule: 5 runs in parallel with 6, and 7 and 8 both lag 6 freely — 8
 consumes what 6 approved, so it is worth running once a sitting of approvals is done rather than after
-each one.
+each one. **5b is outside the flow entirely** — it is not a stage the pipeline reaches, it is a thing a
+human asks for. Never route to it to "finish" the design side.
 
 > **Two copies of this table exist**, here and in `agents/bigin-ba.md` § The pipeline you route
 > through, because a subagent cannot read a plugin-relative path — `${CLAUDE_PLUGIN_ROOT}` resolves
@@ -99,6 +101,7 @@ scope to that feature.
                                                           ask — never a replay of what they answered
 5  a UC has a drafted ## 2 main flow and no current
    design                                               → /bigin-generate-design
+5b THE HUMAN asks for a prototype (never you)           → /bigin-render-design [engine] [slug]
 6  a UC is clear and the human is ready to sign off     → the review flow, below — never headless
 7  a UC is approved with synced: false                  → /sync-entities, when convenient
 8  a feature has approved UCs not in its PRD's
@@ -106,7 +109,9 @@ scope to that feature.
 ```
 
 Steps 3–5 are the pipeline's momentum: run them back to back without stopping, because none of them
-needs a human. Step 6 is the only decision point; steps 7 and 8 lag it freely. Step 8 is headless too,
+needs a human — and step 5 no longer halts for a missing design tool, so nothing in that run can stop.
+Step 5b is never part of that momentum: a render is something a person asks for, on the engine they
+pick, and offering the spec plus "say the word and I'll render it" is the right end to step 5. Step 6 is the only decision point; steps 7 and 8 lag it freely. Step 8 is headless too,
 so once a UC is approved there is nothing to wait for — but it reads the UC's own `status:`, so running
 it before the human has approved anything just reports "nothing approved yet".
 
