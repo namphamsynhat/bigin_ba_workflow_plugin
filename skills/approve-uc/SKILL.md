@@ -53,8 +53,8 @@ human reviews this UC's flow with the rest of its neighborhood in view, not in i
   or another `features:` slug — is only to give the human the full-flow picture before they approve.
   Never open a related UC to edit it, and never write to another UC's file, its hub, or a `BR-###`
   from this skill. If the human decides an edit belongs to one of those related UCs, that edit goes
-  back through `/bigin-transform-signal` (its Stage 3 `uc-detector` step already reads this same
-  cross-UC context when drafting) — approve-uc stops and waits, it doesn't reach out and make the
+  back through `/bigin-transform-signal` (its Stage 3 `uc-router` Phase A already reads this same
+  cross-UC context before drafting) — approve-uc stops and waits, it doesn't reach out and make the
   edit itself.
 * **No PRD is generated here.** `approved` means the UC is feature material (§ Feature material);
   `/bigin-generate-prd` picks it up on its next run and folds it into
@@ -141,8 +141,8 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
        Approving a flow the human just flagged as wrong defeats the reason this summary exists.
      * **If the human flags an inconsistency with a related UC instead:** stop — don't approve, and
        don't edit that other UC from here. Name the related UC and what looks inconsistent, then say
-       the fix belongs to `/bigin-transform-signal` (whose `uc-detector` step already reads this same
-       cross-UC context when drafting), and pick this back up once it's resolved.
+       the fix belongs to `/bigin-transform-signal` (whose `uc-router` Phase A already reads this same
+       cross-UC context before drafting), and pick this back up once it's resolved.
   3. **On confirmation:** set `status: approved` on the UC, bump `version`, set `synced: false`, and
      add one `## Changelog` line noting the approval and anything this run corrected.
   4. **Confirm and point to next.** Tell the user the UC is ready for PRD — `/bigin-generate-prd`

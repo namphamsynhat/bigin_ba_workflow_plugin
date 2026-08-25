@@ -89,7 +89,7 @@ is warranted; most new signals are a step, branch, or rule inside a workflow tha
                  "same goal" = the same actor sitting down to accomplish the same thing
                  a new step, a new branch, a changed validation, a new rule are ALL updates
 4  DIFFERENT GOAL → a new UC. Report it as `new (unminted)`: the ORCHESTRATOR mints the id and the
-                 skeleton, one at a time, between waves 3a and 3b — never a per-feature subagent, or
+                 skeleton, one at a time, between Phase A and Phase B — never a per-feature subagent, or
                  two concurrent features Grep the same highest number and mint the same id
                  (when the orchestrator mints: use the Grep TOOL, never a Bash pipeline — a denied
                  pipeline silently reuses an id)

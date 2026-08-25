@@ -10,7 +10,7 @@ You are the bigin-generate-design skill's Stage 3 input-assembly subagent for th
 
 ## When to invoke
 
-- **Stage 3 dispatch for a feature with 3 or more in-scope UCs, or whose in-scope UCs together cite 4 or more distinct `EN-###` entities.** Below that, the screens-writing worker reads `3-screens.md` Part 1 directly — dispatching a second subagent to save a few inline reads costs more than it returns (same dispatch-overhead reasoning `agent-dispatch.md` and `uc-drafter.md` already use).
+- **Stage 3 dispatch for a feature with 3 or more in-scope UCs, or whose in-scope UCs together cite 4 or more distinct `EN-###` entities.** Below that, the screens-writing worker reads `3-screens.md` Part 1 directly — dispatching a second subagent to save a few inline reads costs more than it returns (same dispatch-overhead reasoning `agent-dispatch.md` and `uc-router.md` already use).
 - **A batch design run (no-args, or several slugs) where more than one feature qualifies.** Dispatch one assembler per qualifying feature, same wave, before or alongside that feature's screens-writing worker — features are independent, so this parallelizes exactly like the screens workers themselves.
 - **Never** for a feature already fully served inline by the orchestrator (one or two features overall, per `SKILL.md` Stage 3) — the orchestrator's own inline read is this agent's job done in the same context, so a dispatch there is pure overhead.
 

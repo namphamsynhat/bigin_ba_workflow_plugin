@@ -78,8 +78,8 @@ Only when no existing UC covers this goal.
 concurrently in Stage 3, and two concurrent `Grep`s over `{uc_dir}` return the same highest number, so
 two features mint the same id and one file overwrites the other. A subagent that finds a genuinely new
 goal therefore **reports it as `new (unminted)`** with the frontmatter values below; the orchestrator
-mints the id, instantiates the skeleton, and writes the hub pointer between waves 3a and 3b
-(`references/agent-dispatch.md` § Minting new UCs, between 3a and 3b). The same rule already covers
+mints the id, instantiates the skeleton, and writes the hub pointer between Phase A and Phase B
+(`references/agent-dispatch.md` § Minting new UCs, between Phase A and Phase B). The same rule already covers
 cross-feature news (`4-sync.md` § Part 1) — this just extends it to *every* new id.
 
 The skeleton, once the orchestrator mints it: instantiate `{template_uc}` as

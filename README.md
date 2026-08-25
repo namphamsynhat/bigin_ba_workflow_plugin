@@ -192,8 +192,9 @@ rulebook at all. The audit stage now has its own `_bigin/stages/extract/2b-audit
 work the same way — that file also owns the table-repair procedure, which is why the repair is a
 dispatched agent rather than orchestrator work.
 
-`/bigin-transform-signal`'s Stage 3/4 dispatches follow the same pattern: `agents/uc-detector.md`
-(3a, UC identification), `uc-drafter.md` (3b, staging content into every lane), and `uc-applier.md`
+`/bigin-transform-signal`'s Stage 3/4 dispatches follow the same pattern: `agents/uc-router.md` (one
+agent, resumed rather than redispatched between its Phase A UC-identification and Phase B
+lane-drafting, so the hub/UC content Phase A reads is never read twice) and `uc-applier.md`
 (Stage 4 Part 2, applying an already-staged main-flow step/flow into `## 2`/`## 3`) each read their
 stage's rulebook (`3-routing.md`, `3-lane-uc.md`, `3-lane-br.md`, `3-lane-design.md`, `4-sync.md`)
 from `_bigin/stages/transform/` at runtime rather than hard-coding it, for the same override reason.

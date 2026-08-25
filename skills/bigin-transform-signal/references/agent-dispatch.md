@@ -1,25 +1,35 @@
-# Subagent dispatch — two per feature, in sequence
+# Subagent dispatch — one resumable agent per feature
 
 ```text
-Agent(uc-detector, foreground)        # 3a — resolves every UC target (read-only; proposes new ids)
-   ORCHESTRATOR MINTS                 # between the waves — § Minting new UCs, below
-Agent(uc-drafter, foreground)         # 3b — drafts the staged content
-one PAIR per FEATURE SLUG, never per lane
+Agent(uc-router, foreground)          # Phase A — resolves every UC target (read-only in effect; proposes new ids)
+   ORCHESTRATOR MINTS                 # between the phases — § Minting new UCs, below
+SendMessage(to: <uc-router's name>)   # Phase B — RESUMES the same run to draft the staged content
+one AGENT per FEATURE SLUG, never per lane
     → a feature's hub + UC/BR files are one ownership domain that two lanes routinely both touch
     → features are independent, so they parallelize safely
 ≤ 4 features concurrently, report between waves        # a failure costs one wave, not the backlog
-within a feature → 3a runs to completion before 3b starts; signals then processed sequentially
+within a feature → Phase A runs to completion before Phase B is resumed; signals then processed
+    sequentially inside Phase B
 ```
 
-**Each agent pins its own model in its frontmatter** (`agents/uc-detector.md`, `agents/uc-drafter.md`,
-`agents/uc-applier.md`) — don't restate or override a tier from a dispatch prompt. The rationale for
+**Resuming, not redispatching, is the point.** `agents/uc-router.md` runs Phase A and Phase B inside
+one agent run. The orchestrator keeps that run's name/id from the Phase A `Agent()` call and, after
+minting, sends the Phase B facts into the **same run** via `SendMessage` — never a fresh `Agent()` call
+for Phase B. Because it's the same run, the hub content and every UC's `## 1`-`## 3`/`## Discussion`
+that Phase A read are still in that run's own context: Phase B drafts from them without reopening a
+single file it already opened. Redispatching a fresh agent for Phase B — the previous two-agent design —
+paid a second full hub-and-UC read (~100k-175k tokens, per this skill's own usage reports) for every
+feature, every run; resuming removes that read entirely rather than shrinking it.
+
+**The agent pins its own model in its frontmatter** (`agents/uc-router.md`, `agents/uc-applier.md`,
+`agents/hub-bookkeeper.md`) — don't restate or override a tier from a dispatch prompt. The rationale for
 each tier is in `SKILL.md § Model`; the tier itself lives in exactly one place, the agent file.
 
-**Skip both subagents entirely when a feature has three or fewer qualified signals** — dispatch overhead
-exceeds the work. Two subagents each read the hub and its UCs in full, so a 3-signal dispatch pays a
-duplicate ~100k-token hub read to save a few inline minutes; the orchestrator runs both lane guides
-inline instead (still resolve the UC target first, per § 3a, before drafting). Fan out when the run spans
-several features, or one feature carries a batch of four or more.
+**Skip `uc-router` entirely when a feature has three or fewer qualified signals** — dispatch overhead
+(the phase transition, the resume round-trip) exceeds the work at that size, even without a duplicate
+read. The orchestrator runs both lane guides inline instead (still resolve the UC target first, per
+§ Phase A, before drafting). Fan out when the run spans several features, or one feature carries a
+batch of four or more.
 
 An **FR adoption** run (`3-lane-uc.md` § Adopting an existing FR) is worth running inline even for one
 feature: it produces the largest diff of any single run.
@@ -27,43 +37,92 @@ feature: it produces the largest diff of any single run.
 ## Before dispatching — resolve UC ownership
 
 A `UC-###` is written only by its `primary_feature`'s subagent. So dispatch must already know **which
-feature owns each UC** before either wave starts, or two waves write the same file.
+feature owns each UC** before either phase starts, or two features write the same file.
 
 ```text
 signal targets a UC owned by the feature being dispatched → include it in that worklist
 signal targets a UC owned by a DIFFERENT feature          → NOT a write in either worklist
-                                                             hand it to the owning feature's subagent
+                                                             hand it to the owning feature's agent
                                                              if that feature is in this run
                                                              else → cross_feature_uc_change for Stage 4
 signal needs a NEW UC whose goal belongs to another actor → same: Stage 4 mints it
 ```
 
-**Which specific `UC-###` a signal targets** (new vs. an id already on the hub) is `uc-detector`'s job,
-not something the orchestrator or the drafting subagent decides — see § 3a.
+**Which specific `UC-###` a signal targets** (new vs. an id already on the hub) is `uc-router`'s Phase A
+job, not something the orchestrator decides — see § Phase A.
 
-## 3a — UC identification (`uc-detector`)
+## Before dispatching — carry the routing read forward, don't re-fetch it
+
+Stage 3 routing (`3-routing.md`) already made the orchestrator read every qualified signal's Signal Log
+row, in full, to decide its lane. That read is not free, and re-fetching the same rows a second time
+inside `uc-router` buys nothing:
+
+```text
+When building the QUALIFIED SIGNALS list in the Phase A prompt below, copy each row's Signal Log text
+VERBATIM — not a paraphrase. Tell uc-router explicitly: this text is already read and authoritative;
+do not reopen the hub's Signal Log to re-fetch these specific rows. It still needs to open the hub for
+what the orchestrator's routing pass did NOT read — the frontmatter (uc:, br:, features) and the
+## Use Cases table (fixed-size, not append-only) — and then the actual UC files, which is genuinely
+new content no earlier step has read.
+```
+
+A paraphrase here is what forces `uc-router` to reopen the hub "just to check what you meant" — the
+exact overlap this step exists to remove.
+
+## Before dispatching — dedupe a symmetric cross-feature read
+
+Two features in the same wave sometimes each flag the *other* as a cross-feature candidate over what is,
+on inspection, the identical shared row or goal (feature X's Signal Log cites feature Y's workflow, and
+feature Y's Signal Log carries the matching row citing X back). Left alone, both features' `uc-router`
+Phase A dispatches independently open the other's hub for that one reference — the same handful of lines,
+read twice.
+
+```text
+before dispatching the wave:
+  for every pair of features in it, check whether their candidate cross-feature lists point at each
+  other over what reads as the same shared row/goal
+  when that symmetry holds:
+    read the shared reference ONCE — just the specific Signal Log row(s) and UC excerpt in question,
+    never either hub in full
+    embed that resolved excerpt in BOTH features' Phase A dispatch prompts, marked as already-resolved:
+      "this specific cross-reference is already read and given above; you do not need to open
+      <other slug>'s hub for it — open it yourself only for something this excerpt doesn't cover"
+```
+
+This applies only to a confirmed **symmetric** pair spotted before dispatch. An asymmetric or one-sided
+cross-feature guess — one feature might touch another's workflow but nothing on the other side confirms
+it yet — still gets a normal, single-sided read by that one feature's own `uc-router`; there is nothing
+to dedupe until both sides actually point at the same thing.
+
+## Phase A — UC identification
 
 Runs first, per feature, over that feature's UC- and Context-lane signals only. Never touches BR,
-Design, or Entity signals — those still resolve entirely inside 3b.
+Design, or Entity signals — those still resolve entirely inside Phase B.
 
-The subagent has no memory of this conversation. Give it the cheap known facts and point it at real
+The agent has no memory of this conversation. Give it the cheap known facts and point it at real
 files — a paraphrase risks it trusting a stale summary over the source of truth.
 
 ```text
 Identify the UC each of feature <slug>'s qualified UC/Context-lane signals belongs to — a new UC or
-an existing one — before anything gets drafted into it. You are READ-ONLY: report a genuinely new goal
-as `new (unminted)` with the frontmatter values it needs; the orchestrator mints the id and the
-skeleton after you report. Never write any file, never stage step content, flows, rules, a business
-need, or a question.
+an existing one — before anything gets drafted into it. This is Phase A of a two-phase run: you are
+READ-ONLY for this phase — report a genuinely new goal as `new (unminted)` with the frontmatter values
+it needs; the orchestrator mints the id and the skeleton after you report, then RESUMES this same run
+for Phase B. Never write any file, never stage step content, flows, rules, a business need, or a
+question during this phase.
 
 QUALIFIED SIGNALS ROUTED TO UC OR CONTEXT (hub row # → lane), decided in Stage 2/3 — do not
-re-qualify or re-route:
-<row #>: <signal text> | lane: UC|context
+re-qualify or re-route. Row text below is copied VERBATIM from the hub's Signal Log; it is already
+read and authoritative — do not reopen the Signal Log to re-fetch these rows:
+<row #>: <signal text, verbatim> | lane: UC|context
 <...>
 
 Hubs that plausibly share a workflow with this feature — read their uc: list and UC content before
 deciding any signal that sounds cross-feature, even if it isn't in this list:
 <candidate slugs, or "none flagged">
+
+<if a symmetric cross-feature reference was pre-resolved for this pair, insert here:>
+ALREADY-RESOLVED CROSS-FEATURE REFERENCE — do not reopen <other slug>'s hub for this:
+<the resolved Signal Log row(s) + UC excerpt, verbatim>
 
 READ FIRST:
 - _bigin/conventions/paths.md — resolves {uc_dir}, {template_uc}, and every other variable below
@@ -72,13 +131,15 @@ READ FIRST:
   § Adopting an existing FR
 - _bigin/conventions/conventions.md § Use Case, § ID scheme, § Frontmatter schema — nothing else
 - 01-Requirements/_features/<slug>.md — READ IT TARGETED, not whole: its frontmatter (uc:, br:,
-  features), its ## Use Cases table, and only the Signal Log rows this dispatch's signals cite.
-  A hub's Signal Log is append-only and mostly irrelevant to a same-goal call; reading it in full
-  costs more every month and tells you nothing the ## Use Cases table doesn't.
+  features), its ## Use Cases table, and only the Signal Log rows this dispatch's signals cite that
+  weren't already given to you verbatim above. A hub's Signal Log is append-only and mostly irrelevant
+  to a same-goal call; reading it in full costs more every month and tells you nothing the
+  ## Use Cases table doesn't.
 - every UC that list names, in full — title, ## 1, ## 2 (Main Success Scenario — the happy path
   only, no branches), ## 3 (every Alternative & Exception Flow), and ## Discussion (proposals
   already staged but not yet folded into ## 2/## 3 — they're part of the flow's real, current
-  shape even though unapplied). Not just the title, and not just ## 2.
+  shape even though unapplied). Not just the title, and not just ## 2. You will need this again in
+  Phase B of this same run — reading it now is the only time you read it.
 
 THEN, per signal, in hub row order:
 1. Read it on its own content — never by adjacency to the row before it, never by phrasing
@@ -102,10 +163,10 @@ THEN, per signal, in hub row order:
    reporting. ## 1–## 6 and the summary block stay EMPTY — no content, not even a Business Need.
 6. A feature with FR-### files and no UC, touched for the first time: report it as a new UC per
    step 5 plus `absorbs: [FR-###, …]` listing every FR on this feature. Do not stage the FR lines
-   yourself — report the adoption so 3b stages them.
+   yourself — that's Phase B, in this same run.
 
-YOU WRITE NOTHING AT ALL — not a UC, not a skeleton, not a hub pointer, not a status. Read any hub or
-UC you need; edit none of them.
+YOU WRITE NOTHING DURING THIS PHASE — not a UC, not a skeleton, not a hub pointer, not a status. Read
+any hub or UC you need; edit none of them. Stop after reporting and wait to be resumed.
 
 REPORT, per signal:
   <hub row #> -> UC-### (existing) | UC (new, unminted) | primary_feature: <slug> |
@@ -119,66 +180,70 @@ owned_elsewhere: <hub row #> -> belongs to <slug> (not written)
 unresolved:      <hub row #> — <why you could not confidently place it>
 ```
 
-## Minting new UCs, between 3a and 3b
+## Minting new UCs, between Phase A and Phase B
 
-**The orchestrator, sequentially, one id at a time**, for every `new (unminted)` a wave's detectors
-reported — the same discipline `4-sync.md` § Part 1 already applies to cross-feature news, extended to
-every new id because the hazard is identical.
+**The orchestrator, sequentially, one id at a time**, for every `new (unminted)` a wave's Phase A
+reports produced — the same discipline `4-sync.md` § Part 1 already applies to cross-feature news,
+extended to every new id because the hazard is identical.
 
 ```text
 per `new (unminted)`, in report order, one completing before the next starts:
-1  DEDUPE THE WAVE FIRST — two detectors in the same wave can report the same goal under different
-   words (a cross-feature flow both features think they own). Same goal → ONE UC, primary_feature =
-   the feature whose actor holds the goal; the other feature is a `features:` entry, not a second UC.
+1  DEDUPE THE WAVE FIRST — two features' Phase A reports in the same wave can report the same goal
+   under different words (a cross-feature flow both features think they own). Same goal → ONE UC,
+   primary_feature = the feature whose actor holds the goal; the other feature is a `features:`
+   entry, not a second UC.
 2  Grep {uc_dir} for the highest existing UC-### and increment. Use the Grep TOOL, never a Bash
    pipeline — a denied pipeline reads as "no matches" and silently reuses an id.
 3  instantiate {template_uc} at {uc_dir}/UC-<NNN> <Title>.md with exactly the frontmatter the
-   detector reported, ## 1-## 6 and the summary block empty
+   Phase A report gave, ## 1-## 6 and the summary block empty
 4  add the id to the owning hub's uc: list and a pointer row to its ## Use Cases
 4b add the id to {requirements_file}'s UC column for the owning feature's row too — same write,
    same pass (conventions.md § Feature Map format). Skipping this is what lets FEATURES.md's UC
    column go stale relative to the hub's own uc: list/## Use Cases table, which is otherwise the
    only place that later gets read
-5  record the mapping <hub row #> -> UC-<NNN> — that is what 3b is handed as a resolved target
+5  record the mapping <hub row #> -> UC-<NNN> — that is what Phase B is resumed with as a
+   resolved target
 ```
 
-Only then dispatch 3b for that feature.
+Only then resume that feature's `uc-router` run for Phase B.
 
-## 3b — Drafting (`uc-drafter`)
+## Phase B — Drafting
 
-Runs after `uc-detector` reports for the same feature. The subagent has no memory of this
-conversation, including `uc-detector`'s run — hand it the resolved targets as data, not a pointer to
-re-derive. Its rulebook (which conventions/lane-guide sections to read, the DO-NOT-WRITE list, the
-report format) is baked into `agents/uc-drafter.md` — this dispatch only needs to supply the
-per-run facts that agent has no way to already know:
+Resumes the same run Phase A ran in, via `SendMessage` to the agent name/id kept from that `Agent()`
+call — never a fresh `Agent()` dispatch. The run has no memory of the orchestrator's conversation
+beyond its own transcript, but it has full memory of everything it read in Phase A — hand it the
+resolved targets and the lanes Phase A never saw as data, not a pointer to re-derive what it already
+knows:
 
 ```text
-Draft the requirement artifacts for feature <slug> from its already-qualified signals.
+Draft the requirement artifacts for feature <slug> from its already-qualified signals. This is Phase B
+of your own run — you already read this feature's hub and every UC in its uc: list in Phase A; do not
+re-read them. Open a BR-### only if it's new to this worklist (Phase A never had reason to open one).
 
-QUALIFIED SIGNALS (hub row # → lane), decided in Stage 2/3 — do not re-qualify or re-route:
-<row #>: <signal text> | lane: UC|BR|design|entity|context | target: <UC-### | BR-### | new>
+QUALIFIED SIGNALS (hub row # → lane), decided in Stage 2/3 — do not re-qualify or re-route. This
+includes BR, Design, Entity, and Context signals your Phase A pass never saw, alongside the
+UC/Context-lane rows you already resolved yourself:
+<row #>: <signal text, verbatim> | lane: UC|BR|design|entity|context | target: <UC-### | BR-### | new>
 <...>
 
-UC TARGETS — resolved by uc-detector for every UC/context-lane row above. Use them AS GIVEN: do NOT
-re-decide which UC a signal belongs to, and do NOT mint a new UC id or file yourself, even if one
-looks missing — report it as blocked instead, so the orchestrator can re-run 3a rather than two
-subagents minting the same goal twice:
+UC TARGETS — resolved by you in Phase A for every UC/context-lane row above, now minted where new.
+Use them AS GIVEN: do NOT re-decide which UC a signal belongs to, and do NOT mint a new UC id or file
+yourself, even if one looks missing — report it as blocked instead, so the orchestrator can re-run
+Phase A rather than guessing mid-Phase-B:
 <row #>: target UC-### (new — skeleton already written | existing)
 <...>
 
 UCs you MAY write (this feature is their primary_feature): <UC-### …, or "none yet">
 UCs you must NOT write (owned by another feature):        <UC-### (owner: <slug>) …, or "none">
-
-01-Requirements/_features/<slug>.md is the hub. Every UC/BR in its uc: / br: frontmatter is fair
-game to read in full before drafting.
 ```
 
-Report format is fixed in `agents/uc-drafter.md` § Report — do not restate it in the dispatch prompt.
+Report format is fixed in `agents/uc-router.md` § Phase B report — do not restate it in the dispatch
+prompt.
 
-## Verifying 3a and the mint, before 3b starts
+## Verifying Phase A and the mint, before Phase B is resumed
 
-A detector report is a set of claims, and 3b staging content into a UC that doesn't exist is the failure
-this catches. Check after minting, before dispatching 3b for the same feature:
+A Phase A report is a set of claims, and Phase B staging content into a UC that doesn't exist is the
+failure this catches. Check after minting, before resuming Phase B for the same feature:
 
 ```text
 per feature:
@@ -195,13 +260,14 @@ per feature:
                    filename. The mint race's only real backstop
 4  every owned_elsewhere / unresolved row has a real reason, not a placeholder
 
-mismatch → BLOCKING. Re-run 3a (or a scoped repair) before 3b touches this feature.
+mismatch → BLOCKING. Re-run Phase A (a fresh `uc-router` dispatch) for this feature before resuming
+           it into Phase B.
 ```
 
 ## Verifying the wave
 
 After each wave, before the next. Check the wave's own claims — do not re-draft anything. This catches
-the failure that matters: a subagent reporting success while its hub write never landed leaves a
+the failure that matters: an agent reporting success while its hub write never landed leaves a
 signal no future run re-collects, because its row now reads `staged` with nothing staged anywhere.
 
 ```text

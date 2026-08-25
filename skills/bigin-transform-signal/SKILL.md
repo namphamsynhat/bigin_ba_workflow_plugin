@@ -162,25 +162,28 @@ per qualified signal → exactly one lane, per clause not per row              [
 
 One lookup happens **inside** the Design lane, not at routing: **durable vs. feature-scoped**.
 **Which UC, new or update** (most signals are a step, branch, or rule in a workflow that already
-exists) is resolved by its own subagent, `uc-detector`, before any lane drafts — see below.
+exists) is resolved in Phase A of its own subagent, `uc-router`, before any lane drafts — see below.
 
 ```text
 FAN OUT ONE SUBAGENT PER FEATURE SLUG, never per lane                        [references/agent-dispatch.md]
     → a feature's hub + UC/BR files are one ownership domain; two lanes routinely touch the same UC
     → features are independent and parallelize safely; within a feature, process sequentially
 
-within a feature, two subagents run in sequence, never merged:
-  3a  uc-detector       resolves every UC/Context-lane signal to a UC-### — an existing id, or
+within a feature, ONE subagent runs in two phases, never two separate dispatches:
+  A   uc-router (Phase A)  resolves every UC/Context-lane signal to a UC-### — an existing id, or
                         `new (unminted)` — reading other features' hubs when a signal sounds
-                        cross-feature. READ-ONLY: it writes nothing at all.
-                        [agent-dispatch.md § 3a]
+                        cross-feature. READ-ONLY in effect: it writes nothing during this phase.
+                        [agent-dispatch.md § Phase A]
   ↳   ORCHESTRATOR      mints every new UC id + skeleton + hub pointer, ONE AT A TIME, between the
-                        waves. Never a subagent: four features run concurrently and two concurrent
+                        phases. Never a subagent: four features run concurrently and two concurrent
                         scans for "the highest id" return the same number.
                         [agent-dispatch.md § Minting new UCs]
-  3b  uc-drafter        stages content into every lane, using the resolved UC targets AS GIVEN — it
-                        never re-decides which UC a signal belongs to, and never mints one itself.
-                        [agent-dispatch.md § 3b]
+  B   uc-router (Phase B) RESUMED via SendMessage into the same run that did Phase A — never a fresh
+                        Agent() dispatch — so it drafts using the hub/UC content it already read,
+                        without reopening a single file. Stages content into every lane, using the
+                        resolved UC targets AS GIVEN — it never re-decides which UC a signal belongs
+                        to, and never mints one itself.
+                        [agent-dispatch.md § Phase B]
 
 a subagent NEVER writes:  {design_principles_file}                                    # vault-wide
                           a NEW UC-### id or skeleton              # orchestrator mints, sequentially
@@ -255,9 +258,11 @@ Each produces a run that looks clean. Ordered by cost to discover later.
   is created, found, corrected, or retired** — nobody said it out loud, so no signal exists, so no row,
   question, or conflict ever appears. It surfaces at build or UAT, as a module that cannot be used.
   Stage 4 Part 4 is the only pass that reads a feature's UC set as a set (`4b-coverage.md`).
-- **Skipping `uc-detector`, or re-deciding new-vs-update inside `uc-drafter` anyway** — the whole
-  reason the lookup got its own step is that a busy drafting pass under-reads a cross-feature hub and
+- **Skipping `uc-router`'s Phase A, or re-deciding new-vs-update inside Phase B anyway** — the whole
+  reason the lookup got its own phase is that a busy drafting pass under-reads a cross-feature hub and
   either mints a duplicate UC or drafts into the wrong one.
+- **Redispatching a fresh `uc-router` agent for Phase B instead of resuming Phase A's run** — this
+  silently reintroduces the exact duplicate hub/UC read the two-phase, one-run design exists to remove.
 - **Stretching the § 2/§ 3 direct-write exception to § 1/§ 4/§ 5/§ 6** — only a new/changed/removed
   main-flow step or flow skips the human-review wait (Stage 4 Part 2); a rule, `## 1` metadata, an
   open question, or a special requirement still stages in `## Discussion` and waits for Stage 1.
@@ -303,13 +308,13 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 
 ## Model
 
-**Every tier is pinned in the agent's own frontmatter** — `agents/uc-detector.md`, `agents/uc-drafter.md`,
+**Every tier is pinned in the agent's own frontmatter** — `agents/uc-router.md`,
 `agents/uc-applier.md`, `agents/hub-bookkeeper.md`. Never restate or override one from a dispatch prompt:
 one place to change it, and no second copy to drift.
 
-The reasoning behind the pins: both Stage 3 subagents inherit the session default because this is
-judgment-heavy work — which UC a signal belongs to, where a step sits in a flow, spotting a cross-feature
-goal. Contrast `/extract-signal`, mechanical against a tight rule set. `uc-applier` sits one tier down:
+The reasoning behind the pins: `uc-router` inherits the session default for both its phases because this
+is judgment-heavy work — which UC a signal belongs to, where a step sits in a flow, spotting a
+cross-feature goal. Contrast `/extract-signal`, mechanical against a tight rule set. `uc-applier` sits one tier down:
 it never decides routing or wording from scratch, only applies text someone already wrote against a
 documented destination table. `hub-bookkeeper` is `haiku` — it mirrors facts it is handed.
 
@@ -318,10 +323,10 @@ a quote-anchored check is cheap. This skill does the shallow half only (Stage 2,
 
 ## Additional resources
 
-- **`references/agent-dispatch.md`** — the per-run variable data handed to `uc-detector` (§ 3a),
-  `uc-drafter` (§ 3b), and `uc-applier` (Stage 4 Part 2, in `4-sync.md`) — their own procedures and
-  report contracts live in `agents/uc-detector.md`, `agents/uc-drafter.md`, and `agents/uc-applier.md`
-  respectively, plus the wave-verification checklist here.
+- **`references/agent-dispatch.md`** — the per-run variable data handed to `uc-router`'s Phase A and
+  Phase B (resumed, not redispatched, between them), and `uc-applier` (Stage 4 Part 2, in
+  `4-sync.md`) — their own procedures and report contracts live in `agents/uc-router.md` and
+  `agents/uc-applier.md` respectively, plus the wave-verification checklist here.
 - **`references/use-case-standard.md`** — where the UC artifact's shape comes from (Cockburn, BABOK,
   Use-Case 2.0, Wiegers), what is established practice and what is a deliberate departure. Read before
   changing the template or a lane guide; not needed for a run.

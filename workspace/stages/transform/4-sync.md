@@ -37,8 +37,8 @@ row by name.
 
 ```text
 MINT EVERY ID IN THE ORCHESTRATOR, never in a subagent — including every ordinary new UC-###, which
-    `uc-detector` now only PROPOSES as `new (unminted)` and the orchestrator mints between waves 3a
-    and 3b (references/agent-dispatch.md § Minting new UCs). This section covers the ones that
+    `uc-router`'s Phase A only PROPOSES as `new (unminted)` and the orchestrator mints between Phase A
+    and Phase B (references/agent-dispatch.md § Minting new UCs). This section covers the ones that
     surface later: a `new` cross_feature_uc_change, and anything a repair pass adds.
     Grep for the highest existing id and increment
     create a register from its template ({template_design_principles}) if absent
