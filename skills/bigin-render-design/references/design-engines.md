@@ -221,6 +221,90 @@ NEVER let it     pick a shipped DESIGN.md over the client's stated preferences  
 
 Its daemon is loopback-only and read-only by default — nothing here needs that relaxed, so don't.
 
+### SPA Delivery Mode — a unified build spanning several specs
+
+A second OUTPUT mode on this same engine, for when the human asks to see several specs together as one
+client-facing package — a cross-role walkthrough, a client-review link, a build meant for a static
+host — rather than one spec's screens rendered on their own. **Never inferred.** Exactly like Stage 1's
+single-target rule, a unified build is a deliberate request naming every spec it spans; "render
+everything" is still not a thing this skill does, however many specs exist.
+
+```text
+trigger        the human names two or more specs (feature slugs or UX-### ids) AND asks for them
+               combined — one build, one link, one file to hand over or deploy
+architecture   one self-contained `index.html`: client-side routing, an embedded state manager, and
+               CSS built from one design system's token VALUES — the whole thing runs with no server
+               and no external stylesheet or script dependency
+```
+
+**The design system is named the same way the engine is — a human choice, never a default.** Point it
+at `{tokens_file}` (the vault's own tokens — what this mode uses when nobody names another) or at a
+package OpenDesign's own catalog actually carries. **Read the catalog to confirm a named package is
+really there; never guess a name into existence** — the same discipline § Rendering a WEB spec with it
+already applies to a template name.
+
+```text
+chosen system found (catalog, or the vault's own tokens)   → render
+chosen system ABSENT from both                             → HALT. Render nothing, write no ## 8 row
+                                                               on ANY participating spec, touch no spec
+```
+
+```text
+HALTED: /bigin-render-design's SPA delivery mode needs a design system named "<name>", and it is
+neither in OpenDesign's catalog nor this vault's own tokens.
+
+available:  <what the catalog actually lists>  ·  or the vault's own tokens ({tokens_file})
+then:       re-run naming one of those, or drop the design-system argument to use the vault's tokens
+
+Nothing was rendered, no ## 8 row was written, no spec was touched.
+```
+
+**Mapping several specs onto one build.**
+
+| Spec material (per participating spec) | Goes in as |
+|---|---|
+| `## 1 Design Brief` incl. the Actor & Scope table | one entry in the build's persona/actor set — see below |
+| `## 2 Screen Inventory` + `## 3` regions/elements/copy/States | that spec's own routes inside the shared runtime, mapped the same way a single-spec render maps them (§ Mapping the spec onto it, above) |
+| `## 4 Flows` + `### Coverage` | which routes this spec's screens actually link to, and which `out of scope` rows still must NOT appear |
+| `{tokens_file}` values, or the named catalog package | the ONE shared token set every participating spec's screens render with — not each spec's own, if they differ |
+| `{nav_map_file}`'s `## Structure` | the shell — built once, shared across every participating spec's screens, same as any other render |
+
+**Zero broken links.** Every route the assembled app can reach — a screen, a modal, a toast, a
+cross-cutting screen more than one participating spec's `## 2 Screen Inventory` names — resolves inside
+the one runtime. A route pointing at a spec that was not named for this build is not a link; it is a
+gap the build should never have offered.
+
+**An actor-switch entry stage, when the participating specs name more than one actor.** If their `## 1`
+Actor & Scope tables name different actors, the assembled build's entry stage lets a reviewer switch
+between them, so a flow that hands off from one spec's actor to another's can be walked end to end.
+**Only the actors and handoffs a participating spec's own `## 1` or `## 4 Flows` actually name** — a
+handoff neither spec describes is an invented flow, the same failure § Grounding already names for an
+invented screen.
+
+**Static-host manifest files, when the engine can produce them.** Alongside `index.html`, files a
+static host needs to serve it (a redirects file, a host config) may come back too — record them in the
+same `## 8` pointer as any other artifact. They are OpenDesign's own output, the same as the framed
+per-screen HTML above; § Write map still applies, and none of it is copied into `04-UIUX/`.
+
+**Recording spans every participating spec.** One build, but every spec it renders gets its own `## 8`
+row — same path, same date, same engine, each spec's own `Against` version — because a spec's render
+history has to show it shipped as part of this build, not that it rendered alone (`/bigin-render-design`
+§ Stage 6).
+
+```text
+NEVER let it     pull in a spec nobody named for this build                  → deliberate, not inferred
+                 invent a persona-switch or handoff neither spec's ## 1 or
+                 ## 4 describes                                              → § Grounding
+                 pick a design system off its own shelf when the human
+                 named the vault's tokens, or the reverse                    → ground 3, the human's
+                                                                                 choice wins
+                 leave a route the assembled app can reach dead-ending
+                 outside the runtime                                         → the zero-broken-links
+                                                                                 rule above
+                 write into 04-UIUX/ or 01-Requirements/                     → § Write map: artifacts
+                                                                                 land in its own project
+```
+
 ---
 
 ## Swapping an engine
@@ -300,3 +384,11 @@ absence is a silent skip, because the built-in method is complete.
   copy of something the engine owns.
 - **Letting the engine choose the output paths.** Same failure `engine-detection.md` already names:
   half the design lands somewhere nothing reads and the run still reports success.
+- **Rendering a SPA delivery mode build without a named design system.** Silently defaulting to one of
+  OpenDesign's 151 shipped packages is the same ground-3-loses failure as any other engine picking its
+  own aesthetic — halt and ask, or use the vault's own tokens explicitly.
+- **Recording a unified build's `## 8` row on only one of the specs it spans.** The others' render
+  history then shows no render at all, and the next person to open one has no idea it shipped as part
+  of a combined build.
+- **Letting a unified build's persona switcher invent a handoff neither participating spec describes.**
+  It reads as a working cross-portal handshake in the prototype and traces to nothing any spec says.

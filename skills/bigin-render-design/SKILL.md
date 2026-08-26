@@ -1,7 +1,7 @@
 ---
 name: bigin-render-design
-description: This skill should be used when the user asks to "render the design", "render the prototype", "build the prototype", "make me a clickable prototype", "run open design", "render this with open design", "render it with frontend-design", "turn the UX spec into screens I can show the client", "prototype UX-###", or names a design engine to run against a finished UX spec. Renders an already-written UX spec into prototype artifacts on the engine the human chooses — never re-designing, never touching a requirement, and recording only pointers to what it produced.
-argument-hint: "[engine] [feature slug | UX-###]"
+description: This skill should be used when the user asks to "render the design", "render the prototype", "build the prototype", "make me a clickable prototype", "run open design", "render this with open design", "render it with frontend-design", "turn the UX spec into screens I can show the client", "prototype UX-###", "package this as a single-page app", "build one unified prototype across these roles", "give me one file for Netlify", or names a design engine to run against a finished UX spec. Renders one or more already-written UX specs into prototype artifacts on the engine the human chooses — including, when explicitly asked, a single self-contained SPA build spanning several specs — never re-designing, never touching a requirement, and recording only pointers to what it produced.
+argument-hint: "[engine] [feature slug | UX-###, or several for a unified SPA build] [design system]"
 disable-model-invocation: true
 ---
 
@@ -12,13 +12,18 @@ exists and turns it into something a client can look at:
 
 ```text
 in    UX-### <Feature>.md    the screens, states, real copy, flows, the ## 4 Coverage table, and the
-                             self-contained prototype prompt blocks
+                             self-contained prototype prompt blocks — one spec, or several when the
+                             human explicitly asks for a unified build spanning them
     + _design-system/        token names AND values, components, this platform's nav ## Structure
     + the ENGINE             the human's choice — a named argument, or the project platform's default
 
-out   artifacts              whatever the engine produced, in the engine's own output location
+out   artifacts              whatever the engine produced, in the engine's own output location —
+                             including, when asked, a single self-contained SPA spanning every named
+                             spec (OpenDesign only — see references/design-engines.md § SPA Delivery
+                             Mode)
     + ## 8 Rendered Artifacts  one appended row per render: date, engine, platform, screens, path,
-                               and the UX-###@version it rendered AGAINST
+                               and the UX-###@version it rendered AGAINST — on a unified build, the
+                               SAME row is appended to EVERY participating spec
     + rendered: true           in the spec's frontmatter
 ```
 
@@ -86,6 +91,12 @@ NEVER   ## 1-## 7 of the spec        the design. Not a screen, not a state, not 
         the spec's absorbed:         staleness is about UCs and screens, not about renders
 ```
 
+**A unified SPA build spanning several specs writes the same ## 8 row to every participating spec.**
+One combined artifact, one date, one engine — but each spec named in that build is a spec whose own
+history should show it shipped as part of it, so the row lands on all of them, not just the one named
+first. Nothing else about the write map changes: still one ## 8 row per spec per render, still never a
+prior row edited.
+
 A token or component an engine wants and cannot find is **not** something to add here. It is a gap in
 the spec, and the spec is `/bigin-generate-design`'s: report it and stop rendering that screen.
 
@@ -122,6 +133,14 @@ means two engines, two sets of artifacts, and one report — and the platform wh
 thinner is the one nobody notices. Ask which, or render the named one and report the other as
 un-rendered.
 
+**A unified build spanning several specs is only ever a deliberate request.** The human names every
+spec it spans, in the same message that asks for them combined — "these three, as one prototype",
+never "everything" and never inferred from, say, all specs sharing a status. This is the same
+discipline as the target-omitted case above, applied to more than one target at once: naming nothing
+lists and asks, naming several without asking to combine them renders them separately, one spec at a
+time, exactly as today. Only OpenDesign's SPA delivery mode can take more than one target — see
+`references/design-engines.md` § SPA Delivery Mode for the design-system argument it also takes.
+
 **A spec at `status: needs-clarification` renders, with its open questions named in the report.** Its
 screens are real and its gaps are written down; refusing to render it would leave the one thing that
 makes those gaps discussable — a prototype in front of a client — unavailable exactly when it is most
@@ -139,6 +158,12 @@ prototype in an aesthetic they did not pick, and the `## 8` row is the only plac
 
 **Never honour `design_engine_required: false`.** That setting is retired (adapter § The retired
 waiver) — here it would mean rendering nothing and reporting success.
+
+**A unified SPA build also names a design system, and that halts the same way.** OpenDesign's SPA
+delivery mode takes a design-system argument alongside the specs it spans; a name that is neither in
+OpenDesign's own catalog nor the vault's own tokens halts exactly like an absent engine — nothing
+rendered, no ## 8 row, on any participating spec. See `references/design-engines.md` § SPA Delivery
+Mode for the halt text.
 
 ## Stage 3 — Read the spec, and only the spec
 
@@ -161,6 +186,11 @@ somebody made.
 
 Read nothing from `01-Requirements/_ucs/`, `_brs/`, or `_entities/`. Everything the render needs was
 absorbed into the spec, and a render that opens a UC has started designing.
+
+**On a unified build, read every named spec in full before rendering anything.** Each one's ## 1 Actor
+& Scope table and ## 4 Flows are what the SPA delivery mode's persona switcher and any cross-spec
+handoff are allowed to draw on (§ SPA Delivery Mode) — read them once, up front, the same way a
+single-spec render reads its one spec before Stage 4 starts.
 
 ## Stage 4 — Render
 
@@ -189,6 +219,9 @@ NEVER let the engine   add a screen ## 2 does not carry                → an in
                                                                          quietly agree to
                        write into 04-UIUX/ or 01-Requirements/          → artifacts land in the
                                                                          engine's own place
+                       pull a spec into a unified build nobody named    → Stage 1's rule for a single
+                                                                         target, applied to several at
+                                                                         once: deliberate, not inferred
 ```
 
 ## Stage 5 — Verify the render against the spec
@@ -208,6 +241,10 @@ recorded. Per rendered screen:
 □ no bulk action, export, or saved view the spec does not carry
 □ relationship_model: modelled → what is shown as remembered traces to a ## 7 row; nothing more
 □ an `out of scope` Coverage row was NOT rendered
+□ on a unified build: every route the assembled app can reach resolves inside the one runtime — no
+  dead link out to a spec that was not part of this build
+□ on a unified build: the persona/actor switcher offers only actors a participating spec's own ## 1
+  names, and any cross-spec handoff traces to a ## 4 Flows row in one of the specs it spans
 ```
 
 A mismatch is **not** repaired by editing the spec to match the render — the spec is the specification.
@@ -225,6 +262,10 @@ Append **one** row to the spec's `## 8 Rendered Artifacts` — never edit a prio
 `Against` (the last column) is what makes staleness visible: a spec at v1.4 whose only render was
 against v1.2 has screens nobody has ever looked at. Then `rendered: true`, one `## Changelog` line,
 and:
+
+**On a unified build, repeat this whole step once per participating spec.** Same path, same date, same
+engine, in every one of them — each spec's `Against` column still names its OWN version, since the
+specs a unified build spans rarely sit at the same version as each other.
 
 ```text
 spec:      UX-### <Feature> — status <…>, platform <…>, version <…>
@@ -267,6 +308,14 @@ Each produces a prototype that looks right.
 - **Rendering around an open question.** The gap is what a prototype is most useful for discussing.
   Render what the spec says and carry the question into the report; filling it in makes the prototype
   answer a question nobody asked it.
+- **Assembling a unified build from specs nobody explicitly named for it.** The same failure as
+  rendering every spec because no target was given (above), reached by a different door — a build that
+  quietly pulls in "the related ones" shows a client a feature nobody asked to combine.
+- **Inventing a persona-switch handoff neither participating spec's ## 1 or ## 4 describes.** It reads
+  as a working cross-portal handshake in the prototype and traces to nothing in either spec.
+- **Recording a unified build's ## 8 row on only one participating spec.** The others' render history
+  then shows no render at all, and the next person to open one has no idea it shipped as part of
+  anything.
 
 ## Model
 
@@ -279,5 +328,6 @@ is judgment work — the same reason `/bigin-generate-design`'s workers do not r
   engine catalog with each one's install-check probe and exact install command, which engine is each
   platform's *default* (and why a default is never a constraint), the halt text, the spec→input
   mapping and iteration shape per engine, each engine's own "NEVER let it" list, why
-  `design_engine_required: false` is retired, and what swapping or adding an engine touches. Read at
-  Stage 2 and again at Stage 4.
+  `design_engine_required: false` is retired, and what swapping or adding an engine touches. Also
+  documents OpenDesign's SPA Delivery Mode — the unified, multi-spec, single-file build and its own
+  design-system halt. Read at Stage 2 and again at Stage 4.
