@@ -13,10 +13,11 @@ this file                        WHICH optional METHOD / QUALITY layer is availa
                                  references, and the Stage 3.5 craft pass. Every one is a SILENT
                                  SKIP, or one reported install line, when absent.
 
-design-engines.md                WHICH engine RENDERS a finished spec into artifacts, chosen by the
-(/bigin-render-design)           HUMAN, and the halt when THAT engine is absent. A different skill,
-                                 invoked when somebody actually wants a prototype. This skill never
-                                 reads that file, and no design run needs any engine installed.
+open-design-adapter.md           HOW a finished spec is RENDERED into artifacts: the Open Design
+(/bigin-render-design)           tool contract, the probe, and the halt when Open Design is
+                                 unreachable. A different skill, invoked when somebody actually
+                                 wants a prototype. This skill never reads that file, and no design
+                                 run needs any engine installed.
 ```
 
 They **compose across the two skills**: whatever method layer is in play here decided *what the

@@ -32,6 +32,7 @@ Project-relative, from the repo root.
 | Variable | Path | Notes |
 | :--- | :--- | :--- |
 | `{ux_dir}` | `04-UIUX/` | one spec per feature: `UX-<NNN> <Feature>.md` |
+| `{prototype_dir}` | `04-UIUX/_prototypes/` | rendered prototypes copied back out of Open Design, one folder per render: `<YYYY-MM-DD>-<slug\|multi>/`. Written by `/bigin-render-design` and by nothing else — **no design stage touches it** |
 | `{design_system_dir}` | `04-UIUX/_design-system/` | **one, vault-wide**, shared by every feature |
 | `{tokens_file}` | `04-UIUX/_design-system/design-tokens.md` | the token file |
 | `{components_dir}` | `04-UIUX/_design-system/components/` | one `<component>.md` per shared component |
@@ -192,18 +193,27 @@ Turning that specification into something a client can look at is `/bigin-render
 human who has decided they want a prototype:
 
 ```text
-/bigin-render-design [engine] [feature slug | UX-###]
+/bigin-render-design [feature slug | UX-### ...] [--design-system <id>] [--project <name|id>]
 
-the ENGINE is the human's choice, not the platform's.  The platform supplies a DEFAULT and nothing
-more: a web project defaults to one engine and a mobile project to another, and a BA who wants the
-other one for either platform says so and gets it. That was the point of splitting the step out.
-absent engine  → that skill halts, with the install command. Nothing upstream ever does
+the ENGINE is Open Design, on every platform. `platform:` decides the SHELL a render builds — a
+sidebar/nav-bar at desktop width, or a 390px phone frame with a bottom tab bar — never which tool
+builds it.
+FOUR THINGS ARE THE HUMAN'S, and that skill asks about each it cannot already resolve:
+    which features            never "everything"
+    which Open Design project share an existing one, or create a new one for this vault
+    which DESIGN SYSTEM       from Open Design's own catalog, or this vault's own tokens. Picked
+                              quietly, it replaces the client's brand with a stranger's — which is
+                              why it is asked rather than defaulted. DESIGN-PRINCIPLES still wins
+    which model               from what Open Design offers, never a hardcoded id
+Open Design unreachable  → that skill retries, then hands over the built prompts to paste in by
+                           hand. Nothing upstream ever halts
 ```
 
-**Why this is not part of the design run.** Which tool, which feature, which platform, and when are
+**Why this is not part of the design run.** Which features, which design system, and when are
 timing-and-taste decisions belonging to whoever is going to sit with the client. Binding them to an
-unattended pipeline forced one engine per platform, re-rendered features nobody asked about, and — the
-expensive part — let a missing prototype tool stop a stage that reads use cases and writes markdown.
+unattended pipeline re-rendered features nobody asked about, picked a brand nobody was asked about,
+and — the expensive part — let a missing prototype tool stop a stage that reads use cases and writes
+markdown.
 
 **What replaced it as the safeguard.** The failure the old halt guarded against was a design nobody
 can look at. What guards against it now is `4-verify`: the run proves the spec is complete enough to

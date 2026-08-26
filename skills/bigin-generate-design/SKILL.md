@@ -526,9 +526,10 @@ work — the same reason `/bigin-transform-signal` fans out on the default model
   onto `## 7` and `## 3` with one clipped as out of scope, a worked example, and the five recurring
   requirement gaps. Read at Stage 1, by the orchestrator, when the skill is installed. A worker reads
   `3-screens.md` Part 4b instead — it cannot reach this directory.
-- **`/bigin-render-design`'s own `references/design-engines.md`** — where the engine catalog, the
-  install commands, the halt text, and the spec→input mappings moved. **This skill never reads it**,
-  and that is the point: a design run has no engine to resolve.
+- **`/bigin-render-design`'s own `references/open-design-adapter.md`** — where the Open Design tool
+  contract, the probe, the install command, and the halt text live, and
+  `references/prompt-contract.md` where the spec→prompt mapping moved. **This skill never reads
+  either**, and that is the point: a design run has no engine to resolve.
 - **`references/agent-dispatch.md`** — the per-feature worker prompt, its report contract, and the
   wave-verification checklist. Read at Stage 3, before fanning out. It also names the dispatch
   threshold for `agents/ux-brief-assembler.md` — the read-only subagent that combines a feature's

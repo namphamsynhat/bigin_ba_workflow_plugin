@@ -33,10 +33,10 @@ exists to prevent: whichever block the BA pastes, the others silently become wro
 
 **This stage does not render, and this file names no design engine.** The blocks are the durable,
 tool-portable record; turning one into something a client can look at is `/bigin-render-design`, a
-separate skill a human invokes when they want it, on whichever engine they choose. So nothing here
-halts for a missing tool, nothing here checks an install, and no engine has a name in this file — its
-catalog, install commands, and brief→input mappings live in that skill's own
-`references/design-engines.md`. A stage guide that hardcoded a tool name is the thing that makes the
+separate skill a human invokes when they want it. So nothing here halts for a missing tool, nothing
+here checks an install, and no engine has a name in this file — the engine's tool contract, install
+command, and the spec→prompt mapping live in that skill's own `references/open-design-adapter.md` and
+`references/prompt-contract.md`. A stage guide that hardcoded a tool name is the thing that makes the
 next swap expensive.
 
 **Which is exactly why the blocks are written every run, unconditionally.** Nobody may ever render

@@ -1,6 +1,9 @@
 # Enterprise fidelity — the bar a render has to clear
 
-Read by `render-ui-designer` (in full, before rendering) and by `render-ui-linter` (as its checklist).
+Quoted **in full** into every prompt Open Design is sent (`prompt-contract.md` § A feature prompt,
+section 8), and used as the verification checklist by `render-screen-worker` and
+`render-prototype-assembler` when they read the result back.
+
 The goal of a render is a prototype a client mistakes for the shipped product. Everything below is
 what separates that from a wireframe with colour.
 
@@ -61,7 +64,8 @@ current entry marked and its ancestors open. A page header carries the screen ti
 primary action; secondary actions sit beside it, visually subordinate. Where the nav map nests three
 or more deep, a breadcrumb renders the real dot-path.
 
-See `render-pipeline.md` § The navigation contract — the map is the only source, and none of this is
+See `prompt-contract.md` § A feature prompt — the map goes into the prompt verbatim as section 4, it
+is the only source, and none of this is
 the designer's call.
 
 ### 5 · Realistic data, at the real scale
@@ -147,7 +151,7 @@ STYLE       raw hex in the artifact · a font family the token system does not n
             picked to look right rather than named · an icon set the design system does not carry
 BEHAVIOUR   a dead link · a control that does nothing on click · alert() · a filter that does not
             filter · a sort that does not sort · a state reachable only by editing the source
-TRACE       any of /(UC|BR|EN|UX)-\d/ in visible copy — see render-pipeline.md § The traceability
+TRACE       any of /(UC|BR|EN|UX)-\d/ in visible copy — see prompt-contract.md § The one exception
             contract. This one is deterministic and has its own script
 ```
 

@@ -73,28 +73,38 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |                  tool can stop it. It ends at a spec proven complete enough to render
         |                  cold, on any engine, months later.
         |
-/bigin-render-design      [Load, on request] a finished UX-### -> prototype artifacts, on the
-        |  (a human asks)  engine the HUMAN chooses. `/bigin-render-design [engine] [slug]` --
-        |                  the platform supplies a default and nothing more, so a BA who wants
-        |                  OpenDesign for a web product, or frontend-design for a phone product,
-        |                  says so and gets it. Re-designs nothing, WRITES no requirement, and
-        |                  records only pointers (the spec's ## 8 Rendered Artifacts). This is the
-        |                  one skill that still halts for a missing external tool -- correctly, at
-        |                  the moment somebody actually wants a prototype. NEVER run unasked, and
-        |                  never across every spec at once.
-        |                  Renders through a THREE-ROLE PIPELINE: (a) render-data-extractor reads
-        |                  the UCs/BRs/ENTITIES.md for DATA ONLY -- field types, validation
-        |                  predicates, enums, state keys, real volume numbers -- filtered by the
-        |                  spec's own screen inventory; (b) render-ui-designer, which never opens
-        |                  a requirement file, builds the artifacts from the spec + that data
-        |                  model + navigation-map.md, with every requirement id confined to data-*
-        |                  attributes and never in visible copy; (c) render-ui-linter gates it --
-        |                  a /(UC|BR|EN|UX)-\d/ leak scan, token-only styling, computed WCAG AA
-        |                  contrast, enterprise density, IA against the nav map, reachable states,
-        |                  real scale, live routes. The split is a SAFETY property, not just a
-        |                  context budget: the agent that designs the UI never sees a requirement
-        |                  file, so it still cannot re-design from one. Aim: output that reads as
-        |                  finished production software, not a wireframe with colour.
+/bigin-render-design      [Load, on request] finished UX-###s -> ONE interactive prototype, on
+        |  (a human asks)  Open Design. `/bigin-render-design [slug|UX-### ...]
+        |                  [--design-system <id>] [--project <name|id>]`. Re-designs nothing,
+        |                  WRITES no requirement, and records only pointers (the spec's ## 8
+        |                  Rendered Artifacts). NEVER run unasked, and never across every spec
+        |                  at once.
+        |                  MODULAR, and it ASKS before it spends anything. Step 0 resolves four
+        |                  things and asks about any it cannot: is Open Design connected; share
+        |                  an existing Open Design project or create a new one for this vault;
+        |                  WHICH DESIGN SYSTEM (listed from Open Design's own catalog resources
+        |                  plus the vault's own tokens -- never guessed, and DESIGN-PRINCIPLES
+        |                  still outranks whichever is picked); and which model, from
+        |                  list_agents rather than a hardcoded id. Then: Step 1 scopes the
+        |                  features; Step 2 builds ONE self-contained prompt per feature (UX
+        |                  spec + UC/BR/ENTITIES data + token VALUES + nav map + the fidelity
+        |                  bar, every vault id expanded into words); Step 3 fans out one
+        |                  start_run per feature into that ONE shared project, each watched by
+        |                  its own render-screen-worker across the 5-30 minutes a run takes,
+        |                  which reads the artifacts back and checks BOTH halves of the
+        |                  traceability contract -- no /(UC|BR|EN|UX)-\d/ in visible copy, and
+        |                  data-ux/data-screen actually present; Step 4 barriers on all of them
+        |                  and dispatches render-prototype-assembler for one final start_run
+        |                  that wires every screen into one self-contained index.html from
+        |                  navigation-map.md's ## Structure, then proves every nav entry,
+        |                  control target, and route resolves; Step 5 COPIES EVERYTHING BACK to
+        |                  04-UIUX/_prototypes/<date>-<slug>/ with a RENDER.md manifest, because
+        |                  an engine is a dependency that can be uninstalled and the vault is
+        |                  what has to still have the prototype next year.
+        |                  Open Design unreachable -> retries, then hands over the built prompts
+        |                  to paste in by hand. A missing engine never costs this pipeline its
+        |                  output. Aim: output that reads as finished production software, not a
+        |                  wireframe with colour.
         |
 /bigin-generate-prd       [Load] every approved UC of a feature -> one PRD-### per feature:
         |                  business capabilities, business flows (with the screens each step
@@ -166,6 +176,11 @@ _bigin/templates/                 blank scaffolds for every artifact type, same 
                                   prompt blocks -- plus the shared append-only design system under
                                   04-UIUX/_design-system/. Its ## 8 Rendered Artifacts holds
                                   pointers, written only by /bigin-render-design
+04-UIUX/_prototypes/<run>/       the rendered prototype, COPIED BACK out of Open Design by
+                                  /bigin-render-design: index.html, screens/, assets/, and a
+                                  RENDER.md manifest naming the project, design system, model,
+                                  and each feature's run id. Written by that skill and nothing
+                                  else
 02-PRD/PRD-<NNN> <Feature>.md    one PRD per feature, from /bigin-generate-prd: the feature's
                                   approved UCs as business capabilities and business flows, its
                                   rules and information, the UX-### design, pending scope, and open
@@ -313,7 +328,7 @@ routed for you, or dispatch the `bigin-ba` agent to work one feature unattended.
 vault to decide what runs next, continue automatically where the next stage needs no decision, and stop
 at the ones that do — `/approve-uc`'s confirmation, `/bigin-new-project`'s engagement config, and
 `/bigin-render-design`, which is never routed to at all: a prototype is something a human asks for, on
-the engine and at the moment they choose.
+the Open Design project, design system, and at the moment they choose.
 
 **`/bigin-run` is the home for any run that fans out.** `/extract-signal` dispatches a named worker per
 note, and `/bigin-transform-signal`, `/bigin-generate-design`, and `/bigin-generate-prd` each dispatch a

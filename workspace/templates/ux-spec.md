@@ -283,10 +283,18 @@ in makes this spec a second, drifting copy of something else, stale the next tim
 
 | Rendered | Engine | Platform | Screens | Artifacts at | Against |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `<YYYY-MM-DD>` | `<engine>` | `<web \| mobile>` | `<N> of <N>` | `<path / project id>` | `UX-<NNN>@<version>` |
+| `<YYYY-MM-DD>` | `open-design (<design system id>)` | `<web \| mobile>` | `<N> of <N>` | `04-UIUX/_prototypes/<run>/ · <OD project id>` | `UX-<NNN>@<version>` |
+
+The `Engine` cell carries the DESIGN SYSTEM in parentheses because that is the fact a reader needs
+to know whether two renders are comparable — same screens rendered against two different brands look
+like two different products. `Artifacts at` names the COPIED-BACK folder first and the Open Design
+project id second: the folder is the durable artifact, the project id is where it came from. Never
+record a `previewUrl` here — it dies when Open Design restarts.
 
 `Against` is what makes a render's staleness visible: a spec at v1.4 whose only render was against
-v1.2 has screens nobody has ever looked at. Re-rendering appends a row; it never edits one. -->
+v1.2 has screens nobody has ever looked at. Re-rendering appends a row; it never edits one. A build
+spanning several specs writes the SAME row to every participating spec, each with its own
+`Against`. -->
 
 <!-- HOW MANY BLOCKS IS A PLATFORM FACT (design-conventions.md § Prototype prompt; Stage 6 check 8):
 
