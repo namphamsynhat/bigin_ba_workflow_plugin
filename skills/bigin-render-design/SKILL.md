@@ -1,6 +1,6 @@
 ---
 name: bigin-render-design
-description: This skill should be used when the user asks to "render the design", "render the prototype", "build the prototype", "make me a clickable prototype", "run open design", "render this with open design", "render it with frontend-design", "turn the UX spec into screens I can show the client", "prototype UX-###", "package this as a single-page app", "build one unified prototype across these roles", "give me one file for Netlify", or names a design engine to run against a finished UX spec. Renders one or more already-written UX specs into prototype artifacts on the engine the human chooses — including, when explicitly asked, a single self-contained SPA build spanning several specs — never re-designing, never touching a requirement, and recording only pointers to what it produced.
+description: This skill should be used when the user asks to "render the design", "render the prototype", "build the prototype", "make me a clickable prototype", "run open design", "render this with open design", "render it with frontend-design", "turn the UX spec into screens I can show the client", "prototype UX-###", "package this as a single-page app", "build one unified prototype across these roles", "give me one file for Netlify", "make it look like real production software", "make the prototype high-fidelity", "the prototype has UC ids all over it", or names a design engine to run against a finished UX spec. Renders one or more already-written UX specs into enterprise-grade prototype artifacts on the engine the human chooses — through a three-role subagent pipeline (extract the data model, design the UI, lint and sanitize it), with navigation built verbatim from the canonical navigation map and every requirement id confined to `data-*` attributes — including, when explicitly asked, a single self-contained SPA build spanning several specs. Never re-designs, never touches a requirement, and records only pointers to what it produced.
 argument-hint: "[engine] [feature slug | UX-###, or several for a unified SPA build] [design system]"
 disable-model-invocation: true
 ---
@@ -69,7 +69,8 @@ want of input.
 | `{design_system_dir}` | `04-UIUX/_design-system/` | `design-tokens.md` + `components/` + `navigation-map.md` — **read-only here** |
 | `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | **read-only** — client-stated preferences, and they outrank any engine's taste |
 | `{hub_dir}` | `01-Requirements/_features/<slug>.md` | read `uiux:` to find a slug's spec. **Not written** — a render changes no requirement bookkeeping |
-| `{uc_dir}` · `{br_dir}` · `{entity_dir}` | `01-Requirements/_ucs/` · `_brs/` · `_entities/` | **never read, never written.** The spec already absorbed them; re-reading them here is how a render starts re-designing |
+| `{entities_file}` | `01-Requirements/ENTITIES.md` | **read-only, by Stage 4 Part 1 alone.** The entity register — field lists, types, enum values, cardinalities |
+| `{uc_dir}` · `{br_dir}` · `{entity_dir}` | `01-Requirements/_ucs/` · `_brs/` · `_entities/` | **read-only, by Stage 4 Part 1 alone, for DATA ONLY** — predicates, field types, state keys, real volume numbers, filtered by the spec's own screen inventory. **Never written.** No other stage and no other agent opens them: the agent that designs the UI never sees a requirement file, which is what keeps a render from re-designing (§ Stage 4) |
 
 Missing `_bigin/conventions/` → stop and say `/bigin-new-project` must run first. Then
 `_bigin/conventions/conventions.md` § Workspace version check, as every skill does: behind → warn and
@@ -103,12 +104,15 @@ the spec, and the spec is `/bigin-generate-design`'s: report it and stop renderi
 ## Execution order
 
 ```text
-1  resolve   which spec(s), which engine, which platform        (§ Stage 1)
-2  check     is that engine installed? absent → HALT            [references/design-engines.md]
-3  read      the spec, the design system, the nav ## Structure   (§ Stage 3)
-4  render    map the spec onto the engine's inputs, iterate      [references/design-engines.md]
-5  verify    what came back IS what the spec says                (§ Stage 5)
-6  record    append ## 8, flip rendered:, changelog, report      (§ Stage 6)
+1  resolve   which spec(s), which engine, which platform          (§ Stage 1)
+2  check     is that engine installed? absent → HALT              [references/design-engines.md]
+3  read      the spec, the design system, the nav ## Structure     (§ Stage 3)
+4  render    the THREE-ROLE PIPELINE                               (§ Stage 4)
+             4a extract   UCs · BRs · ENTITIES.md → a Data Model & Logic Spec
+             4b design    spec + data model + nav map → enterprise-grade artifacts
+             4c lint      leak scan · tokens · contrast · density · IA · states · scale
+5  verify    what came back IS what the spec says                  (§ Stage 5)
+6  record    append ## 8, flip rendered:, changelog, report        (§ Stage 6)
 ```
 
 ## Stage 1 — Resolve the spec, the engine, and the platform
@@ -184,19 +188,132 @@ Mode for the halt text.
 render, with the reason already written down. An engine that helpfully adds it back undoes a decision
 somebody made.
 
-Read nothing from `01-Requirements/_ucs/`, `_brs/`, or `_entities/`. Everything the render needs was
-absorbed into the spec, and a render that opens a UC has started designing.
+**The requirement files are read at Stage 4 Part 1, by one agent, for data only** — never here, and
+never by the agent that writes the UI. The spec is what says *what* the screens are; the extractor
+supplies only the *data underneath* them (field types, validation predicates, enum vocabularies, state
+keys, real volume numbers), filtered by this spec's own `## 2` and `## 3`. See § Stage 4.
 
 **On a unified build, read every named spec in full before rendering anything.** Each one's ## 1 Actor
 & Scope table and ## 4 Flows are what the SPA delivery mode's persona switcher and any cross-spec
 handoff are allowed to draw on (§ SPA Delivery Mode) — read them once, up front, the same way a
 single-spec render reads its one spec before Stage 4 starts.
 
-## Stage 4 — Render
+## Stage 4 — Render, as three roles
+
+One agent cannot hold a UC set, every BR behind it, every entity's field list, the spec, the design
+system, the nav map, **and** a growing HTML artifact — and the part that gets thin when it runs out of
+room is always the last screens and the fidelity checks. So the render runs as three roles with three
+contracts, defined in `references/render-pipeline.md`:
+
+```text
+4a  render-data-extractor    READ-ONLY over 01-Requirements/ — the ONLY agent that opens a UC
+    UCs · BRs · ENTITIES.md  →  field lists, predicates, enums, state keys, real volume numbers
+                             →  a Data Model & Logic Spec, in the session scratchpad
+
+4b  render-ui-designer       NEVER opens 01-Requirements/
+    + the UX spec · navigation-map.md · tokens · DESIGN-PRINCIPLES
+                             →  enterprise-grade artifacts, human-grade copy, ids in data-* only
+
+4c  render-ui-linter         the gate — verifies, sanitizes narrowly, never designs
+    leak scan /(UC|BR|EN|UX)-\d/ · token-only styling · contrast · density · IA vs the nav map ·
+    states reachable · real scale · live routes      →  PASS | RE-RENDER | BLOCKED
+```
+
+**Run the pipeline as agents when it earns the dispatch**, and inline otherwise — the same threshold
+discipline the design side uses:
+
+```text
+ALWAYS DISPATCH   a unified SPA build spanning 2+ specs  ·  a spec with 3+ screens, or citing 2+
+                  entities. One extractor per spec; ONE designer even on a unified build (the shared
+                  shell and persona switcher are one artifact); one linter per artifact set
+INLINE            below that, play all three roles yourself, in this order, under these same
+                  contracts. A one-screen render does not need three dispatches
+```
+
+Running inline is not a relaxation. The leak scan still runs, the fidelity bar still applies, and the
+nav map is still the only source of navigation.
+
+**Before dispatching, resolve the plugin's own paths and pass them in — every dispatch.** The two
+references and the two scripts live in the plugin, not the vault, and `${CLAUDE_PLUGIN_ROOT}` **only
+resolves in the orchestrator**: a subagent that tries it gets a literal string and reads nothing. So
+resolve them here, to absolute paths, and put them in each agent's prompt:
+
+```text
+4a needs   render-pipeline.md
+4b needs   render-pipeline.md · enterprise-fidelity.md · design-engines.md ·
+           scan-traceability-leaks.sh
+4c needs   render-pipeline.md · enterprise-fidelity.md · scan-traceability-leaks.sh ·
+           check-contrast.py
+```
+
+An agent told to read a rulebook it cannot reach does not stop — it reconstructs the checklist from
+memory and passes everything. Each agent is instructed to halt on a missing path for exactly that
+reason; supplying the paths is what makes that instruction unnecessary.
+
+Also pass, per dispatch: the spec path(s), the resolved **platform**, the **engine** (already proven
+installed at Stage 2 — no agent re-checks it and none may fall back), the scratchpad path for the Data
+Model & Logic Spec, `{tokens_file}`, `{nav_map_file}`, `{design_principles_file}`, and the artifact
+output location.
 
 The per-engine brief→input mapping, the iteration shape for an engine that renders one screen per
 call, and each engine's own "NEVER let it" list are all in `references/design-engines.md`. Follow that
-file and improvise nothing.
+file and improvise nothing about an engine's mechanics.
+
+### The three rules the pipeline exists to enforce
+
+**A · Traceability and visible copy are strictly separated.** A rendered screen carries its provenance
+so it can be traced back, and carries none of it where a human can read it.
+
+```text
+GOES IN     data-ux · data-screen · data-uc · data-uc-step · data-br · data-en · data-field ·
+            data-state · data-nav-id
+NEVER IN    a text node · aria-label · title · alt · placeholder · value · an <option> body ·
+            a table header · a legend · a tooltip · CSS content: · a user-visible URL fragment
+```
+
+`Pending approval (BR-014)` is the most common way a prototype announces itself as a document. Write
+`<span class="badge" data-br="BR-014">Pending approval</span>`. `aria-label` and `title` are
+**visible** — a screen reader speaks them, a browser renders them on hover — so they are not a
+loophole. Full vocabulary in `references/render-pipeline.md` § The traceability contract;
+`scripts/scan-traceability-leaks.sh` is the deterministic check.
+
+**B · `navigation-map.md` is the single source of truth for navigation.** Not the spec, not the
+engine's template, not what the screens seem to imply. Labels verbatim, dot-path `id` as the tree,
+`Order` as sibling order, `Points to` as the route, `Role(s)` as visibility, a `retired` row never
+rendered, a phone shell capped at five top-level entries. The shell is built **once** and is identical
+on every screen. A nav item the render wants and the map does not carry is **reported, never added**:
+it is a `/bigin-generate-design` gap. Full contract in `references/render-pipeline.md` § The
+navigation contract.
+
+**C · The roles stay split, and that is a safety property, not just a context budget.** The old rule
+was "a render never opens a UC", because a render that reads requirements starts re-designing from
+them. Splitting the roles keeps that rule exactly where it counts:
+
+```text
+ONE agent reads the requirements   mechanically, for data only, filtered by the spec's own ## 2/## 3
+the agent that DESIGNS never does  so it still cannot re-design from a source it never sees
+```
+
+What makes 4a safe is not its restraint — it is the **filter**. Everything it finds lands in one of
+three buckets, and only the first is ever rendered:
+
+```text
+USED     the spec names it, the data behind it was found        → the data model
+UNUSED   found in an EN/BR, the spec names nothing for it       → reported. NEVER rendered
+GAP      the spec names it, nothing supplies the data behind it → BLOCKING. Never filled, never
+                                                                  invented — it is a spec hole
+```
+
+### The fidelity bar
+
+`references/enterprise-fidelity.md` — read in full by 4b before rendering, walked item-by-item by 4c —
+is what makes the output read as shipped software rather than a wireframe with colour: token-only
+styling, computed WCAG AA contrast, enterprise density, the always-present shell, realistic data at
+the real scale, every named state actually reachable, production chrome, typography discipline,
+restraint, and cross-screen consistency. Plus § The tells, which is what 4c greps for.
+
+**That file raises the finish. It never widens the scope.** Where it and a `DESIGN-PRINCIPLES` row
+disagree, the row wins: it is ground 3 and the file is ground 2b.
 
 ```text
 NEVER let the engine   add a screen ## 2 does not carry                → an invented screen arrives
@@ -217,6 +334,11 @@ NEVER let the engine   add a screen ## 2 does not carry                → an in
                        promise a memory ## 7 does not carry             → D7, the most expensive
                                                                          thing a prototype can
                                                                          quietly agree to
+                       print a UC/BR/EN/UX id into visible copy         → rule A. It reaches a client
+                                                                         reading as a document, and
+                                                                         it is the most common leak
+                       invent a nav entry the map does not carry        → rule B. The map is the only
+                                                                         source of navigation
                        write into 04-UIUX/ or 01-Requirements/          → artifacts land in the
                                                                          engine's own place
                        pull a spec into a unified build nobody named    → Stage 1's rule for a single
@@ -224,10 +346,27 @@ NEVER let the engine   add a screen ## 2 does not carry                → an in
                                                                          once: deliberate, not inferred
 ```
 
+### The repair loop, and when it stops
+
+`verdict: RE-RENDER` sends a finding list back to 4b, which re-renders the named screens only — then
+the **full** scan runs again, because a fix that moved an id into `data-*` on one screen commonly left
+it on three.
+
+**Two round trips, then stop.** A finding surviving two designer→linter cycles is not a render problem
+— it is a spec problem or an engine limitation. Report the screen un-rendered, with the finding, and
+let a human decide. A third automated attempt produces a screen that satisfies the linter and nobody
+else.
+
+**No `## 8` row is written for a screen that did not reach `verdict: PASS`.**
+
 ## Stage 5 — Verify the render against the spec
 
-The engine is an external tool with its own opinions, so what came back is checked before it is
-recorded. Per rendered screen:
+Stage 4c already ran the mechanical gate — the leak scan, the token scan, the computed contrast, the
+density and IA checks. **This stage verifies the render against the SPEC**, which is a different
+question and the one only the orchestrator can answer, because it is the only role holding both the
+spec and the linter's verdict. Start by taking 4c's `verdict:` as a precondition, not as a conclusion:
+anything short of `PASS` means those screens are un-rendered, whatever else checks out. Per rendered
+screen:
 
 ```text
 □ it is a screen ## 2 Screen Inventory names — and no screen ## 2 does not name was produced
@@ -241,6 +380,12 @@ recorded. Per rendered screen:
 □ no bulk action, export, or saved view the spec does not carry
 □ relationship_model: modelled → what is shown as remembered traces to a ## 7 row; nothing more
 □ an `out of scope` Coverage row was NOT rendered
+□ the linter's verdict for this screen is PASS — a RE-RENDER or BLOCKED screen is un-rendered
+□ scan-traceability-leaks.sh exits clean over the artifacts, re-run here rather than taken on trust
+□ the shell matches {nav_map_file} ## Structure: every label verbatim, every dot-path nested as the
+  map nests it, no retired row rendered, no menu entry the map does not carry
+□ the extractor reported no unresolved `gaps:` for this screen — a screen rendered over a blocking
+  gap has a field nobody can explain
 □ on a unified build: every route the assembled app can reach resolves inside the one runtime — no
   dead link out to a spec that was not part of this build
 □ on a unified build: the persona/actor switcher offers only actors a participating spec's own ## 1
@@ -273,10 +418,16 @@ engine:    <name> (chosen | defaulted for platform <…>)
 rendered:  <N> of <N> screen(s), <N> state(s) — artifacts at <path>
             (pointers only — nothing rendered was copied into the spec)
 un-rendered: <screen> — <why>, or "none"
+fidelity:  linter verdict PASS — leaks: clean · tokens: token-only · contrast: AA ·
+           IA: matches navigation-map.md · states: <N> of <N> reachable · scale: at the real number
+           <or: the items that did not pass, one line each, and which screens they cost>
+repairs:   <N> designer→linter cycle(s) — <what the linter sent back>, or "none needed"
+data gaps: <a field the spec shows that no entity carries> — reported, not filled (or "none")
 stale:     this render is against v<x>; the spec is at v<y> — <N> screen(s) changed since | current
 open:      <N> unanswered question(s) on this spec, carried into the review: <the question>
 next:      show it · re-render after /bigin-generate-design updates the spec ·
-           requirement gaps → /bigin-transform-signal
+           design gaps (a token, a nav entry, a state) → /bigin-generate-design ·
+           requirement gaps (a field nothing carries) → /bigin-transform-signal
 ```
 
 ## Failure modes
@@ -316,14 +467,57 @@ Each produces a prototype that looks right.
 - **Recording a unified build's ## 8 row on only one participating spec.** The others' render history
   then shows no render at all, and the next person to open one has no idea it shipped as part of
   anything.
+- **A requirement id in visible copy.** `Pending approval (BR-014)`, a `UC-031` in an `aria-label`, an
+  `EN-004` in a column header. The prototype stops reading as software and starts reading as a
+  document about software — and it is the client, not the BA, who notices. Rule A exists because this
+  is the most common leak there is, and `scripts/scan-traceability-leaks.sh` exists because catching
+  it by reading is unreliable.
+- **Letting the extractor's `## Unused` findings into the render.** An entity field the spec names no
+  element for is not an oversight to helpfully fix — it is a decision somebody made, and rendering it
+  re-designs the product from the data side, which is much harder to spot than re-designing it from
+  the screen side.
+- **Filling a `GAP` instead of reporting it.** The spec shows a field, no entity carries it, and
+  somebody invents a type so the form validates. The prototype then validates a field that does not
+  exist, and the review confirms behaviour nothing specifies.
+- **The designer opening a UC "just to check something".** It is one read, it is always reasonable,
+  and it puts the one agent that writes UI back in exactly the position the split was built to
+  prevent. Everything it needs was extracted for it.
+- **Building navigation from the screens instead of the map, or letting the shell differ between
+  screens.** The screens imply a menu; the map *is* the menu — grounded, ordered, role-gated, shared
+  with every other feature. Both failures are invisible screen by screen and obvious across the set.
+- **Three sample rows on a screen the spec says holds ten thousand.** The client reviews a table that
+  does not exist: no pagination, no sort under load, no truncation, no realistic value spread. The
+  real scale *is* the review, which is why the spec was made to name a real number.
+- **The linter fixing something a reviewer might have an opinion about.** Moving an id into `data-*`
+  is invisible and safe. Rewording copy, adding a control, or changing a token value to make contrast
+  pass is a redesign that turns the checklist green — worse than a failure, because it is silent.
+- **Reporting `fidelity: all pass` without walking the checklist.** It reads exactly like a real pass,
+  which is why Stage 5 checks that claim hardest.
+- **A third repair cycle.** Two designer→linter round trips exhaust what automation can fix. Past
+  that, the render converges on something that satisfies the linter and nobody else, and the real
+  problem — a spec hole or an engine limitation — never reaches a human.
 
 ## Model
 
-Session default. Mapping a spec onto an engine's inputs and checking what came back against the spec
-is judgment work — the same reason `/bigin-generate-design`'s workers do not run on `haiku`.
+Session default, for the orchestrator and for all three pipeline agents (`model: inherit`). Mapping a
+spec onto an engine's inputs, writing copy a person would have written, and judging density and
+contrast are all judgment work — the same reason `/bigin-generate-design`'s workers do not run on
+`haiku`. The linter looks mechanical and is not: the regex scan is, but "does this read as a finished
+product" is the part that matters, and it is the part a cheaper model skips.
 
 ## Additional resources
 
+### Reference files
+
+- **`references/render-pipeline.md`** — the three-role contract: why the split exists and when it
+  earns its dispatch, the exact shape of the Data Model & Logic Spec (and the USED/UNUSED/GAP filter
+  that makes it safe), the full `data-*` traceability vocabulary with every position an id may not
+  appear in, the navigation contract, and the handoff/repair loop. Read at Stage 4 by every role.
+- **`references/enterprise-fidelity.md`** — the bar: ten items covering token-only styling, computed
+  WCAG AA contrast, enterprise density, the always-present shell, realistic data at real scale,
+  reachable states, production chrome, typography discipline, restraint, and cross-screen consistency
+  — plus § The tells (what marks a prototype as a prototype) and § What this file may never be used to
+  justify. Read in full by 4b before rendering, item-by-item by 4c.
 - **`references/design-engines.md`** — the adapter, and the only place an engine has a name: the
   engine catalog with each one's install-check probe and exact install command, which engine is each
   platform's *default* (and why a default is never a constraint), the halt text, the spec→input
@@ -331,3 +525,24 @@ is judgment work — the same reason `/bigin-generate-design`'s workers do not r
   `design_engine_required: false` is retired, and what swapping or adding an engine touches. Also
   documents OpenDesign's SPA Delivery Mode — the unified, multi-spec, single-file build and its own
   design-system halt. Read at Stage 2 and again at Stage 4.
+
+### Scripts
+
+- **`scripts/scan-traceability-leaks.sh <path>…`** — rule A's deterministic gate. Scans rendered
+  artifacts for `/(UC|BR|EN|UX)-\d/` in every visible position (text nodes, `aria-label`, `title`,
+  `alt`, `placeholder`, `value`, `<option>` bodies, CSS `content:`), ignoring `data-*` where those ids
+  belong. Exits `0` clean, `1` with each leak as `file:line | position | id | context`, `2` if it
+  could not run. Run by 4b before reporting and by 4c as its first act.
+- **`scripts/check-contrast.py`** — WCAG 2.1 ratios, computed. `<fg> <bg> …` for pairs,
+  `--tokens <design-tokens.md>` to sweep every colour token against every surface token, or
+  `--pairs <file>` for `name fg bg [large|ui]` lines. Exits non-zero on a failure. Contrast is a
+  formula; a model asked to judge it by eye is wrong on exactly the muted-on-subtle pairings a dense
+  enterprise screen is full of.
+
+### Agents
+
+- **`agents/render-data-extractor.md`** — Stage 4a. Read-only over `01-Requirements/`; the only agent
+  in a render permitted to open a UC.
+- **`agents/render-ui-designer.md`** — Stage 4b. Never opens `01-Requirements/`; inherits the full
+  tool set because the engine may be an MCP server, a skill, or a CLI.
+- **`agents/render-ui-linter.md`** — Stage 4c. Verifies, sanitizes narrowly, never designs.

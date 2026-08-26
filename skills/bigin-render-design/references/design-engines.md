@@ -11,6 +11,12 @@ THIS skill + an ENGINE   renders the ARTIFACT       the actual clickable/visual 
 the PROMPT BLOCKS        are the durable record     self-contained, tool-portable, outlive any engine
 ```
 
+**This file governs the ENGINE only.** *How* a render is produced — the three-role subagent pipeline,
+the `data-*` traceability contract, the navigation map as the single source of navigation, and the
+enterprise-fidelity bar — is in `render-pipeline.md` and `enterprise-fidelity.md`, and applies to
+**every** engine documented here. An engine's own "NEVER let it" list below is additional to those,
+never instead of them.
+
 **This file is the whole seam.** Swapping an engine — a better mobile renderer ships, the web one is
 deprecated, a client mandates their own tool — is an edit to *this file only*. No design stage guide
 names an engine; every one of them says "the render step" and stops there. Keep it that way: a stage

@@ -82,6 +82,19 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |                  one skill that still halts for a missing external tool -- correctly, at
         |                  the moment somebody actually wants a prototype. NEVER run unasked, and
         |                  never across every spec at once.
+        |                  Renders through a THREE-ROLE PIPELINE: (a) render-data-extractor reads
+        |                  the UCs/BRs/ENTITIES.md for DATA ONLY -- field types, validation
+        |                  predicates, enums, state keys, real volume numbers -- filtered by the
+        |                  spec's own screen inventory; (b) render-ui-designer, which never opens
+        |                  a requirement file, builds the artifacts from the spec + that data
+        |                  model + navigation-map.md, with every requirement id confined to data-*
+        |                  attributes and never in visible copy; (c) render-ui-linter gates it --
+        |                  a /(UC|BR|EN|UX)-\d/ leak scan, token-only styling, computed WCAG AA
+        |                  contrast, enterprise density, IA against the nav map, reachable states,
+        |                  real scale, live routes. The split is a SAFETY property, not just a
+        |                  context budget: the agent that designs the UI never sees a requirement
+        |                  file, so it still cannot re-design from one. Aim: output that reads as
+        |                  finished production software, not a wireframe with colour.
         |
 /bigin-generate-prd       [Load] every approved UC of a feature -> one PRD-### per feature:
         |                  business capabilities, business flows (with the screens each step
