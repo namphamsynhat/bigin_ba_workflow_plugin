@@ -77,7 +77,7 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |  (a human asks)  engine the HUMAN chooses. `/bigin-render-design [engine] [slug]` --
         |                  the platform supplies a default and nothing more, so a BA who wants
         |                  OpenDesign for a web product, or frontend-design for a phone product,
-        |                  says so and gets it. Re-designs nothing, touches no requirement, and
+        |                  says so and gets it. Re-designs nothing, WRITES no requirement, and
         |                  records only pointers (the spec's ## 8 Rendered Artifacts). This is the
         |                  one skill that still halts for a missing external tool -- correctly, at
         |                  the moment somebody actually wants a prototype. NEVER run unasked, and

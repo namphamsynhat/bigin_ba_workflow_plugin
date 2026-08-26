@@ -178,6 +178,8 @@ the app itself  the desktop app ships via DMG / Homebrew cask; the MCP server co
 **Match the MCP server row by substring, case-insensitively, never by exact name** — same rule
 `/bigin-new-project` § 7.1 applies to every provider, for the same reason.
 
+### Rendering a WEB spec with it
+
 **Rendering a WEB spec with it is legitimate.** Its catalog is not only phone templates — pick the one
 that matches the spec's platform at run time, from the MCP server's own template listing or the desktop
 app's template picker, and **record which template you used** in the `## 8` row. Do not guess a
@@ -186,7 +188,12 @@ web render's template is whatever that catalog actually offers on the day. A wro
 noisily, which is the good case; the bad case is a template that renders something plausible in the
 wrong shell.
 
-**Mapping the spec onto it.**
+**Record the template inside the `## 8` row's Engine cell**, as `<engine> (<template>)` — e.g.
+`open-design (mobile-app)`. The row has six fixed columns (`Rendered | Engine | Platform | Screens |
+Artifacts at | Against`) and no template column of its own, so a template recorded anywhere else has
+nowhere to land and is lost.
+
+### Mapping the spec onto it
 
 | Spec material | Goes in as |
 |---|---|

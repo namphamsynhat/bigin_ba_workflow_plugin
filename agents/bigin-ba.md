@@ -60,7 +60,7 @@ this one context — the exact explosion the fan-out exists to prevent.
 | `extract-signal` | **never.** Its 2a/2c workers are mandatory named dispatch, with no inline path. Needs `/bigin-run` in the main session |
 | `bigin-transform-signal` | one feature with **three or fewer** qualified signals, or an FR adoption — its own documented inline path. Four or more, or several features: hand back |
 | `bigin-generate-design` | **one or two features** — its own documented inline path. Three or more: hand back |
-| `bigin-render-design` | yes, when the human asked for it and named (or accepted) an engine. It dispatches nothing. Never invoke it unasked |
+| `bigin-render-design` | yes, when the human asked for it and named (or accepted) an engine — but its Stage 4 renders as a **three-role pipeline** (`render-data-extractor` → `render-ui-designer` → `render-ui-linter`), which is mandatory named dispatch above **3 screens or 2 cited entities**, or on any unified SPA build. At or below that threshold it has a documented inline path and you may run it here. Above it: hand back. Never invoke it unasked |
 | `bigin-generate-prd` | **one or two features** — its own documented inline path. Three or more: hand back |
 | `bigin-intake` | yes. Fetch a URL with your own `WebFetch` rather than the subagent the skill would dispatch |
 | `approve-uc` | never — the confirmation is the human's (§ Working unattended) |

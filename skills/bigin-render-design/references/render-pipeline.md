@@ -4,20 +4,24 @@ Read by `/bigin-render-design` at Stage 4, and by the three agents it dispatches
 passes between them**, so that no stage has to guess what the previous one meant.
 
 ```text
+**One naming scheme, everywhere: `4a` / `4b` / `4c`.** Not "Part 1/2/3", and never a bare "Stage 2"
+for the designer — the skill has real Stages 1-6, and a bare stage number inside a render role points
+at the wrong one.
+
 ┌──────────────────────────────────────────────────────────────────────────┐
-│ Part 1  render-data-extractor      READ-ONLY over 01-Requirements/       │
+│ 4a  render-data-extractor          READ-ONLY over the requirement docs   │
 │         UCs · BRs · ENTITIES.md → field lists, predicates, enums,        │
 │         state keys, real volume numbers                                  │
 └───────────────────────────┬──────────────────────────────────────────────┘
                             │  Data Model & Logic Spec  (§ below)
 ┌───────────────────────────▼──────────────────────────────────────────────┐
-│ Part 2  render-ui-designer         NEVER opens 01-Requirements/          │
+│ 4b  render-ui-designer             NEVER opens _ucs/ _brs/ _entities/    │
 │         + the UX spec · navigation-map.md · tokens · DESIGN-PRINCIPLES   │
 │         → enterprise-grade HTML/CSS/JS, human-grade copy, data-* ids     │
 └───────────────────────────┬──────────────────────────────────────────────┘
                             │  rendered artifacts + a manifest of paths
 ┌───────────────────────────▼──────────────────────────────────────────────┐
-│ Part 3  render-ui-linter           gate — verifies, sanitizes narrowly    │
+│ 4c  render-ui-linter               gate — verifies, sanitizes narrowly   │
 │         leak scan /(UC|BR|EN|UX)-\d/ · tokens · contrast · density ·      │
 │         IA vs the nav map · states · real scale · routes                  │
 └──────────────────────────────────────────────────────────────────────────┘
@@ -35,7 +39,9 @@ CONTEXT      a UC set, every BR behind it, every entity's full field list, the U
 
 SAFETY       the old rule was "a render never opens a UC", because a render that reads requirements
              starts re-designing from them. Splitting the roles KEEPS that rule where it counts:
-             the agent that writes UI still never sees a UC. One agent reads them, mechanically,
+             the agent that writes UI still never sees a UC. The exclusion is the requirement
+             ARTIFACTS — _ucs/, _brs/, _entities/, ENTITIES.md — not the folder: DESIGN-PRINCIPLES.md
+             also lives in 01-Requirements/ and 4b is REQUIRED to read it (it is ground 3). One agent reads them, mechanically,
              for data only, and hands forward facts rather than material to re-interpret
 
 QUALITY      extracting a field list, writing product copy, and judging contrast and density are
@@ -44,8 +50,9 @@ QUALITY      extracting a field list, writing product copy, and judging contrast
              context is full and a report is due
 ```
 
-**When the pipeline is worth its dispatch cost** — the same threshold discipline `agent-dispatch.md`
-already applies:
+**When the pipeline is worth its dispatch cost** — the same threshold discipline the design side
+applies in its own `agent-dispatch.md` (a `/bigin-generate-design` reference, named for provenance and
+not read here):
 
 ```text
 ALWAYS       a unified SPA build spanning 2+ specs
@@ -61,7 +68,7 @@ applies, and the nav map is still the only source of navigation.
 
 ## The Data Model & Logic Spec
 
-Part 1's whole output. Written to the **session scratchpad**, never into the vault — the orchestrator
+4a's whole output. Written to the **session scratchpad**, never into the vault — the orchestrator
 supplies the exact path in the dispatch (it is a session path, not a `{variable}` in `paths.md`, so
 there is nothing to resolve and nothing to invent):
 
@@ -70,7 +77,7 @@ there is nothing to resolve and nothing to invent):
 ```
 
 Disposable by design. It is not committed, not referenced from any `## 8` row, and not read by
-anything after Part 3. It exists to move facts between two agents without either of them having to
+anything after 4c. It exists to move facts between two agents without either of them having to
 re-read `01-Requirements/`.
 
 ### It is filtered by the spec, and that filter is the safety property
@@ -95,9 +102,11 @@ here produces a prototype that validates a field which does not exist.
 spec: UX-<NNN> @ v<x> · platform: <web|mobile> · extracted: <date>
 
 ## Screens in scope
-<!-- copied VERBATIM from ## 2 Screen Inventory. This is the filter, restated so the designer can
-     see what was filtered against. An `out of scope` Coverage row never appears here. -->
-| Screen | Actor | Volume | Real scale | Serves |
+<!-- copied from ## 2 Screen Inventory, whose real columns these are. This is the filter, restated so
+     the designer can see what was filtered against. An `out of scope` Coverage row never appears
+     here. Real scale is NOT a ## 2 column — it lives on the ## 3 States table's `many` row, and it
+     is carried in ## Volume below. -->
+| Screen | Actor | Volume | Purpose | Serves | Entities | Key actions |
 
 ## Entities
 <!-- one table per EN-### the spec's ## 3 cites -->
@@ -118,8 +127,14 @@ spec: UX-<NNN> @ v<x> · platform: <web|mobile> · extracted: <date>
 | Screen | State (spec's own name) | Reached by | Grounded by |
 
 ## Volume
-| Screen | Band | Real number | Grounded by (EN cardinality + UC step) |
-<!-- "≈10,384 records, page 1 of 208" — never "several", never "many". The number IS the review. -->
+| Screen | Band | Real number | Source | Grounded by |
+<!-- "≈10,384 records, page 1 of 208" — never "several", never "many". The number IS the review.
+     SOURCE, in this order:
+       `## 3 States` — the spec's own `many` row states the number, and 4-verify requires it there.
+                       This is the normal case: COPY it, do not re-derive it.
+       `derived`     — only when that row is missing or says "several". Fall back to the EN-###
+                       cardinality plus the UC step that puts an actor in front of that set, and say
+                       you derived it: a spec that failed to state its own scale is a finding. -->
 
 ## Enumerations
 | Enum | Ordered values | Source | Used on |
@@ -157,8 +172,16 @@ none of that where a human can read it.
 | `data-nav-id` | the nav map's dot-path `id` | a nav item |
 
 Space-separate multiples (`data-uc="UC-031 UC-044"`) where an element genuinely serves two.
-**Every value must resolve** to a real id in the spec, the data model, or the nav map — an invented
-`data-*` value is worse than none, because it reads as verified provenance.
+
+**Every value is READ out of the spec, never judged.** The `## 3` element table's `Grounded by` column
+supplies `data-uc`/`data-uc-step`/`data-br`; its `Field` column supplies `data-en`/`data-field`; the
+`## 3` States table's own state names supply `data-state`; the nav map's dot-path `id` supplies
+`data-nav-id`. A value that cannot be read out of one of those is a value that is not emitted — an
+invented `data-*` is worse than none, because it reads as verified provenance.
+
+This is also why the **prompt block cannot drive the pipeline**: D6 forbids any vault id in a prompt
+body, so a render built from the block alone has nothing to populate these attributes from. The block
+is the portable fallback for a human or a cold render; the pipeline renders from `## 1`-`## 7`.
 
 ### Where an id may never appear
 
@@ -184,7 +207,7 @@ renders them on hover. They are not a loophole.
 
 `scripts/scan-traceability-leaks.sh <path>…` is the deterministic gate: it scans every visible
 position for `/(UC|BR|EN|UX)-\d/`, ignores `data-*` attributes, and exits non-zero on a leak. The
-designer runs it before reporting; the linter runs it as Part 3's first act and never trusts the
+designer runs it before reporting; the linter runs it as 4c's first act and never trusts the
 designer's word for it.
 
 **Sanitizing a leak means moving the id, never rewording the copy.** If removing the id leaves the
@@ -257,17 +280,33 @@ a link, it is a gap the build should never have offered.
 ## Handoff and repair
 
 ```text
-Part 1 → Part 2   the Data Model & Logic Spec path. `gaps:` non-empty is BLOCKING: the orchestrator
-                  decides per screen whether to render without the field or leave it un-rendered.
-                  Neither the extractor nor the designer decides that
-Part 2 → Part 3   the artifact paths + the designer's report. The report is a CLAIM; Part 3 verifies
-                  it and never substitutes it for a check
-Part 3 → Part 2   `verdict: RE-RENDER` returns a finding list. The designer re-renders the named
-                  screens only. Then the FULL scan runs again — a fix that moved an id into data-*
-                  on one screen commonly left it on three
+4a → 4b   the Data Model & Logic Spec path. `gaps:` non-empty is BLOCKING: the ORCHESTRATOR decides
+          per screen whether to render without the field or leave it un-rendered. Neither the
+          extractor nor the designer decides that. 4a's `blocked:` (an unresolvable UC/BR/EN
+          reference) blocks the screens depending on it, exactly as a gap does
+4b → 4c   the artifact paths · the designer's REPORT · and the Data Model & Logic Spec path again
+          (4c resolves data-en/data-field values against it). The report is a CLAIM; 4c verifies it
+          and never substitutes it for a check
+4c → 4b   `RE-RENDER` returns a finding list. The designer re-renders the named screens only. Then
+          the FULL scan runs again — a fix that moved an id into data-* on one screen commonly left
+          it on three
 ```
 
-**Two round trips, then stop.** A finding surviving two designer→linter cycles is not a render
+**The verdict is per screen; the roll-up is a summary.** 4c emits one `screen verdict:` line per screen
+plus an overall `verdict:`, and the orchestrator records from the per-screen lines. An artifact-level
+`RE-RENDER` alone forces a choice between discarding screens that passed and recording one that did
+not.
+
+**Whether 4c can sanitize at all depends on where the artifact lives.** It has `Edit` and no MCP
+access, deliberately — a gate that can reach into the engine is a gate that can quietly redesign. A
+file on disk it was given the path to, it fixes. An **engine-hosted** artifact (an OpenDesign project
+reached over MCP or the `od` CLI, which is the default mobile path and the only SPA path) it can read
+and cannot write: there, **every** finding — leaks included — returns as `RE-RENDER` for 4b, which has
+the engine access. 4c states which mode it is in on the first line of its report, because "leaks
+sanitized" from an agent that never had write access is a clean bill on a dirty artifact.
+
+**Two round trips, then stop** — and both 4b and 4c carry this rule themselves, so it survives an
+orchestrator that forgot to count. A finding surviving two designer→linter cycles is not a render
 problem; it is a spec problem or an engine limitation. Report the screen un-rendered, with the
 finding, and let a human decide — a third automated attempt produces a screen that satisfies the
 linter and nobody else.

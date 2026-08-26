@@ -663,7 +663,11 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   feedback loop, § Feedback handling). It writes nothing else on a UC/BR, and never touches the
   Signal Log or `## Requirement Readiness`. Its own rules live in
   `_bigin/conventions/design-conventions.md`. (The retired `/prototype-design` held this slot.)
-- `/bigin-render-design`: **touches no hub and no requirement at all.** It renders a finished `UX-###`
+- `/bigin-render-design`: **writes no hub and no requirement at all.** Its Stage 4 Part 4a does *read*
+  `_ucs/`, `_brs/`, `_entities/`, and `ENTITIES.md` — for **data only** (field types, validation
+  predicates, enum vocabularies, state keys, real volume numbers), filtered by the UX spec's own screen
+  inventory, and by one subagent that writes nothing. The agent that renders the UI never opens them at
+  all, which is what keeps a render from re-designing. It renders a finished `UX-###`
   into prototype artifacts on the engine a human chose, and writes only that spec's `## 8 Rendered
   Artifacts` (one appended pointer row), its `rendered:` flag, and one `## Changelog` line. A render is
   not a requirement event, so nothing on a hub changes because one happened. It is also the only place
