@@ -6,8 +6,9 @@ prompt** and an **assembly prompt** contain, in what order, and what may never a
 ## Why this file is strict
 
 Open Design spawns its own agent, in its own process, in its own project directory. **That agent
-cannot see this vault.** It has no UC file, no ENTITIES.md, no design-tokens.md, no navigation map —
-it has the prompt and the design system bound to the project, and nothing else.
+cannot see this vault.** It has no UC file, no ENTITIES.md, no navigation map — it has the prompt and
+the design system bound to the project, and nothing else. (There is no token file to miss: the vault
+holds no design system, which is exactly why the bound one carries the whole visual answer.)
 
 ```text
 anything left OUT of the prompt   is something the agent will INVENT, plausibly and confidently, and
@@ -17,8 +18,7 @@ anything put in AS AN ID          "per UC-012 S4" is a dangling pointer. It prod
                                   screen or a screen with "UC-012" printed on it
 ```
 
-So the prompt is **self-contained** (D6, the same rule the spec's own `## Prototype Prompt` blocks
-follow) and **fully expanded**. It is long. That is correct.
+So the prompt is **self-contained** and **fully expanded**. It is long. That is correct.
 
 ---
 
@@ -32,8 +32,10 @@ A feature prompt is assembled from five places. When two disagree, the higher ro
                                       design system, the engine's taste, and the fidelity bar
 2  the UX-### spec                    THE DESIGN. Screens, regions, elements, copy, states, flows.
                                       Verbatim, never paraphrased
-3  {tokens_file} + {components_dir}   the token VALUES and shared components. Names alone are
-   + {nav_map_file} ## Structure      useless to a process that cannot read the token file
+3  the BOUND DESIGN SYSTEM           the visual answer, from Step 0.3 — not from the vault, which
+   + {nav_map_file} ## Structure      holds none. Each element's semantic ROLE is stated IN WORDS
+                                      ("this is the primary action") and the bound system resolves
+                                      it. Never a hex invented here to stand in for a role
 4  UC / BR / ENTITIES.md / _entities  DATA AND LOGIC ONLY — field lists, types, formats, enums,
                                       cardinalities, validation predicates, state keys, real volumes
 5  PAIN-POINTS.md rows behind a state which states are worth rendering properly
@@ -187,9 +189,12 @@ a screen the ## 2 inventory does not carry  → § Grounding. Not the prompt's t
 a field, status, or capability no source
   carries                                   → the same rule, one level down
 Lorem, placeholder copy, or "TBD"           → copy is content and it was decided
-a token name with no value                  → the agent cannot read {tokens_file}
+a hex, px, or font invented for a ROLE      → the bound design system answers a role. A value
+                                                written here decides the client's brand instead
+a role left out of an element's description → the agent has no way to know which control is the
+                                                primary one, and every button comes back identical
 a nav entry not in ## Structure              → the nav map is the single source of truth
-a raw hex or px value not from a token       → token-only styling, fidelity item 1
+a raw hex or px not from the bound system    → system-only styling, fidelity item 1
 an instruction to "improve", "modernise",
   or "make it look better"                   → that is redesigning, and it is not this step's
 an ## 4 Coverage "out of scope" row rendered

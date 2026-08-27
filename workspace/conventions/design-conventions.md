@@ -1,47 +1,50 @@
 # Design Conventions
 
-The **design** rulebook: what a screen spec is, what a token is, what a prototype prompt may contain.
+The **UX** rulebook: what a screen spec is, what a user flow is, what the navigation map holds.
 
 **This file is deliberately separate from `conventions.md`.** That file is the **requirement**
 rulebook — what a use case is, when a signal becomes a rule, who may approve scope. This one is the
-**design** rulebook. They never merge:
+**experience** rulebook. They never merge:
 
 ```text
 a rule about WHAT THE SYSTEM DOES        → conventions.md          (requirement side)
-a rule about HOW A SCREEN LOOKS/READS    → this file               (design side)
+a rule about HOW A USER GETS THERE       → this file               (experience side)
 a "design rule" that decides behaviour   → it is a requirement. It is in the wrong file.
 ```
+
+**There is no design system here, and no tokens.** `/bigin-generate-design` produces the
+**experience** — actors, screens, states, navigation, and the flows that connect them — and says
+nothing about colour, type, spacing, or component styling. A screen names a **semantic role**
+(§ Semantic style roles); a real design system is supplied later, by the design team or by whichever
+system a render is bound to. A run that invents a palette has designed the one thing nobody asked it
+for and locked the client's brand to it.
 
 Read only the sections your stage needs.
 
 | Stage | Sections |
 |---|---|
 | `1-scope` | Paths · Write map · Design status · Staleness · **Platform** |
-| `2-system` | The design system · Token architecture · The navigation map · **Platform** |
-| `3-screens` | The UX spec · Screen spec · Grounding · The relationship model · Open questions · The navigation map · **Platform** · **Actor scope** |
-| `4-verify` | Coverage verification · Grounding · The UX spec · Open questions · Prototype prompt · **Platform** · **Actor scope** |
-| `5-prompt` | Prototype prompt · Rendering is a separate step · The relationship model · **Platform** · **Actor scope** |
-| `6-close` | Design status · Write map · Staleness · The navigation map · The relationship model · Coverage verification · **Platform** · **Actor scope** |
+| `2-navigation` | The navigation map · User flows and pain points · **Platform** |
+| `3-screens` | The UX spec · Screen spec · Semantic style roles · Grounding · The relationship model · Open questions · The navigation map · **Platform** · **Actor scope** |
+| `4-flow-review` | The flow review · User flows and pain points · The navigation map · Grounding · Open questions |
+| `5-verify` | Coverage verification · Grounding · The UX spec · Open questions · Rendering is a separate step · **Platform** · **Actor scope** |
+| `6-close` | Design status · Write map · Staleness · The navigation map · The flow review · The relationship model · Coverage verification · **Platform** · **Actor scope** |
 
 ## Paths
 
 Project-relative, from the repo root.
 
-**Design side — this stage owns these.**
+**Experience side — this stage owns these.**
 
 | Variable | Path | Notes |
 | :--- | :--- | :--- |
 | `{ux_dir}` | `04-UIUX/` | one spec per feature: `UX-<NNN> <Feature>.md` |
+| `{ux_system_dir}` | `04-UIUX/_ux/` | the **one, vault-wide** UX system: navigation and the flow spine. Not a design system — it holds no colour, type, spacing, or component styling |
+| `{nav_map_file}` | `04-UIUX/_ux/navigation-map.md` | the vault's menu/navigation system |
 | `{prototype_dir}` | `04-UIUX/_prototypes/` | rendered prototypes copied back out of Open Design, one folder per render: `<YYYY-MM-DD>-<slug\|multi>/`. Written by `/bigin-render-design` and by nothing else — **no design stage touches it** |
-| `{design_system_dir}` | `04-UIUX/_design-system/` | **one, vault-wide**, shared by every feature |
-| `{tokens_file}` | `04-UIUX/_design-system/design-tokens.md` | the token file |
-| `{components_dir}` | `04-UIUX/_design-system/components/` | one `<component>.md` per shared component |
-| `{nav_map_file}` | `04-UIUX/_design-system/navigation-map.md` | the vault's menu/navigation system |
-| `{design_stages_dir}` | `_bigin/stages/design/` | `1-scope`, `2-system`, `3-screens`, `4-verify`, `5-prompt`, `6-close` |
+| `{design_stages_dir}` | `_bigin/stages/design/` | `1-scope`, `2-navigation`, `3-screens`, `4-flow-review`, `5-verify`, `6-close` |
 | `{design_conventions}` | `_bigin/conventions/design-conventions.md` | this file |
 | `{template_ux}` | `_bigin/templates/ux-spec.md` | |
-| `{template_design_system}` | `_bigin/templates/design-system.md` | |
-| `{template_component}` | `_bigin/templates/design-component.md` | |
 | `{template_nav_map}` | `_bigin/templates/navigation-map.md` | |
 
 **Requirement side — inputs. Read them; do not rewrite them.**
@@ -51,21 +54,25 @@ Project-relative, from the repo root.
 | `{uc_dir}` | `01-Requirements/_ucs/` | the flow the screens serve — `## 2` steps, `## 3` branches |
 | `{br_dir}` | `01-Requirements/_brs/` | validations and error states |
 | `{entity_dir}` | `01-Requirements/_entities/` | the fields a form actually has |
+| `{pain_points_file}` | `01-Requirements/PAIN-POINTS.md` | the `PP-###` register — **what the flows exist to fix** (§ User flows and pain points) |
 | `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | client-stated durable preferences |
-| `{hub_dir}` | `01-Requirements/_features/` | `## Design Directives` in, `## UX Spec` out |
+| `{hub_dir}` | `01-Requirements/_features/` | `## Design Directives` and `## Pain Points` in, `## UX Spec` out |
 | `{requirements_file}` | `01-Requirements/FEATURES.md` | the slug registry |
 
 Missing `_bigin/conventions/`, `_bigin/stages/design/`, or `_bigin/templates/` → stop and say
 `/bigin-new-project` must run first. A subagent that cannot read its stage guide still writes a
 screen, just one following no rule.
 
+**A design system, if this vault has one, is not on either list.** A design team may drop one
+anywhere they like; nothing in this skill reads it, writes it, or requires it. Which system a
+prototype is rendered against is `/bigin-render-design`'s question, asked of a human, at render time.
+
 ## Write map — what design may touch
 
 ```text
 WRITE   {ux_dir}                      the UX spec (create, or update in place) — except `## 8
                                       Rendered Artifacts`, which only /bigin-render-design writes
-        {design_system_dir}           tokens + components — ADD ONLY
-        {nav_map_file}                menu entries — ADD ONLY (part of {design_system_dir})
+        {nav_map_file}                menu entries — ADD ONLY
         hub ## UX Spec                link + status
         hub uiux:                     the UX-### id
         hub ## Design Directives      Status: open → reflected, on rows a screen really implements
@@ -76,7 +83,10 @@ READ    every path in the requirement table above
 
 NEVER   a UC's ## 1-## 6 · a BR's rule statement · an EN field list
         DESIGN-PRINCIPLES.md          (client-stated only — research findings are not client words)
-        a hub's Signal Log · ## Requirement Readiness · status: · uc: · br:
+        PAIN-POINTS.md                the register is the requirement side's. A flow that resolves a
+                                      pain point says so in the UX spec; it never writes the row's
+                                      `Resolved by` cell, and never adds a pain point of its own
+        a hub's Signal Log · ## Pain Points · ## Requirement Readiness · status: · uc: · br:
         FEATURES.md
         _bigin/system/project.md      the engagement config, INCLUDING platform: — design READS it
                                       (§ Platform) and never writes it. An unstamped config is
@@ -92,12 +102,14 @@ all on an `approved` UC.
 ## The eight design hard rules
 
 ```text
-D1  The design system is APPEND-ONLY. Never delete or rename a token, component, or nav entry.
-D2  A screen spec names TOKENS, never raw values. No hex, no px, no font name.
-D3  Every screen, element, and state is GROUNDED (see § Grounding). Ungrounded → a question.
-D4  Requirement content is READ-ONLY. Design never edits a UC, a BR, or an entity.
+D1  The navigation map is APPEND-ONLY. Never delete or rename an entry — retire it.
+D2  A screen spec names a SEMANTIC ROLE, never a value and never a token id. No hex, no px, no font
+    name, no `--color-*` (see § Semantic style roles).
+D3  Every screen, element, state, and flow is GROUNDED (see § Grounding). Ungrounded → a question.
+D4  Requirement content is READ-ONLY. Design never edits a UC, a BR, an entity, or a pain point.
 D5  Never write status: accepted. A human accepts a design; an agent never does.
-D6  A prototype prompt STANDS ALONE. No UC-/BR-/EN-/PP-/UX-/INT- id inside the prompt body.
+D6  A user flow must RESOLVE SOMETHING STATED — a UC goal, or a `PP-###` pain point it names. A
+    flow that resolves nothing on record is an invented journey (see § User flows and pain points).
 D7  A relationship model never grants MEMORY, AUTONOMY, or RETENTION the requirements did not
     state. What an agent keeps, decides alone, or forgets is behaviour — a requirement gap, never
     a design call (see § The relationship model).
@@ -122,8 +134,8 @@ so an unstamped project keeps designing exactly as it always did rather than sil
 
 **Read it once, at Stage 1, and pass it down.** Stage 1 announces it; Stages 2–5 and every dispatched
 worker are *told* it. A worker never re-reads the project config to decide it, for the same reason it
-never re-detects the engine: two workers inferring a platform differently produces one product with
-two navigation shells.
+never re-detects the method layer: two workers inferring a platform differently produces one product
+with two navigation shells.
 
 ### Per-feature override — the only thing that outranks the config
 
@@ -154,7 +166,7 @@ mobile  header · content · tab-bar · sheet · fab      the phone vocabulary
 ```
 
 A `nav` region on a mobile screen, or a `tab-bar` on a web one, is the wrong vocabulary — it produces a
-prototype prompt that asks a tool to build a shell the platform does not have.
+spec that asks a render tool to build a shell the platform does not have.
 
 ### What `both` means, exactly
 
@@ -167,9 +179,10 @@ requirements   ONE UC set, platform-blind. A UC never forks per platform, and pl
 screens        ONE screen inventory (the same user goals), with a per-platform LAYOUT SPLIT only
                where the two genuinely differ — a shared behaviour block, then `Layout — Web` /
                `Layout — Mobile`. Identical on both → one layout line, no split.
+flows          ONE flow per user goal. A phone splitting one web page into three sheets is the same
+               journey on more surfaces, not a second journey (§ User flows and pain points).
 nav map        ONE file, TWO structures: `## Structure — Web` and `## Structure — Mobile`, mapping
                the same feature set onto each shell (§ The navigation map).
-prompts        FOUR blocks, not two (§ Prototype prompt).
 ```
 
 **Never split the screen inventory itself.** Two inventories means two designs to keep in sync, and
@@ -185,8 +198,8 @@ explicit client statement about one is a `DESIGN-PRINCIPLES` row, not a design c
 
 ### Rendering is a separate step
 
-`/bigin-generate-design` produces a **specification** — screens, states, real copy, a token system, a
-nav shell, and the self-contained prompt blocks. It renders nothing, checks for no design tool, and
+`/bigin-generate-design` produces a **specification** — actors, screens, states, real copy, the
+navigation shell, the flows, and a coverage table. It renders nothing, checks for no design tool, and
 has **no halt of its own**.
 
 Turning that specification into something a client can look at is `/bigin-render-design`, invoked by a
@@ -201,12 +214,12 @@ builds it.
 FOUR THINGS ARE THE HUMAN'S, and that skill asks about each it cannot already resolve:
     which features            never "everything"
     which Open Design project share an existing one, or create a new one for this vault
-    which DESIGN SYSTEM       from Open Design's own catalog, or this vault's own tokens. Picked
-                              quietly, it replaces the client's brand with a stranger's — which is
-                              why it is asked rather than defaulted. DESIGN-PRINCIPLES still wins
+    which DESIGN SYSTEM       the design team's, or one from Open Design's own catalog. THIS SKILL
+                              PRODUCES NONE, which is exactly why it is asked rather than defaulted.
+                              DESIGN-PRINCIPLES still wins over whichever is picked
     which model               from what Open Design offers, never a hardcoded id
-Open Design unreachable  → that skill retries, then hands over the built prompts to paste in by
-                           hand. Nothing upstream ever halts
+Open Design unreachable  → that skill retries, then hands the spec over to paste in by hand.
+                           Nothing upstream ever halts
 ```
 
 **Why this is not part of the design run.** Which features, which design system, and when are
@@ -215,10 +228,139 @@ unattended pipeline re-rendered features nobody asked about, picked a brand nobo
 and — the expensive part — let a missing prototype tool stop a stage that reads use cases and writes
 markdown.
 
-**What replaced it as the safeguard.** The failure the old halt guarded against was a design nobody
-can look at. What guards against it now is `4-verify`: the run proves the spec is complete enough to
+**What guards against a design nobody can look at.** `5-verify` proves the spec is complete enough to
 render *cold*, on any engine, months later (§ Coverage verification). A spec that passes that is a
-spec a render cannot go wrong on for want of input.
+spec a render cannot go wrong on for want of input — with the single, deliberate exception of the
+visual system, which is not this skill's to supply.
+
+## Semantic style roles — what replaced tokens
+
+A screen spec says what an element **is for**, never what it looks like. One word, from a closed
+list, in the element table's `Role` cell:
+
+```text
+primary action    the one thing this screen exists for
+secondary action  a real action, not the main one
+destructive       deletes, cancels, or revokes something
+danger            a state or badge that means something is wrong or overdue
+warning           something needs attention but is not yet wrong
+success           something completed
+info              neutral supporting information
+emphasis          content that must be read first
+muted             present, deliberately quiet — metadata, timestamps, helper text
+default           carries no particular weight (leave blank; `default` is the absence of a role)
+```
+
+**A role is a design-system-independent fact.** "This is the primary action" stays true whichever
+brand, palette, or component library is bound later — which is the whole reason it survives where a
+token name would not. Whoever supplies the design system maps the ten roles once; nothing in the
+vault has to change.
+
+```text
+ALLOWED     `primary action` · `danger` · `muted`
+FORBIDDEN   `#2563eb` · `16px` · `Inter Semibold` · `--color-action-primary` · `btn-primary`
+            → all four are D2 broken. The first three pin a value nobody stated; the last two cite a
+              system this vault does not have, so nothing resolves them and a renderer picks its own
+```
+
+A screen that needs a **role the list does not carry** does not get a new role invented for it. It is
+an Open Question (owner: team) asking whether the list should grow — a private eleventh role is a
+one-screen vocabulary nobody else can map.
+
+**Layout, density, and hierarchy are not roles.** "Three columns", "compact table", "above the fold"
+belong in `regions` and the element order, where they already are.
+
+## User flows and pain points
+
+A screen inventory says *what exists*. A **flow** says how a real person gets from a trigger to an
+outcome — and it is the artifact this stage exists to get right, because it is the one a client can
+recognise as their own working day or fail to.
+
+```text
+one flow  =  one user goal, for ONE actor, end to end
+             entry (the trigger, in plain words)
+             → the screens in order, one line each
+             → the success end
+             → each failure end, and the screen or state the user is left on
+```
+
+Every flow is a `## 4 Flows` entry in the UX spec, and every flow carries the two things that make it
+reviewable:
+
+```text
+Resolves     the PP-### pain point(s) this journey fixes, or "—" when it serves a UC goal alone
+Steps to     how many screens the actor passes through from trigger to success
+goal
+```
+
+### D6 — a flow resolves something stated
+
+```text
+a UC goal                  → always sufficient. The flow delivers the UC's ## 2, end to end.
+a PP-### pain point        → cite it. This is the flow saying WHY the journey is shaped this way
+                             rather than some other way that also delivers the steps.
+neither                    → an invented journey. It is not a flow; it is an Open Question.
+```
+
+**The pain-point register is READ-ONLY here** (§ Write map). A flow names the `PP-###` it resolves;
+it never writes that row's `Resolved by` cell, never changes a pain point's status, and never adds
+one. A pain point the flows reveal — a real friction nobody wrote down — is an Open Question owned by
+the client, and `/bigin-transform-signal` is what puts it on the register.
+
+**A pain point is not a licence to add a screen.** `PP-004: "reviewers lose track of what they
+already approved"` grounds *how* the queue is ordered and *what* the flow shows on return; it does
+not, on its own, ground a whole "approval history" screen nobody's UC asked for. Same line as
+ground 2b in § Grounding: it shapes a grounded thing, it does not create one.
+
+### Flows on `both`
+
+One flow per user goal, not one per platform. A phone that splits one web form into three sheets is
+carrying the **same journey across more surfaces** — say so inside the flow's `Path` line
+(`web: Details → Confirm · mobile: Details → Reviewers → Confirm`), never as a second flow. Two flows
+for one goal is two journeys to keep in sync, and the second is wrong the first time a UC changes.
+
+## The flow review
+
+`4-flow-review` — a pass over the flows and the navigation **as a whole**, after every screen exists
+and before coverage is verified. It is the only stage that looks at the product the way a user meets
+it: not "is this screen grounded?" but "does this journey make sense, and does it fix what the client
+said hurt?"
+
+**It runs when a perception-first-design skill is installed, and is skipped, silently, when one is
+not** (`method-layer.md` § Stage 4). That is a deliberate gate: the pass is a real critique method,
+and a run that fakes it produces a `### Flow Review` table nobody should trust. A skipped review is
+reported as skipped, with the install line, and the run continues — nothing here halts.
+
+### What it may change, and what it may only ask
+
+```text
+MAY CHANGE, in place        the flow's screen ORDER · which screen an interaction leads to · a nav
+                            entry's placement or nesting · a screen's element ORDER · copy that
+                            misleads · a state a flow reaches but no screen declared
+                            → every one of these is still GROUNDED (§ Grounding) and changelogged
+
+MAY ONLY ASK (## 6)         a screen that should exist and does not · a field, capability, or state
+                            nothing grants · a pain point the flows cannot fix as specified · a
+                            requirement gap of any kind
+                            → the fix is a 3-screens dispatch next run, or /bigin-transform-signal.
+                              A review pass that draws the missing screen has stopped reviewing
+```
+
+The line is the same one `5-verify` holds: **repair what is already decided; ask about what is not.**
+The difference is direction — this pass repairs the *journey* between screens, `5-verify` repairs the
+*bookkeeping* about them.
+
+### The verdicts
+
+Each flow gets one row in the UX spec's `## 5 Navigation & Flow Review`:
+
+```text
+sound                        the journey works as specified, and its pain point is fixed where the
+                             row says it is
+improved — <what changed>    the pass reordered, re-pointed, or re-worded something. Say what, in a
+                             phrase, so a human can diff it against what they last read
+gap → ## 6 Q<n>              the journey does not work and the fix is not this pass's to make
+```
 
 ## Actor scope — who a screen is for, and how much they hold
 
@@ -306,7 +448,8 @@ not doing the same work.
 
 Two screens means two `## 2` inventory rows, each with its own `Serves` naming its own actor's UC
 steps, and names that make the actor legible — `Member Directory (Admin)` beside `My Profile`, never
-`Member Record` written twice.
+`Member Record` written twice. It also means **two flows** (§ User flows and pain points): the two
+actors are on two journeys.
 
 ### Scope is not a persona
 
@@ -330,7 +473,7 @@ Its own list, unrelated to the UC/BR one.
 unchecked line ⟺ status **is** `needs-clarification`. Set it **last**, from a live count of the
 section on disk — never from what the run intended.
 
-The design system files carry **no** status. They are versioned and append-only instead.
+The navigation map carries **no** status. It is versioned and append-only instead.
 
 ## Staleness — what "unprocessed" means
 
@@ -366,69 +509,35 @@ with the three § Actor scope facts and what grounds each. It is what stops the 
 screen for two actors whose work is not the same work.
 
 Sections: `## 1 Design Brief` · `## 2 Screen Inventory` · `## 3 Screen Specs` · `## 4 Flows`
-*(carrying `### Coverage` — § Coverage verification)* · `## 5 Design System Usage` ·
+*(carrying `### Coverage` — § Coverage verification)* · `## 5 Navigation & Flow Review` ·
 `## 6 Open Questions` · `## 7 Relationship Model` *(conditional — § The relationship model)* ·
 `## 8 Rendered Artifacts` *(pointers only, and written by `/bigin-render-design` alone — absent
-until somebody renders)* · the **prototype prompt blocks** · `## Changelog`.
+until somebody renders)* · `## Changelog`.
 
-The prompt-block headings are **platform-suffixed**, and how many there are is a platform fact
-(§ Platform, § Prototype prompt):
-
-```text
-platform: web     ## Prototype Prompt — Claude design (Web)
-                  ## Prototype Prompt — Figma Make (Web)
-platform: mobile  ## Prototype Prompt — Claude design (Mobile)
-                  ## Prototype Prompt — Figma Make (Mobile)
-platform: both    all four of the above
-```
-
-A spec written before the suffix existed carries the unsuffixed `## Prototype Prompt — Claude design`
-/ `— Figma Make` headings. That is a `web` spec by definition (`web` is the absent-platform default),
-and it self-heals on the next design run of its feature — see `3-screens.md` § Adopting an existing
-UX spec. Nothing downstream requires the suffix: `/bigin-generate-prd` § 9 points at whichever
-prompt headings the spec actually has.
+**The spec ends at `## 8`.** There are no prototype-prompt blocks: `/bigin-render-design` builds its
+own prompt from these sections, the UCs, the BRs, and the entity register, so a second hand-written
+copy of the same screens was a drifting duplicate of the thing beside it. A spec written before this
+change carries `## Prototype Prompt — …` headings; they are harmless and self-heal on that feature's
+next design run (`3-screens.md` § Adopting an existing UX spec).
 
 `## 7` is **appended after `## 6`, never inserted before it.** Renumbering `## 6 Open Questions`
 would silently invalidate every hub mirror, stage guide, and verification check that cites it by
-number — the section list is append-only for the same reason the design system is (D1).
-
-## The design system
-
-**One** design system, at `{design_system_dir}`, shared by the whole vault. Two modes:
-
-```text
-{tokens_file} absent  → BOOTSTRAP  create it from {template_design_system}; the first screens seed it
-{tokens_file} present → EXTEND     load it, reuse it, ADD what is genuinely new
-```
-
-Extend means: reference an existing token or component **first**; add only when nothing there fits;
-dedup before adding so two names never mean the same thing; bump `version` and append a
-`## Changelog` line naming this run's features.
-
-**Never delete, never rename** (D1) — a screen built last month cites that name. A token that looks
-wrong or duplicated becomes an Open Question owned by the team, never a silent edit.
-
-## Token architecture — three levels
-
-```text
-Level 1  raw        --color-blue-600: #2563eb          a value with no meaning
-Level 2  semantic   --color-action-primary: L1 blue-600  what it MEANS      ← screens use these
-Level 3  component  --button-primary-bg: L2 action-primary  where it is used ← components use these
-```
-
-A screen spec cites Level 2 or Level 3 by **name**. A raw value in a screen spec is D2 broken: the
-value now lives in two places and the next screen drifts from it.
+number — the section list is append-only for the same reason the navigation map is (D1).
 
 ## The navigation map
 
 **One** navigation map, at `{nav_map_file}`, shared by the whole vault — the menu/navigation system
 for the platform or project: every persistent, directly-reachable entry point (a nav bar item, a
-sidebar link, a tab, a flyout child) and the screen it opens. Same two modes as the design system:
+sidebar link, a tab, a flyout child) and the screen it opens. Two modes:
 
 ```text
 {nav_map_file} absent  → BOOTSTRAP  create it from {template_nav_map}; the first screens seed it
 {nav_map_file} present → EXTEND     load it, reuse its tree, ADD new entries screens actually need
 ```
+
+It lives at `04-UIUX/_ux/`, **not** inside a design-system folder. Navigation is an experience
+decision this skill owns end to end; a design system is a visual system somebody else supplies, and
+putting the two in one directory made the first look like part of the second.
 
 ### The shell is a platform fact (§ Platform)
 
@@ -473,14 +582,20 @@ reached only via another screen's control                          → no entry 
 ```
 
 Every entry is **grounded** the same way any other design decision is (§ Grounding below): a role
-split traces to a `BR-###` or a UC's actors, a nesting decision traces to a stated preference or an
-existing branch of the tree, and a label that nothing in the flow calls for is an Open Question,
-never an invented menu.
+split traces to a `BR-###` or a UC's actors, a nesting decision traces to a stated preference, an
+existing branch of the tree, or a `PP-###` the placement resolves, and a label that nothing in the
+flow calls for is an Open Question, never an invented menu.
 
 **Append-only (D1).** A screen that stops existing does not get its row deleted — see the template's
 § Removing an entry: mark it `retired`, keep the row, keep the history. Retiring a container retires
 its whole subtree implicitly; its children are not re-listed. Deleting a row breaks nothing
 technically, but it also erases the record of why the IA looks the way it does.
+
+**`4-flow-review` may move an entry; it may never delete one.** Re-nesting a row (changing its `id`
+to sit under a different parent) is the one structural change that pass makes, and it is still
+append-only in effect: the old `id` is retired in § Removing an entry with `re-nested to <new id>` as
+its reason, and the new one is added. A row that silently changes `id` breaks every screen spec
+citing the old path.
 
 ## Screen spec — semantic structure only
 
@@ -497,7 +612,8 @@ regions      web:    header / nav / main / aside / footer      — semantic HTML
              mobile: header / content / tab-bar / sheet / fab  — the phone vocabulary
              (§ Platform. On `both`, a shared behaviour block plus a `Layout — Web` /
               `Layout — Mobile` split, ONLY where the two actually differ)
-elements     per element: what it is · the content or copy · the token(s) it uses
+elements     per element: what it is · the content or copy · its semantic ROLE (§ Semantic style
+             roles), when it carries one
              · the entity field it renders, when it renders one
              · `Visible to`, ONLY when a BR-### restricts that element to some of the screen's
                actors — blank means every actor of this screen sees it
@@ -513,15 +629,18 @@ interactions what each control does, and which screen or state it leads to
 
 ## Grounding — the test that keeps design out of the requirements
 
-Every non-trivial decision (a screen existing, a field appearing, a state, a nav grouping) traces to
-exactly one of:
+Every non-trivial decision (a screen existing, a field appearing, a state, a flow's shape, a nav
+grouping) traces to exactly one of:
 
 ```text
 1  a REQUIREMENT   a UC step / branch, a BR, or an EN field         → cite the id
-2a a VAULT PATTERN an existing screen or component in this vault    → name it
-2b an EXTERNAL     a pattern from an installed design/UX skill      → name the skill and the pattern
+1b a PAIN POINT    a PP-### on the register                          → cite the id. It grounds HOW a
+                                                                       flow is shaped, never THAT a
+                                                                       screen exists (§ User flows)
+2a a VAULT PATTERN an existing screen in this vault                  → name it
+2b an EXTERNAL     a pattern from an installed design/UX skill       → name the skill and the pattern
    PATTERN
-3  a PREFERENCE    a DESIGN-PRINCIPLES row or a hub directive       → cite the row #
+3  a PREFERENCE    a DESIGN-PRINCIPLES row or a hub directive        → cite the row #
 ```
 
 **2a and 2b are not interchangeable.** A vault pattern is evidence that this product already works
@@ -536,7 +655,12 @@ that way. An external pattern is only evidence that the pattern exists somewhere
 An external catalog that grounds existence is how a whole screen nobody asked for arrives carrying a
 citation. The citation makes it *look* grounded, which is strictly worse than an obvious guess.
 
-None of the three → **it is not yours to settle**. Write an Open Question (D3). An invented screen
+**1b behaves like 2b, not like 1.** A pain point is real, client-stated, and on the register — but it
+states a *problem*, not a system behaviour. It grounds a flow's ordering, a screen's emphasis, a nav
+placement, a default. It never grounds a new screen, field, capability, or state on its own; that
+needs ground 1, or it is a requirement gap.
+
+None of the above → **it is not yours to settle**. Write an Open Question (D3). An invented screen
 is scope nobody asked for, and it looks exactly like a designed one.
 
 An entity that is still `proposed`/`draft` grounds a decision as a **known gap**, not settled fact —
@@ -556,13 +680,14 @@ is what stops the design inventing scope, and it is completely blind to the oppo
 a rule, a field, or a whole exception flow that nobody drew. A screen that was never drawn has no
 element to trace, so every backward check passes on a spec with a third of the requirement missing.
 
-`4-verify` runs the **forward** direction, once, per design run:
+`5-verify` runs the **forward** direction, once, per design run:
 
 ```text
 every non-removed S# / A# / E# of every in-scope UC        →  the screen AND STATE that carries it
 every BR-### they cite that constrains what an actor
   sees or may do                                           →  the state, validation, or Visible to
 every EN-### field their steps read or write                →  the element that renders it
+every PP-### this feature's hub carries, still open         →  the flow that resolves it
 every open hub ## Design Directives row                     →  the screen that implements it
 every active DESIGN-PRINCIPLES row                          →  where it applied
 ```
@@ -570,8 +695,9 @@ every active DESIGN-PRINCIPLES row                          →  where it applie
 Three verdicts, and no fourth:
 
 ```text
-covered                          the screen and the state, both named. A `covered` verdict over an
-                                 empty cell is the table claiming a coverage nobody checked
+covered                          the screen and the state, both named (for a PP-###: the FLOW and
+                                 where in it). A `covered` verdict over an empty cell is the table
+                                 claiming a coverage nobody checked
 gap → ## 6 Q<n>                  genuinely not designed. A design question (owner: team), or a
                                  REQUIREMENT GAP (owner: client) when the answer would change what
                                  the system DOES — /bigin-transform-signal's, never written on the UC
@@ -582,7 +708,8 @@ out of scope — <cited reason>    excluded by something ON RECORD, and the reco
 ```
 
 The table lives in the spec (`## 4 Flows` → `### Coverage`), is re-written **whole** every run — the
-same rule `absorbed:` follows, for the same reason — and is verified on disk by `6-close` check 18.
+same rule `absorbed:` follows, for the same reason — and is verified on disk by `6-close`'s coverage
+check.
 
 **It repairs; it does not design.** An item a screen plainly carries whose row failed to say so gets
 the row fixed. An item nothing carries gets a question. Adding the missing screen, state, or control is
@@ -592,11 +719,15 @@ has no independent verdict left to give (D3).
 **Render readiness is verified in the same pass**, and it is the safeguard that replaced the old
 required-engine halt (§ Rendering is a separate step). A render may happen months later, on a tool
 nobody has picked, run by someone who never read the requirements — so the spec must be sufficient
-input *now*: this platform's regions, real copy and real field names, every state named, every token
-carrying a value, the nav shell resolvable, a `many` screen's real scale in words, a phone screen's
-device facts. A box that cannot be ticked from the record is a question, never a plausible fill: a
-render engine given a gap produces something convincing, and a convincing prototype is reviewed as a
-specified one.
+input *now*: this platform's regions, real copy and real field names, every state named, every element
+carrying a role or deliberately carrying none, the nav shell resolvable, a `many` screen's real scale
+in words, a phone screen's device facts. A box that cannot be ticked from the record is a question,
+never a plausible fill: a render engine given a gap produces something convincing, and a convincing
+prototype is reviewed as a specified one.
+
+**The visual system is the one thing render readiness does not check.** No colour, type scale, or
+component library is expected in the spec, because this skill produces none — the design system is
+bound at render time (§ Rendering is a separate step). A spec is render-ready without one.
 
 ## The relationship model
 
@@ -671,51 +802,5 @@ question, gets answered twice, and can never be paired back up.
 ```
 
 Never copy a question that is already open on the UC's `## 5`. If the answer would change **what the
-system does** rather than how it looks, say so in the question and in the report: it is a
+system does** rather than how it looks or flows, say so in the question and in the report: it is a
 requirement gap, and `/bigin-transform-signal` owns it.
-
-## Prototype prompt
-
-**Two blocks per platform**, from the same screens: **Claude design** and **Figma Make**. Every block
-must be self-contained (D6) — pasteable into a tool that has never seen this vault.
-
-```text
-platform: web     2 blocks   Claude design (Web) · Figma Make (Web)
-platform: mobile  2 blocks   Claude design (Mobile) · Figma Make (Mobile)
-platform: both    4 blocks   all of the above
-```
-
-```text
-inline    the token values (with a plain-language note on each), the screen list, per-screen
-          structure and copy, the flow order, the states, the sample data
-expand    every vault id into words: "UC-012 S4" → "the step where the reviewer approves the request"
-omit      nothing the tool needs; a prompt that says "per the use case" produces the wrong screen
-```
-
-Keep the blocks consistent — same screens, same states, same copy in all of them. Two axes of
-difference, and only two:
-
-```text
-by TOOL      Claude design is addressed to a builder (behaviour, states, working HTML);
-             Figma Make is addressed to a design tool (frames, components, variants).
-by PLATFORM  the shell and the viewport. A web block builds a sidebar/nav-bar shell at desktop
-             width; a mobile block builds a 390px phone frame with a bottom tab bar, safe-area
-             insets, and touch-target minimums. Same screens, same words, different chrome.
-```
-
-**Nothing else may differ.** A screen present in the web block and missing from the mobile one, or
-copy reworded "because it's a phone", is the failure this section exists to prevent: whichever block
-the BA pastes, the others silently become wrong.
-
-Figma Make prompts are **authored here in both modes** — Figma Make previews mobile natively at
-390×844, so a mobile prompt states mobile-first viewport, bottom tab navigation, and safe-area insets
-rather than needing a different tool.
-
-The prompt blocks are the **durable, tool-portable record**, and they are written on **every** design
-run whether or not anybody intends to render. `/bigin-render-design` turns one into an artifact on
-whichever engine the human picks (§ Rendering is a separate step), but every engine is an external
-dependency that can change, break, or be replaced; the block stays in the spec so the prototype is
-reproducible by hand, in any tool, years after that engine is gone.
-
-A block that leans on the spec around it — "the states listed above", "per the screen inventory" — has
-failed its only test. The render may be run months later, by someone who never opens the spec.

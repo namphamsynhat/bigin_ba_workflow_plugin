@@ -19,14 +19,21 @@ is ground 2b.
 Ten items. The designer self-checks them before reporting; the linter verifies each one and reports a
 skipped item as skipped, never as a pass.
 
-### 1 · Token-only styling
+### 1 · System-only styling
 
-Every colour, type size, weight, spacing value, radius, border, and shadow comes from
-`{tokens_file}`, by name, with that file's value. No raw hex, no raw `px` on a spacing or type
-property, no named font family the token system does not carry.
+Every colour, type size, weight, spacing value, radius, border, and shadow comes from **the design
+system bound at Step 0.3** — its own names, its own values. No raw hex, no raw `px` on a spacing or
+type property, no named font family the bound system does not carry.
 
-A value the render needs and the token file does not have is a **gap to report**, not a token to add:
-the design system is append-only and it is `/bigin-generate-design`'s (D1).
+**The vault holds no design system**, so there is nothing here to check a value against locally: the
+bound system is the whole authority, and `{design_principles_file}`'s active rows are the one thing
+that outranks it (ground 3). Where the spec says an element's role is `primary action`, the bound
+system's own primary treatment is the answer — a value invented to fill the gap is this render
+deciding the client's brand.
+
+A value the render needs and the **bound system** does not cover is a **gap to report to the design
+team**, not a token to invent and not a `/bigin-generate-design` question: that skill produces no
+visual system, so sending it there produces nothing.
 
 ### 2 · Contrast — WCAG AA, computed
 

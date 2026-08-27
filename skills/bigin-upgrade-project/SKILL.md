@@ -285,10 +285,15 @@ nothing**: see the last rule below.
     wrote. Do not extend this prune to `_bigin/conventions/` or `_bigin/templates/` without the same
     reasoning: a template a project still has content instantiated from is not dead just because the
     plugin stopped shipping it.
-    - **1.8 → 1.9 is exactly this case:** `design/4-prompt.md` and `design/5-close.md` became
-      `design/5-prompt.md` and `design/6-close.md`, with a new `design/4-verify.md` between them. An
-      upgrade that skips the prune leaves a project reading a stale "Stage 4 — The prototype prompts"
-      that still tells it to render.
+    - **1.9 → 1.10 is the sharpest case yet.** `design/2-system.md` became `design/2-navigation.md`,
+      `design/4-verify.md` became `design/5-verify.md`, `design/4-flow-review.md` is new, and
+      `design/5-prompt.md` was **deleted outright** — the prototype-prompt blocks are gone from the
+      pipeline. An upgrade that skips the prune leaves a project reading a stale "Stage 2 — The
+      design system", which tells it to seed tokens nothing will ever cite, and a stale "Stage 5 —
+      The prototype prompts", which tells it to write blocks Stage 6 check 7 now blocks on. Both
+      files look authoritative and neither is live.
+      (The earlier 1.8 → 1.9 rename — `design/4-prompt.md`/`design/5-close.md` becoming
+      `design/5-prompt.md`/`design/6-close.md` — is the same class, one version back.)
   - **This copy runs strictly after § 4, and § 4's inputs are why.** § 1 takes its "current" snapshot
     of `_bigin/templates/*.md` — section headers *and* frontmatter keys — before anything is
     overwritten, and § 4 then reads a template's currently *materialized* state again to decide what a

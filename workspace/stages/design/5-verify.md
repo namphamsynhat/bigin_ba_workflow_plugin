@@ -1,18 +1,22 @@
-# Stage 4 — Verify: does the design cover what the requirements actually say?
+# Stage 5 — Verify: does the design cover what the requirements actually say?
 
 ```text
-runs: orchestrator, inline, after EVERY Stage 3 worker has reported and BEFORE Stage 5 writes a block
+runs: orchestrator, inline, after Stage 4's flow review (or its skip) and BEFORE Stage 6 closes
 in:   each UX spec ON DISK (never a worker's report) + the in-scope UCs' step/flow ids + the BR-###
-      they cite + the EN-### fields those steps touch + open hub directives + active principles
+      they cite + the EN-### fields those steps touch + each hub's OPEN PAIN POINTS + open hub
+      directives + active principles
 out:  a `### Coverage` table under each spec's `## 4 Flows` · repaired spec rows · new `## 6`
       questions for what is genuinely not designed
-never: a new screen · a new state · a new field · a requirement edit · a status (Stage 6 owns it)
+never: a new screen · a new state · a new field · a new flow · a requirement edit · a status
+       (Stage 6 owns it)
 ```
 
 This is the **forward** direction, and it is the only stage that runs it: **every requirement item →
 the screen that carries it.** Stage 3's grounding test and Stage 6's checks already run the *backward*
 direction — every screen element back to a ground — and that direction cannot find a miss, because a
-screen that was never drawn has no element to trace. A spec can pass every one of Stage 6's checks
+screen that was never drawn has no element to trace. Stage 4's flow review runs a third direction
+again — journey quality — and it is blind to omission too: a journey nobody wrote gets no verdict.
+A spec can pass every one of Stage 6's checks
 with a whole exception flow missing: each thing on it is properly grounded, nothing on it is invented,
 and the flow the client cares about is simply not there. That is the failure this stage exists for.
 
@@ -38,6 +42,10 @@ per feature designed this run, per in-scope UC (the ones on the Stage 1 work-lis
                verdict cell, rather than listing every one)
   fields      every EN-### field a step READS or WRITES — not every field the entity owns. An entity
               with forty fields whose flow touches four contributes four rows
+  pain points the owning hub's ## Pain Points rows still UNRESOLVED — one row each. This is the only
+              forward check that a design actually addressed what the client said hurt: a UC's steps
+              can be delivered end to end by a journey that leaves every pain point exactly where it
+              was, and nothing else in this pipeline notices
   directives  the owning hub's ## Design Directives rows still at Status: open
   principles  {design_principles_file} rows still `active`
 ```
@@ -49,16 +57,26 @@ designed it, and re-verifying it here would re-open questions a human already cl
 ## Part 2 — Match each item against the spec on disk
 
 Read the UX spec's `## 2 Screen Inventory` (its `Serves` column), `## 3`'s screen specs (regions,
-elements, States, Interactions), and `## 4`'s flows. Match by **id**, never by resemblance: a screen
+elements, States, Interactions), and `## 4`'s flows (their `Path` and `Resolves` cells). Match by
+**id**, never by resemblance: a screen
 whose `Serves` cell says `UC-003 S4` covers `S4`; a screen that merely looks like it would is not a
 match, and treating it as one is how a step gets signed off unbuilt.
 
 ```text
 item found in Serves / a State / an element               → covered
+a PP-### named in some flow's `Resolves`                  → covered — and `Covered by` names THE
+                                                            FLOW and where in it, never a screen
+                                                            alone. "It appears on the queue screen"
+                                                            is not a pain point being resolved
 item plainly IS on a screen, but no row says so           → REPAIR the row, then covered
 item is nowhere on any screen of any spec this run        → not designed
 item is excluded by something ON RECORD                   → out of scope, and cite what excluded it
 ```
+
+**A pain point matches only on an explicit `Resolves` cell.** Never by resemblance: a flow that looks
+like it would help with `PP-004` and does not name it is not coverage, it is a hope. Stage 3 Part 4c
+required every open pain point to be named or questioned, so an unnamed one here means that step was
+skipped — raise it, do not repair it by writing the id into a flow yourself.
 
 **The repair is narrow and it is the orchestrator's.** Add the missing `S#`/`A#`/`E#` to a `Serves`
 cell, name the `BR-###` behind a state that already exists, add an entity field to an element list
@@ -88,7 +106,7 @@ out of scope
 ```
 
 One question per item, and check `## 6` and the UC's own `## 5` before adding it — a question already
-open somewhere is mirrored, never re-asked (Stage 6 check 6).
+open somewhere is mirrored, never re-asked (Stage 6 check 5).
 
 ## Part 4 — Write the `### Coverage` table
 
@@ -97,7 +115,7 @@ claims a coverage that was never checked:
 
 ```markdown
 ### Coverage
-<!-- Written by Stage 4. Every in-scope requirement item, matched forward to what carries it.
+<!-- Written by Stage 5. Every in-scope requirement item, matched forward to what carries it.
 Verdicts: `covered` | `gap → ## 6 Q<n>` | `out of scope — <cited reason>`. Nothing else. -->
 
 | Item | Kind | Covered by | Verdict |
@@ -105,6 +123,8 @@ Verdicts: `covered` | `gap → ## 6 Q<n>` | `out of scope — <cited reason>`. N
 | UC-003 S4 | step | Member Record · Editing | covered |
 | UC-003 E2 | exception | — | gap → ## 6 Q1 |
 | BR-014 | rule | Member Record · Locked | covered |
+| PP-004 | pain point | Review the queue · opens on in-progress items | covered |
+| PP-011 | pain point | — | gap → ## 6 Q4 |
 | BR-021 | rule | — | out of scope — back-office calculation, no screen surface |
 | EN-002.tax_id | field | — | out of scope — hub ## Design Directives #2 |
 | directive #3 | directive | Member Directory · filter bar | covered |
@@ -114,7 +134,7 @@ Verdicts: `covered` | `gap → ## 6 Q<n>` | `out of scope — <cited reason>`. N
 `Covered by` names the **screen and the state**, not just the screen: a step served only in an error
 state and a step served on the default view are different coverage, and a bare screen name hides the
 difference. An item with a `covered` verdict and a `—` in `Covered by` is a contradiction, and Stage 6
-check 18 blocks on it.
+check 17 blocks on it.
 
 ## Part 5 — Render readiness: is the spec enough input for a render?
 
@@ -129,8 +149,9 @@ while the material is still in hand. Per screen, per spec:
   values spelled out. No `Lorem`, no `<label>`, no "the usual fields"
 □ every STATE the screen reaches is named and described — default, empty, loading, error, and each
   rule-driven one. An engine renders the states it is given and no others
-□ every TOKEN a screen cites exists in {tokens_file} WITH A VALUE — a name alone makes the engine
-  pick its own colour
+□ every element that carries a ROLE carries one from the closed list, and every element that
+  carries none is deliberately unweighted — not a cell somebody forgot
+  ({design_conventions} § Semantic style roles)
 □ the NAV SHELL this screen sits in is resolvable from {nav_map_file}'s ## Structure for this
   platform — an engine with no shell improvises one per screen
 □ a `many` screen names its REAL SCALE in words ("about 10,000 records, page 1 of 200") and carries
@@ -139,7 +160,15 @@ while the material is still in hand. Per screen, per spec:
   targets, one primary action, sheets rather than modals
 □ `relationship_model: modelled` → ## 7's memory rows are concrete enough to render as a real
   variant rather than static text (D7)
+□ every `## 4` flow's `Path` names screens that all exist in `## 3`, so a render can wire the
+  journey without inferring which screen a step meant
 ```
+
+**The VISUAL SYSTEM is not on this list, and its absence is not a gap.** No colour, no type scale, no
+component library, no token values: this pipeline produces none, and the design system is bound at
+render time by a human ({design_conventions} § Rendering is a separate step). A spec is render-ready
+without one. Raising "no design system" as a render-readiness gap puts a permanent unanswerable
+question on every spec in the vault.
 
 A box that cannot be ticked is a **spec** gap, so it is fixed here the same way Part 2's repairs are:
 fill what is already decided and on record, and raise a `## 6` question for what is not. Never invent
@@ -149,7 +178,8 @@ input is the failure this whole pass exists to prevent, arriving one stage later
 ## Part 6 — Report to Stage 6
 
 ```text
-Stage 4:   <slug> UX-### — <N> items checked: <N> covered, <N> gap(s), <N> out of scope
+Stage 5:   <slug> UX-### — <N> items checked: <N> covered, <N> gap(s), <N> out of scope
+                  pain points: <N> of <N> resolved by a flow
                   <N> row(s) repaired · <N> question(s) raised (<N> requirement gap)
                   render-ready: yes | <N> input gap(s) raised
 ```
@@ -170,6 +200,15 @@ not silence. Silence reads as "the pass did not run".
 - **Turning a gap into an out-of-scope line with no citation.** It reads as a decision. A field the
   client expected then disappears with an explanation nobody made, and the exclusion outlives every
   person who could contradict it.
+- **Matching a pain point by resemblance.** A `covered` verdict over a flow that never named the
+  `PP-###` records that the client's complaint was addressed when nobody decided it was. It is the
+  most consequential false `covered` on the table: every other item is a step or a field somebody
+  will notice missing, and a pain point is the thing everybody assumes somebody else handled.
+- **Naming a screen instead of a flow in a pain point's `Covered by`.** A pain point is about a
+  journey — where in it the actor stops experiencing the pain. A screen name says the subject came
+  up somewhere.
+- **Raising the missing design system as a render-readiness gap.** There is none by design. The
+  question is unanswerable from this pipeline and lands on every spec in the vault forever.
 - **Listing every field of every cited entity.** A forty-field entity whose flow touches four
   produces thirty-six false gaps, the table becomes noise, and the four real ones stop being read.
 - **Re-verifying a `CURRENT` UC.** It re-opens questions a human already closed, and the run reports

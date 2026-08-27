@@ -5,15 +5,17 @@ runs: one worker per FEATURE (a subagent, or the orchestrator inline for a small
 in:   this feature's NEW/CHANGED UCs + its BRs, entities, directives, principles
 out:  {ux_dir}/UX-<NNN> <Feature>.md — brief, screen inventory, screen specs, flows
       + ## 7 Relationship Model, on a feature that passes Part 4b's trigger (most do not)
-      + a report of token/component/nav candidates (this stage NEVER writes the design system)
-never: an invented screen · a raw colour/size · an invented nav entry · an edit to a UC, BR, or entity
+      + a report of nav candidates (this stage NEVER writes the navigation map)
+never: an invented screen · a raw colour/size/token id · an invented nav entry · an invented journey
+       · an edit to a UC, BR, entity, or pain point
        · a memory, autonomy, or retention rule the requirements did not state (D7)
        · one screen serving two actors whose volume band or capability differs, and no bulk action,
          export, or saved view the requirements did not grant (D8)
 ```
 
-Read `{design_conventions}` § The UX spec, § Screen spec, § Grounding, § Open questions,
-§ Actor scope, § The relationship model, § The navigation map, and § Platform first.
+Read `{design_conventions}` § The UX spec, § Screen spec, § Semantic style roles, § Grounding,
+§ Open questions, § Actor scope, § User flows and pain points, § The relationship model,
+§ The navigation map, and § Platform first.
 
 ---
 
@@ -38,18 +40,26 @@ Read `{design_conventions}` § The UX spec, § Screen spec, § Grounding, § Ope
                                — note each RELATIONSHIP CARDINALITY (one Account has many Orders):
                                  it is what tells Part 2a whether an actor's set is one, few, or
                                  unbounded, and the band decides the screen's machinery
-5  {design_principles_file}    rows with Status: active
-6  {tokens_file} + {components_dir}   what already exists, so you cite instead of invent
+5  the hub's ## Pain Points    every row NOT resolved — PP-### and the client's own words. These
+                               are what the FLOWS have to fix (Part 5), and what shapes emphasis and
+                               ordering on a screen. They never create one (ground 1b)
+6  {design_principles_file}    rows with Status: active
 7  {nav_map_file}              its ## Structure — the tree that already exists, at whatever depth,
                                so a new entry joins an existing branch instead of starting a
                                parallel one
 8  the existing UX spec, if any        you UPDATE it; you never fork it
 9  every other UX-*.md in {ux_dir}     how a sibling feature already solved a list, a queue,
                                        an approval, a wizard. Reuse beats inventing (ground 2).
+
+There is **no design system to read** and no token file: a screen names a semantic ROLE
+(`{design_conventions}` § Semantic style roles), and the visual system is supplied later by a design
+team or bound at render time. A worker that goes looking for `_design-system/` finds either nothing
+or a stale folder nothing reads.
 ```
 
-Write `## 1 Design Brief` from step 0 and steps 1–5: actors, platform, the principles applied, the
-directives applied, and the known gaps (each open UC question, one line, marked as a gap). Then fill
+Write `## 1 Design Brief` from step 0 and steps 1–6: actors, platform, the pain points in scope, the
+principles applied, the directives applied, and the known gaps (each open UC question, one line,
+marked as a gap). Then fill
 its **Actor & Scope** table — one row per actor the in-scope UCs name — per Part 2a below. Fill it
 before you map a single screen: it is the input to Part 2's merge rule, not a summary written after.
 
@@ -361,12 +371,17 @@ regions       semantic structure, never a pixel layout — and which regions EXI
 elements      per element:
                 what it is        heading | table | form field | button | badge | ...
                 content/copy      the real words, in the client's language
-                token(s)          BY NAME, from {tokens_file}. Never a hex, px, or font name (D2)
+                role              ONE semantic role, from the closed list in
+                                  {design_conventions} § Semantic style roles — `primary action`,
+                                  `danger`, `muted`, … — or BLANK when the element carries no
+                                  particular weight. NEVER a hex, a px, a font name, or a
+                                  `--token` id (D2): there is no design system here to resolve one
                 field             the EN-### field it renders, when it renders one
                 visible to        ONLY when a BR-### restricts it to some of this screen's actors
                                   ("Admin only — BR-018"). Blank = every actor of this screen sees
                                   it. Not a place to smuggle in a second actor Part 2a would split
-                grounded by       UC-### S<n> | BR-### | EN-### field | pattern <name> | directive #<n>
+                grounded by       UC-### S<n> | BR-### | EN-### field | PP-### (emphasis/ordering
+                                  ONLY — never existence) | pattern <name> | directive #<n>
                                   | the volume fact, for find machinery only
                                   ("EN-004 many-per-Account · UC-030 S2")
 states        see Part 4
@@ -378,6 +393,31 @@ types, which are required, and an enum's real options — which are the dropdown
 entity still at `proposed`/`draft` is a **known gap**: use it, and say next to it that the field list
 is not settled.
 
+### Roles, and what a pain point may do to a screen
+
+A `role` says what an element is **for**, and a design system maps the ten roles once, later. So the
+only judgment here is which of the ten fits — never what it should look like:
+
+```text
+the ONE thing this screen exists for       → `primary action`. Exactly one per screen.
+it deletes, cancels, or revokes            → `destructive`
+it means something is wrong or overdue     → `danger`      (a state or badge, not a button)
+it needs attention but is not yet wrong    → `warning`
+it must be read first                      → `emphasis`
+it is deliberately quiet                   → `muted`       (metadata, timestamps, helper text)
+none of the above                          → LEAVE IT BLANK. Most elements are blank.
+```
+
+A screen needing a role the list does not carry raises a `## 6` question asking whether the list
+should grow. Never invent an eleventh role in one spec: nothing else in the vault can map it.
+
+**A pain point (ground 1b) can move an element, never add one.** `PP-004: "reviewers can never find
+what they were working on yesterday"` legitimately puts the in-progress items first, gives them
+`emphasis`, and pre-selects that filter — every one of those is ordering and weight on a screen a UC
+already asked for, cited as `PP-004` alongside the UC step. What it cannot do is add a "Recent
+activity" panel nothing granted: that is existence, it needs ground 1, and without it the pain point
+becomes a `## 6` question instead.
+
 ### On `both` — shared behaviour, then a layout split only where they differ
 
 Purpose, serves, elements, states, and interactions are the **same design** on both platforms: the
@@ -388,7 +428,7 @@ and only sometimes. Write the behaviour once, then split what actually differs:
 ### <Screen name>
 purpose       one line                                                  ← shared
 serves        UC-### S<n>, S<n>                                         ← shared
-elements      what it is · content/copy · token(s) · field · visible to · grounded by
+elements      what it is · content/copy · role · field · visible to · grounded by
                                                                         ← shared, ONE table
 states        one row per reachable state (Part 4)                      ← shared, ONE table
 interactions  control → what happens → next screen or state             ← shared, ONE table
@@ -541,6 +581,64 @@ what happens when it is WRONG — who is accountable, what is undone? → an E-f
 does the user know it is learning from them?                        → disclosure. A BR, or a gap.
 ```
 
+## Part 4c — The flows, and the pain points they resolve
+
+The screens are *what exists*; a flow is **how a real person gets from a trigger to an outcome**. It
+is the artifact a client recognises as their working day or fails to, which is why it gets its own
+part rather than being written as an afterthought at the end. Read `{design_conventions}`
+§ User flows and pain points before this part.
+
+```text
+ONE flow per user goal, per ACTOR — never one per platform, never one per screen
+    Entry        the trigger, in plain words
+    Path         the screens in order
+    Success      what the user is left with
+    Failures     each exception → the screen or state the user is left on
+    Resolves     the PP-### this journey fixes, or "—" when it serves a UC goal alone
+    Steps to     how many screens the actor passes through from trigger to success
+    goal
+```
+
+### D6 — a flow resolves something stated
+
+```text
+it delivers a UC's ## 2, end to end       → sufficient on its own. Every UC in scope gets a flow.
+it also fixes a PP-### from Part 1 step 5 → NAME IT in `Resolves`. This is the flow saying why the
+                                            journey is shaped this way rather than another way that
+                                            also delivers the steps
+it does neither                            → it is not a flow. It is an invented journey, and it is
+                                            an Open Question in ## 6, not a row here
+```
+
+**Every open pain point on this feature's hub gets an answer here — including "no".** A `PP-###` no
+flow resolves is a `## 6` question (owner: client, marked as a requirement gap when fixing it would
+change what the system does), never a silent omission: `5-verify` matches every open pain point
+forward to its flow, and an unanswered one surfaces there as a gap with this feature's name on it.
+
+**Never mark the register.** `PAIN-POINTS.md` and the hub's `## Pain Points` are read-only from here
+(`{design_conventions}` § Write map). The flow names the id; `/bigin-transform-signal` is what closes
+the row.
+
+### Two actors, two flows
+
+The same rule Part 2a applies to screens applies to journeys. A member checking their own record and
+an administrator working a directory of ten thousand are not on one journey with a filter bar in the
+middle — they are two flows, each naming its own actor, each with its own `Steps to goal`.
+
+### On `both`, still one flow
+
+A phone that splits one web form into three sheets is carrying the **same journey across more
+surfaces**. Say so inside the `Path` line — `web: Details → Confirm · mobile: Details → Reviewers →
+Confirm` — never as a second flow. Two flows for one goal is two journeys to keep in sync, and the
+second is wrong the first time a UC changes.
+
+### `Steps to goal` is a number you write down, not a target
+
+Count the screens between trigger and success and record it. It is not a budget and there is no
+right value — a five-step approval that a BR requires is five steps. It exists so `4-flow-review`
+has something to compare a journey against, and so a human reading two flows can see that one of
+them takes four times as long as the other for no reason anybody wrote down.
+
 ## Part 5 — When you do not know
 
 ```text
@@ -556,10 +654,13 @@ Write the question on the UX spec's `## 6`:
 ```
 
 ```text
-the answer changes how it LOOKS/READS        → a design question. Owner: client (or team).
+the answer changes how it LOOKS/FLOWS        → a design question. Owner: client (or team).
 a PLATFORM question — which shell a feature  → a DESIGN question too. Owner: client (or team).
 belongs on, whether a flow really works on a   It changes the SHAPE, not what the system does,
 phone, whether a 6th tab or a shared one       so the UC stays platform-blind either way (D4).
+a PAIN POINT no flow can resolve as the      → say which PP-### and why. It is a design question
+requirements stand                             when a different journey would fix it; a REQUIREMENT
+                                               GAP when nothing the system does today can.
 the answer changes what the system DOES      → a REQUIREMENT GAP. Say so in the question,
                                                report it, and let /bigin-transform-signal own it.
                                                Do NOT write it onto the UC yourself (D4).
@@ -580,8 +681,11 @@ one already exists           → UPDATE IT IN PLACE: bump version, append a ## C
                                naming the UCs this run designed. Never create a second one.
 ```
 
-Fill `## 4 Flows` last: per UC, entry → screens in order → success end and failure ends, one line
-each, mirroring the UC's own flow without restating its steps.
+Write `## 4 Flows` from Part 4c: per user goal, per actor — entry, path, success, failures,
+`Resolves`, and `Steps to goal`. It mirrors the UC's own flow without restating its step text.
+
+Leave `## 5 Navigation & Flow Review` with its nav rows filled and its **Flow Review table empty** —
+`4-flow-review` writes those verdicts, and a worker that pre-fills them has reviewed its own work.
 
 Set `platform:` in the frontmatter to the value you designed to — the dispatched one, or the
 per-feature override — and write the same value on `## 1`'s `Platform` line, with the override's
@@ -603,9 +707,9 @@ has checked which UCs really got screens.
 ## Part 7 — Report, do not write
 
 ```text
-DO NOT WRITE   {tokens_file} · {components_dir} · {nav_map_file} · another feature's UX spec/hub
-               DESIGN-PRINCIPLES.md · any UC, BR, or entity · FEATURES.md
-REPORT INSTEAD token candidates · component candidates · nav candidates · cross-feature screens
+DO NOT WRITE   {nav_map_file} · another feature's UX spec or hub · DESIGN-PRINCIPLES.md
+               PAIN-POINTS.md or a hub's ## Pain Points · any UC, BR, or entity · FEATURES.md
+REPORT INSTEAD nav candidates · cross-feature screens · unresolved pain points
 ```
 
 Report lines:
@@ -619,6 +723,10 @@ screens:            <screen> serves UC-### S<n>, S<n>  (one line each)
                     actor: <role> | volume: one|few|many <(the real number, when many)>
                     regions: <the platform's vocabulary, as specced>
                     on both, add: layout split web|mobile|none — <what differs, in a phrase>
+flows:              <goal> | actor: <role> | path: <screen> → <screen> | steps to goal: <N>
+                    | resolves: PP-### | — (one line each)
+pain_points:        PP-### | resolved by flow: <goal> | or: NOT RESOLVED — question raised
+                    (one line per open PP-### on this feature's hub; "none open" is a real result)
 actor_scope:        <actor> | sees: own|assigned|unit|all | volume: one|few|many
                     | may: read one|act on one|act on many | grounded by: <BR-### | UC-### S<n> |
                       EN-### cardinality>   (one line per actor in ## 1's table)
@@ -626,9 +734,9 @@ actor_splits:       <place> → <screen A> (<actor>, <band>) + <screen B> (<acto
                     | split on: volume|capability   (one line each; "none" when nothing split)
 capability_gaps:    <the unstated bulk/export/saved-view affordance> | asked for by: <what suggested
                     it> | NOT designed — requirement gap raised   (one line each, D8)
-tokens_used:        <existing token name> (one line each)
-token_candidates:   <proposed name> | level: 2|3 | value: <raw> | why: <what it means> | on: <screen>
-component_candidates: <name> | variants: … | states: … | used on: <screen>, <screen>
+roles_used:         <role> | on: <screen> · <element> (one line each, from the closed list)
+role_gaps:          <what needed a role the list does not carry> | on: <screen> | question raised
+                    (one line each, or "none")
 nav_candidates:     <entry label> | shell: web|mobile (one line per shell on both)
                     | parent: <existing id it nests under, or "new: <path>", or "top-level">
                     | points to: <screen> | role(s): <actor(s)>
@@ -642,22 +750,50 @@ designed_ucs:       UC-###@<version>  (one line each — ONLY UCs that really go
 blocked:            UC-### — <why, one line>
 ```
 
-**The orchestrator's next move is `4-verify.md`, on what you actually wrote.** It re-reads your spec
+**The orchestrator's next move is `4-flow-review.md` and then `5-verify.md`, on what you actually
+wrote.** It re-reads your spec
 from disk and matches every in-scope requirement item forward to the screen and state that carries it.
 So a screen that really serves `S4` must *say* it serves `S4` — an under-recorded `Serves` cell is
-repaired there, but a step you skipped becomes an Open Question with your feature's name on it. Report
-what you designed; do not report coverage you did not write down.
+repaired there, but a step you skipped becomes an Open Question with your feature's name on it. The
+same is true of a pain point: an open `PP-###` no flow's `Resolves` names surfaces as a gap.
+
+**Your flows will be reviewed and may be reordered.** `4-flow-review` can change a flow's screen
+order, re-point an interaction, re-nest a nav entry, and re-word copy that misleads — all in place,
+all changelogged. Write the journey you actually believe is right; do not pre-empt a critique by
+padding it, and do not leave a flow thin on the theory that something later will fix it.
+
+Report what you designed; do not report coverage you did not write down.
 
 ## Failure modes
 
 - **Inventing a screen the flow never asked for.** The most expensive mistake here: it reaches a
   client as if someone had specified it.
 - **Promoting every validation to its own screen.** A ten-screen spec for a five-step flow.
-- **Hardcoding `#2563eb` because the token did not exist yet.** Propose the token and cite its name.
+- **Writing `#2563eb`, `16px`, or `--color-action-primary` into a spec.** All three are D2 broken,
+  and the last one worst: it cites a design system this vault does not have, so it resolves to
+  nothing and a renderer quietly picks its own. Name a semantic role, or leave the cell blank.
+- **Inventing an eleventh role.** The ten are a closed list precisely so one mapping covers the
+  vault. A private role is a one-screen vocabulary nobody downstream can resolve — ask instead.
+- **Giving a screen two `primary action` elements.** The role means "the one thing this screen
+  exists for". Two of them means the screen is two screens, or one of the two is secondary.
 - **Making up form fields.** The entity has the fields. If it does not, that is a question.
 - **Re-asking a question the UC already has open.** The human answers it twice and the copies drift.
 - **Creating a second UX spec for a feature that has one.** The review splits and both go stale.
-- **Writing the design system or nav map from here.** Two features run at once; the second write loses.
+- **Writing the nav map from here.** Two features run at once; the second write loses.
+- **Writing a flow that resolves nothing.** D6. A journey nobody asked for reads exactly like one
+  somebody did, and a client walks it in a prototype believing it was specified.
+- **Leaving an open pain point unanswered.** Every open `PP-###` on the hub gets a flow that names
+  it or a `## 6` question saying why none does. Silence reads as "considered and fine" — and
+  `5-verify` will surface it anyway, one stage later, with less context to fix it in.
+- **Letting a pain point add a screen.** Ground 1b shapes ordering, emphasis, and defaults on a
+  screen a UC already asked for. A "recent activity" panel grounded only in `PP-004` is an invented
+  screen carrying a citation, which reviews as designed where a bare guess would have been caught.
+- **Marking a pain point resolved.** The register is read-only here. Name the id in the flow and
+  stop; `/bigin-transform-signal` closes the row.
+- **Writing two flows for one goal on `both`.** The phone splitting a form into sheets is the same
+  journey on more surfaces — one flow, the split inside its `Path`.
+- **Filling the Flow Review table.** `4-flow-review` writes those verdicts. A worker that grades its
+  own journeys has produced a review with nothing independent in it.
 - **Proposing a nav entry for a screen reached only through another screen.** It reads as a second
   door into the same room, and the two drift the first time one changes.
 - **Nesting a nav entry three levels deep because it looks tidier.** Depth is grounded like anything
@@ -725,17 +861,43 @@ spec HAS ## 7 from an earlier run      → update it in place like any other sec
 ```
 
 `platform` arrived the same way, and the same shape applies. A spec written before it existed has no
-`Platform` value in its `## 1 Design Brief` (or the literal words "not stated"), and unsuffixed
-`## Prototype Prompt — Claude design` / `## Prototype Prompt — Figma Make` headings:
+`Platform` value in its `## 1 Design Brief` (or the literal words "not stated"):
 
 ```text
-no Platform value + unsuffixed prompt   → a `web` spec, by definition — `web` is the absent-platform
-headings                                  default, and web is exactly what that run produced
-next design run of its feature          → self-heals: write Platform from the dispatch slot, and
-                                          give the prompt headings their (Web) suffix
-dispatched platform is now mobile|both  → still not a fork: same spec, updated in place, the
-                                          headings its platform calls for
+no Platform value                       → a `web` spec, by definition — `web` is the absent-platform
+                                          default, and web is exactly what that run produced
+next design run of its feature          → self-heals: write Platform from the dispatch slot
+dispatched platform is now mobile|both  → still not a fork: same spec, updated in place
 ```
+
+**A spec written against a design system** carries three things this pipeline no longer produces,
+and all three self-heal in place — never by forking the spec:
+
+```text
+## 3 element tables with a `Token(s)` column   → rename the column `Role` and re-fill it from the
+                                                 closed list ({design_conventions} § Semantic style
+                                                 roles). A cell holding `--color-action-primary` on
+                                                 the submit button becomes `primary action`; a cell
+                                                 holding a hex, a px, or a font name becomes the
+                                                 role it was standing in for, or BLANK. Do not try
+                                                 to preserve the old token name anywhere: nothing
+                                                 resolves it any more.
+## 5 Design System Usage                       → becomes ## 5 Navigation & Flow Review. Keep its
+                                                 nav rows (they are still true); drop `Design system
+                                                 version`, `Tokens used`, `Components used`, and
+                                                 `Added this run`.
+## Prototype Prompt — … blocks (2 or 4)        → DELETE them, all of them. /bigin-render-design
+                                                 builds its own prompt from ## 1-## 5, the UCs, the
+                                                 BRs, and the entity register, so these are a stale
+                                                 second copy of the screens beside them — and they
+                                                 inline token values that no longer exist anywhere.
+                                                 Say so in the ## Changelog line.
+frontmatter `design_system:`                   → drop the key. `nav_map:` stays.
+```
+
+`## 4 Flows` written before `Resolves` and `Steps to goal` existed carries neither: fill both this
+run, per Part 4c, for every flow in the section — including flows this run did not otherwise touch.
+An unfilled `Resolves` reads as "no pain point applies here", which is a claim nobody made.
 
 `## 1`'s **Actor & Scope** table, `## 2`'s `Actor` and `Volume` columns, and `## 3`'s `Actor` /
 `Scope` lines arrived the same way, and this one has real content behind it — a spec written before
@@ -771,5 +933,6 @@ been prototyped, so removing it silently loses the fact that somebody was shown 
 `/bigin-transform-signal` settle whether it was ever meant to exist.
 
 Every spec self-heals on the next design run of its feature. A spec whose feature is never redesigned
-keeps working — nothing downstream requires `## 7`, a `Platform` value, an Actor & Scope table, or
-the prompt suffix to exist.
+keeps working — nothing downstream requires `## 7`, a `Platform` value, an Actor & Scope table, a
+`Role` column, or a `Resolves` cell to exist. `/bigin-render-design` reads whichever shape it finds
+and reports what it could not resolve rather than halting.

@@ -14,8 +14,11 @@ exist and turns them into something a client can click through:
 in    UX-### <Feature>.md    the screens, states, real copy, flows, the ## 4 Coverage table — one
                              spec per feature, one or many features per run
     + UC / BR / ENTITIES.md  DATA ONLY: field lists, types, enums, predicates, state keys, volumes
-    + _design-system/        token VALUES, components, and the canonical navigation ## Structure
+    + _ux/navigation-map.md  the canonical navigation ## Structure
     + Open Design            ONE project, ONE design system, ONE model — all chosen before any run
+                             THE DESIGN SYSTEM IS BOUND HERE AND NOWHERE ELSE. The vault holds none:
+                             a spec says an element is the `primary action`, and the bound system
+                             decides what that looks like (§ Step 0.3)
 
 out   {od_project}           N feature runs + 1 assembly run, all in the same Open Design project
     + {prototype_dir}/       every artifact COPIED BACK into the vault, so the output outlives the
@@ -89,10 +92,7 @@ matches the unit of work.
 | `{design_conventions}` | `_bigin/conventions/design-conventions.md` | the design rulebook — § Rendering is a separate step, § Write map, § Grounding, § Platform |
 | `{ux_dir}` | `04-UIUX/` | **the input**, one `UX-<NNN> <Feature>.md` per feature. Its `## 8` + `rendered:` are the only spec fields this skill writes |
 | `{prototype_dir}` | `04-UIUX/_prototypes/` | **the output**, one folder per render: `{prototype_dir}/<YYYY-MM-DD>-<slug-or-multi>/`. Created by this skill and by nothing else |
-| `{design_system_dir}` | `04-UIUX/_design-system/` | **read-only here** |
-| `{tokens_file}` | `04-UIUX/_design-system/design-tokens.md` | token names AND values — **read-only** |
-| `{components_dir}` | `04-UIUX/_design-system/components/` | **read-only** |
-| `{nav_map_file}` | `04-UIUX/_design-system/navigation-map.md` | **the single source of truth for navigation**, and the assembly run's brief — read-only |
+| `{nav_map_file}` | `04-UIUX/_ux/navigation-map.md` | **the single source of truth for navigation**, and the assembly run's brief — read-only |
 | `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | **read-only** — client-stated preferences, and they outrank any engine's taste and any design system's defaults |
 | `{pain_points_file}` | `01-Requirements/PAIN-POINTS.md` | **read-only** — which states are worth rendering properly |
 | `{hub_dir}` | `01-Requirements/_features/` | read `<slug>.md`'s `uiux:` to find a slug's spec. **Not written** — a render changes no requirement bookkeeping |
@@ -117,16 +117,31 @@ WRITE   {prototype_dir}/<run>/               the copied-back artifacts. THE ONLY
         {project_file} render settings       the resolved Open Design project + design system +
                                              agent/model, so the next run does not re-ask (§ Step 0)
 
-NEVER   ## 1-## 7 of the spec        the design. Not a screen, not a state, not a word of copy
-        the prompt blocks            the record of what was specified, not of what a render made of it
-        {design_system_dir}          a token an engine wanted is a /bigin-generate-design question
+NEVER   ## 1-## 7 of the spec        the design. Not a screen, not a state, not a word of copy, not
+                                     a flow, not a Flow Review verdict
+        a design system, anywhere    the vault holds none by design. A visual decision the bound
+        in the vault                 system does not answer is a question for the design team, not a
+                                     token file this skill invents
         anything in 01-Requirements/ including the hub. A render is not a requirement event
         the spec's status:           human-only, and a render is not a review (D5)
         the spec's absorbed:         staleness is about UCs and screens, not about renders
 ```
 
-A token or component Open Design wants and cannot find is **not** something to add here. It is a gap
-in the spec, and the spec is `/bigin-generate-design`'s: report it and stop rendering that screen.
+**Two different "missing" cases, and only one of them is a gap.**
+
+```text
+a SCREEN, STATE, FIELD, or COPY the spec does not carry   → a gap in the spec, and the spec is
+                                                            /bigin-generate-design's. Report it and
+                                                            stop rendering that screen
+a COLOUR, SIZE, FONT, or COMPONENT the spec does not      → NOT a gap. The spec is not supposed to
+carry                                                        carry one. The BOUND DESIGN SYSTEM
+                                                            answers it (§ Step 0.3), and where the
+                                                            spec says `primary action` the system's
+                                                            own primary treatment is the answer
+```
+
+Reporting the second as a spec gap sends a human back to `/bigin-generate-design` to add something
+that skill deliberately does not produce.
 
 ## Execution order
 
@@ -200,15 +215,24 @@ the target project already has one bound (get_project) → offer it as the defau
 NONE of the above                                      → ASK, and list what is actually available
 ```
 
+**This is the only place a visual system enters the pipeline.** `/bigin-generate-design` produces
+none — no palette, no type scale, no components, no tokens — so there is no vault default to fall
+back on and nothing to compare a catalog system against. Whatever is bound here is what the client
+sees.
+
 **List, never guess.** Open Design exposes design systems as MCP **resources**, not tools — enumerate
-`resources/list` and take every `od://design-systems/<id>/DESIGN.md` entry. That listing plus the
-vault's own `{tokens_file}` is the complete menu. Put both kinds in front of the human:
+`resources/list` and take every `od://design-systems/<id>/DESIGN.md` entry. That listing is the menu:
 
 ```text
-the vault's own tokens ({tokens_file})   the client's actual brand, from /bigin-generate-design
 <id> — <title>                            an Open Design catalog system
 …                                         (every entry resources/list returned)
 ```
+
+**A design system the design team supplied** is the other legitimate answer, and it is not in that
+listing: a brand file, a Figma library, a token set living wherever the team keeps it. When the human
+names one, take it as given — pass its values into the prompt (Step 2) the way a catalog system's
+would be. Do not copy it into the vault: a mirrored brand is stale the first time the team changes it
+and authoritative-looking forever.
 
 ```text
 named design system found in either place  → bind it and render
@@ -222,8 +246,8 @@ and renders the client's product in a stranger's brand.
 
 **`{design_principles_file}` outranks whichever system is chosen.** An active DESIGN-PRINCIPLES row and
 a catalog system's default disagree → the row wins, and Step 2 states it in the prompt as a hard
-override. That is ground 3, and it is why a shipped design system is never a substitute for the
-vault's tokens.
+override. That is ground 3: the client's own stated preference is the one visual fact this vault
+does hold, and no shipped design system overrides it.
 
 ### 0.4 Which model?
 
@@ -248,7 +272,7 @@ Write the four resolved values into `{project_file}` so the next render does not
 
 ```yaml
 od_project:        <project id>
-od_design_system:  <design system id, or "vault-tokens">
+od_design_system:  <design system id, or the design team's system as the human named it>
 od_agent:          <agent id, or empty for Open Design's default>
 od_model:          <model id, or empty>
 ```
@@ -302,16 +326,31 @@ agent never sees the vault, so anything left out is something it will invent.
 
 ```text
 UX-### spec        ## 1 Design Brief · ## 2 Screen Inventory · ## 3 Screen Specs (regions, elements,
-                   copy, tokens, States, Interactions) · ## 4 Flows          THE DESIGN. Verbatim
+                   copy, ROLES, States, Interactions) · ## 4 Flows (the journey each screen sits in,
+                   and the pain point it resolves)                           THE DESIGN. Verbatim
 UC / BR            the steps each screen serves, the validation predicates, the error states, the
                    state keys                                                DATA AND LOGIC ONLY
 ENTITIES.md /      field lists, types, formats, enum vocabularies, cardinalities, real volume
 _entities/         numbers                                                   DATA ONLY
-{tokens_file}      every token the screens use, by NAME **and VALUE**        the design system
-+ {nav_map_file}   this platform's ## Structure — the shell, verbatim
-+ {components_dir}
+the BOUND DESIGN   the visual system, from Step 0.3 — NOT from the vault, which holds none. Every
+SYSTEM             semantic ROLE the spec names maps to this system's own treatment for it
+{nav_map_file}     this platform's ## Structure — the shell, verbatim
 PAIN-POINTS.md +   which states are worth rendering properly, and the client-stated preferences that
-DESIGN-PRINCIPLES  outrank the design system                                 ground 3
+DESIGN-PRINCIPLES  outrank the bound design system                           ground 3
+```
+
+**The role→system mapping is the one translation this skill performs**, and it is mechanical, not a
+design decision:
+
+```text
+the spec says     an element's Role is `primary action` | `danger` | `muted` | … | blank
+the prompt says   "this is the primary action — use <the bound system's primary treatment>"
+                  "this badge means something is overdue — use <the bound system's danger treatment>"
+                  blank → no instruction at all; the system's default body treatment applies
+
+NEVER invent a value for a role the bound system does not cover. Say the role in words and let the
+engine resolve it inside the system it was given. A hex written here is this skill deciding the
+client's brand, one screen at a time.
 ```
 
 **Every vault id is expanded into words before it enters the prompt.** `UC-012 S4` becomes "the step
@@ -410,14 +449,16 @@ prompt is built from:
 {nav_map_file} ## Structure    the shell and the route tree, VERBATIM. This is the single source of
                                truth for navigation and the assembler resolves nothing itself
 every screens/*.html           what the feature runs produced, by path
-{tokens_file}                  the same token values every feature run used
+the BOUND DESIGN SYSTEM        the same one every feature run was given (Step 0.3) — so the shell
+                               matches the screens it wraps. Never a second system, and never one
+                               re-derived from what the rendered HTML happens to contain
 the entry-actor set            when the participating specs' ## 1 Actor & Scope tables name more than
                                one actor, an entry stage that lets a reviewer switch between them —
                                ONLY the actors and handoffs a spec's own ## 1 or ## 4 Flows names
 ```
 
-Output: **one `index.html`** — client-side routing, embedded state, CSS from the token values, no
-server and no external stylesheet or script. It runs from a file, which is what makes it something a
+Output: **one `index.html`** — client-side routing, embedded state, CSS from the bound design
+system, no server and no external stylesheet or script. It runs from a file, which is what makes it something a
 person can be handed.
 
 Then the assembler **verifies the prototype actually works**:
@@ -518,17 +559,30 @@ construction.
 4  say plainly that the automation failed, what failed, and that the prompts are the deliverable
 ```
 
-The spec's own `## Prototype Prompt` blocks are the other fallback and they need no tool at all — name
-them too. A missing engine has never been allowed to cost this pipeline its output, and it does not
-start here.
+**The built prompts are the whole fallback, and they are enough.** Older specs carried their own
+`## Prototype Prompt` blocks as a second copy; that pipeline stage is gone, and a spec that still has
+one is stale (its blocks inline token values the vault no longer holds and screens that may since
+have changed). Name the prompts this run built, in `{prototype_dir}/<run>/`, and never point a human
+at a leftover block. A missing engine has never been allowed to cost this pipeline its output, and it
+does not start here.
 
 ---
 
 ## Failure modes
 
-- **Picking a design system without asking.** The single most damaging silent failure in this skill:
-  the client's brand is replaced by a stranger's and the prototype still looks finished. Step 0.3 asks,
+- **Picking a design system without asking.** The single most damaging silent failure in this skill,
+  and it got worse when the vault stopped holding tokens of its own: there is no longer any vault
+  default to fall back on, so whatever is bound here is simply what the client sees. Step 0.3 asks,
   every time it is not already resolved.
+- **Writing a hex, a size, or a font into a prompt because the spec did not carry one.** The spec is
+  not supposed to carry one — it names a semantic role, and the bound design system answers it. A
+  value invented here is this skill deciding the client's brand one screen at a time, and it is
+  invisible in review because the prototype looks finished either way.
+- **Reporting a missing colour or component as a spec gap.** It sends a human back to
+  `/bigin-generate-design` to add something that skill deliberately does not produce.
+- **Pointing a human at a spec's leftover `## Prototype Prompt` block.** Those blocks are stale by
+  construction now: they inline token values the vault no longer holds and describe screens that may
+  have changed since. The prompts this run built are the fallback.
 - **Guessing a design system or model id.** A guessed id that 404s is fine. A guessed id that *resolves
   to something else* is the failure. `resources/list` and `list_agents` are the only authorities.
 - **Cancelling a slow run.** `running` with unchanged mtimes is the inner agent thinking. Open Design's
@@ -592,7 +646,8 @@ not.
   root carries no `data-ux`/`data-screen`. Exits `0` clean, `1` with each finding as
   `file:line | kind | position | id | context`, `2` if it could not run.
 - **`scripts/check-contrast.py`** — WCAG 2.1 ratios, computed. `<fg> <bg> …` for pairs,
-  `--tokens <design-tokens.md>` to sweep every colour token against every surface token, or
+  `--tokens <file.md>` — the **bound** design system's `DESIGN.md`, or a token file the design team
+  supplied — to sweep every colour token against every surface token, or
   `--pairs <file>` for `name fg bg [large|ui]` lines. Exits non-zero on a failure. Contrast is a
   formula; a model asked to judge it by eye is wrong on exactly the muted-on-subtle pairings a dense
   enterprise screen is full of.

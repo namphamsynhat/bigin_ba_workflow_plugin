@@ -63,15 +63,27 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |                  references, refresh its feature hub(s). Run whenever
         |                  convenient -- not part of the review loop.
         |
-/bigin-generate-design    [Load] every UC with no current design -> one UX-### per feature:
-        |                  screen specs, the shared design system, a forward coverage check, and a
-        |                  prototype prompt per tool per platform (Claude design + Figma Make; two
-        |                  blocks on a web or mobile product, four on both). Shaped by `platform:`
-        |                  in the project config -- a UC itself stays platform-blind. Runs off UCs,
-        |                  not the PRD, so it can start as soon as a use case has a main flow.
-        |                  Fully headless with NO halt: it renders nothing, so no missing design
-        |                  tool can stop it. It ends at a spec proven complete enough to render
-        |                  cold, on any engine, months later.
+/bigin-generate-design    [Load] every UC with no current design -> one UX-### per feature: the
+        |                  EXPERIENCE, and only the experience. Actors and their data scope, a
+        |                  screen inventory, screen specs, the vault-wide navigation shell, and the
+        |                  USER FLOWS -- each flow naming the PP-### pain point it resolves, or
+        |                  saying it serves a UC goal alone. Then a flow review that walks every
+        |                  journey as the actor and improves it in place (gated: it runs when a
+        |                  perception-first-design or critique skill is installed, and is skipped,
+        |                  silently, when none is -- a fabricated review is worse than none). Then
+        |                  a forward coverage check matching every requirement item AND every open
+        |                  pain point to what carries it.
+        |                  NO DESIGN SYSTEM AND NO TOKENS. No palette, no type scale, no component
+        |                  library. An element names a SEMANTIC ROLE from a closed list of ten
+        |                  (`primary action`, `danger`, `muted`, ...), and a real design system --
+        |                  the design team's, or one bound at render time -- maps those ten once,
+        |                  later. A run that invented a palette would pin the client's brand to a
+        |                  colour nobody chose.
+        |                  Shaped by `platform:` in the project config -- a UC itself stays
+        |                  platform-blind. Runs off UCs, not the PRD, so it can start as soon as a
+        |                  use case has a main flow. Fully headless with NO halt: it renders
+        |                  nothing, so no missing design tool can stop it. It ends at a spec proven
+        |                  complete enough to render cold, on any engine, months later.
         |
 /bigin-render-design      [Load, on request] finished UX-###s -> ONE interactive prototype, on
         |  (a human asks)  Open Design. `/bigin-render-design [slug|UX-### ...]
@@ -82,13 +94,16 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |                  MODULAR, and it ASKS before it spends anything. Step 0 resolves four
         |                  things and asks about any it cannot: is Open Design connected; share
         |                  an existing Open Design project or create a new one for this vault;
-        |                  WHICH DESIGN SYSTEM (listed from Open Design's own catalog resources
-        |                  plus the vault's own tokens -- never guessed, and DESIGN-PRINCIPLES
-        |                  still outranks whichever is picked); and which model, from
-        |                  list_agents rather than a hardcoded id. Then: Step 1 scopes the
-        |                  features; Step 2 builds ONE self-contained prompt per feature (UX
-        |                  spec + UC/BR/ENTITIES data + token VALUES + nav map + the fidelity
-        |                  bar, every vault id expanded into words); Step 3 fans out one
+        |                  WHICH DESIGN SYSTEM -- listed from Open Design's own catalog
+        |                  resources, or named by the human as the design team's. THIS IS THE ONLY
+        |                  PLACE A VISUAL SYSTEM ENTERS THE PIPELINE, since the vault holds none,
+        |                  so it is never guessed; DESIGN-PRINCIPLES still outranks whichever is
+        |                  picked. And which model, from list_agents rather than a hardcoded id.
+        |                  Then: Step 1 scopes the features; Step 2 builds ONE self-contained
+        |                  prompt per feature (UX spec + UC/BR/ENTITIES data + nav map + each
+        |                  element's semantic role stated IN WORDS for the bound system to
+        |                  resolve + the fidelity bar, every vault id expanded into words);
+        |                  Step 3 fans out one
         |                  start_run per feature into that ONE shared project, each watched by
         |                  its own render-screen-worker across the 5-30 minutes a run takes,
         |                  which reads the artifacts back and checks BOTH halves of the
@@ -170,12 +185,22 @@ _bigin/templates/                 blank scaffolds for every artifact type, same 
 ├── _frs/FR-<NNN> <Title>.md      RETIRED — pre-UC requirement docs, frozen, absorbed_by: UC-###
 └── SCENARIOS.md                  RETIRED — pre-UC SCN-### cross-feature register; a cross-feature
                                   flow is now one UC
-04-UIUX/UX-<NNN> <Feature>.md    one design spec per feature, from /bigin-generate-design: screen
-                                  inventory, screen specs, flows, the ### Coverage table proving
-                                  nothing in the requirements went undesigned, and the prototype
-                                  prompt blocks -- plus the shared append-only design system under
-                                  04-UIUX/_design-system/. Its ## 8 Rendered Artifacts holds
-                                  pointers, written only by /bigin-render-design
+04-UIUX/UX-<NNN> <Feature>.md    one UX spec per feature, from /bigin-generate-design: actors and
+                                  their data scope, screen inventory, screen specs (semantic roles,
+                                  never colours or tokens), the user flows and the pain point each
+                                  resolves, the ### Flow Review verdicts, and the ### Coverage
+                                  table proving nothing in the requirements went undesigned. Its
+                                  ## 8 Rendered Artifacts holds pointers, written only by
+                                  /bigin-render-design
+04-UIUX/_ux/navigation-map.md    the ONE vault-wide navigation shell -- every directly-reachable
+                                  menu entry and the screen it opens, append-only, at arbitrary
+                                  depth via a dot-path id. A web tree, a mobile tab bar of at most
+                                  five, or one file carrying both. It is /bigin-render-design's
+                                  single source of truth for routing
+04-UIUX/_design-system/          LEGACY, unread. A vault materialized before design systems left
+                                  this pipeline may still have design-tokens.md and components/
+                                  here. Nothing reads them and nothing deletes them; they are a
+                                  record of what earlier runs specced against
 04-UIUX/_prototypes/<run>/       the rendered prototype, COPIED BACK out of Open Design by
                                   /bigin-render-design: index.html, screens/, assets/, and a
                                   RENDER.md manifest naming the project, design system, model,
@@ -246,7 +271,8 @@ can dispatch `hub-bookkeeper` per touched hub, same pattern as everywhere else i
 a size threshold (3+ in-scope UCs, or 4+ distinct cited entities) — a read-only pass that combines a
 feature's UCs, the `EN-###` entities they cite, their `BR-###` rule mirrors, open hub directives, and
 active design principles into one Design Brief for that feature's screens-writing worker. It never
-writes a file and never finalizes a screen boundary, a token, or the Part 4b relationship verdict —
+writes a file and never finalizes a screen boundary, a semantic role, a user flow, or the Part 4b
+relationship verdict —
 those stay the screens worker's judgment; the assembler only removes the need to re-derive the
 mechanical parts of the read from scratch in the same context that then has to design the screens.
 

@@ -104,8 +104,11 @@ resources/read <uri>    →  that system's DESIGN.md prose — palette, typograp
 ```
 
 `resources/list` is backed by the daemon's `GET /api/design-systems`, scoped to the signed-in
-workspace, so what it returns is what the human sees in the app. That listing **plus** the vault's own
-`{tokens_file}` is the complete menu for Step 0.3, and an id outside both halts the run.
+workspace, so what it returns is what the human sees in the app. That listing is the catalog half of
+Step 0.3's menu; the other half is **a system the design team supplied**, which lives outside Open
+Design and outside the vault, and which the human names directly. **There is no vault-tokens option**
+— `/bigin-generate-design` produces no design system at all. A catalog id outside the listing, with
+no design-team system named either, halts the run.
 
 Read `od://design-systems/<id>/DESIGN.md` when the prompt needs to state the brand explicitly — but
 remember `{design_principles_file}` outranks it, and say so in the prompt where they disagree.

@@ -32,7 +32,9 @@ The orchestrator hands you all of this. You do not re-resolve any of it.
 
 ```text
 od_project        the resolved Open Design project id                    ALWAYS pass it explicitly
-od_design_system  the design system id, or "vault-tokens"
+od_design_system  the design system id bound to the project — the ONLY visual system in play.
+                  The vault holds none, so nothing local overrides or supplements it except
+                  DESIGN-PRINCIPLES.md (ground 3)
 od_agent          an agent id from list_agents, or empty
 od_model          a model id, or empty
 tool_prefix       mcp__<server>__ — resolved once at Step 0 by substring match
@@ -56,8 +58,6 @@ in order. You read, for this feature only:
 
 ```text
 the UX spec           ## 1 Design Brief · ## 2 Screen Inventory · ## 3 Screen Specs · ## 4 Flows
-{tokens_file}         every token those screens name — NAMES AND VALUES
-{components_dir}      the shared components those screens use
 {nav_map_file}        this platform's ## Structure, verbatim
 DESIGN-PRINCIPLES.md  active rows — ground 3, and they override the bound design system
 PAIN-POINTS.md        the rows behind a state the screens carry
@@ -209,8 +209,11 @@ resolve the project, design system, model  Step 0 did that. You are handed the v
 render a screen the ## 2 inventory
   does not carry                           § Grounding. Report it; do not keep it
 invent a field, a status, or a capability  the dataset authors values; structure is the spec's
-add a token, edit {tokens_file}, or touch
-  {design_system_dir}                      append-only, and it is /bigin-generate-design's (D1)
+write a hex, size, or font for a ROLE      the BOUND design system answers a role. `primary action`
+  the spec did not give a value for           means its primary treatment, not a colour you pick.
+                                              A value invented here decides the client's brand
+create a design system anywhere in the     the vault holds none, by design. A visual question the
+  vault                                       bound system cannot answer goes to the design team
 write into 01-Requirements/                a render is not a requirement event
 write the spec's ## 1-## 7 or its
   prompt blocks                            § Write map. The orchestrator writes ## 8, not you

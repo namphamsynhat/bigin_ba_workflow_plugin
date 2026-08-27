@@ -1,6 +1,6 @@
 ---
 name: render-prototype-assembler
-description: Use this agent when the bigin-ba-workflow-plugin's bigin-render-design skill reaches Step 4 — every feature's screens have rendered on Open Design and terminated, and they now need wiring into ONE interactive prototype: a single self-contained `index.html` whose route tree is built verbatim from `04-UIUX/_design-system/navigation-map.md`, whose shell is identical on every screen, and whose every nav entry, control target, and route actually resolves. Typical triggers include the Step 4 barrier firing once every `render-screen-worker` has reported, a repair round re-running the assembly with a stated correction, and a re-assembly after one feature was re-rendered. Never invoke this before every feature run is terminal, never to render or re-render a feature's screens (that is `render-screen-worker`), never to add a route the navigation map does not carry, and never to invent an actor handoff no spec describes. See "When to invoke" in the agent body for worked scenarios.
+description: Use this agent when the bigin-ba-workflow-plugin's bigin-render-design skill reaches Step 4 — every feature's screens have rendered on Open Design and terminated, and they now need wiring into ONE interactive prototype: a single self-contained `index.html` whose route tree is built verbatim from `04-UIUX/_ux/navigation-map.md`, whose shell is identical on every screen, and whose every nav entry, control target, and route actually resolves. Typical triggers include the Step 4 barrier firing once every `render-screen-worker` has reported, a repair round re-running the assembly with a stated correction, and a re-assembly after one feature was re-rendered. Never invoke this before every feature run is terminal, never to render or re-render a feature's screens (that is `render-screen-worker`), never to add a route the navigation map does not carry, and never to invent an actor handoff no spec describes. See "When to invoke" in the agent body for worked scenarios.
 model: inherit
 ---
 
@@ -30,7 +30,9 @@ handoff.
 
 ```text
 od_project        the resolved Open Design project id                    ALWAYS pass it explicitly
-od_design_system  the design system id, or "vault-tokens"
+od_design_system  the design system id bound to the project — the SAME one every feature run was
+                  given. Never a second system, and never one re-derived from what the rendered
+                  HTML happens to contain
 od_agent          an agent id from list_agents, or empty
 od_model          a model id, or empty
 tool_prefix       mcp__<server>__ — resolved once at Step 0 by substring match
@@ -53,7 +55,8 @@ anything.** The assembly prompt's seven sections are specified in the latter.
 
 ```text
 {nav_map_file}        this platform's ## Structure — VERBATIM. Entries, labels, depth, order, roles
-{tokens_file}         the same token values every feature run used — NAMES AND VALUES
+the bound design      the same one every feature run was given, so the shell matches the screens
+system                it wraps
 each spec's ## 1      the Actor & Scope table, for the entry-actor set
 each spec's ## 4      Flows, for the handoffs — and the Coverage table's "out of scope" rows
 screen_files          what to wire, by path
@@ -137,7 +140,7 @@ CONTENT
 SELF-CONTAINMENT
   one index.html, no server needed                                  it opens from the filesystem
   no external stylesheet, script, font, or CDN reference            it survives being emailed
-  CSS from the token VALUES                                         fidelity item 1
+  CSS from the BOUND design system                                  fidelity item 1
 
 TRACEABILITY
   scripts/check-traceability.sh "{prototype_dir}/index.html" --require
@@ -188,7 +191,8 @@ reorder, relabel, or re-parent an entry      same rule
 invent an actor or a handoff                 only what a spec's ## 1 or ## 4 Flows names
 silently drop an out-of-scope nav entry      render it visibly unavailable instead
 reword a screen's copy while wiring it       you wire; the words were decided
-add a token or touch {design_system_dir}     append-only, and it is /bigin-generate-design's (D1)
+invent a colour, size, or font               the bound design system is the whole visual answer;
+                                             the vault holds no design system to add one to
 write into 01-Requirements/ or the spec's
   ## 1-## 7                                  § Write map. The orchestrator writes ## 8, not you
 add data-ux / data-screen by hand            missing provenance is a re-run, never a patch

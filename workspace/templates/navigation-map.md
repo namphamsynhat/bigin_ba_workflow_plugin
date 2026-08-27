@@ -10,14 +10,20 @@ updated:
 
 # Navigation Map
 
-The **one** navigation map for this vault, at `04-UIUX/_design-system/navigation-map.md`. It is the
+The **one** navigation map for this vault, at `04-UIUX/_ux/navigation-map.md`. It is the
 menu/navigation system of the product this project is building: every persistent,
 directly-reachable entry point a user sees in a nav bar, sidebar, tab strip, tab bar, or flyout, and
 which screen it opens. No feature forks it.
 
-**Append-only (D1), same as the design system.** An entry here is a real menu item a screen already
-depends on being reachable. Never delete or rename one — a screen removed from the flow leaves its
-entry to be closed out explicitly (see § Removing an entry), not silently dropped.
+It lives under `_ux/`, not inside a design-system folder: navigation is an **experience** decision
+`/bigin-generate-design` owns end to end, and this plugin produces no design system at all — colour,
+type, spacing, and components are the design team's, or are bound at render time.
+
+**Append-only (D1).** An entry here is a real menu item a screen already depends on being reachable.
+Never delete one, and never edit an `id` in place — a screen removed from the flow leaves its entry
+to be closed out explicitly (see § Removing an entry), not silently dropped. A **re-nest** (Stage 4's
+one structural change) adds the new row and retires the old id in that same section; it never
+overwrites the old one, because every screen spec citing the old path would point at nothing.
 
 ## The shell is a platform fact
 
@@ -49,8 +55,8 @@ not a global rank.
 On `platform: both`, rename this heading `## Structure — Web`. On `platform: mobile`, this section
 IS the phone shell — the five-tab cap below applies to it. -->
 
-| Order | id | Label | Points to (screen) | Role(s) | Grounded by | Icon/token | Added by |
-|-------|----|-------|---------------------|---------|-------------|------------|-----------|
+| Order | id | Label | Points to (screen) | Role(s) | Grounded by | Icon | Added by |
+|-------|----|-------|---------------------|---------|-------------|------|-----------|
 
 ```text
 example, three levels — Order resets per parent, it is not a global rank:
@@ -68,7 +74,13 @@ neither collides with the other. A child's `id` is always `<parent id>.<segment>
 must already exist **in the same section** (append-only builds each tree top-down; a child never
 arrives before its parent). `Role(s)` defaults to "everyone"; a narrower value is never invented — it
 cites the `BR-###` or the UC's actors that actually draw the line (§ Grounded by, and
-design-conventions.md § Grounding).
+design-conventions.md § Grounding). `Grounded by` may also cite a `PP-###` for a PLACEMENT decision
+(why this entry sits here rather than three levels down) — never for the entry existing, which needs
+a screen a UC actually asked for.
+
+`Icon` is a plain NAME a renderer can resolve on its own ("inbox", "calendar") or blank. Never a
+token id: there is no design system in this vault to resolve one against
+(design-conventions.md § Semantic style roles).
 
 **The phone shell's five-tab cap.** Wherever a section describes a phone shell — `## Structure` on a
 `mobile` project, `## Structure — Mobile` on a `both` one — it holds **at most 5 top-level entries**,
@@ -88,8 +100,8 @@ An entry that exists on one shell and not the other is NORMAL and expected — a
 an admin area a phone app never surfaces. Say so in that row's `Grounded by` rather than mirroring it
 onto the other shell to look symmetrical: a mirrored row is an invented menu item (D3). -->
 
-| Order | id | Label | Points to (screen) | Role(s) | Grounded by | Icon/token | Added by |
-|-------|----|-------|---------------------|---------|-------------|------------|-----------|
+| Order | id | Label | Points to (screen) | Role(s) | Grounded by | Icon | Added by |
+|-------|----|-------|---------------------|---------|-------------|------|-----------|
 
 ## Removing an entry
 <!-- A screen that no longer exists still leaves its row here (D1). Mark it instead of deleting.
@@ -101,7 +113,10 @@ as "—", or drop it. -->
 
 | Structure | id | Status | Since | Why |
 |-----------|----|--------|-------|-----|
-<!-- Status: active | retired — a retired row stays for history; it is never deleted. -->
+<!-- Status: active | retired — a retired row stays for history; it is never deleted.
+A Stage 4 RE-NEST retires the old id here with `re-nested to <new id>` as its Why, and the new row
+is added to ## Structure above. That pair is what keeps a moved entry auditable; editing the id in
+place instead loses both the history and every screen spec citing the old path. -->
 
 ## Open Questions
 <!-- A menu placement, nesting depth, or role split that looks wrong, or that a screen's report

@@ -50,8 +50,9 @@ P6  Design is QUOTED, not decided. § 9 reports the screens that exist; it never
 ```
 
 Ids **are** required here — in §§ 5-7 and § Traceability — because this is an internal document and
-traceability is the point. That is the opposite of a prototype prompt, which may carry no ids at all
-(`{design_conventions}` D6). Do not carry that rule across.
+traceability is the point. That is the opposite of a RENDER PROMPT, which `/bigin-render-design`
+builds at render time and which may carry no ids at all: it runs in a process that has never seen
+this vault. Do not carry that rule across.
 
 ## Operating modes
 

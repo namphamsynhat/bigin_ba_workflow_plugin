@@ -6,7 +6,10 @@ dense enterprise screen is full of: muted text on a subtle surface. Compute it.
 
 usage:
     check-contrast.py <fg> <bg> [<fg> <bg> ...]        # colour pairs
-    check-contrast.py --tokens <design-tokens.md>      # every colour token, pairwise vs surfaces
+    check-contrast.py --tokens <file.md>               # every colour token, pairwise vs surfaces
+                                                      # (the BOUND design system's DESIGN.md, or a
+                                                      #  token file the design team supplied — the
+                                                      #  vault itself holds no design system)
     check-contrast.py --pairs <file>                   # one "name fg bg [large|ui]" per line
 
 Colours: #rgb, #rrggbb, #rrggbbaa (alpha ignored — composite it yourself first), or "r,g,b".
@@ -82,7 +85,8 @@ def main(argv):
 
     if argv[0] == "--tokens":
         if len(argv) < 2:
-            print("--tokens needs a file", file=sys.stderr)
+            print("--tokens needs a file (the bound design system's DESIGN.md, or the design "
+                  "team's token file — the vault holds no design system)", file=sys.stderr)
             return 2
         tokens = read_tokens(argv[1])
         if not tokens:

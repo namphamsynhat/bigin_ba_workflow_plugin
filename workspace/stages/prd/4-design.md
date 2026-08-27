@@ -6,8 +6,8 @@ in:   {ux_dir}/UX-<NNN> <Feature>.md (§ 1-§ 6, and § 7 when present) · {desi
       rows it applied ·
       the hub's ## Design Directives · the PENDING list from Stage 1 · every folded UC's § 5 and § 6
 out:  §§ 9-12 of {prd_dir}/PRD-<NNN> <Feature>.md, plus § 6's Screen column backfilled
-never: inventing a screen, a state, or a visual decision (P6) · a token name, hex, or px (P1) ·
-       editing the UX spec (P4) · restating a prototype prompt
+never: inventing a screen, a state, a journey, or a visual decision (P6) · a semantic role, hex, or
+       px (P1) · editing the UX spec (P4) · restating a screen spec
 ```
 
 ## § 9 Experience & Design — report the design, never decide it
@@ -29,15 +29,18 @@ UX spec exists                → fill § 9 from it, and record UX-###@version f
 | `Platform` | § 1 Design Brief `Platform` — copy it as stated. A spec written before the field existed carries none: that is a `web` spec (`{design_conventions}` § Platform), not a gap to raise |
 | `Design intent, as stated to us` | § 1 `Principles applied` + `Directives applied` — the client's words, not the row numbers alone |
 | **Screens** table | § 2 Screen Inventory: `Screen`, `Purpose` → `What the actor does there`, `Serves` → the § 5 capability whose UC owns those `S#` ids. Carry the `Actor` cell too, and the `Volume` band **in business words** where it is `many` ("the administrator's view of all ~10,000 members") — two screens the design split by actor are two rows here, never collapsed back into one: which actor a screen is for, and how much they are looking at, is business content a reader can verify, unlike anything else on the design side. A spec written before those columns existed carries neither; leave them out rather than inferring an actor |
-| **Journeys** table | § 4 Flows: `Path` → `The path through the screens`, `Success` → `Ends on` |
-| `Prototype` | say the prompts are in `UX-<NNN>`, naming **the prompt-block headings that spec actually carries** — the headings are platform-suffixed, so a `web` or `mobile` spec has 2 (`§ Prototype Prompt — Claude design (Web)` / `— Figma Make (Web)`, or the `(Mobile)` pair) and a `both` spec has all 4. A pre-suffix spec carries the unsuffixed `— Claude design` / `— Figma Make` pair. Read the spec's own headings; never assume a fixed pair. **Point, never restate** |
-| `Known design gaps` | § 6 Open Questions, unchecked lines only, translated to business words |
+| **Journeys** table | § 4 Flows: `Path` → `The path through the screens`, `Success` → `Ends on`, and — where the flow names one — the `PP-###` it resolves, **in the pain point's own business words, not its id**. A journey that fixes something the client complained about is the most readable thing on this page; a bare `PP-004` is not. A spec written before `Resolves` existed carries none: leave the column out rather than inferring which journey fixes what |
+| `Prototype` | one line pointing at `/bigin-render-design` as how a clickable prototype gets made from `UX-<NNN>`, and at `§ 8 Rendered Artifacts` for whether one already has been (with its date and design system, when the section exists). **Never quote a `## Prototype Prompt` block, and never point a reader at one:** those blocks were removed from the pipeline, and a spec that still carries one is stale — it inlines token values the vault no longer holds. **Point, never restate** |
+| `Known design gaps` | § 6 Open Questions, unchecked lines only, translated to business words. **Add one line when `flow_review: skipped`:** the user journeys were specified but never critiqued, because no flow-review skill was installed on that run — a reader deciding whether to build from this document needs to know which of the two it is |
 | `What the system does for the actor` *(only when § 7 exists)* | § 7 Relationship Model: what it remembers between visits, and what it does unprompted versus only suggests — **in business words, two or three lines.** Cite the `BR-###` that granted it. Never reproduce the Trust Map table, never carry the Proposed Measures, and never describe an autonomy no BR granted (`{design_conventions}` D7) |
 
 **What never crosses from the design side into this document** (`{design_conventions}` D2, and P1
-here): a token name, a hex value, a px value, a font, a component name, a region layout, an
-interaction table. A business reader cannot verify any of it, and duplicating it here creates a
-second, drifting source for something the design system owns.
+here): a semantic role (`primary action`, `danger`), a hex value, a px value, a font, a component
+name, a region layout, an interaction table. A business reader cannot verify any of it.
+
+**And there is nothing else to cross.** The UX spec carries no design system, no palette, and no
+tokens — `/bigin-generate-design` produces none, and the visual system is bound at render time. So a
+`§ 9` that has nothing to say about how the product will look is correct and complete, not thin.
 
 **Backfill § 6's `Screen` column now.** The UX spec's § 2 `Serves` column cites `S#` ids directly, so
 the mapping is a lookup, not a judgment: for each `S#` in § 6, the screen whose `Serves` lists it.

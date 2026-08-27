@@ -43,9 +43,10 @@ The test (P1): a sentence a developer needs in order to implement, but a busines
 confirm or deny, is in the wrong document.
 
 Ids ARE welcome here and required in §§ 5-7 and § Traceability — this is an internal document and
-traceability is the point. That is the opposite of a prototype prompt, which must carry no ids at
-all (design-conventions.md D6); do not carry that rule across. The prose must still read
-completely without the ids: cite them, never lean on them.
+traceability is the point. That is the opposite of a RENDER PROMPT, which /bigin-render-design builds
+at render time and which must carry no ids at all: it runs in a process that has never seen this
+vault, so an id there is a dangling pointer that gets printed on a screen. Do not carry that rule
+across. The prose must still read completely without the ids: cite them, never lean on them.
 
 Every section: fill it from the artifacts, or write "not stated". A blank line reads as "nobody
 looked"; "not stated" is a real and useful fact about the source material. Never invent a goal, a
@@ -154,7 +155,7 @@ the real field list stays one hop away; do not reproduce it here. -->
 
 ## 9. Experience & Design
 <!-- What the design ALREADY says, quoted from 04-UIUX/UX-<NNN> <Feature>.md. This section reports;
-it never decides (P6). No token names, no hex, no px, no component API, no layout grid — those live
+it never decides (P6). No semantic roles, no hex, no px, no component API, no layout grid — those live
 in the design system and mean nothing to a business reader. A screen that does not exist in the UX
 spec is not listed here, however obviously needed: that is an entry in § 11.
 
@@ -175,7 +176,7 @@ describe screens from imagination to fill it. -->
 | Capability | The path through the screens | Ends on |
 |------------|-----------------------------|---------|
 
-* **Prototype:** `<where the prompts are — point at the headings the spec actually carries, e.g. "the prototype prompts are ready in UX-<NNN> § Prototype Prompt — Claude design (Web) / — Figma Make (Web)"; 2 headings on a web or mobile spec, 4 on both, unsuffixed on a pre-suffix web spec>` — never restate a prompt here
+* **Prototype:** `<how one gets made, and whether one exists — e.g. "a clickable prototype is built from UX-<NNN> by /bigin-render-design, against a design system chosen at that point; none has been built yet" or "last rendered <date> against <design system>, see UX-<NNN> § 8">` — never restate a screen or a prompt here, and never point at a `## Prototype Prompt` heading: those blocks left the pipeline, and a spec that still carries one is stale
 * **Known design gaps:** `<one line per unchecked question on the UX spec's § 6, in business words>`
 
 ## 10. Scope & Release Framing
