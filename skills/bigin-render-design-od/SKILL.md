@@ -1,6 +1,6 @@
 ---
 name: bigin-render-design-od
-description: Renders finished UX specs into one interactive prototype on Open Design. Syncs vault markdown (UX spec, UCs, BRs, entities, feature hub) into an Open Design project, replacing stale copies, then runs one start_run per feature and assembles them into a single prototype. Invoked by a human when they ask to "render the prototype", "generate the design via Open Design", "sync features to Open Design", or "assemble the demo prototype" — never on the plugin's own initiative.
+description: Renders finished UX specs into one interactive prototype on Open Design. Syncs vault markdown (UX spec, UCs, BRs, entities) into an Open Design project, replacing stale copies, then runs one start_run per feature and assembles them into a single prototype. Invoked by a human when they ask to "render the prototype", "generate the design via Open Design", "sync features to Open Design", or "assemble the demo prototype" — never on the plugin's own initiative.
 argument-hint: "[feature-slug ... | --all]"
 disable-model-invocation: true
 ---
@@ -66,10 +66,16 @@ python3 "$SKILL_DIR/scripts/sync_feature.py" <slug> [<slug> ...] [--project <nam
 python3 "$SKILL_DIR/scripts/sync_feature.py" --all [--project <name>]
 ```
 
-Copies each feature's hub, UX doc, UCs, BRs, and entities into the Open Design project, overwriting
+Copies each feature's UX doc, UCs, BRs, and entities into the Open Design project, overwriting
 any stale copy and renaming each to a space-free name an `@`-mention can address. Prints the target
 project's id and one ready-to-use prompt per feature — that printed list is the scope the rest of
 this run acts on.
+
+The feature hub itself is read (its frontmatter names the UCs/BRs/entities/UX doc in scope) but
+never copied or `@`-mentioned: it carries unrefined raw material — Signal Log rows, open pain
+points, internal ids — that is not something a screen may ground in (only UCs, BRs, and entities
+are grounded inputs), and letting the render agent browse it risks a leaked internal reference the
+Step 4 traceability check exists to catch.
 
 ### Step 2 — One worker per feature, one at a time
 

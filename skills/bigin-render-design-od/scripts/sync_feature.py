@@ -70,10 +70,6 @@ def sync_feature(vault_root: Path, target_dir: Path, feature_slug: str) -> None:
 
     copied = []
 
-    hub_name = mention_name(f"{feature_slug}.md")
-    shutil.copy2(hub_file, target_dir / hub_name)
-    copied.append(hub_name)
-
     ux_fname = copy_file_by_prefix(vault_root / "04-UIUX", uiux, target_dir, copied) if uiux else None
 
     uc_fnames = [
@@ -84,8 +80,10 @@ def sync_feature(vault_root: Path, target_dir: Path, feature_slug: str) -> None:
         fn for br in brs
         if (fn := copy_file_by_prefix(vault_root / "01-Requirements" / "_brs", br, target_dir, copied))
     ]
-    for en in entities:
-        copy_file_by_prefix(vault_root / "01-Requirements" / "_entities", en, target_dir, copied)
+    en_fnames = [
+        fn for en in entities
+        if (fn := copy_file_by_prefix(vault_root / "01-Requirements" / "_entities", en, target_dir, copied))
+    ]
 
     print(f"[✓] Synced {len(copied)} file(s) for '{feature_slug}' -> {target_dir}")
 
@@ -99,7 +97,8 @@ def sync_feature(vault_root: Path, target_dir: Path, feature_slug: str) -> None:
         prompt += f"The User Stories: {', '.join('@' + fn for fn in uc_fnames)}\n"
     if br_fnames:
         prompt += f"The Business Rules: {', '.join('@' + fn for fn in br_fnames)}\n"
-    prompt += f"\nthe Feature that contains the unrefined material: @{hub_name}\n"
+    if en_fnames:
+        prompt += f"The Entities / Data Dictionary: {', '.join('@' + fn for fn in en_fnames)}\n"
     print(prompt)
 
 
