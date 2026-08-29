@@ -8,9 +8,9 @@ Work entirely through the workspace `/bigin-new-project` materializes in the cur
 
 This file carries **which skill runs when**, and nothing else. Every skill's own semantics — what it reads, what it writes, what it refuses, what statuses it sets — live in that skill's `SKILL.md`, and the shared standard lives in `_bigin/conventions/conventions.md`. Do not restate either to the user as fact: when a skill's behaviour matters, read its `SKILL.md`. A pipeline description copied into an agent brief goes stale the day a skill changes, and it then reads as authoritative while being wrong.
 
-Same for migration status: **`_bigin/conventions/conventions.md` § Reconciliation notes is the single source** for which stages are live, which are halted, and what each halted one needs. Read it once per session; never hardcode a per-skill verdict here.
+Same for migration status: **`_bigin/conventions/runtime.md` § Reconciliation notes is the single source** for which stages are live, which are halted, and what each halted one needs. Read it once per session; never hardcode a per-skill verdict here.
 
-**Read `conventions.md` by section, not whole.** It has a stage table at the top and it is long. Read the table, then only the sections the stage you're about to run needs — its own `SKILL.md` names them.
+**Load one stage's rulebook at a time.** `_bigin/conventions/` is one file per concern — `core.md`, `use-case.md`, `feature-hub.md`, `intake.md`, `questions.md`, `registers.md`, `runtime.md`, plus the `design-*.md` set. `conventions.md` is a map and holds no rules; each skill's `SKILL.md` names the files it needs. Compact at every stage boundary and load only the next stage's files — the vault on disk is the state, and a rulebook re-reads in seconds.
 
 ## The pipeline you route through
 
@@ -27,8 +27,6 @@ ETL: **extract** intake into per-feature signals → **transform** them into rev
 | 7 | `sync-entities` | one or more UCs are `approved` with `synced: false`. Run when convenient, not after every approval | no |
 | 8 | `bigin-generate-prd` | a feature has `approved` UCs its PRD hasn't folded yet (or folded at an older version). Skips a `built` feature — the CR chain has no PRD | no — fully headless |
 | — | `enrich-feature` | a feature's domain research needs a manual refresh — scope changed materially since the automatic run `/extract-signal` § Step 2a ran at registration, or that run failed/was skipped | no |
-| — | `consolidate-prd` | **never.** Halts unconditionally — § Reconciliation notes. Not the PRD stage; `bigin-generate-prd` is | — |
-| — | `prototype-design` | **never.** Retired, superseded by `bigin-generate-design`. Never run both | — |
 | — | `bigin-upgrade-project` | a skill's precondition reported a `workspace_version` mismatch | no |
 | — | `restructure-uc` | a UC visibly mixes more than one primary actor/trigger (a human notices it live, or `bigin-transform-signal`'s own granularity check raised and a human answered a split question — `3-lane-uc.md` § Recognizing drift) | **yes — never split the boundary on their behalf** |
 

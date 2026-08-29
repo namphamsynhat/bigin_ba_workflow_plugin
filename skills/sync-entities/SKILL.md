@@ -35,12 +35,12 @@ itself; this skill catches up everything the approval implied, on its own schedu
   doesn't re-show the UC or ask again, except where a genuine contradiction needs a human call
   (below).
 * **Entities are promoted from real references, never speculatively:** only an entity a UC's steps or
-  rules actually cite gets a document or an update (§ Entity Data Model). Most UCs touch none — skip
+  rules actually cite gets a document or an update (`registers.md` § Entity Data Model). Most UCs touch none — skip
   cleanly when that's true, and leave nothing behind for a UC that references nothing.
 * **One doc per business object; a field is never an entity.** `Application.Certification Status` is a
   row in `EN-001 Application`, not `EN-107`. Resolve every reference to its owning object before
   writing, whatever shape the register row or the UC's `entities:` list gave it, and absorb any
-  attribute-shaped doc already on disk into its owner (§ Entity Data Model, A fragment already on
+  attribute-shaped doc already on disk into its owner (`registers.md` § Entity Data Model, A fragment already on
   disk). Minting one more fragment because a register row was named that way is the single failure
   this skill is most likely to commit, since the row reads like an entity name.
 * **Write the whole dictionary, every time.** The doc is scoped to the *object*, not to the UC being
@@ -62,10 +62,10 @@ itself; this skill catches up everything the approval implied, on its own schedu
 
 ## Precondition — check this first
 
-Missing `_bigin/conventions/conventions.md` or `_bigin/templates/` → stop, say `/bigin-new-project`
+Missing `_bigin/conventions/core.md` or `_bigin/templates/` → stop, say `/bigin-new-project`
 must run first.
 
-Then run `_bigin/conventions/conventions.md` § Workspace version check — one `Grep` of
+Then run `version-check.md` § Workspace version check — one `Grep` of
 `_bigin/system/project.md` against the installed plugin's version, compared as semver. Behind → warn and
 recommend `/bigin-upgrade-project`; **ahead → stop**.
 
@@ -108,7 +108,7 @@ reads, since the point is to find the field statements, not to load the vault.
   exists to preserve):
   1. **Process entities.** For every entity this UC's `## 2`/`## 3` steps or `## 4` rules actually
      reference — its `entities: []` list, plus anything a human edit introduced that isn't listed yet.
-     **The output is a data dictionary, not a diff of this approval** (§ Entity Data Model, The doc is
+     **The output is a data dictionary, not a diff of this approval** (`registers.md` § Entity Data Model, The doc is
      a data dictionary): the doc you leave behind must read as the whole shape of one business object,
      to someone who has never opened this UC.
      * **Resolve the reference to a business object first.** `Application`, `Vendor`, `Wallet` — the
@@ -121,7 +121,7 @@ reads, since the point is to find the field statements, not to load the vault.
        references, with no `EN-###` document yet, gets promoted now: instantiate
        `_bigin/templates/entity.md` as `01-Requirements/_entities/EN-<NNN> <Entity>.md`, id from a
        `Grep` scan of `01-Requirements/_entities/` (its own sequence — never a bash `grep`/`awk`
-       pipeline, § ID scheme).
+       pipeline, `core.md` § ID scheme).
      * **Gather every known field before writing the doc, not just this UC's.** Union of: the
        `ENTITIES.md` row's `Fields (so far)` cell, the rows already on the doc, and every UC/BR in the
        entity's `features:` (plus this UC) that references it — `Grep` the entity's name and id across
@@ -168,7 +168,7 @@ reads, since the point is to find the field statements, not to load the vault.
        promote or extend one speculatively.
   2. **Refresh the owning feature hub(s).** For every feature in this UC's `features:` list, update
      `## Requirement Readiness` to reflect its current status, and flip this UC's Signal Log rows to
-     `applied` if not already (§ Feature Hub — Maintenance contract).
+     `applied` if not already (`feature-hub.md` § Feature Hub — Maintenance contract).
   3. **Mark it done.** Set `synced: true` on the UC once both steps above land clean for it — even if
      it referenced no entities, so a later run doesn't rescan it for nothing.
   4. **Continue to the next queued UC** rather than stopping the whole run on one contradiction.

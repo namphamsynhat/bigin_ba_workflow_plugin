@@ -45,7 +45,7 @@ FAIL if the note's ## Extracted signals row carries Notes: rationale: in questio
 ```
 
 - **Never re-raise the question.** It exists on the note, owned by a human. A second copy of the same
-  ask is a bug (`conventions.md` § One question, two places).
+  ask is a bug (`intake.md` § One question, two places).
 - **Never re-derive the missing `Why`** from the raw source — a `Why` reconstructed at transform time
   is a guess wearing a citation.
 

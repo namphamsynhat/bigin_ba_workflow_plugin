@@ -13,9 +13,9 @@ never: an invented screen · a raw colour/size/token id · an invented nav entry
          export, or saved view the requirements did not grant (D8)
 ```
 
-Read `{design_conventions}` § The UX spec, § Screen spec, § Semantic style roles, § Grounding,
-§ Open questions, § Actor scope, § User flows and pain points, § The relationship model,
-§ The navigation map, and § Platform first.
+Read `design-screens.md` § The UX spec, `design-screens.md` § Screen spec, `design-screens.md` § Semantic style roles, `design-grounding.md` § Grounding,
+`questions.md` § Open questions, `design-actor-scope.md` § Actor scope, `design-navigation.md` § User flows and pain points, `design-review.md` § The relationship model,
+`design-navigation.md` § The navigation map, and `design-platform.md` § Platform first.
 
 ---
 
@@ -48,11 +48,16 @@ Read `{design_conventions}` § The UX spec, § Screen spec, § Semantic style ro
                                so a new entry joins an existing branch instead of starting a
                                parallel one
 8  the existing UX spec, if any        you UPDATE it; you never fork it
-9  every other UX-*.md in {ux_dir}     how a sibling feature already solved a list, a queue,
-                                       an approval, a wizard. Reuse beats inventing (ground 2).
+9  ONE sibling UX spec, at most, and only when this feature needs a pattern the nav map does not
+   already name — a list, a queue, an approval, a wizard. Pick it from {nav_map_file}'s
+   ## Structure, which names which feature owns which branch; grep {ux_dir} for the pattern
+   rather than reading specs to find out who has it. Reuse beats inventing (ground 2).
+   → NEVER read every UX-*.md. At two features that is a habit; at ten it is nine specs in
+     context before this feature's first screen, and the ten-feature project is the one where
+     the cost lands.
 
 There is **no design system to read** and no token file: a screen names a semantic ROLE
-(`{design_conventions}` § Semantic style roles), and the visual system is supplied later by a design
+(`design-screens.md` § Semantic style roles), and the visual system is supplied later by a design
 team or bound at render time. A worker that goes looking for `_design-system/` finds either nothing
 or a stale folder nothing reads.
 ```
@@ -182,7 +187,7 @@ information" reads identically whether the actor is one member looking at their 
 administrator working a directory of ten thousand. Those are not one screen with a filter bar bolted
 on; they are two products, and merging them ships the member's screen to the administrator.
 
-Read `{design_conventions}` § Actor scope before this part. It is the standard; this is the
+Read `design-actor-scope.md` § Actor scope before this part. It is the standard; this is the
 procedure.
 
 ### The three facts, per actor
@@ -224,7 +229,7 @@ many    the set can never be shown whole, so the screen's job becomes FINDING, a
 
 The find machinery and the volume states are **grounded by the volume fact itself**, cited like any
 other ground: `EN-004 — many Orders per Account · UC-030 S2`. That is a ground-1 requirement citation
-(§ Grounding), not an exception to D3.
+(`design-grounding.md` § Grounding), not an exception to D3.
 
 ### D8 — the line volume may not cross
 
@@ -301,7 +306,7 @@ is invented.
 ## Part 2b — Which of these screens get a nav entry
 
 Most screens in the inventory above are **not** menu items — they are reached by clicking through
-from one that is. Read `{design_conventions}` § The navigation map before this part.
+from one that is. Read `design-navigation.md` § The navigation map before this part.
 
 ```text
 per screen in the inventory:
@@ -372,7 +377,7 @@ elements      per element:
                 what it is        heading | table | form field | button | badge | ...
                 content/copy      the real words, in the client's language
                 role              ONE semantic role, from the closed list in
-                                  {design_conventions} § Semantic style roles — `primary action`,
+                                  `design-screens.md` § Semantic style roles — `primary action`,
                                   `danger`, `muted`, … — or BLANK when the element carries no
                                   particular weight. NEVER a hex, a px, a font name, or a
                                   `--token` id (D2): there is no design system here to resolve one
@@ -489,7 +494,7 @@ A state with no source is invented. Leave it out, or ask.
 
 Most features do not. Run the trigger test; on a miss, **delete `## 7` from the spec** and move on —
 an empty `## 7` claims the relationship was considered when nobody looked. Read
-`{design_conventions}` § The relationship model before writing anything here.
+`design-review.md` § The relationship model before writing anything here.
 
 ### The trigger — three tests, all three from sources you already read in Part 1
 
@@ -520,7 +525,7 @@ entity field, and the trigger are either there or they are not.
 
 ### What you write, and what grounds it
 
-Four sub-blocks (the template carries the tables). Every row is grounded per § Grounding or it is
+Four sub-blocks (the template carries the tables). Every row is grounded per `design-grounding.md` § Grounding or it is
 not a row:
 
 ```text
@@ -554,7 +559,7 @@ planning canvases, preference-evolution maps, contextual timelines. Those are **
 they arrive with a citation, which makes an invented screen look designed.
 
 ```text
-an external pattern is ground 2b (§ Grounding) — it shapes HOW something already grounded is built.
+an external pattern is ground 2b (`design-grounding.md` § Grounding) — it shapes HOW something already grounded is built.
 it can NEVER ground THAT a screen, field, or state exists.
 
 "the relationship-UX skill recommends a memory dashboard"     → not a ground. Not a screen.
@@ -585,8 +590,7 @@ does the user know it is learning from them?                        → disclosu
 
 The screens are *what exists*; a flow is **how a real person gets from a trigger to an outcome**. It
 is the artifact a client recognises as their working day or fails to, which is why it gets its own
-part rather than being written as an afterthought at the end. Read `{design_conventions}`
-§ User flows and pain points before this part.
+part rather than being written as an afterthought at the end. Read `design-navigation.md` § User flows and pain points before this part.
 
 ```text
 ONE flow per user goal, per ACTOR — never one per platform, never one per screen
@@ -616,7 +620,7 @@ change what the system does), never a silent omission: `5-verify` matches every 
 forward to its flow, and an unanswered one surfaces there as a gap with this feature's name on it.
 
 **Never mark the register.** `PAIN-POINTS.md` and the hub's `## Pain Points` are read-only from here
-(`{design_conventions}` § Write map). The flow names the id; `/bigin-transform-signal` is what closes
+(`design-core.md` § Write map). The flow names the id; `/bigin-transform-signal` is what closes
 the row.
 
 ### Two actors, two flows
@@ -875,7 +879,7 @@ and all three self-heal in place — never by forking the spec:
 
 ```text
 ## 3 element tables with a `Token(s)` column   → rename the column `Role` and re-fill it from the
-                                                 closed list ({design_conventions} § Semantic style
+                                                 closed list (`design-screens.md` § Semantic style
                                                  roles). A cell holding `--color-action-primary` on
                                                  the submit button becomes `primary action`; a cell
                                                  holding a hex, a px, or a font name becomes the
@@ -886,7 +890,7 @@ and all three self-heal in place — never by forking the spec:
                                                  nav rows (they are still true); drop `Design system
                                                  version`, `Tokens used`, `Components used`, and
                                                  `Added this run`.
-## Prototype Prompt — … blocks (2 or 4)        → DELETE them, all of them. /bigin-render-design
+## Prototype Prompt — … blocks (2 or 4)        → DELETE them, all of them. /bigin-render-design-od
                                                  builds its own prompt from ## 1-## 5, the UCs, the
                                                  BRs, and the entity register, so these are a stale
                                                  second copy of the screens beside them — and they
@@ -934,5 +938,5 @@ been prototyped, so removing it silently loses the fact that somebody was shown 
 
 Every spec self-heals on the next design run of its feature. A spec whose feature is never redesigned
 keeps working — nothing downstream requires `## 7`, a `Platform` value, an Actor & Scope table, a
-`Role` column, or a `Resolves` cell to exist. `/bigin-render-design` reads whichever shape it finds
+`Role` column, or a `Resolves` cell to exist. `/bigin-render-design-od` reads whichever shape it finds
 and reports what it could not resolve rather than halting.

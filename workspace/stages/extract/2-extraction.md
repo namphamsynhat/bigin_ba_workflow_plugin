@@ -4,14 +4,14 @@ Rulebook for the `extract-signal` **extraction** subagent (2a).
 
 ```text
 in:   every ### SRC-n block in a note's ## Raw, plus any file a block names
-out:  one row per discrete signal in that note's ## Extracted signals
+out:  one row per discrete signal in that note's ## Extracted signals, self-audited
 never: anchoring · hubs · registers · questions · status · grouping of any kind   → those are 3-filing.md
 ```
 
 The split is deliberate: an extractor that knows its rows get grouped downstream starts pre-grouping
 them here, and the raw record is the one place that is unrecoverable.
 
-`{variable}` resolves in `_bigin/conventions/paths.md`. `_bigin/conventions/conventions.md` § ID scheme
+`{variable}` resolves in `_bigin/conventions/paths.md`. `core.md` § ID scheme
 covers vault-wide id rules. `{conventions_file}`, if present, overrides anything here.
 
 ## Recall is the whole job
@@ -48,7 +48,8 @@ claim's `Type`, never whether it gets written.
 
 5. WHY         run the search before writing "not stated" (§ The Why field)
 
-6. CHECK       § Before reporting
+6. SELF-AUDIT  § Step 6 — audit your own table, and repair it
+7. CHECK       § Before reporting
 ```
 
 Report one segment list per block, with rows per segment. A segment with zero rows is a claim it held
@@ -204,6 +205,33 @@ check 3 can catch a cite that stopped resolving; it cannot catch one that resolv
 This binds a re-extraction, a fold-in run, and a repair pass equally
 (`2b-audit.md` § Row numbers are permanent, in a repair too).
 
+## Step 6 — audit your own table, and repair it
+
+You wrote the table; you close it. Re-walk each block **against the table you just wrote** and fix
+what you find, in place, before you report. The categories and the exact repair for each are in
+`2b-audit.md` § Repairing the table — that file is the one home for the repair vocabulary, and it
+governs here too.
+
+```text
+per block, in order, table open beside it:
+  every claim in the block has a row?          missing → append it (gap)
+  every row claims no more than its quote?     wider   → narrow it (overreach)
+  every as-is claim typed as-is, not as a
+    requirement?                               no      → re-type + add the ask (inversion)
+  every Source cite names the block whose
+    words are actually quoted?                 no      → fix the cite
+  a row nothing in the source supports?        yes     → mark unsupported, never delete
+  two claims that contradict?                  yes     → leave both, pair them as conflict
+```
+
+**This pass is not the independent audit, and does not replace it on a hard note.** You already know
+what you extracted, so you confirm your own reading more readily than you challenge it — that bias is
+exactly what a fresh reader is for. Say in your report whether this note meets `2b-audit.md`
+§ When the independent pass is owed; the orchestrator dispatches `signal-auditor` on your answer.
+
+Row numbers stay permanent through your own repairs, the same as anyone else's (§ Row numbers are
+permanent ids): correct in place, append after the highest `#` ever used, never renumber.
+
 ## Before reporting
 
 ```text
@@ -225,6 +253,11 @@ This binds a re-extraction, a fold-in run, and a repair pass equally
 10 derived      every "derived from #<n>" also carries Notes: inferred — confirm with client
 11 columns      Feature and Status blank on every new row; Notes only the four allowed values
 12 cites        every Source names a specific block, and the quoted words are in it
+13 self-audit   § Step 6 walked every block against the table; every category it found is repaired,
+                and the repairs are reported by row # and category
+14 audit owed   the note is judged against `2b-audit.md` § When the independent pass is owed, and the
+                verdict (owed / not owed, and which trigger) is REPORTED — the orchestrator dispatches
+                on it, so an unstated verdict silently downgrades a transcript to no audit at all
 ```
 
 ## Safety

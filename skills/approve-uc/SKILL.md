@@ -19,7 +19,7 @@ whatever a prior run last wrote.
 This skill only ever *writes* the UC's own file, so approving several UCs back to back is never
 blocked on anything slower than the human's own read-and-decide pace. Entity promotion and feature-hub
 refresh — the vault-wide bookkeeping that used to happen inline here — is `/sync-entities`'s job now,
-run separately, on its own schedule (§ Entity Data Model). It does, however, *read* a bounded set of
+run separately, on its own schedule (`registers.md` § Entity Data Model). It does, however, *read* a bounded set of
 other files — the feature hub(s) and any `BR-###` this UC cites — purely to surface related UCs so the
 human reviews this UC's flow with the rest of its neighborhood in view, not in isolation.
 
@@ -37,7 +37,7 @@ human reviews this UC's flow with the rest of its neighborhood in view, not in i
 * **Re-derive, don't trust stale state:** the human may have edited the UC directly while reviewing.
   Re-count `## 5` **Still open** before anything else — a UC with any unresolved `- [ ] Q:` line is
   `needs-clarification`, not approvable, no matter what `status` currently reads
-  (§ Open Questions ↔ status consistency).
+  (`questions.md` § Open Questions ↔ status consistency).
 * **Never fold flow drift into the summary silently:** `## 2`/`## 3` are the two sections
   `/bigin-transform-signal` writes directly, with no human wait (4-sync.md § Part 2) — a UC can reach
   this skill with its flow changed since a human last looked, marked only by a `## Changelog` line
@@ -47,7 +47,7 @@ human reviews this UC's flow with the rest of its neighborhood in view, not in i
   point.
 * **Entity promotion and feature-hub refresh happen elsewhere:** this skill never *writes*
   `ENTITIES.md`, `01-Requirements/_entities/`, or a feature hub — that's `/sync-entities`, run
-  separately (§ Entity Data Model). Setting `synced: false` here is the only handoff needed; don't
+  separately (`registers.md` § Entity Data Model). Setting `synced: false` here is the only handoff needed; don't
   write to those files from this skill even opportunistically.
 * **Related-UC context is read-only:** collecting sibling UCs — same feature hub, a shared `BR-###`,
   or another `features:` slug — is only to give the human the full-flow picture before they approve.
@@ -56,7 +56,7 @@ human reviews this UC's flow with the rest of its neighborhood in view, not in i
   back through `/bigin-transform-signal` (its Stage 3 `uc-router` Phase A already reads this same
   cross-UC context before drafting) — approve-uc stops and waits, it doesn't reach out and make the
   edit itself.
-* **No PRD is generated here.** `approved` means the UC is feature material (§ Feature material);
+* **No PRD is generated here.** `approved` means the UC is feature material (`feature-hub.md` § Feature material);
   `/bigin-generate-prd` picks it up on its next run and folds it into
   `02-PRD/PRD-<NNN> <Feature>.md`. Writing PRD content is out of scope for this skill — keep the two
   separate so an approval never silently rewrites a document the sponsor has already read.
@@ -65,10 +65,10 @@ human reviews this UC's flow with the rest of its neighborhood in view, not in i
 
 ## Precondition — check this first
 
-Missing `_bigin/conventions/conventions.md` or `_bigin/templates/` → stop, say `/bigin-new-project`
+Missing `_bigin/conventions/core.md` or `_bigin/templates/` → stop, say `/bigin-new-project`
 must run first.
 
-Then run `{conventions_reference}` § Workspace version check — one `Grep` of `_bigin/system/project.md`
+Then run `version-check.md` § Workspace version check — one `Grep` of `_bigin/system/project.md`
 against the installed plugin's version, compared as semver. Behind → warn and recommend
 `/bigin-upgrade-project`; **ahead → stop**, because approving against a rulebook older than the one this
 UC's content was written under commits scope under the wrong contract.
@@ -96,11 +96,11 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
      last computed:
      * Re-count `## 5` **Still open**. Any unresolved `- [ ] Q:` line → tell the user which question(s)
        are still open and stop; don't ask to approve a UC with an open question
-       (§ Open Questions ↔ status consistency's invariant — this holds regardless of what `status`
+       (`questions.md` § Open Questions ↔ status consistency's invariant — this holds regardless of what `status`
        currently reads).
        * **Separate "unanswered" from "answered but not folded in".** A line whose `A:` already
          carries an answer is not waiting on the human — it is waiting on a fold-in, because a
-         reviewing BA is expected to type answers straight into the file (§ Answering a question) and
+         reviewing BA is expected to type answers straight into the file (`questions.md` § Answering a question) and
          the content only changes when `/bigin-transform-signal` Stage 1 harvests them. Still stop,
          but say which it is: name the answered-not-applied lines and point at "process UC-###" (the
          `bigin-ba` agent's process-the-UC pass, or `/bigin-run`) rather than reporting them back as
@@ -113,7 +113,7 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
        the lines `/bigin-transform-signal` Stage 4 Part 2 writes whenever it direct-writes a `## 2`/
        `## 3` change (4-sync.md § Part 2); this is the flow drift step 2 leads with.
      * Check `## 4`'s rule mirror against each cited `BR-###`'s current statement and enforcement
-       point. `## 4` is a read-only mirror (§ Use Case) — if a human edit left it drifted from the BR
+       point. `## 4` is a read-only mirror (`use-case.md` § Use Case) — if a human edit left it drifted from the BR
        file, refresh the mirror to match; never invent a rule that isn't already in a `BR-###` file.
      * **Say nothing about enrichment.** It's a feature-level pass now (`/enrich-feature`, § Reconciliation
        notes), not a UC-level gate — `enriched` is permanently unreachable as a UC status and
@@ -152,5 +152,5 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
      (§ Reconciliation notes). If this UC's
      `entities: []` isn't empty, mention `/sync-entities` is still pending for it — that is what writes
      each referenced entity up as its **data dictionary** (every field the vault knows for that
-     business object, enum values spelled out, § Entity Data Model) and catches up `ENTITIES.md` and
+     business object, enum values spelled out, `registers.md` § Entity Data Model) and catches up `ENTITIES.md` and
      the feature hub. Run it now, or leave it queued and run it later; nothing here depends on it.

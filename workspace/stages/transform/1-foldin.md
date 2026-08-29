@@ -14,7 +14,7 @@ run before anything new gets staged. A run that starts by drafting re-asks quest
 on disk.
 
 `{variable}` resolves in `_bigin/conventions/paths.md`. Full checkpoint rationale:
-`_bigin/conventions/conventions.md` § Resumable unattended apply — the procedure here is complete on
+`runtime.md` § Resumable unattended apply — the procedure here is complete on
 its own.
 
 A UC/BR with no `staged` row pointing at it and no filled `A:` line is not this stage's business,
@@ -206,7 +206,7 @@ the answer ADDS content the artifact does not have — a step, a branch, a rule,
       own note (citing the UC and the question), then extraction files it and the next transform
       run drafts it with a row, a source, and a citation like every other requirement.
       Never draft it inline to save a round trip; a step in a UC with no traceable source is the
-      one thing this vault's chain is built to prevent (conventions.md § Traceability chain).
+      one thing this vault's chain is built to prevent (`use-case.md` § Traceability chain).
 
 the answer does not settle the question at all — it restates it, defers it ("ask the client"),
     or asks a new one

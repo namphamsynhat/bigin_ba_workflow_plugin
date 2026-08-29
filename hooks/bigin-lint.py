@@ -33,15 +33,20 @@ Design rules this file holds itself to:
   * NEVER break a session. Any internal error, missing dependency, or unexpected
     payload exits 0 in --hook mode without output. A linter that can wedge a run is
     worse than no linter.
+  * --hook is ADVISORY: findings go to stdout, exit 0. Mid-stage states legitimately
+    break cross-file invariants for a few tool calls (a UC exists before its hub lists
+    it), and a blocking hook there turns every such moment into a self-correction loop.
+    The blocking gate is --full, run once at a stage boundary, where a finding is real.
   * NEVER fire outside a Bigin vault. No `_bigin/system/project.md` under the project
     root -> exit 0 immediately. The plugin's hooks are active wherever the plugin is
     enabled, which is not the same as wherever a vault exists.
   * Report at most MAX_PER_CHECK findings per check, with a count of the rest. A wall
     of output trains its reader to skip it.
 
-Escape hatches, both environment variables:
+Escape hatches, all environment variables:
   BIGIN_LINT_OFF=1        disable entirely (exit 0, always)
-  BIGIN_LINT_ADVISORY=1   findings go to stdout with exit 0 instead of stderr/exit 2
+  BIGIN_LINT_BLOCKING=1   restore the pre-1.8.8 behaviour: --hook findings go to stderr
+                          with exit 2, so the model is interrupted on every write
   BIGIN_LINT_DEBUG=1      print internal errors instead of swallowing them
 """
 
@@ -797,16 +802,18 @@ def run_hook():
         return 0
 
     body = (
-        "bigin-lint found %d issue(s) after that write. These are invariants — none of them\n"
-        "is ever legitimately true mid-stage, so each is a real defect at the moment it landed.\n"
-        "Fix them before continuing; do not proceed and leave them for a later verification pass.\n\n%s\n"
+        "bigin-lint: %d invariant issue(s) after that write — ADVISORY, not a stop.\n"
+        "Some of these are normal mid-stage: a new UC exists for a moment before its hub lists it,\n"
+        "a row is cited before the row it cites is appended. Do NOT abandon what you were doing to\n"
+        "chase them. Finish the step you are on; the stage's own `--full` gate is what blocks, and\n"
+        "anything still listed there is real.\n\n%s\n"
         % (findings.total(), findings.render())
     )
-    if os.environ.get("BIGIN_LINT_ADVISORY") == "1":
-        sys.stdout.write(body)
-        return 0
-    sys.stderr.write(body)
-    return 2
+    if os.environ.get("BIGIN_LINT_BLOCKING") == "1":
+        sys.stderr.write(body)
+        return 2
+    sys.stdout.write(body)
+    return 0
 
 
 def run_full(root):

@@ -60,7 +60,7 @@ extraction time, so the row usually exists already.
 Bump the register's `version` and append a `## Changelog` line on every write.
 
 > **Column mismatch to expect.** The template's header is `# | Principle | Why | Source | Notes`;
-> `conventions.md` § Design Principles Register describes
+> `registers.md` § Design Principles Register describes
 > `# | Principle / Preference | Category | Source | Status | Notes`. **Append rows matching the header
 > the file on disk actually has**, report the mismatch once per run rather than migrating mid-write,
 > and record a supersession in `Notes` when there is no `Status` column.

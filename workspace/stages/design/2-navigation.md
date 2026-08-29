@@ -10,7 +10,7 @@ never: deleting a nav entry · renaming one · rewriting the file from scratch
        · a token, a colour, a type scale, or a component — none of those exist in this pipeline
 ```
 
-Read `{design_conventions}` § The navigation map, § User flows and pain points, and § Platform first.
+Read `design-navigation.md` § The navigation map, `design-navigation.md` § User flows and pain points, and `design-platform.md` § Platform first.
 
 **The platform arrives as an instruction, not a lookup.** Stage 1 read `platform:` once and passed
 it here; this stage never opens `_bigin/system/project.md` to check. It decides one thing below —
@@ -22,7 +22,7 @@ what *discover* new places a menu has to reach. So: seed, design, then fold the 
 
 **There is no design system in this stage, and no Part for one.** Colour, type, spacing, and
 components are supplied by a design team or bound at render time
-(`{design_conventions}` § Rendering is a separate step). What this stage owns is where a user can
+(`design-platform.md` § Rendering is a separate step). What this stage owns is where a user can
 **go**, which is an experience decision this pipeline makes end to end.
 
 ---
@@ -38,7 +38,7 @@ components are supplied by a design team or bound at render time
     version 1.0
     stamp its frontmatter platform: with the value Stage 1 announced
     shape its ## Structure section(s) for that platform, per the template's own
-        § The shell is a platform fact
+        `design-navigation.md` § The shell is a platform fact
 
 {nav_map_file} present:
     read its ## Structure whole — the tree already exists, at whatever depth it has grown to;
@@ -46,7 +46,7 @@ components are supplied by a design team or bound at render time
     NEVER overwrite it. NEVER re-instantiate the template over it.
 ```
 
-**The shell is a platform fact** (`{design_conventions}` § The navigation map → "The shell is a
+**The shell is a platform fact** (`design-navigation.md` § The navigation map → "The shell is a
 platform fact"). One file either way; what differs is the `## Structure` it holds:
 
 ```text
@@ -58,7 +58,7 @@ both    ## Structure — Web         BOTH sections, in ONE file, one table each,
         ## Structure — Mobile      mapping the SAME feature set onto each shell.
 ```
 
-`{template_nav_map}` ships both headings, and its own § The shell is a platform fact says which to
+`{template_nav_map}` ships both headings, and its own `design-navigation.md` § The shell is a platform fact says which to
 keep and which to delete at instantiation. Do that there; do not re-derive it here.
 
 **On load, the file already has a shape**, and its frontmatter `platform:` records which one:
@@ -100,10 +100,10 @@ what a pain point may do HERE     say a destination must be directly reachable r
 
 what it may NEVER do              create a nav entry pointing at a screen no UC asked for. That is
                                   ground 1b, and 1b alone grounds nothing
-                                  ({design_conventions} § Grounding)
+                                  (`design-grounding.md` § Grounding)
 ```
 
-**The register is read-only** (`{design_conventions}` § Write map). This stage cites a `PP-###`; it
+**The register is read-only** (`design-core.md` § Write map). This stage cites a `PP-###`; it
 never marks one resolved, never edits a statement, and never adds a row.
 
 Nothing to read — a feature with no open pain points — is normal and common. Say so once in the
@@ -152,7 +152,7 @@ written, neither can be removed (D1), and they drift the first time one of the t
 ```text
 per reported nav candidate:
     is it a screen reached only through another screen?       → NOT an entry (§ Structure test in
-                                                                design-conventions.md § The
+                                                                `design-navigation.md` § The
                                                                 navigation map) — decline it, and
                                                                 say so in the report
     is it directly menu-reachable and genuinely new?          → mint its id and add ONE row
@@ -246,7 +246,7 @@ re-shape a populated ## Structure       → forbidden. A platform change GROWS t
 add a 6th tab to a phone shell          → forbidden. It is an Open Question, owner: team (B3).
 seed a token, a colour, or a component  → there is nowhere to write one and nothing to cite it.
                                           A screen needing a visual decision names a semantic ROLE
-                                          ({design_conventions} § Semantic style roles)
+                                          (`design-screens.md` § Semantic style roles)
 ```
 
 An entry that looks wrong, duplicated, or unused becomes a line in this file's own `## Open Questions`

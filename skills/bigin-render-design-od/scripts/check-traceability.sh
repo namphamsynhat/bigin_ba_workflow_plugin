@@ -14,7 +14,7 @@
 #   exit 1  findings (each printed as  file:line | kind | position | id | context)
 #   exit 2  could not run (no input, nothing to scan)
 #
-# See references/prompt-contract.md § The one exception for the attribute vocabulary.
+# See references/traceability.md § The block to quote for the attribute vocabulary.
 
 set -uo pipefail
 
@@ -125,7 +125,7 @@ if [ "$findings" -gt 0 ]; then
   echo "  missing  NEVER add the attribute by hand. An id you invent is an id nobody grounded." >&2
   echo "           This is a re-run finding: state it as a correction and start a new run." >&2
   echo "" >&2
-  echo "See references/prompt-contract.md § The one exception." >&2
+  echo "See references/traceability.md § The block to quote." >&2
   exit 1
 fi
 

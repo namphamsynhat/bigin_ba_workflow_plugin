@@ -65,7 +65,7 @@ said — not "this UC mixes two goals" but "actually, here's a third thing the c
 
 ## Precondition — check this first
 
-Missing `_bigin/conventions/conventions.md` or `_bigin/templates/` → stop, say `/bigin-new-project` must
+Missing `_bigin/conventions/core.md` or `_bigin/templates/` → stop, say `/bigin-new-project` must
 run first.
 
 `$ARGUMENTS` names a `UC-###` that doesn't exist under `01-Requirements/_ucs/` → say so and stop.

@@ -39,7 +39,7 @@ brs: entities: uiux: features: sources:   from what §§ 5-9 actually cite
 ```
 
 `absorbed:` is the entire mechanism that makes "this PRD has drifted from its use cases" detectable
-(`{conventions_reference}` § Absorbed) — `sources:` cannot answer it, because a CR edits a UC in place
+(`runtime.md` § Absorbed) — `sources:` cannot answer it, because a CR edits a UC in place
 and the id keeps looking covered. Two rules make it self-healing:
 
 - **re-stamp the whole list every run.** No counter, no append — a re-run cannot leave a false
@@ -72,12 +72,12 @@ Per slug in the PRD's `features:` (owner first):
 |---|---|
 | `prd:` frontmatter | the `PRD-###` id |
 | `## PRD` | the link + status: `[[PRD-<NNN> <Feature>]] — draft, N capabilities, M pending` |
-| `## Open Questions / Gates` | mirror § 11's lines, **same sentence** as the UC/UX they came from — never a reworded second copy. A § 11 line that came from this hub's own `## Coverage Gaps` is **already** mirrored here (`{conventions_reference}` § Feature Hub): confirm it, never add a second copy. Never write to `## Coverage Gaps` itself |
+| `## Open Questions / Gates` | mirror § 11's lines, **same sentence** as the UC/UX they came from — never a reworded second copy. A § 11 line that came from this hub's own `## Coverage Gaps` is **already** mirrored here (`feature-hub.md` § Feature Hub): confirm it, never add a second copy. Never write to `## Coverage Gaps` itself |
 | `## Notes / History` · `## Changelog` | one line each: what this run folded |
 
 **Nothing else on the hub.** Not the Signal Log, not `## Requirement Readiness`, not `## Use Cases`,
 not `status:`, not `uc:`/`br:`/`uiux:`. There is no "ready for PRD" feature status and this stage does
-not invent one (`{conventions_reference}` § Feature Hub, maintenance contract).
+not invent one (`feature-hub.md` § Feature Hub, maintenance contract).
 
 Sequential, one hub per write pass — a hub is shared state and two concurrent writers lose a section.
 
@@ -111,7 +111,7 @@ verification: 8/8 or the failures · next
 `next` is one of: `/approve-uc` on the pending ids · `/bigin-transform-signal` to clear an open
 decision · `/bigin-generate-design` when a design is missing or stale · a human takes the PRD to the
 sponsor · epics/stories, by hand until that stage is built
-(`{conventions_reference}` § Reconciliation notes).
+(`runtime.md` § Reconciliation notes).
 
 Report what the vault says, not what the run meant to do. A count recomputed from intent instead of
 from the file is how a clean-looking report hides a half-written section.

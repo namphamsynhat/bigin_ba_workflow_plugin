@@ -5,7 +5,7 @@ Read at **Stage 1**, by the orchestrator, when a relationship-centric-interfaces
 ```text
 this file is ORCHESTRATOR-FACING          how to decide it applies, what to tell a worker, how to verify
 3-screens.md Part 4b is WORKER-FACING     the procedure itself, materialized where a subagent can read it
-design-conventions.md § The relationship model is the CONTRACT   what ## 7 is, what grounds each row
+`design-review.md` § The relationship model is the CONTRACT   what ## 7 is, what grounds each row
 ```
 
 A worker never reads this file — a `SKILL.md` and its `references/` live in the plugin install
@@ -32,7 +32,7 @@ that makes it read as designed. That is the most expensive failure this skill ha
 So the booster is bounded by grounding, not by good intentions:
 
 ```text
-an external pattern is ground 2b (design-conventions.md § Grounding)
+an external pattern is ground 2b (`design-grounding.md` § Grounding)
     → it shapes HOW something already grounded by a requirement, a vault pattern, or a stated
       preference gets built
     → it can NEVER ground THAT a screen, field, or state exists

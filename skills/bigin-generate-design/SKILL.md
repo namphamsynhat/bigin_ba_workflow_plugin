@@ -1,6 +1,6 @@
 ---
 name: bigin-generate-design
-description: This skill should be used when the user asks to "generate the design", "design the screens", "design the UX", "run the design stage", "load the use cases into design", "map the user flows", "review the user flow", "fix the navigation", "which features still need designing", or after /bigin-transform-signal has drafted or updated a UC. Turns every unprocessed (new or changed) UC-### plus the pain-point register and design directives into per-feature UX specs — actors, screens, states, real copy, the navigation shell, and the user flows that connect them — then runs a perception-first flow review over those journeys and a forward coverage check proving nothing in the requirements went undesigned. It produces NO design system and NO tokens: colour, type, spacing, and components come from the design team or are bound at render time. It renders nothing — rendering is /bigin-render-design, invoked by a human.
+description: This skill should be used when the user asks to "generate the design", "design the screens", "design the UX", "run the design stage", "load the use cases into design", "map the user flows", "review the user flow", "fix the navigation", "which features still need designing", or after /bigin-transform-signal has drafted or updated a UC. Turns every unprocessed (new or changed) UC-### plus the pain-point register and design directives into per-feature UX specs — actors, screens, states, real copy, the navigation shell, and the user flows that connect them — then runs a built-in flow review over those journeys and a forward coverage check proving nothing in the requirements went undesigned. It produces NO design system and NO tokens: colour, type, spacing, and components come from the design team or are bound at render time. It renders nothing — rendering is /bigin-render-design-od, invoked by a human, who can then run a perception-first-design (or similar) critique against the rendered artifact by hand if they want one.
 argument-hint: "[feature slug | UC-### | omit for every feature that needs designing]"
 disable-model-invocation: true
 ---
@@ -23,7 +23,7 @@ out   UX-### per feature      an Actor & Scope table + screen inventory + screen
     + _ux/navigation-map.md   one vault-wide, append-only navigation shell — a web tree, a mobile
                                tab bar, or one file carrying both
     + a ### Flow Review        every journey walked as the actor, against the pain points, and
-                               improved in place — when a perception-first-design skill is installed
+                               improved in place — the built-in walk, every run
     + a ### Coverage table     every requirement item AND every open pain point matched FORWARD to
                                the screen, state, or flow that carries it — the only check that
                                finds an OMISSION, and a render-readiness pass in the same sweep
@@ -32,11 +32,11 @@ out   UX-### per feature      an Actor & Scope table + screen inventory + screen
 **It produces no design system and no tokens.** No palette, no type scale, no spacing scale, no
 component library. A screen element names a **semantic role** — `primary action`, `danger`, `muted` —
 from a closed list of ten, and a real design system maps those ten once, later, when the design team
-supplies one or `/bigin-render-design` binds one. A run that invented a palette designed the one
+supplies one or `/bigin-render-design-od` binds one. A run that invented a palette designed the one
 thing nobody asked it for and pinned the client's brand to it.
 
-**It renders nothing.** Turning a spec into artifacts a client can look at is `/bigin-render-design`,
-a separate skill a human invokes when they want a prototype (§ Rendering is a separate step). Nothing
+**It renders nothing.** Turning a spec into artifacts a client can look at is `/bigin-render-design-od`,
+a separate skill a human invokes when they want a prototype (`design-platform.md` § Rendering is a separate step). Nothing
 here checks for a design tool, and nothing here can halt for one.
 
 This skill is the **procedure**. `{design_conventions}` is the **standard** — a rulebook kept
@@ -71,7 +71,7 @@ drives    screen composition   one web form is legitimately three phone sheets �
           regions vocabulary   web: header/nav/main/aside/footer · mobile: header/content/
                                tab-bar/sheet/fab — the wrong one asks a tool to build a shell
                                the platform does not have
-          the render shell     what /bigin-render-design builds, LATER, if a human asks for a
+          the render shell     what /bigin-render-design-od builds, LATER, if a human asks for a
                                prototype — never something this run needs installed
 
 does NOT  the FLOWS. One flow per user goal, per actor — never one per platform. A phone splitting
@@ -84,7 +84,7 @@ per-feature override   ONLY a UC, a hub ## Design Directives row, or an active D
                        override — design to the config value and raise an Open Question.
 ```
 
-`{design_conventions}` § Platform is the standard; this is the procedure.
+`design-platform.md` § Platform is the standard; this is the procedure.
 
 ## Actor scope
 
@@ -125,7 +125,7 @@ and asking later means the client approves a reach nobody granted. And actor sco
 actor: it reads the ones the UCs already name and asks three questions about each — a "power user"
 nobody wrote down is a persona, and a screen for one is invented scope with an invented owner.
 
-`{design_conventions}` § Actor scope is the standard; `3-screens.md` Part 2a is the procedure.
+`design-actor-scope.md` § Actor scope is the standard; `3-screens.md` Part 2a is the procedure.
 
 ## User flows and pain points
 
@@ -153,7 +153,7 @@ pain point becomes a question.
 **The register is read-only.** A flow names the `PP-###`; it never fills a `Resolved by` cell, never
 changes a status, and never adds a row. `/bigin-transform-signal` closes a pain point.
 
-`{design_conventions}` § User flows and pain points is the standard; `3-screens.md` Part 4c is the
+`design-navigation.md` § User flows and pain points is the standard; `3-screens.md` Part 4c is the
 procedure.
 
 ## Semantic style roles — what replaced tokens
@@ -201,7 +201,7 @@ role raises a question rather than inventing one nothing else in the vault can m
 | `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | **read-only** — client-stated preferences |
 | `{template_*}` | `_bigin/templates/*` | `ux-spec`, `navigation-map` |
 
-`{design_conventions}` § Paths is the full table, and the one a subagent reads — a `SKILL.md` lives
+`design-core.md` § Paths is the full table, and the one a subagent reads — a `SKILL.md` lives
 in the plugin install directory, which a subagent cannot reach.
 
 **A design system, if this vault has one, is on no path table here.** Nothing in this skill reads
@@ -211,7 +211,7 @@ unread, as a record of what earlier runs specced against.
 Missing `_bigin/conventions/`, `_bigin/stages/design/`, or `_bigin/templates/` → stop and say
 `/bigin-new-project` must run first.
 
-Then run `_bigin/conventions/conventions.md` § Workspace version check — one `Grep` of
+Then run `version-check.md` § Workspace version check — one `Grep` of
 `_bigin/system/project.md` against the installed plugin's version, compared as semver. Behind → warn and
 recommend `/bigin-upgrade-project`; **ahead → stop**.
 
@@ -219,7 +219,7 @@ Then the platform — the one run-wide fact resolved before Stage 1 builds a wor
 
 ```text
 Grep _bigin/system/project.md frontmatter for  platform: web | mobile | both
-field absent  → web        (§ Platform — the compatibility default)
+field absent  → web        (`design-platform.md` § Platform — the compatibility default)
 ```
 
 ## Rendering is a separate step
@@ -228,22 +228,29 @@ field absent  → web        (§ Platform — the compatibility default)
 states, real copy, semantic roles, a nav shell, reviewed flows, and a coverage table.
 
 ```text
-/bigin-render-design [feature slug | UX-###]     a HUMAN invokes it, when they want one
+/bigin-render-design-od [feature slug | UX-###]     a HUMAN invokes it, when they want one
 
   the DESIGN SYSTEM is THEIR choice — this skill supplies none, which is precisely why that skill
   asks rather than defaults. DESIGN-PRINCIPLES still outranks whatever gets bound
   that skill halts when Open Design is unreachable. NOTHING HERE DOES
   it writes only the spec's ## 8 Rendered Artifacts (pointers) and its rendered: flag
+
+  once a rendered artifact exists, a human MAY manually run a perception-first-design (or similar)
+  critique skill against it — a real HTML/CSS artifact is what that kind of tool is built to
+  evaluate, unlike the markdown spec this skill produces. Neither this skill nor
+  /bigin-render-design-od invokes one automatically; it is a follow-up step a human reaches for,
+  when they want it, on their own schedule
 ```
 
 **Stage 5 is what guards against the failure a required-engine halt used to guard against** — a design
 nobody can look at — by proving each spec is complete enough to render *cold*, on any engine, months
 later. The visual system is the one thing it deliberately does not check for, because there is none.
-`{design_conventions}` § Rendering is a separate step carries the full reasoning.
+`design-platform.md` § Rendering is a separate step carries the full reasoning.
 
-## The optional method layer, and the gated flow review
+## The optional method layer, and the built-in flow review
 
-Two separate questions, neither of which can halt anything.
+Two separate questions. Neither can halt anything, and neither reaches for an external critique
+plugin any more.
 
 ```text
 METHOD LAYER — how the screens get DERIVED. Optional; absence is a silent skip.
@@ -253,21 +260,20 @@ METHOD LAYER — how the screens get DERIVED. Optional; absence is a silent skip
     3  any design plugin  a design/UX skill in this session's skill list
     4  built-in           always available — the method in the stage guides themselves
 
-FLOW REVIEW (Stage 4) — whether the JOURNEYS get critiqued. GATED, not optional-in-effect:
-    a perception-first-design skill installed  → Stage 4 RUNS. Mode 1 (checklist) only
-    a generic critique skill installed          → Stage 4 runs on the built-in walk
-    NEITHER                                     → Stage 4 is SKIPPED, silently. No ### Flow Review
-                                                  table is written — not an empty one. One install
-                                                  line in the closeout, and the run continues
+FLOW REVIEW (Stage 4) — whether the JOURNEYS get critiqued. UNCONDITIONAL, every run:
+    the built-in walk (`4-flow-review.md` Parts 1-4) always runs, over every flow this run
+    designed — no install to check, nothing to skip, no ### Flow Review table left unwritten.
 [references/method-layer.md]
 ```
 
-**The Stage 4 gate is deliberate.** A flow critique run without a method is plausible opinion landing
-in the spec as a `sound` verdict — and `sound` is the strongest claim this pipeline makes about a
-journey. A skipped review says "nobody looked", which is true and recoverable; a fabricated one says
-"somebody looked and it was fine", which is neither.
+**A deeper, corpus-backed critique (perception-first-design or similar) is a human's call, made
+later, against a rendered artifact — never something this run invokes.** Running one here, against a
+markdown spec with no rendered surface, was always the wrong input for that kind of tool (§ Rendering
+is a separate step); the built-in walk is what checks the journeys at spec time, and a human who wants
+a second opinion runs a critique skill by hand once `/bigin-render-design-od` has produced something
+to look at.
 
-Detection, install commands, how to hand work to a method layer, and Stage 4's mode rules:
+Detection, install commands, and how to hand work to a method layer:
 **`references/method-layer.md`**. It also covers the optional per-step `designer-skills` pattern
 references and the ground 2a/2b split that bounds every external pattern.
 
@@ -285,7 +291,7 @@ scope = $ARGUMENTS slug or UC-###, else every {hub_dir} feature
 3  screens   per feature: brief + actor scope → inventory → specs
              → FLOWS, each naming the pain point it resolves          [3-screens.md]
 4  review    walk every journey as the actor; improve it in place     [4-flow-review.md]
-             GATED — skipped, silently, when no review skill is installed
+             the built-in walk, unconditional, every run
 5  verify    FORWARD coverage: every requirement item AND every open
              pain point → its screen, state, or flow                  [5-verify.md]
              + render readiness, so a later render cannot lack input
@@ -296,13 +302,13 @@ scope = $ARGUMENTS slug or UC-###, else every {hub_dir} feature
 Six stages, in order, every invocation, and **no precondition ahead of them**. **Load a stage file on
 reaching that stage**, not up front.
 
-The run ends at a verified specification. A prototype is `/bigin-render-design`, whenever a human wants
+The run ends at a verified specification. A prototype is `/bigin-render-design-od`, whenever a human wants
 one.
 
 ## Stage 1 — Scope
 
 **First, the one run-wide fact:** read `platform:` from `_bigin/system/project.md` (absent → `web`,
-§ Platform). **Announce it** in the Stage 1 output and again in the closeout, saying whether it was
+`design-platform.md` § Platform). **Announce it** in the Stage 1 output and again in the closeout, saying whether it was
 stated or defaulted. Read once; every later stage and every worker is *told* the value.
 
 ```text
@@ -404,11 +410,10 @@ sessions, and the trigger *repeats* for the same actor. Three of three → `## 7
 section is deleted, not left empty. A real agent feature yields **more requirement gaps than rows**
 here, and that is the section working (D7).
 
-## Stage 4 — Flow review (gated)
+## Stage 4 — Flow review
 
-`4-flow-review.md`, in the orchestrator, after every worker has reported. **It runs only when a
-perception-first-design or generic critique skill is installed**; otherwise it is skipped, silently,
-with one install line in the closeout and no `### Flow Review` table written at all.
+`4-flow-review.md`, in the orchestrator, after every worker has reported. **It runs every time, on
+the built-in walk** — no skill to detect, nothing to skip.
 
 It is the only stage that looks at the product **the way a user meets it**. Five questions per flow —
 does it arrive, is every step earned, can the actor get back, does it start where they are, and
@@ -476,11 +481,9 @@ top-down, respect the five-tab cap, bump the version, changelog it. **Nothing is
 renamed in place** (D1).
 
 Then stamp `absorbed:` with `UC-###@version` for **only the UCs that really got a screen row this
-run**, re-stamped whole. Set each status from a live count of unchecked questions on disk. Stamp
-`flow_review:` from what is really in `## 5` — a flag naming a skill over no table is the same lie as
-`relationship_model: modelled` over an empty `## 7`. Refresh every hub named in `features:`, naming
-each `PP-###` a flow now resolves — **and never filling that row's `Resolved by` cell**, which is the
-requirement side's.
+run**, re-stamped whole. Set each status from a live count of unchecked questions on disk. Refresh
+every hub named in `features:`, naming each `PP-###` a flow now resolves — **and never filling that
+row's `Resolved by` cell**, which is the requirement side's.
 
 Then `6-close.md` Part 5's verification checks — **seventeen** today, every one blocking on mismatch.
 Check 3 is the role list; check 4 bans a raw value *and* a `--token` id; check 7 is that no
@@ -489,7 +492,7 @@ table **and** Stage 4's flow-review table together, including that an empty flow
 either way.
 
 ```text
-mode · platform (+ any per-feature override) · method layer · flow review (skill | SKIPPED)
+mode · platform (+ any per-feature override) · method layer
 actors per feature (scope + volume band) · actor splits · capability gaps raised
 per-feature screens and flows · pain points resolved by a flow / still unresolved
 flow review: N sound / N improved / N gaps · nav entries re-nested
@@ -498,7 +501,7 @@ nav entries added (0 deleted, 0 renamed) · directives reflected · skipped
 relationship: modelled|none per feature (+ gaps raised) · skipped
 design system: NONE PRODUCED, by design — never reported as a gap
 pending · questions (design | REQUIREMENT GAP)
-next: human review → /bigin-render-design when they want a prototype (their design system, their
+next: human review → /bigin-render-design-od when they want a prototype (their design system, their
       timing)
 ```
 
@@ -510,10 +513,9 @@ Each produces a run that looks clean. Ordered by cost to discover later.
   omission. Every other check runs backward or sideways and passes cleanly on a spec missing a whole
   exception flow. A design reviewed as complete with a third of the flow absent is the most expensive
   clean-looking failure this pipeline produces.
-- **Writing a `### Flow Review` table on a run where no review skill was installed.** It records that
-  every journey was walked and found sound when nobody walked one, and `sound` is the strongest claim
-  this pipeline makes about a flow. A skip is recoverable; a fabricated review is not. Same for an
-  *empty* table left behind on a skip — it reads as "reviewed, nothing found".
+- **Leaving `### Flow Review` empty, or not writing it, when flows exist.** The built-in walk runs
+  every time, over every flow this run designed — an empty table, or none at all, reads as "reviewed,
+  nothing found" when the pass never actually happened.
 - **Giving a flow `sound` without finding the moment its pain point is fixed.** A journey that
   delivers every UC step and touches nothing the client complained about is exactly the design that
   reviews well and disappoints in the room.
@@ -553,8 +555,6 @@ Each produces a run that looks clean. Ordered by cost to discover later.
 - **Writing two flows for one goal on `both`.** The phone splitting a form into sheets is the same
   journey on more surfaces — one flow, the split inside its `Path`.
 - **Stamping `absorbed:` for a UC that got no screen.** The feature reads as designed forever.
-- **Stamping `flow_review:` from the run's intention rather than the file.** Read `## 5` for the
-  table, then stamp.
 - **Designing one screen for two actors whose work is not the same work.** A member reading their own
   record and an administrator working ten thousand land on "the same place", and whichever actor the
   prototype renders for, the other got a product that does not fit their job.
@@ -587,13 +587,13 @@ judgment work — the same reason `/bigin-transform-signal` fans out on the defa
 
 ## Additional resources
 
-- **`references/method-layer.md`** — the **optional** method layer and the **gated** Stage 4 flow
-  review. None of it can halt anything: the provider table, how to detect each one, the install
+- **`references/method-layer.md`** — the **optional** method layer that Stage 3 screens are derived
+  through. None of it can halt anything: the provider table, how to detect each one, the install
   command to report when none is present, how the built-in method works, the per-step
-  `designer-skills` pattern references, the ground 2a/2b split that bounds them, and Stage 4's rules
-  for driving Perception-First Design (Mode 1 only — never its solve or analyze modes) or a generic
-  critique skill. Read at Stage 1 by the orchestrator; the per-step section is read again by each
-  worker at Stage 3, and § Stage 4 by the orchestrator before the review.
+  `designer-skills` pattern references, and the ground 2a/2b split that bounds them. Read at Stage 1
+  by the orchestrator; the per-step section is read again by each worker at Stage 3. Stage 4's flow
+  review is unconditional and built-in — it is not part of this method layer, and calls no external
+  critique skill.
 - **`references/agentic-ux.md`** — the relationship model: what the agentic booster does and does not
   contribute, how the trigger is decided (and why Stage 1 cannot decide it), the five pillars mapped
   onto `## 7` and `## 3`, a worked example, and the five recurring requirement gaps. Read at Stage 1,
@@ -604,6 +604,6 @@ judgment work — the same reason `/bigin-transform-signal` fans out on the defa
 - **`agents/ux-brief-assembler.md`** (plugin-root `agents/`, not this skill's `references/`) — the
   named subagent dispatched per qualifying feature at Stage 3, ahead of the screens worker. It never
   writes a file and never finalizes a screen boundary; it only assembles.
-- **`/bigin-render-design`'s own `references/open-design-adapter.md`** — where the Open Design tool
+- **`/bigin-render-design-od`'s `references/open-design-adapter.md`** — where the Open Design tool
   contract, the design-system choice, and the halt text live. **This skill never reads it**, and that
   is the point: a design run has no engine and no design system to resolve.

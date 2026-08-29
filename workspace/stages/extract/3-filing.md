@@ -11,9 +11,8 @@ never: ## Raw, a transcript, or an attachment
          and any disagreement here would silently overwrite it
 ```
 
-`{variable}` resolves in `_bigin/conventions/paths.md`. Read `_bigin/conventions/conventions.md`
-§ ID scheme, § Feature Hub, § Signal → feature mapping, § Open Questions wording, § Pain Point Register,
-§ Design Principles Register, § Entity Data Model — those sections only. `{conventions_file}`, if
+`{variable}` resolves in `_bigin/conventions/paths.md`. Read `core.md` § ID scheme, `feature-hub.md` § Feature Hub, `registers.md` § Signal → feature mapping, `questions.md` § Open Questions wording, `registers.md` § Pain Point Register,
+`registers.md` § Design Principles Register, `registers.md` § Entity Data Model — those sections only. `{conventions_file}`, if
 present, overrides anything here.
 
 ## Scope
@@ -74,7 +73,7 @@ for row in table:                       # ROW BY ROW, on its own content
 
 ### The declared-slug exception, precisely
 
-`conventions.md` § Declared features is the standard; this is the procedure, stated here because this is
+`registers.md` § Declared features is the standard; this is the procedure, stated here because this is
 the file the filing stage actually reads. It fires **only** for a slug in the note's `declared_features:`
 frontmatter — written by `/bigin-intake` from a human's own multi-select at capture, never from any
 agent's reading of content.

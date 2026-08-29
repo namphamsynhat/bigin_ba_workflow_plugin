@@ -1,5 +1,5 @@
 {
-  "description": "Runs bigin-lint's invariant checks after a write into a Bigin requirements vault, so an ID collision, a malformed signal-table row, a broken citation, or an illegal status value is caught at the moment it lands rather than by a verification pass that a context-pressured run can skip. Exits silently and immediately in any repo that has no _bigin/system/project.md, so it is inert outside a Bigin project.",
+  "description": "Runs bigin-lint's invariant checks after a write into a Bigin requirements vault, so an ID collision, a malformed signal-table row, a broken citation, or an illegal status value is surfaced at the moment it lands. ADVISORY only — findings go to stdout and the hook always exits 0, because a mid-stage write legitimately breaks a cross-file invariant for a few tool calls and a blocking hook there costs a self-correction loop every time. The blocking gate is `bigin-lint.py --full`, which each skill runs once at its stage boundary. Exits silently and immediately in any repo that has no _bigin/system/project.md, so it is inert outside a Bigin project.",
   "hooks": {
     "PostToolUse": [
       {

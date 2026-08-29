@@ -59,7 +59,7 @@ booking behind, and it is the most commonly empty cell on the UC template.
 
 **The step table** — one row per `S#` row in the UC's § 2, in row order (which is flow order; the
 ids are not sequential and must not be re-ordered into sequence,
-`{conventions_reference}` § ID scheme):
+`core.md` § ID scheme):
 
 ```text
 What happens   one sentence, business voice, carrying the actor's intent AND what the business
@@ -92,7 +92,7 @@ never asked for, and it looks exactly like a real one.
 
 A mirror of the `BR-###` files in each folded UC's `brs:` — read the BR file for the statement, and
 the UC's § 4 for `Enforced at`. Never write a rule from the UC's mirror alone; the BR file is the
-source (`{conventions_reference}` § ID scheme).
+source (`core.md` § ID scheme).
 
 ```text
 Applies at              the § 4 Enforced at value, in words + the id in brackets:

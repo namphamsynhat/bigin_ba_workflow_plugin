@@ -49,7 +49,7 @@ lines above — not from the flows, which they will not read.
   not quantified.
 
 The pain-point table mirrors `{pain_points_file}` rows for this feature, **by id**, read-only
-(`{conventions_reference}` § Pain Point Register). `Addressed by` names the capability from § 5 that
+(`registers.md` § Pain Point Register). `Addressed by` names the capability from § 5 that
 resolves it — fill it after § 5 exists, or write `—` when no folded capability does. A `PP-###` no
 capability addresses is worth one line in the report: the feature does not yet resolve a pain the
 client stated.

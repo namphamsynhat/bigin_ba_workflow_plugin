@@ -18,7 +18,7 @@ per UX spec:
     nav_map:       = {nav_map_file}'s version, as it stands now
     engine:        = the METHOD layer Stage 1 detected (wds | figma | <plugin> | built-in).
                      NOT a renderer — nothing in this skill renders. What actually rendered this
-                     spec, if anything ever does, is `/bigin-render-design`'s to write into ## 8
+                     spec, if anything ever does, is `/bigin-render-design-od`'s to write into ## 8
     platform:      = the project config's platform, as Stage 1 announced it (web | mobile | both;
                      absent in the config → web) — UNLESS a UC, a hub ## Design Directives row, or an
                      active DESIGN-PRINCIPLES row EXPLICITLY stated a platform for THIS feature, in
@@ -27,9 +27,6 @@ per UX spec:
     relationship_model: = modelled ONLY IF ## 7 exists AND carries rows. Read the section on disk;
                           a worker that reported `modelled` and wrote an empty ## 7 gets `none`
                           and its ## 7 deleted (checks 9-11)
-    flow_review:   = pfd | <critique skill> | skipped — what Stage 4 actually did, read from whether
-                     a ### Flow Review table is really in ## 5. A `pfd` flag over no table is the
-                     same lie as a `modelled` flag over an empty ## 7 (check 17)
     sources:       = every UC/BR/EN/PP id, DESIGN-PRINCIPLES row #, and hub directive # used
     features:      = the owning slug first, then every other slug these screens touch
 ```
@@ -76,7 +73,7 @@ NEVER TOUCH             Signal Log · ## Pain Points · ## Requirement Readiness
 `## Notes / History` line and in the UX spec's `## 4` `Resolves` cell. It never fills that row's
 `Resolved by` cell, never changes its status, and never touches `PAIN-POINTS.md` — the register is
 the requirement side's, and `/bigin-transform-signal` is what closes a row
-(`{design_conventions}` § Write map).
+(`design-core.md` § Write map).
 
 ## Part 4 — The one line back to the requirement
 
@@ -99,11 +96,11 @@ re-check, then report.
 |---|---|---|
 | 1 | every `absorbed:` entry names a UC with ≥1 screen row in `## 2` | a stamped-but-undesigned UC makes the feature read as finished forever |
 | 2 | every screen's `serves` cites an `S#` that exists in that UC and is not removed | a screen serving a deleted step serves nothing |
-| 3 | every element's `Role` cell holds a role from the closed list in `{design_conventions}` § Semantic style roles, or is blank; and no screen carries two `primary action` elements | an invented eleventh role is a one-screen vocabulary nothing downstream can map, and two primary actions means the screen is really two screens, or one of them was never primary |
+| 3 | every element's `Role` cell holds a role from the closed list in `design-screens.md` § Semantic style roles, or is blank; and no screen carries two `primary action` elements | an invented eleventh role is a one-screen vocabulary nothing downstream can map, and two primary actions means the screen is really two screens, or one of them was never primary |
 | 4 | no raw colour, size, or font value — and **no `--token` id** — in any screen spec | D2. A hex pins a value nobody stated; a token id cites a design system this vault does not have, so it resolves to nothing and a render engine quietly picks its own |
 | 5 | every question in `## 6` is mirrored on the hub, same sentence, and is not already open on the UC's `## 5` | one question, two places — never two questions |
 | 6 | each UX spec's `status` matches its live unchecked-question count | the invariant Part 2 exists to hold |
-| 7 | **no `## Prototype Prompt` heading remains** in any spec this run touched | those blocks were a second, hand-written copy of the screens beside them, inlining token values that no longer exist anywhere. `/bigin-render-design` builds its own prompt from `## 1`–`## 5` plus the UCs, BRs, and entity register — a leftover block is a stale spec a human may paste in good faith (`3-screens.md` § Adopting an existing UX spec deletes them) |
+| 7 | **no `## Prototype Prompt` heading remains** in any spec this run touched | those blocks were a second, hand-written copy of the screens beside them, inlining token values that no longer exist anywhere. `/bigin-render-design-od` builds its own prompt from `## 1`–`## 5` plus the UCs, BRs, and entity register — a leftover block is a stale spec a human may paste in good faith (`3-screens.md` § Adopting an existing UX spec deletes them) |
 | 8 | `{nav_map_file}` lost nothing: no entry deleted, and no `id` changed **in place** — a Stage 4 re-nest adds the new row and retires the old one in § Removing an entry. Every entry's `Points to` (when not "—") names a screen that really exists in an actual UX spec; every entry whose `id` has a dot has a parent `id` that also exists **in the same `## Structure` section** (on `both`, the two shells are two trees — an `id` is unique within its own section, not across both) | D1, and either an orphaned menu entry (dead link) or an orphaned branch (a child with no parent row) reaches a client looking like real IA. An `id` edited in place silently un-points every screen spec citing the old path |
 | 9 | `relationship_model:` matches `## 7` **on disk**: `modelled` ⟺ `## 7` exists with ≥1 row in any of its four tables; `none` ⟺ `## 7` is absent or was deleted | an empty `## 7` reads as "the relationship was considered and there is none" when nobody looked — and a `modelled` flag over no rows makes the next run skip the work |
 | 10 | every **Memory Architecture** row names an `EN-###` field that really exists in that entity's field list, and every filled **stage 3 — autonomous** cell cites a `BR-###` that really exists | D7. A memory over no stored field is a relationship the system cannot have; an ungranted autonomous cell reaches a prototype as the agent acting alone, with nobody having decided it may |
@@ -113,7 +110,7 @@ re-check, then report.
 | 14 | the frontmatter `actors:` list and the `## 1` **Actor & Scope** table hold the same roles, in the same bands; every row names an actor that really appears in an in-scope UC's `## 1`; and every one of its three cells carries a ground that really exists (a `BR-###`, a UC step, or an `EN-###` cardinality) — no row for an actor no UC names | an invented actor is an invented persona, and every screen designed for them is scope nobody asked for wearing an owner nobody appointed. A guessed `all` in a scope cell is worse: it hands an actor reach no rule granted, and the client approves it by looking at a prototype |
 | 15 | every screen spec carries an `Actor` and a `Scope` line whose actor appears in the Actor & Scope table; every screen at volume `many` carries **at least one find mechanism** (search, filter, or sort) and all five volume states — `empty`, `few`, `many at real scale` (with the real number named, not "several"), `loading`, `error`; and no screen at volume `one` carries find machinery | a `many` screen without find machinery reviews as finished and collapses on the client's real table — and no other check catches it, because every element on it is properly grounded. A `many` state that never names a number gets prototyped at three rows, which tests nothing the client is worried about |
 | 16 | no screen spec carries a bulk action, an export, a "select all matching", a saved view, or a subscription unless a `UC-### S<n>` or a `BR-###` **really grants it** — and every one that was left out because nothing granted it is an unchecked `- [ ] Q:` in `## 6` marked as a requirement gap | D8, the data-side counterpart of check 10. An ungranted bulk affordance reaches the client in a working prototype, they agree it looks right, and it becomes a requirement nobody wrote or costed — except this one deletes five hundred records at a time |
-| 17 | **`## 4`'s `### Coverage` table and `## 5`'s `### Flow Review` table, together.** Coverage exists and is **whole** (`5-verify.md` wrote it): one row per non-removed `S#`/`A#`/`E#` of every in-scope UC, per screen-constraining `BR-###` they cite, per `EN-###` field their steps read or write, **per unresolved hub `PP-###`**, per open hub directive, and per active principle — every row carrying `covered` (with a real screen **and** state in `Covered by`; for a `PP-###`, a real **flow** and where in it), `gap → ## 6 Q<n>` pointing at a question that really exists and is unchecked, or `out of scope — <reason>` citing something that really says so. And Flow Review matches `flow_review:` on disk: one row per `## 4` flow ⟺ the flag names a skill; **no table at all** ⟺ `skipped`. An **empty** Flow Review table fails either way | Stage 5's whole output, and the only check that can catch an **omission**. Every other check on this list runs backward — element to ground — and backward passes cleanly on a spec with an entire exception flow missing: nothing on it was invented, because nothing on it was drawn. A `covered` verdict over an empty `Covered by`, or a `gap` pointing at no question, is the table claiming a coverage nobody checked. The Flow Review half catches the same lie one level up: an empty table, or one written on a run where no review skill was installed, records that every journey was walked and found sound when nobody walked one |
+| 17 | **`## 4`'s `### Coverage` table and `## 5`'s `### Flow Review` table, together.** Coverage exists and is **whole** (`5-verify.md` wrote it): one row per non-removed `S#`/`A#`/`E#` of every in-scope UC, per screen-constraining `BR-###` they cite, per `EN-###` field their steps read or write, **per unresolved hub `PP-###`**, per open hub directive, and per active principle — every row carrying `covered` (with a real screen **and** state in `Covered by`; for a `PP-###`, a real **flow** and where in it), `gap → ## 6 Q<n>` pointing at a question that really exists and is unchecked, or `out of scope — <reason>` citing something that really says so. And Flow Review is equally whole: one row per `## 4` flow, **never** empty and **never** missing — the built-in walk runs every time, so there is no case where the table is legitimately absent | Stage 5's whole output, and the only check that can catch an **omission**. Every other check on this list runs backward — element to ground — and backward passes cleanly on a spec with an entire exception flow missing: nothing on it was invented, because nothing on it was drawn. A `covered` verdict over an empty `Covered by`, or a `gap` pointing at no question, is the table claiming a coverage nobody checked. The Flow Review half catches the same lie one level up: an empty or missing table records that every journey was walked and found sound when nobody walked one |
 
 **A `PP-###` row is the one to check hardest.** Every other item on the Coverage table is a step, a
 rule, or a field somebody eventually notices missing. A pain point is the thing everybody assumes
@@ -140,8 +137,6 @@ Stage 3:   <slug> UX-### created|updated — <N> screens (<N> new), <N> states, 
 Stage 2B:  <N> nav entr(y/ies) added — total <N> entries; 0 deleted, 0 renamed in place
 Stage 4:   <slug> UX-### — <N> flow(s) reviewed: <N> sound, <N> improved, <N> gap(s);
            <N> nav entr(y/ies) re-nested | none
-           method: <pfd (mode 1) | <critique skill> | SKIPPED — not installed>
-           (on a skip, ONE install line, once for the run — never per feature)
 Stage 5:   <slug> UX-### — <N> item(s) checked: <N> covered, <N> gap(s), <N> out of scope;
            pain points: <N> of <N> resolved by a flow;
            <N> row(s) repaired; render-ready: yes | <N> input gap(s) raised
@@ -150,7 +145,7 @@ pain points: <slug> — PP-### resolved by flow <goal> (one line each);
            <N> still unresolved — question raised | none open on this feature
 design system: NONE PRODUCED, by design. Colour, type, spacing, and components come from the design
            team or are bound at render time. Never reported as a gap
-render:    not this skill's job — /bigin-render-design, whenever a human wants it, on the engine
+render:    not this skill's job — /bigin-render-design-od, whenever a human wants it, on the engine
            they choose. Never reported as done, skipped, or waived here: there was nothing to do
 actors:    <slug> UX-### — <N> actor(s): <role> (sees <own|assigned|unit|all>, <one|few|many>);
            … (one line per feature)
@@ -165,7 +160,7 @@ skipped:   <slug>/UC-### — <no main flow | already current | owned by <slug> |
 pending:   <slug> — on the work-list, not reached this run
 questions: UX-### — <the question>, owner client|team [design | REQUIREMENT GAP]
 next:      human review of UX-### → then, when they want a prototype in front of a client:
-             /bigin-render-design [<slug>]   — their choice of design system, project, and timing
+             /bigin-render-design-od [<slug>]   — their choice of design system, project, and timing
            requirement gaps → /bigin-transform-signal
 ```
 
@@ -198,9 +193,9 @@ next:      human review of UX-### → then, when they want a prototype in front 
 - **Leaving a `## Prototype Prompt` block in a spec this run touched.** It inlines token values that
   no longer exist anywhere and describes screens that may since have changed. A BA who pastes it in
   good faith gets a prototype of a design nobody is maintaining (check 7).
-- **Stamping `flow_review: pfd` on a run where the stage was skipped.** Same failure as stamping
-  `relationship_model: modelled` over an empty `## 7`: the flag says every journey was walked, no
-  future run re-opens it, and nobody ever did. Read `## 5` for the table, then stamp (check 17).
+- **Leaving `### Flow Review` empty or absent.** The built-in walk runs every time; an empty or
+  missing table means the run never actually walked the flows, not that anything was skipped
+  (check 17).
 - **Filling a pain point's `Resolved by` cell on the hub or the register.** Both are the requirement
   side's. A flow that fixes `PP-004` names it; `/bigin-transform-signal` closes the row. Closing it
   here means a pain point reads as settled on the strength of a design nobody has accepted yet.

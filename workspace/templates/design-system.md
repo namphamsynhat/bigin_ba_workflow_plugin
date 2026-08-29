@@ -2,8 +2,8 @@
 
 /bigin-generate-design produces the EXPERIENCE (actors, screens, states, navigation, and the flows
 between them) and no visual system at all: a screen element names a semantic ROLE from a closed list
-(_bigin/conventions/design-conventions.md § Semantic style roles), and colour, type, spacing, and
-components are supplied by the design team or bound at render time by /bigin-render-design.
+(`design-screens.md` § Semantic style roles), and colour, type, spacing, and
+components are supplied by the design team or bound at render time by /bigin-render-design-od.
 
 Kept, unreferenced, for two reasons: a vault materialized before this change may still have files
 instantiated from it under 04-UIUX/_design-system/ (nothing reads them, and nothing deletes them),

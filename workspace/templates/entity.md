@@ -4,7 +4,7 @@ id: EN-
 name:            # the real-world BUSINESS OBJECT — "Application", "Vendor", "Wallet". Never an
                  # attribute: "Application.Certification Status" is a FIELD of Application, and a
                  # doc named that way is the fragmentation this artifact exists to prevent
-                 # (conventions.md § Entity Data Model, The doc is a data dictionary).
+                 # (`registers.md` § Entity Data Model, The doc is a data dictionary).
 kind:            # actor | data | system
 status: proposed # proposed (row exists in ENTITIES.md, no doc yet) -> draft (this doc exists,
                  # fields still settling) -> approved (human confirmed at a UC/BR review gate).
@@ -24,7 +24,7 @@ updated:
 <!-- THE DATA DICTIONARY for this business object — every field it is known to carry, not only the
 ones the use case being synced happened to touch. /sync-entities rebuilds this from the union of
 every source that has stated a field for this object: the ENTITIES.md row's `Fields (so far)`, the
-rows already here, and every UC/BR in `features:` that references it (conventions.md § Entity Data
+rows already here, and every UC/BR in `features:` that references it (registers.md § Entity Data
 Model, The doc is a data dictionary).
 
 Type spells out the values. A bare `enum`, `status`, or `code` documents nothing — enumerate the
@@ -38,7 +38,7 @@ complete over what the vault knows, with the gaps left visible as gaps.
 
 Source cites the Signal Log row (or UC-### S<n> / BR-###) that introduced or last changed the field. A
 field-level business rule is not a subsection here — it's its own BR-### file under
-01-Requirements/_brs/ (conventions.md § Entity Data Model), citing this entity's fields it
+01-Requirements/_brs/ (`registers.md` § Entity Data Model), citing this entity's fields it
 governs in its own body. -->
 
 | Field | Type | Required? | Source | Notes |

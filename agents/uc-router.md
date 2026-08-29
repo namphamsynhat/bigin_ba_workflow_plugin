@@ -26,7 +26,7 @@ Your job in this phase is to look at one feature hub's qualified UC/Context-lane
 Read `_bigin/conventions/paths.md` to resolve every `{variable}` below, then read, in full:
 - `_bigin/stages/transform/3-routing.md` § Which UC — new or update
 - `_bigin/stages/transform/3-lane-uc.md` § Ownership, § Granularity, § Creating a new UC, § Adopting an existing FR
-- `_bigin/conventions/conventions.md` § Use Case, § ID scheme, § Frontmatter schema — nothing else in that file governs this phase
+- `use-case.md` § Use Case · `core.md` § ID scheme and § Frontmatter schema — those two files only
 
 If `.claude/bigin-ba-workflow-plugin.local.md` exists, it overrides anything above.
 
@@ -122,7 +122,9 @@ Trust the targets from your own Phase A report as given. A row whose target look
 ### Your only rulebook for Phase B
 
 Read, in full, only the lanes the dispatched signals actually use — you do not need to re-read anything from the Phase A list above:
-- `_bigin/conventions/conventions.md` §§ ID scheme, Use Case, Frontmatter schema, Status vocabularies, Feature Hub, Open Questions wording, Open Questions ↔ status consistency, Feedback handling — nothing else in that file governs this phase.
+- `core.md` (ID scheme, frontmatter schema, status vocabularies) · `use-case.md` § Use Case ·
+  `feature-hub.md` § Feature Hub · `questions.md` (both sections) · `intake.md` § Feedback handling.
+  Those five files and nothing else — do not open `conventions.md`, which is only a map.
 - `_bigin/stages/transform/3-lane-uc.md` — skip § Creating a new UC and § Adopting an existing FR (you already did that in Phase A); read the rest: Staging a change, Writing a step, Alternative/exception flows, the § 4 mirror, the Context sub-lane, Questions, Conflict.
 - `_bigin/stages/transform/3-lane-br.md`, in full, when a dispatched signal routed to the BR lane.
 - `_bigin/stages/transform/3-lane-design.md`, in full, when a dispatched signal routed to the Design lane.

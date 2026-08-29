@@ -32,7 +32,7 @@ Steps 2 and 3 belong in this same sequential pass, not back in Stage 3: a cross-
 whose own subagent has already finished, and a pointer written from two places at once loses a row.
 
 No entity is minted or promoted here — that's `/sync-entities`'s job, run separately once a UC is
-approved, never Stage 4 (§ Entity Data Model). This stage only ever cites an existing `{entities_file}`
+approved, never Stage 4 (`registers.md` § Entity Data Model). This stage only ever cites an existing `{entities_file}`
 row by name.
 
 ```text
@@ -183,7 +183,7 @@ UC(s) together with its BRs and look for a genuine contradiction — two stateme
 
 A vault-wide sweep costs quadratically more, and nothing runs one today — the per-UC contradiction
 sweep was never `/enrich-feature`'s job even under its old design, and its retargeted, feature-scoped
-form (`conventions.md` § Reconciliation notes) doesn't read UC content at all. Do **not** promote this
+form (`runtime.md` § Reconciliation notes) doesn't read UC content at all. Do **not** promote this
 scoped check into
 a vault-wide one to compensate: per-feature every run is what keeps an unattended run's cost proportional
 to what changed. A wording difference, a narrower restatement, or two rules about different conditions are

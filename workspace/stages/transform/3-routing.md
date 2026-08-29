@@ -131,7 +131,7 @@ extraction gap worth reporting, not backfilling here.
 **Never promote a row to a full `EN-###` document, and never report one as a candidate for the
 orchestrator to promote.** That lane doesn't exist in this skill any more — a `proposed` row stays a
 row until `/sync-entities` promotes it, run once an approved UC (or a `BR-###` it mirrors) is actually
-confirmed to reference it (§ Entity Data Model). Deferring it that far means a UC that never reaches
+confirmed to reference it (`registers.md` § Entity Data Model). Deferring it that far means a UC that never reaches
 approval never leaves behind an entity doc nobody ended up needing.
 
 A UC or BR drafted or updated in this run may still cite the entity **by name** against the register

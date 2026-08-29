@@ -1,6 +1,6 @@
 ---
 name: extract-signal
-description: This skill should be used when the ask is to extract signals, process the intake queue, drain 00-Inbox, or map intake to features. Drains the raw intake queue in 00-Inbox — extracts each INT-### note's signals into a flat raw record on the note, audits that record against the source in both directions, then anchors every signal to a FEATURES.md slug and files it onto that feature's Signal Log grouped by functional theme. A signal that can't be anchored raises a written question instead of a guess. Never drafts or edits a UC.
+description: This skill should be used when the ask is to extract signals, process the intake queue, drain 00-Inbox, or map intake to features. Drains the raw intake queue in 00-Inbox — extracts each INT-### note's signals into a flat raw record on the note and audits that record against the source in both directions, then anchors every signal to a FEATURES.md slug and files it onto that feature's Signal Log grouped by functional theme. A signal that can't be anchored raises a written question instead of a guess. Never drafts or edits a UC.
 argument-hint: "[resume]"
 disallowed-tools: AskUserQuestion
 ---
@@ -29,9 +29,9 @@ Row counts won't match, and shouldn't. Every later stage reads the raw record; n
 | `{requirements_file}` | `01-Requirements/FEATURES.md` | the slug registry; anchors resolve only to slugs listed here |
 | `{hub_dir}` | `01-Requirements/_features/<slug>.md` | one Feature Hub per slug |
 | `{uc_dir}` | `01-Requirements/_ucs` | read-only — scanned for open questions (Stage 1) |
-| `{conventions_reference}` | `_bigin/conventions/conventions.md` | ID scheme, frontmatter schema, artifact conventions |
+| `{conventions_reference}` | `_bigin/conventions/` | this stage reads four of them: `core.md` (ID scheme, frontmatter, statuses) · `feature-hub.md` · `registers.md` · `questions.md`. Never `conventions.md`, which is only a map |
 | `{extraction_rules}` | `_bigin/stages/extract/2-extraction.md` | the **extraction** subagent's only rulebook |
-| `{audit_rules}` | `_bigin/stages/extract/2b-audit.md` | the **source-audit** subagent's only rulebook, plus the table-repair procedure |
+| `{audit_rules}` | `_bigin/stages/extract/2b-audit.md` | `signal-auditor`'s only rulebook. Its § Repairing the table and § When the independent pass is owed are read by `signal-extractor` too — nothing else in it is |
 | `{filing_rules}` | `_bigin/stages/extract/3-filing.md` | the **filing** subagent's only rulebook |
 | `{conventions_file}` | `.agents/bigin-ba-workflow-plugin.local.md` (or `.claude/bigin-ba-workflow-plugin.local.md`) | optional project overrides |
 | `{pain_points_file}` | `01-Requirements/PAIN-POINTS.md` | canonical `PP-###`; each hub mirrors its own rows |
@@ -43,7 +43,7 @@ Project-relative, materialized by `/bigin-new-project`. Missing `{extraction_rul
 `{filing_rules}`, or `{conventions_reference}` → stop, say `/bigin-new-project` must run first. A subagent
 that can't read its rules improvises and reports success.
 
-Then run `{conventions_reference}` § Workspace version check — one `Grep` of `_bigin/system/project.md`
+Then run `version-check.md` § Workspace version check — one `Grep` of `_bigin/system/project.md`
 against the installed plugin's version. Behind → warn and recommend `/bigin-upgrade-project`; **ahead →
 stop**: the materialized rulebook this run would follow is older than the one the vault was built
 against, and filing against an older contract is how a stage silently regresses.
@@ -79,9 +79,9 @@ else        → report(note · mode · sources · raw_lines), continue
 
 ## Stage 2 — Process the queue
 
-**Dispatch the named agents** — `signal-extractor`, `signal-auditor`, `signal-repairer`, `signal-filer`,
-`signal-batch-verifier` — never a bare `general-purpose` agent. Each pins its own model and tool set in
-its frontmatter, and each reads its own rulebook from `_bigin/`. Every subagent is fresh: reuse grows
+**Two agents per note** — `signal-extractor`, then `signal-filer` — plus `signal-auditor` on the
+notes that earn it. Never a bare `general-purpose` agent. Each pins its own model and tool set in its
+frontmatter, and each reads its own rulebook from `_bigin/`. Every subagent is fresh: reuse grows
 context instead of resetting it.
 
 **`references/agent-dispatch.md` carries the per-run data to hand each one, and nothing else.** Do not
@@ -96,27 +96,29 @@ for batch in chunks(queue, 5):
 
     2a  Agent(signal-extractor)                                  [dispatch § 2a]
         reads   every SRC block in note.sources · {extraction_rules}
+                       · {audit_rules} §§ Repairing the table, When the independent pass is owed
         writes  ## Extracted signals — # · Type · Signal · Why · Source
                 Feature and Status left blank
+                THEN re-walks each block against that table and repairs it in place
+                       ({extraction_rules} § Step 6)
+        reports self_audit (what it repaired) · audit_owed (yes + trigger | no + why)
         if any SRC block unread        → re-spawn scoped to that block
         if why "not stated" > 30% of requirement/feedback rows
                                        → re-spawn scoped to those rows
 
-    2b  Agent(signal-auditor)                                    [dispatch § 2b]
+    2b  Agent(signal-auditor), ONLY when 2a reported audit_owed: yes   [dispatch § 2b]
+        the fresh reader — the one pass that catches what the agent who wrote the table
+        could not see in its own work. It both audits and repairs, in one dispatch.
         reads   ## Raw by line range FIRST (table unseen), then the table · {audit_rules}
-        writes  a two-direction gap report — repairs nothing
-        SKIPPABLE: ## Raw under ~100 lines, ONE block, kind != transcript, no `derived` row
-                   → orchestrator checks inline instead, reported as "audit: inline"
-                   → NEVER skip on a transcript, however short  [{audit_rules} § When this pass
-                     may be skipped]
-
-    2b-repair  Agent(signal-repairer), only if 2b found something [dispatch § 2b-repair]
-        handed  the audit report VERBATIM — it never re-reads the source
-        writes  the table repairs: gap → append · overreach → narrow · inversion → re-type + add
-                the ask · bad cite → fix · no support → question · contradiction → conflict pair
-        → repair touched > 2 rows → RE-AUDIT those rows, scoped, before filing
-        → NOT done in the orchestrator: that pulls every table and audit report into the one
-          context this whole fan-out exists to keep small
+        writes  the table repairs, then verifies them against the blocks it still has open
+        OWED when: any block is a transcript (however short) · ## Raw >= ~300 lines ·
+                   >1 block with an attachment or thread among them · 2a reported an unread
+                   block or >30% not-stated · 2a's self-audit found an inversion or a
+                   contradiction · 2a repaired > 5 rows
+                   [{audit_rules} § When the independent pass is owed]
+        otherwise 2a's self-audit stands — report it as "audit: self", never as dispatched.
+        NEVER audit inline in the orchestrator: that pulls ## Raw into the one context this
+        whole fan-out exists to keep small.
 
   # ---- shared writes: SEQUENTIAL, one note at a time ----
   for note in batch, in order:
@@ -129,19 +131,23 @@ for batch in chunks(queue, 5):
         → sequential because hubs and the three registers are shared: two concurrent notes
           appending to one hub lose a row
 
-  3a  ORCHESTRATOR: python3 "${CLAUDE_PLUGIN_ROOT}/hooks/bigin-lint.py" --full
-      the mechanical half of the batch check, for free and without judgment: table shape, cite
-      resolution, illegal status values, note rows cited by no hub row or cited twice on one hub
-      exit 1 → its findings are blocking, same as the verifier's
-      unavailable (no python3, path won't resolve, command denied) → SAY SO and let 3b cover it all;
-      never read an unavailable checker as a pass
-  3b  Agent(signal-batch-verifier), one per batch                [dispatch § 3]
-      the half a program can't do: does this note's status match what was reported, is every
-      question actually mirrored where a human will see it, is a themed Signal cell really carrying
-      a clause per number it cites, was the rationale question batched
-      mismatch → blocking; dispatch signal-repairer in hub-repair mode, re-check, then move on
+  3   ORCHESTRATOR: python3 "${CLAUDE_PLUGIN_ROOT}/hooks/bigin-lint.py" --full
+      THE batch gate — deterministic, free, and the only one. Table shape, cite resolution,
+      illegal status values, note rows cited by no hub row or cited twice on one hub,
+      status-vs-open-questions consistency.
+      exit 1 → blocking. A filing gap (rows anchored to a slug no hub row cites) → dispatch
+               signal-filer in hub-repair mode scoped to exactly that gap, re-run --full,
+               then move on.
+      unavailable (no python3, path won't resolve, command denied) → SAY SO and check the
+               batch by hand against § Stage 3's shape; never read an unavailable checker
+               as a pass.
   4   report(batch)                                              # before the next batch starts
 ```
+
+**Why there is no verification subagent.** Everything a batch-verifier could check mechanically,
+`--full` checks in milliseconds and without judgment. What it could not check mechanically, it was
+not reliably checking either — and paying a cold agent start per batch to re-read files the linter
+already parsed is the trade this pipeline exists to avoid.
 
 **Why 2a/2b parallelize and 2c does not.** 2a and 2b touch exactly one file each — that note's own
 table. The shared-write hazard the old sequential loop guarded against lives entirely in 2c, where hubs
@@ -188,19 +194,22 @@ coverage:  INT-###: M segments, N rows (0-row segments: <list|none>) · field ta
 mix:       INT-###: as-is N · pain N · to-be N · derived N · commitments N
            why: N of M stated (X% not stated) — <ok | re-ran 2a>
            rationale: N in question · N non-blocking · N unmarked <row #s | none>
-audit:     INT-###: N claims in source, N gaps appended, N narrowed, N inversions re-typed,
-           N conflicts paired, N downgraded to question
+audit:     INT-###: <self | independent (<trigger>)> — N claims in source, N gaps appended,
+           N narrowed, N inversions re-typed, N conflicts paired, N downgraded to question
 filed:     <slug>: N signals in M themed rows (Signal Log #a-#b)
 registers: PP minted <ids> · PP matched <ids> · entities N · design N
 parked:    INT-### awaiting an answer (N open) · INT-### awaiting a feature mapping
-audit:     INT-###: dispatched | inline (<N> lines, <kind>) — and, if repaired, re-audited (<rows>) | not
-verified:  clean | repaired (<what>)
+gate:      bigin-lint --full: clean | repaired (<what>) | UNAVAILABLE (<why>) — checked by hand
 remaining: N in queue — re-run to continue
 ```
 
 These four lines are the only place quality is visible: `sources` catches a source nobody read ·
 `coverage` under-extraction · `mix` mis-classification · `audit` fidelity. A run that appended gaps or
 re-typed inversions is never folded into "clean".
+
+**`audit:` must say which depth ran on each note.** `self` and `independent` are not
+interchangeable, and a note that says neither is a note where nobody can tell whether a transcript
+got the fresh reader it was owed.
 
 ## Themed hub rows
 
@@ -246,6 +255,9 @@ no {requirements_file} slug matches
 
 ## Additional resources
 
-- **`references/agent-dispatch.md`** — the per-run data to hand each of the five named agents, and the
-  parallelism rule. Their procedures live in `_bigin/` (`{extraction_rules}`, `{audit_rules}`,
-  `{filing_rules}`) or in the agent's own body — one home each, never a second copy here.
+- **`references/agent-dispatch.md`** — the per-run data to hand each of the three named agents, the
+  audit-owed test, and the parallelism rule. Their procedures live in `_bigin/`
+  (`{extraction_rules}`, `{audit_rules}`, `{filing_rules}`) — one home each, never a second copy here.
+- **`hooks/bigin-lint.py --full`** (plugin root) — Stage 2 step 3's batch gate. It replaced the
+  `signal-batch-verifier` agent in 1.8.8, along with `signal-repairer`, whose work now happens inside
+  whichever agent found the finding.

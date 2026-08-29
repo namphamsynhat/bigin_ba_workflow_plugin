@@ -9,7 +9,7 @@ updated:
 <!-- RETIRED TEMPLATE — do not instantiate, never add a row. Kept only so that a SCENARIOS.md written
 before the UC migration still parses and its SCN-### ids still resolve. Existing rows stay in place with
 Status: superseded and Notes naming the UC that absorbed them.
-See conventions.md § Business Scenarios (retired). -->
+See `registers.md` § Business Scenarios (retired). -->
 
 One row per cross-feature business scenario — a flow whose steps span more than one feature. Replaced
 by `UC-###`: a use case spanning features records the same flow with its actors, alternative and

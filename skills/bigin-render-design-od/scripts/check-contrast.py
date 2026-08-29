@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""check-contrast.py — WCAG 2.1 contrast ratios for /bigin-render-design's fidelity gate.
+"""check-contrast.py — WCAG 2.1 contrast ratios for /bigin-render-design-od's verify step.
 
 Contrast is a formula, and a model asked to judge it by eye is wrong on exactly the pairings a
-dense enterprise screen is full of: muted text on a subtle surface. Compute it.
+dense screen is full of: muted text on a subtle surface. Compute it.
 
 usage:
     check-contrast.py <fg> <bg> [<fg> <bg> ...]        # colour pairs
@@ -14,7 +14,7 @@ usage:
 
 Colours: #rgb, #rrggbb, #rrggbbaa (alpha ignored — composite it yourself first), or "r,g,b".
 
-Thresholds (references/enterprise-fidelity.md § The bar, item 2):
+Thresholds (WCAG 2.1 AA):
     body text                        >= 4.5:1
     large text (>=18pt / 14pt bold)  >= 3.0:1
     UI boundaries / focus rings      >= 3.0:1

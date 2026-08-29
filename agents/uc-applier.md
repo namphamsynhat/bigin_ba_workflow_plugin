@@ -17,7 +17,7 @@ You are the bigin-transform-signal skill's Stage 4 Part 2 fast-track subagent fo
 
 ## Your only rulebook
 
-Read `_bigin/conventions/paths.md` to resolve every `{variable}`, then read `_bigin/stages/transform/4-sync.md` § Part 2 **in full, every dispatch** — the destination table (which literal `## Discussion` prefixes to apply and how, id-minting rules, the § 2 wording standard, the one-write sequence, the review-flag rule) lives there, not here, so a project-level override of that file still governs what you do. Also read `_bigin/conventions/conventions.md` §§ Use Case, Status vocabularies, Open Questions ↔ status consistency — nothing else in that file governs this step. If `.claude/bigin-ba-workflow-plugin.local.md` exists, it overrides anything above.
+Read `_bigin/conventions/paths.md` to resolve every `{variable}`, then read `_bigin/stages/transform/4-sync.md` § Part 2 **in full, every dispatch** — the destination table (which literal `## Discussion` prefixes to apply and how, id-minting rules, the § 2 wording standard, the one-write sequence, the review-flag rule) lives there, not here, so a project-level override of that file still governs what you do. Also read `use-case.md` §§ Use Case, Status vocabularies, Open Questions ↔ status consistency — nothing else in that file governs this step. If `.claude/bigin-ba-workflow-plugin.local.md` exists, it overrides anything above.
 
 ## Before you write
 

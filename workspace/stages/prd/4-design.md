@@ -26,11 +26,11 @@ UX spec exists                → fill § 9 from it, and record UX-###@version f
 | § 9 element | Source in the UX spec |
 |---|---|
 | `Design spec` + version | its frontmatter `id`, `status`, `version` |
-| `Platform` | § 1 Design Brief `Platform` — copy it as stated. A spec written before the field existed carries none: that is a `web` spec (`{design_conventions}` § Platform), not a gap to raise |
+| `Platform` | § 1 Design Brief `Platform` — copy it as stated. A spec written before the field existed carries none: that is a `web` spec (`design-platform.md` § Platform), not a gap to raise |
 | `Design intent, as stated to us` | § 1 `Principles applied` + `Directives applied` — the client's words, not the row numbers alone |
 | **Screens** table | § 2 Screen Inventory: `Screen`, `Purpose` → `What the actor does there`, `Serves` → the § 5 capability whose UC owns those `S#` ids. Carry the `Actor` cell too, and the `Volume` band **in business words** where it is `many` ("the administrator's view of all ~10,000 members") — two screens the design split by actor are two rows here, never collapsed back into one: which actor a screen is for, and how much they are looking at, is business content a reader can verify, unlike anything else on the design side. A spec written before those columns existed carries neither; leave them out rather than inferring an actor |
 | **Journeys** table | § 4 Flows: `Path` → `The path through the screens`, `Success` → `Ends on`, and — where the flow names one — the `PP-###` it resolves, **in the pain point's own business words, not its id**. A journey that fixes something the client complained about is the most readable thing on this page; a bare `PP-004` is not. A spec written before `Resolves` existed carries none: leave the column out rather than inferring which journey fixes what |
-| `Prototype` | one line pointing at `/bigin-render-design` as how a clickable prototype gets made from `UX-<NNN>`, and at `§ 8 Rendered Artifacts` for whether one already has been (with its date and design system, when the section exists). **Never quote a `## Prototype Prompt` block, and never point a reader at one:** those blocks were removed from the pipeline, and a spec that still carries one is stale — it inlines token values the vault no longer holds. **Point, never restate** |
+| `Prototype` | one line pointing at `/bigin-render-design-od` as how a clickable prototype gets made from `UX-<NNN>`, and at `§ 8 Rendered Artifacts` for whether one already has been (with its date and design system, when the section exists). **Never quote a `## Prototype Prompt` block, and never point a reader at one:** those blocks were removed from the pipeline, and a spec that still carries one is stale — it inlines token values the vault no longer holds. **Point, never restate** |
 | `Known design gaps` | § 6 Open Questions, unchecked lines only, translated to business words. **Add one line when `flow_review: skipped`:** the user journeys were specified but never critiqued, because no flow-review skill was installed on that run — a reader deciding whether to build from this document needs to know which of the two it is |
 | `What the system does for the actor` *(only when § 7 exists)* | § 7 Relationship Model: what it remembers between visits, and what it does unprompted versus only suggests — **in business words, two or three lines.** Cite the `BR-###` that granted it. Never reproduce the Trust Map table, never carry the Proposed Measures, and never describe an autonomy no BR granted (`{design_conventions}` D7) |
 
@@ -90,7 +90,7 @@ Pool, into one list, in this order:
 2. every unchecked line in the UX spec's § 6 that is marked a **requirement gap**
 3. every `open` or `answered` row on the feature hub's `## Coverage Gaps` — what nobody has described
    at all, found by `/bigin-transform-signal`'s coverage pass reading the feature's UC set as a set
-   (`{conventions_reference}` § Feature Hub). **These matter more here than anywhere else:** a gap
+   (`feature-hub.md` § Feature Hub). **These matter more here than anywhere else:** a gap
    blocks no single UC, so a feature can reach this stage with every folded UC clean and still be
    missing how its central record gets created, found, corrected, or retired. Left off this list, the
    PRD reads as complete scope.
@@ -102,11 +102,11 @@ Rules for the list:
 ```text
 - keep the ORIGINAL SENTENCE for 1, 2, and 3 — the same question, worded identically, so a human
   answering it here and a human answering it on the UC or the hub are answering one question, not two
-  ({conventions_reference} § One question, two places)
+  (`intake.md` § One question, two places)
 - (ref: …) always names where it lives: UC-<NNN> § 5, or UX-<NNN> § 6, or <slug> ## Coverage Gaps
   #<n>, or PRD-<NNN> for a gap this run found
 - one decision per line, self-contained, plain business language
-  ({conventions_reference} § Open Questions wording)
+  (`questions.md` § Open Questions wording)
 - never write an A: line here. A decision is answered on the artifact that owns it and folded in by
   /bigin-transform-signal or /bigin-generate-design; this list is refreshed from them on the next run
 ```

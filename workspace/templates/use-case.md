@@ -3,15 +3,15 @@ id: UC-
 type: use-case
 title:              # the goal, as a short ACTIVE VERB PHRASE ("Enrol a student", not "Enrolment")
 status: draft       # draft | needs-clarification | enriched | approved | consolidated | removed
-                    # (_bigin/conventions/conventions.md § Status vocabularies). /bigin-transform-signal
+                    # (`core.md` § Status vocabularies). /bigin-transform-signal
                     # only ever writes draft/needs-clarification; enriched is permanently unreachable
                     # (enrichment moved off the UC to a feature-scoped pass — nothing sets this any
-                    # more), consolidated to /consolidate-prd, and approved/removed are human-only
+                    # more), consolidated is legacy-only/unreachable, and approved/removed are human-only
                     # (hard rule 4).
 version: 1.0
 synced: true        # false the moment /approve-uc flips status to approved, until /sync-entities has
                     # promoted/extended any entities: [] this UC references and refreshed its feature
-                    # hub(s) (conventions.md § Entity Data Model). Meaningless at any other status —
+                    # hub(s) (`registers.md` § Entity Data Model). Meaningless at any other status —
                     # leave true.
 level: user-goal    # summary | user-goal | subfunction — Cockburn's goal levels. user-goal is the
                     # default and the "boss test" level: real work, one sitting, 3-9 main-flow steps.
@@ -24,7 +24,7 @@ features: []        # every FEATURES.md slug this UC touches, primary_feature fi
 brs: []             # BR-### ids governing this workflow — mirrored read-only in § 4
 entities: []        # EN-### ids this UC's steps reference
 pain_points: []     # PP-### ids this UC exists to resolve — ids only; the register and the hub carry
-                    # the statements (conventions.md § Pain Point Register)
+                    # the statements (`registers.md` § Pain Point Register)
 sources: []         # INT-### id(s) this UC traces to — append-only, never pruned
 links: []           # downstream PRD-###/EP-###/US-###/UX-### ids, once they exist
 attachments: []     # vault-relative paths, copied over from every sources: INT note's own attachments
@@ -37,8 +37,8 @@ updated:
 
 > [!summary]- Summary (retired)
 > `<nothing writes this any more — enrichment moved off the UC to a feature-scoped pass
-> (conventions.md § Reconciliation notes). Leave blank; omit the block entirely on a new UC.>`
-> <!-- conventions.md § Summary block. -->
+> (runtime.md § Reconciliation notes). Leave blank; omit the block entirely on a new UC.>`
+> <!-- `use-case.md` § Summary block. -->
 
 ## 1. Context & Metadata
 <!-- BABOK stakeholder-requirements framing. Fill every line or write "not stated" — a blank line
@@ -139,8 +139,8 @@ Empty is normal for a workflow with no policy constraints. -->
 that section, plus the settled history behind it.
 
 STILL OPEN — the canonical checkbox list. This is what the status invariant counts: zero unchecked
-- [ ] Q: lines here ⟺ status is not needs-clarification (conventions.md § Open Questions ↔ status
-consistency). Wording rules: conventions.md § Open Questions wording — self-contained, plain business
+- [ ] Q: lines here ⟺ status is not needs-clarification (`questions.md` § Open Questions ↔ status
+consistency). Wording rules: `questions.md` § Open Questions wording — self-contained, plain business
 language for owner: client, one decision per line.
 
 - [ ] Q: <question> (owner: client|team) (ref: <INT-###>)
@@ -153,7 +153,7 @@ fully settles the question — "we'll ask the client", "TBD after the demo", or 
 new question is not settled, and ticking it anyway is what makes a parked use case read as
 approvable. Don't edit the numbered sections to match your own answer: say "process UC-###" and the
 pipeline folds every filled A: in, then comes back with the follow-ups that pass produced — or the
-flow to approve when there are none (conventions.md § Answering a question).
+flow to approve when there are none (`questions.md` § Answering a question).
 
 SETTLED — move a question here once its A: line is filled and the change is folded in. This is where
 the speaker context goes: who raised it, what they said, what was decided. Append-only; never delete

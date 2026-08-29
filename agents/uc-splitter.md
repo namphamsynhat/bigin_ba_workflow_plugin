@@ -31,8 +31,8 @@ reason `3-lane-uc.md` § Creating a new UC reserves minting to itself.
 
 ## Your only rulebook
 
-Read `_bigin/conventions/paths.md` to resolve every `{variable}`, then read `_bigin/conventions/conventions.md`
-§§ Use Case, Business Rule, Status vocabularies, Open Questions ↔ status consistency, and
+Read `_bigin/conventions/paths.md` to resolve every `{variable}`, then read `use-case.md` § Use Case ·
+`core.md` § Status vocabularies · `questions.md` § Open Questions ↔ status consistency, and
 `_bigin/stages/transform/3-lane-uc.md` in full (§ Granularity, § Creating a new UC, § Writing a step, §
 Writing an alternative or exception flow) — the permanent-id rule and the step-writing standard governing
 every UC you touch live there, not here. If `.claude/bigin-ba-workflow-plugin.local.md` exists, it

@@ -1,7 +1,7 @@
 # The Open Design adapter — the engine contract
 
-Read by `/bigin-render-design` at Step 0, and **in full** by `render-screen-worker` and
-`render-prototype-assembler`. This is the only file in the plugin where an Open Design tool has a name.
+Read by `/bigin-render-design-od` when a run misbehaves, and **in full** by
+`render-feature-od-worker`. This is the only file in the plugin where an Open Design tool has a name.
 
 ## Do we need to build an adapter? No — and here is why that matters
 
@@ -30,8 +30,9 @@ wrong.
 **One consequence worth stating plainly.** Because Open Design spawns its *own* agent, the model doing
 the rendering is **not** the model reading this file. Our agents write the prompt and judge the
 result; Open Design's agent writes the HTML. That is the whole reason the prompt contract
-(`prompt-contract.md`) is as strict as it is — it is the only channel to a process that cannot see the
-vault.
+(`traceability.md`) is as strict as it is — it is the only channel to a process that cannot see the
+vault. Visual fidelity itself is never this file's call — that lives entirely in the **bound design
+system**, whichever one the user selected for this project.
 
 ---
 
@@ -64,7 +65,7 @@ row present, ✘       the daemon is down. Ask the human to open the Open Design
 tools erroring       § Retry ladder
 ```
 
-Then `/bigin-render-design` § The manual fallback, always — a halt still produces the prompts.
+Then `/bigin-render-design-od` § The manual fallback, always — a halt still produces the prompts.
 
 ---
 
@@ -129,7 +130,7 @@ instead — that is what makes the client's brand, rather than a shipped one, th
 ```text
 start_run{
   project,        the resolved id. ALWAYS explicit
-  prompt,         the whole self-contained brief — see prompt-contract.md
+  prompt,         the @-mention brief sync_feature.py printed, plus the key instructions
   agent?,         an id from list_agents. Omit to use OD's configured runtime
   model?,         a model id from that agent's catalog. Omit with agent
   skill?/skills?, an OD skill id to drive the run. Optional
@@ -231,7 +232,7 @@ For a tool call that errors, not for a run that is merely slow:
 2  wait 10s, retry                  daemon busy or restarting
 3  wait 30s, retry                  daemon restarting after an app relaunch
 4  re-probe (§ Probe)               is the server still Connected at all?
-5  still failing                    → /bigin-render-design § The manual fallback
+5  still failing                    → /bigin-render-design-od § The manual fallback
 ```
 
 Every retry of a `start_run` reuses the **same** `requestId` (§ Idempotency). Read calls are safe to
@@ -265,11 +266,11 @@ be given a guessed design-system or model id              → resources/list and
                                                               only authorities
 target the ACTIVE project by omission                     → the active context expires in ~5 minutes;
                                                               always pass the resolved id
-add a screen the spec's ## 2 does not carry               → § Grounding. Report it, do not keep it
+add a screen the spec's ## 2 does not carry               → `design-grounding.md` § Grounding. Report it, do not keep it
 substitute placeholder copy for the real words            → copy is content, and it was decided
 invent a field, a status, or a capability in the dataset  → values are authored, structure is not
 write into 04-UIUX/ (beyond {prototype_dir}) or
-  01-Requirements/                                        → § Write map
+  01-Requirements/                                        → `design-core.md` § Write map
 be cancelled because a poll looked quiet                  → 5-30 minutes is normal
 be replaced by write_file when it feels slow              → § The `write_file` ban
 have its previewUrl recorded as the artifact path         → it dies with the runtime; the copied-back

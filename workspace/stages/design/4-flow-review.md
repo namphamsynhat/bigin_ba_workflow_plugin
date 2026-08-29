@@ -1,9 +1,7 @@
 # Stage 4 — Flow review: does the journey make sense, and does it fix what hurt?
 
 ```text
-runs: orchestrator, inline, after EVERY Stage 3 worker has reported and BEFORE 5-verify
-gate: ONLY when a perception-first-design skill (or a generic critique skill) is installed.
-      Not installed → SKIP, silently, report the install line, continue. Nothing here halts.
+runs: orchestrator, inline, after EVERY Stage 3 worker has reported and BEFORE 5-verify, EVERY run
 in:   each UX spec ON DISK (never a worker's report) · {nav_map_file}'s ## Structure
       · each feature's open ## Pain Points rows
 out:  a `### Flow Review` table in each spec's ## 5 · flows reordered or re-pointed IN PLACE
@@ -12,39 +10,14 @@ never: a new screen · a new field · a new capability · a requirement edit · 
        · a verdict on a flow this run did not touch
 ```
 
-Read `{design_conventions}` § The flow review, § User flows and pain points, § The navigation map,
-§ Grounding, and § Open questions first.
+Read `design-review.md` § The flow review, `design-navigation.md` § User flows and pain points, `design-navigation.md` § The navigation map,
+`design-grounding.md` § Grounding, and `design-grounding.md` § Open questions first.
 
 This is the only stage that looks at the product **the way a user meets it**. Every other check in
 this pipeline is per-artifact: is this element grounded, does this id resolve, does this cell say what
 the file beside it says. None of them can see that a four-screen journey delivers the same outcome a
 two-screen one would, that the flow's success screen is a dead end, or that the pain point the client
 actually complained about is untouched by every screen designed to fix it.
-
----
-
-## Part 0 — The gate
-
-```text
-a perception-first-design skill is installed        → run this stage (Part 5 is its method)
-a generic critique skill is installed instead       → run this stage on the built-in method
-                                                      (Parts 1-4), and use the critique skill for
-                                                      Part 5 in whatever shape it offers
-NEITHER is installed                                → SKIP THE WHOLE STAGE.
-                                                      Write NO ### Flow Review table.
-                                                      Do NOT leave an empty one — an empty table
-                                                      reads as "reviewed, nothing found".
-                                                      Report `flow review: skipped — not installed`
-                                                      plus ONE install line, and continue to
-                                                      5-verify.
-```
-
-**The gate is deliberate, and it is not laziness.** A flow critique run without a method is a
-paragraph of plausible opinion that lands in the spec as a `sound` verdict, and a `sound` verdict is
-the strongest claim this pipeline makes about a journey. A skipped review says "nobody looked", which
-is true and recoverable. A faked one says "somebody looked and it was fine", which is neither.
-
-Detection, the install line, and how to drive the installed skill: `method-layer.md` § Stage 4.
 
 ---
 
@@ -120,7 +93,7 @@ citing the old path would silently point at nothing.
 The same line `5-verify` holds, applied to journeys instead of bookkeeping.
 
 ```text
-FIX IN PLACE — every one still grounded (§ Grounding), every one changelogged:
+FIX IN PLACE — every one still grounded (`design-grounding.md` § Grounding), every one changelogged:
     the ORDER of screens in a flow's Path
     which screen or state an ## 3 Interactions row leads to
     the ORDER of elements inside a screen's element table
@@ -181,65 +154,24 @@ A verdict of `improved` over an unchanged `## 4` is a claim with nothing behind 
 
 ---
 
-## Part 5 — The installed skill's own pass
-
-Everything above is the built-in walk, and it runs whichever skill gated this stage. Part 5 is where
-the installed skill contributes its own method, on the flows and screens **this run drafted** and
-nothing else.
-
-Read `method-layer.md` § Stage 4 for which modes to use and which to refuse. The short version, for
-perception-first design specifically:
-
-```text
-Mode 1  evaluate / checklist    walks an artifact against the 5 layers, flags what fails   ← use this
-Mode 2  solve / derivation      generates a solution FROM the 5 layers, bottom-up          ← never
-Mode 3  analyze                 predicts consequences of a hypothetical change             ← never
-```
-
-Modes 2 and 3 **produce** something — a solution, a predicted consequence — from psychology alone,
-with no UC, BR, entity, or pain point in the loop. That is precisely the ungrounded design call D3
-exists to catch, wearing a citation. The checklist walks what is already there.
-
-Sort every finding the same way Part 3 does:
-
-```text
-a finding about ORDER, EMPHASIS, WORDING, or DENSITY   → Part 3's fix-in-place list. Apply it, cite
-                                                         the layer, changelog it
-a finding that would ADD, REMOVE, or REORDER something → back through the grounding test:
-the requirements never asked for                         grounded → apply it and cite the ground
-                                                         ungrounded → a ## 6 question, same as any
-                                                                      other ungrounded decision
-```
-
-**A checklist finding is never a fourth ground.** "The audit flagged it" does not license a screen, a
-field, a state, or a capability — it is ground 2b at best (`{design_conventions}` § Grounding), which
-shapes how a grounded thing is built and grounds nothing on its own.
-
-Run it **at most once per flow per run**. A pass re-critiquing its own fixes in a loop is scope creep
-wearing a quality label.
-
----
-
-## Part 6 — Report to Stage 6
+## Part 5 — Report to Stage 6
 
 ```text
 Stage 4:   <slug> UX-### — <N> flow(s) reviewed: <N> sound, <N> improved, <N> gap(s)
                   <N> pain point(s) confirmed resolved, <N> not resolved (question raised)
                   nav: <N> entr(y/ies) re-nested | none · <N> question(s) raised
-           method: <pfd (mode 1) | <critique skill> | SKIPPED — not installed>
 ```
 
 A run where every flow came back `sound` reports that, and it is a real result worth printing — not
-silence. Silence reads as "the pass did not run", which is the one thing this report has to
-distinguish from a genuine skip.
+silence. Silence reads as "the pass did not run", which this report has to distinguish from.
 
 ## Failure modes
 
-- **Running this stage with no method installed.** The table lands in the spec claiming every journey
-  was reviewed, `sound` becomes the vault's strongest claim about a flow, and nobody ever looks
-  again. A skip is recoverable; a fabricated review is not.
-- **Leaving an empty `### Flow Review` table on a skip.** It reads as "reviewed, nothing found" —
-  the same false claim, with the effort of writing a heading. Write no table at all.
+- **Leaving an empty `### Flow Review` table, or writing none.** The built-in walk runs every time —
+  an empty or missing table means the pass did not actually happen, not that anything was skipped.
+- **Reaching for an external critique skill (perception-first-design or similar) here.** That kind of
+  tool evaluates a rendered artifact; a UX spec has no rendered surface yet. It belongs after
+  `/bigin-render-design-od`, run by a human, by hand — never inside this stage.
 - **Designing the missing screen here.** The pass grades what it just built and has no independent
   verdict left. The question goes in `## 6`; the screen comes from `3-screens` next run.
 - **Giving a flow `sound` without finding the moment its pain point is fixed.** Part 1 Q5 is the

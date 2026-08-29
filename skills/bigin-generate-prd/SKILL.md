@@ -40,7 +40,7 @@ P1  Business language only. No API, schema, field type, endpoint, framework, tab
     hex, or px. The test: a sentence a developer needs to implement but a business owner cannot
     confirm or deny is in the wrong document.
 P2  Approved UCs only in the body. A non-approved UC is listed in § 10 Pending Scope, never
-    folded into §§ 5-9 (conventions.md § Feature material).
+    folded into §§ 5-9 (`feature-hub.md` § Feature material).
 P3  Never invent. Every line traces to a UC, a BR, an entity, a pain point, a screen, or a stated
     source. Nothing to trace → "not stated", or an Open Business Decision.
 P4  Requirement and design content are READ-ONLY. This skill edits no UC, BR, entity, or UX spec.
@@ -50,7 +50,7 @@ P6  Design is QUOTED, not decided. § 9 reports the screens that exist; it never
 ```
 
 Ids **are** required here — in §§ 5-7 and § Traceability — because this is an internal document and
-traceability is the point. That is the opposite of a RENDER PROMPT, which `/bigin-render-design`
+traceability is the point. That is the opposite of a RENDER PROMPT, which `/bigin-render-design-od`
 builds at render time and which may carry no ids at all: it runs in a process that has never seen
 this vault. Do not carry that rule across.
 
@@ -74,13 +74,13 @@ this vault. Do not carry that rule across.
 | `{hub_dir}` | `01-Requirements/_features/<slug>.md` | `## PRD` + `prd:` out; `## Pain Points`, `## Notes / History` in |
 | `{requirements_file}` | `01-Requirements/FEATURES.md` | the slug registry, and the chain gate |
 | `{pain_points_file}` · `{entities_file}` | `01-Requirements/PAIN-POINTS.md` · `ENTITIES.md` | **read-only** registers |
-| `{conventions_reference}` | `_bigin/conventions/conventions.md` | read § Feature material · § Traceability chain · § Absorbed · § Status vocabularies · § Open Questions wording · § Pain Point Register |
+| `{conventions_reference}` | `_bigin/conventions/` | read `feature-hub.md` § Feature material · `use-case.md` § Traceability chain · `runtime.md` § Absorbed · `core.md` § Status vocabularies · `questions.md` § Open Questions wording · `registers.md` § Pain Point Register |
 
-`{conventions_reference}` § Paths is the full table and the one a subagent reads — a `SKILL.md` lives
+`design-core.md` § Paths is the full table and the one a subagent reads — a `SKILL.md` lives
 in the plugin install directory, which a subagent cannot reach.
 
 Missing `_bigin/conventions/`, `_bigin/stages/prd/`, or `_bigin/templates/` → stop and say
-`/bigin-new-project` must run first. Then run `{conventions_reference}` § Workspace version check —
+`/bigin-new-project` must run first. Then run `version-check.md` § Workspace version check —
 one `Grep` of `_bigin/system/project.md` against the installed plugin's version, compared as semver.
 Behind → warn and recommend `/bigin-upgrade-project`; **ahead → stop**.
 
@@ -125,7 +125,7 @@ Two gates decide whether a feature gets a PRD at all:
 
 ```text
 FEATURES.md Status = built        → the lightweight CR chain, which SKIPS the PRD. Skip and say so
-                                    (conventions.md § Traceability chain). Named explicitly in
+                                    (`use-case.md` § Traceability chain). Named explicitly in
                                     $ARGUMENTS is the one exception — write it, stamp chain: cr
 FEATURES.md Status = out-of-scope → skip, always, with no exception
 zero approved UCs                → "nothing approved yet → /approve-uc". Do NOT write a PRD whose

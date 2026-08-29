@@ -67,7 +67,7 @@ of Part 1/2 from scratch.
                         explicit statement is an override; an inference from step wording or from
                         where an actor sits never is.)
                         There is NO render engine to resolve in a design run: rendering is
-                        /bigin-render-design, invoked by a human later. A worker resolves neither the
+                        /bigin-render-design-od, invoked by a human later. A worker resolves neither the
                         platform nor the method layer — it cannot read this plugin's install
                         directory.
 7  PASS THE PAIN POINTS per feature, its hub's UNRESOLVED ## Pain Points rows — PP-### plus the
@@ -140,9 +140,9 @@ DESIGN BRIEF:        <a ux-brief-assembler report is attached below — start th
                      threshold">
 
 READ FIRST:
-- _bigin/conventions/design-conventions.md — these sections ONLY: § Paths, § Write map,
-  § The eight design hard rules, § The UX spec, § Screen spec, § Grounding, § Open questions,
-  § Actor scope, § The relationship model, § The navigation map
+- _bigin/conventions/design-conventions.md — these sections ONLY: `design-core.md` § Paths, `design-core.md` § Write map,
+  `design-core.md` § The eight design hard rules, `design-screens.md` § The UX spec, `design-screens.md` § Screen spec, `design-grounding.md` § Grounding, `questions.md` § Open questions,
+  `design-actor-scope.md` § Actor scope, `design-review.md` § The relationship model, `design-navigation.md` § The navigation map
 - _bigin/stages/design/3-screens.md — your stage guide, in full
 - 01-Requirements/_features/<slug>.md — the hub: ## Design Directives (Status: open), actors, and
   ## Pain Points (every row NOT resolved — these are what your flows have to fix)

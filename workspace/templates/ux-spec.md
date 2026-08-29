@@ -3,7 +3,7 @@ id: UX-
 type: uiux
 title:                  # "<Feature> screens"
 status: draft           # draft | needs-clarification | accepted | superseded
-                        # (_bigin/conventions/design-conventions.md § Design status vocabulary).
+                        # (`design-core.md` § Design status vocabulary).
                         # /bigin-generate-design only ever writes draft/needs-clarification;
                         # accepted is human-only (D5).
 version: 1.0
@@ -17,39 +17,36 @@ platform: web           # web | mobile | both — COPIED from the project config
                         # OVERRIDE that a UC, a hub ## Design Directives row, or a DESIGN-PRINCIPLES
                         # row EXPLICITLY stated for this feature — cite it on § 1's Platform line.
                         # Never inferred from a step's wording
-                        # (design-conventions.md § Platform). Verified in Stage 6 (check 12).
+                        # (`design-platform.md` § Platform). Verified in Stage 6 (check 12).
 uc: []                  # UC-### id(s) designed here
 brs: []                 # BR-### id(s) that produced a state or a validation
 entities: []            # EN-### id(s) the screens render fields from
 pain_points: []         # PP-### id(s) some § 4 flow's `Resolves` cell names. READ from the hub's
                         # ## Pain Points; this spec never marks one resolved on the register
-                        # (design-conventions.md § Write map).
+                        # (`design-core.md` § Write map).
 actors: []              # every role § 1's Actor & Scope table carries, each as
                         # "<role>:<own|assigned|unit|all>:<one|few|many>" — e.g.
                         # ["Member:own:one", "Administrator:all:many"]. Read from the in-scope UCs'
-                        # § 1 actors, never invented (design-conventions.md § Actor scope).
+                        # § 1 actors, never invented (`design-actor-scope.md` § Actor scope).
                         # A spec with two actors at different volume bands must carry SEPARATE
                         # screens for them, not one screen serving both. Verified in Stage 6
                         # (check 14). Absent on a spec written before this key existed —
                         # 3-screens.md § Adopting an existing UX spec builds it on the next run.
 sources: []             # UC-###/BR-###/EN-###/PP-### ids + DESIGN-PRINCIPLES row #s + hub directive #s
 absorbed: []            # UC-<NNN>@<version> — THE staleness record. Only UCs that really got
-                        # screens this run. Re-stamped WHOLE every run (§ Staleness).
+                        # screens this run. Re-stamped WHOLE every run (`design-core.md` § Staleness).
 nav_map:                # the {nav_map_file} version these screens were specced against
 engine:                 # the METHOD layer that decided these screens: wds | figma | <plugin> |
                         # built-in. NOT a renderer — /bigin-generate-design renders nothing. What
                         # actually rendered this spec, if anything has, is § 8's table.
-flow_review:            # pfd | <critique skill> | skipped — what Stage 4 actually did. `skipped`
-                        # REQUIRES no ### Flow Review table in § 5; a named skill REQUIRES one row
-                        # per § 4 flow. An empty table fails either way (Stage 6 check 17).
-rendered: false         # false | true — flipped by /bigin-render-design when it appends a § 8 row.
+rendered: false         # false | true — flipped by /bigin-render-design-od when it appends a § 8 row.
                         # A design run never touches this key, so a spec re-designed after a render
                         # keeps it: § 8's `Against` column is what shows the render went stale.
 relationship_model: none  # none | modelled — set by Stage 3 Part 4b's trigger test, verified in
                         # Stage 6 (check 9). `modelled` REQUIRES a filled § 7; `none` requires
                         # § 7 to be absent or empty. An empty § 7 with `modelled` reads as
                         # "considered, nothing found" when nobody looked
-                        # (design-conventions.md § The relationship model).
+                        # (`design-review.md` § The relationship model).
 updated:
 ---
 
@@ -58,8 +55,8 @@ updated:
 <!-- THIS SPEC CARRIES NO VISUAL SYSTEM. No colour, no type scale, no spacing, no component library,
 no token names or values — /bigin-generate-design produces the EXPERIENCE (actors, screens, states,
 navigation, and the flows between them) and nothing else. An element says what it is FOR, via a
-semantic ROLE from a closed list (design-conventions.md § Semantic style roles); a real design system
-is supplied later by the design team, or bound at render time by /bigin-render-design. -->
+semantic ROLE from a closed list (`design-screens.md` § Semantic style roles); a real design system
+is supplied later by the design team, or bound at render time by /bigin-render-design-od. -->
 
 ## 1. Design Brief
 <!-- Assembled in Stage 3 Part 1. Never invented: every line traces to something already written. -->
@@ -77,7 +74,7 @@ is supplied later by the design team, or bound at render time by /bigin-render-d
 * **Pain points in scope:** `<PP-### — the client's own words, one line each>`
   <!-- The hub's ## Pain Points rows that are not resolved. These are what the § 4 flows have to
   fix, and what shapes emphasis and ordering on a screen — ground 1b. A pain point NEVER grounds a
-  screen, field, or capability existing (design-conventions.md § Grounding). "None open" is a real
+  screen, field, or capability existing (`design-grounding.md` § Grounding). "None open" is a real
   and common result; say it rather than leaving the line blank. -->
 * **Principles applied:** `<DESIGN-PRINCIPLES row # — the principle, in the client's words>`
 * **Directives applied:** `<hub ## Design Directives row # — the directive>`
@@ -88,7 +85,7 @@ is supplied later by the design team, or bound at render time by /bigin-render-d
 <!-- One row per actor the in-scope UCs name in their § 1 — no more, no fewer. This table is what
 stops the run designing one screen for two actors whose work is not the same work: a member reading
 their own record and an administrator working a directory of ten thousand read identically in a UC
-and are two different products (design-conventions.md § Actor scope).
+and are two different products (`design-actor-scope.md` § Actor scope).
 
 EVERY cell is READ, never assumed. Unresolvable → the narrowest reading, plus a § 6 question.
   Sees whose   own | assigned subset | their unit's | all
@@ -108,7 +105,7 @@ EVERY cell is READ, never assumed. Unresolvable → the narrowest reading, plus 
 that UC and not be removed.
 
 Two UCs landing on the same place share ONE row ONLY when their actors' scope agrees. Compare the
-Actor & Scope rows above (design-conventions.md § Actor scope):
+Actor & Scope rows above (`design-actor-scope.md` § Actor scope):
     the VOLUME BAND differs      → TWO rows, each naming its own actor
     the CAPABILITY differs       → TWO rows
     both agree, only WHICH       → ONE row; carry the difference in the § 3 element table's
@@ -141,7 +138,7 @@ pattern, or a directive (D3). An element grounded in nothing is a question in §
 * **Regions:** `<this platform's vocabulary only — web: header / nav / main / aside / footer ·
   mobile: header / content / tab-bar / sheet / fab — semantic elements, not a pixel layout>`
   <!-- A `nav` region on a phone screen, or a `tab-bar` on a web one, is the wrong vocabulary: it
-  asks a tool to build a shell the platform does not have (design-conventions.md § Platform;
+  asks a tool to build a shell the platform does not have (`design-platform.md` § Platform;
   Stage 6 check 13). -->
 
 <!-- PER-PLATFORM LAYOUT SPLIT — on `platform: both` ONLY, and ONLY for a screen whose two shells
@@ -190,7 +187,7 @@ rows tests nothing the client is worried about. -->
 
 ## 4. Flows
 <!-- ONE flow per user goal, per ACTOR — never one per platform, never one per screen. This is the
-artifact a client recognises as their working day or fails to (design-conventions.md § User flows
+artifact a client recognises as their working day or fails to (design-navigation.md § User flows
 and pain points). Written in Stage 3 Part 4c; reviewed, and possibly reordered, in Stage 4.
 
 `Resolves` names the PP-### this journey fixes, or "—" when it serves a UC goal alone. D6: a flow
@@ -216,7 +213,7 @@ never as a second flow. Omit this whole section on a design-only feature (no UC)
 
 ### Coverage
 <!-- Written by Stage 5 (_bigin/stages/design/5-verify.md), re-written WHOLE every run — a partial
-table claims a coverage nobody checked. Read design-conventions.md § Coverage verification.
+table claims a coverage nobody checked. Read `design-grounding.md` § Coverage verification.
 
 This is the FORWARD direction, and the only thing in this pipeline that can find an OMISSION. Every
 other check runs backward — element to ground — and backward passes cleanly on a spec with a whole
@@ -268,16 +265,11 @@ feature JOINS the shared navigation map at 04-UIUX/_ux/navigation-map.md; it nev
 
 ### Flow Review
 <!-- Written by Stage 4 (_bigin/stages/design/4-flow-review.md), re-written WHOLE every run. One row
-per § 4 flow.
+per § 4 flow, EVERY run — the built-in walk is unconditional, so this table always exists.
 
-THIS SECTION IS CONDITIONAL, and its absence means something specific. Stage 4 runs only when a
-perception-first-design (or generic critique) skill is installed:
-    a skill was installed   → one row per § 4 flow, and frontmatter flow_review: names the skill
-    none was installed      → DELETE this heading and its table entirely, and set
-                              flow_review: skipped
 NEVER leave an empty table. An empty ### Flow Review reads as "every journey was reviewed and
 nothing was found" — the strongest claim this pipeline makes about a flow — when nobody looked.
-Stage 6 check 17 blocks on the mismatch either way.
+Stage 6 check 17 blocks on the mismatch.
 
 Verdicts, and nothing else:
   sound                       the journey works, and its pain point is fixed where the row says.
@@ -294,7 +286,7 @@ not. -->
 
 ## 6. Open Questions
 <!-- The canonical list. Zero unchecked lines ⟺ status is not needs-clarification
-(design-conventions.md § Design status vocabulary). Mirrored on the hub's ## Open Questions / Gates
+(`design-core.md` § Design status vocabulary). Mirrored on the hub's ## Open Questions / Gates
 with the SAME sentence. Never re-ask a question already open on a UC's § 5.
 Mark a question whose answer would change what the SYSTEM DOES as a requirement gap — it is
 /bigin-transform-signal's to resolve, never this stage's.
@@ -306,7 +298,7 @@ Format:
 ## 7. Relationship Model
 <!-- CONDITIONAL. Delete this whole section unless the feature passed the relationship trigger
 (_bigin/stages/design/3-screens.md Part 4b) — an empty § 7 claims the relationship was considered.
-Read design-conventions.md § The relationship model first.
+Read `design-review.md` § The relationship model first.
 
 This section describes the relationship the requirements ALREADY imply. It never discovers that the
 product needs memory, autonomy, or a dashboard (D7). Expect more requirement gaps here than rows:
@@ -349,7 +341,7 @@ track — instrumentation is behaviour. Not a requirement, not a target, not a d
 |---------|------------------------|--------------------------|
 
 ## 8. Rendered Artifacts
-<!-- ABSENT until somebody renders. Written by `/bigin-render-design` ALONE — no stage of
+<!-- ABSENT until somebody renders. Written by `/bigin-render-design-od` ALONE — no stage of
 `/bigin-generate-design` touches this section, and a design run neither creates it nor clears it.
 
 POINTERS ONLY. Rendered HTML, images, and PDFs are outputs the engine owns; pasting their contents
@@ -371,7 +363,7 @@ v1.2 has screens nobody has ever looked at. Re-rendering appends a row; it never
 spanning several specs writes the SAME row to every participating spec, each with its own
 `Against`. -->
 
-<!-- THE SPEC ENDS HERE. There are no prototype-prompt blocks: /bigin-render-design builds its own
+<!-- THE SPEC ENDS HERE. There are no prototype-prompt blocks: /bigin-render-design-od builds its own
 prompt from § 1-§ 5 plus the UCs, BRs, and entity register, so a hand-written second copy of the
 same screens was a duplicate that drifted from the section above it — and it inlined token values
 this pipeline no longer produces. A spec written before this change carries `## Prototype Prompt —

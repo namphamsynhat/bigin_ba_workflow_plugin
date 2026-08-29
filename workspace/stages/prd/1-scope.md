@@ -8,7 +8,7 @@ out:  the work-list: per feature, which approved UCs FOLD, which are CURRENT,
 never: writing a PRD section · reading a whole UC yet · touching a file
 ```
 
-Read `{conventions_reference}` § Feature material, § Traceability chain, and § Absorbed before this
+Read `feature-hub.md` § Feature material, `use-case.md` § Traceability chain, and `runtime.md` § Absorbed before this
 stage. They define the eligibility test, the chain gate, and the staleness read used below.
 
 ## Part 1 — Which features are candidates
@@ -27,7 +27,7 @@ capability is written.
 ## Part 2 — The chain gate, per feature
 
 The `FEATURES.md` row's `Status` decides whether this feature takes a PRD **at all**
-(`{conventions_reference}` § Traceability chain):
+(`use-case.md` § Traceability chain):
 
 | `FEATURES.md` Status | Chain | This stage |
 |---|---|---|
@@ -65,7 +65,7 @@ per candidate feature:
 
 `status:` on the UC's own file is the authoritative gate, **not** the hub's `## Use Cases` table or
 its `## Requirement Readiness` snapshot — both are refreshed indexes and both go stale
-(`{conventions_reference}` § Feature Hub). Read the frontmatter.
+(`feature-hub.md` § Feature Hub). Read the frontmatter.
 
 `CURRENT` is a result, not a silence. Report it (`<slug>: 4 approved UC current, nothing to fold`)
 so a human can tell "already in the PRD" from "the run never reached it".
@@ -105,6 +105,6 @@ per feature:  chain · FOLD (ids@version) · CURRENT (count) · PENDING (ids + s
 
 Mint a new `PRD-###` only in the orchestrator, and only for a feature that has at least one FOLD or
 CURRENT UC: `Grep` `{prd_dir}` for `PRD-\d{3}` and take the highest + 1
-(`{conventions_reference}` § ID scheme — use the `Grep` tool, never a Bash `grep`/`awk` pipeline).
+(`core.md` § ID scheme — use the `Grep` tool, never a Bash `grep`/`awk` pipeline).
 A feature that already has a PRD keeps its id and version-bumps; never mint a second one for the
 same slug.

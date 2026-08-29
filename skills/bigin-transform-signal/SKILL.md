@@ -18,7 +18,7 @@ actors and trigger (`## 1`), the flow that delivers it (`## 2`), the branches th
 reviews and approves. `FR-###` is retired.
 
 This skill is the **procedure**; `{conventions_reference}` is the **standard**. Read only its § Use
-Case, § Feature Hub, § Status vocabularies, § Feedback handling, § Resumable unattended.
+Case, `feature-hub.md` § Feature Hub, `core.md` § Status vocabularies, `intake.md` § Feedback handling, § Resumable unattended.
 
 ## Operating modes
 
@@ -50,7 +50,7 @@ folds a change in on the strength of one answered mid-run.
 
 | Variable | Path | Notes |
 | :--- | :--- | :--- |
-| `{conventions_reference}` | `_bigin/conventions/conventions.md` | ID scheme, § Use Case, frontmatter, status vocabularies |
+| `{conventions_reference}` | `_bigin/conventions/` | this stage reads four: `core.md` (ID scheme, frontmatter, status vocabularies) · `use-case.md` · `feature-hub.md` · `questions.md`. Never `conventions.md`, which is only a map |
 | `{paths_reference}` | `_bigin/conventions/paths.md` | resolves every `{variable}` the stage files use — what a subagent reads instead of this table |
 | `{stages_dir}` | `_bigin/stages/transform/` | `1-foldin`, `2-qualification`, `3-routing`, `3-lane-{uc,br,design}`, `4-sync`, `4b-coverage`, `5-status` |
 | `{requirements_file}` | `01-Requirements/FEATURES.md` | the feature slug registry |
@@ -71,7 +71,7 @@ Missing `_bigin/conventions/`, `_bigin/stages/`, or `_bigin/templates/` → stop
 `/bigin-new-project` must run first. A subagent that can't read `3-lane-uc.md` still writes a UC, just
 one following no rule.
 
-Then run `{conventions_reference}` § Workspace version check — one `Grep` of `_bigin/system/project.md`
+Then run `version-check.md` § Workspace version check — one `Grep` of `_bigin/system/project.md`
 against the installed plugin's version. Behind → warn and recommend `/bigin-upgrade-project`; **ahead →
 stop**, because the materialized rulebook this run would follow is older than the one the vault's content
 was built against.
@@ -220,7 +220,7 @@ orchestrator, after every Stage 3 subagent has reported                      [4-
 
 A cross-feature UC change is **staged, not applied** — it is UC content, so it passes the same gate.
 No entity is ever promoted here — that's `/sync-entities`'s job, run separately once a UC referencing
-it is approved (§ Entity Data Model). Never auto-resolve a contradiction: raise it, name both sides,
+it is approved (`registers.md` § Entity Data Model). Never auto-resolve a contradiction: raise it, name both sides,
 stop.
 
 **Only `## 2` and `## 3` skip the wait.** A rule, `## 1` (including a Context-lane Business Need),

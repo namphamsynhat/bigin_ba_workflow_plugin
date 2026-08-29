@@ -3,7 +3,7 @@ type: navigation-map
 version: 1.0
 platform: web           # web | mobile | both — COPIED from the project config
                         # (_bigin/system/project.md frontmatter; absent there reads as `web`).
-                        # It decides this file's SHAPE — see § The shell is a platform fact below.
+                        # It decides this file's SHAPE — see `design-navigation.md` § The shell is a platform fact below.
 features: []            # every feature slug that has contributed a menu entry
 updated:
 ---
@@ -28,7 +28,7 @@ overwrites the old one, because every screen spec citing the old path would poin
 ## The shell is a platform fact
 
 `platform:` in the frontmatter above decides what shape this file is in — **one file either way**
-(design-conventions.md § The navigation map):
+(`design-navigation.md` § The navigation map):
 
 ```text
 web     ## Structure                 a persistent sidebar / nav-bar shell. Arbitrary depth.
@@ -41,7 +41,7 @@ both    ## Structure — Web           BOTH sections, in this one file, one tabl
 On `web` or `mobile`, keep the single `## Structure` heading below and delete
 `## Structure — Mobile`. On `both`, rename `## Structure` to `## Structure — Web` and keep
 `## Structure — Mobile` as the second section. Everything after them — § Removing an entry,
-§ Open Questions, § Changelog — is shared by every shape, and a row from either structure is
+`questions.md` § Open Questions, § Changelog — is shared by every shape, and a row from either structure is
 referenced there by its `id` plus which structure it lives in.
 
 ## Structure
@@ -74,20 +74,20 @@ neither collides with the other. A child's `id` is always `<parent id>.<segment>
 must already exist **in the same section** (append-only builds each tree top-down; a child never
 arrives before its parent). `Role(s)` defaults to "everyone"; a narrower value is never invented — it
 cites the `BR-###` or the UC's actors that actually draw the line (§ Grounded by, and
-design-conventions.md § Grounding). `Grounded by` may also cite a `PP-###` for a PLACEMENT decision
+`design-grounding.md` § Grounding). `Grounded by` may also cite a `PP-###` for a PLACEMENT decision
 (why this entry sits here rather than three levels down) — never for the entry existing, which needs
 a screen a UC actually asked for.
 
 `Icon` is a plain NAME a renderer can resolve on its own ("inbox", "calendar") or blank. Never a
 token id: there is no design system in this vault to resolve one against
-(design-conventions.md § Semantic style roles).
+(`design-screens.md` § Semantic style roles).
 
 **The phone shell's five-tab cap.** Wherever a section describes a phone shell — `## Structure` on a
 `mobile` project, `## Structure — Mobile` on a `both` one — it holds **at most 5 top-level entries**,
 plus per-screen headers and sheets. Depth below a tab is still arbitrary. The cap is a real
 constraint, not a style preference: a phone tab bar physically stops being usable past five, so a
 sixth top-level candidate means either two features share a tab or one belongs a level down — and
-which of those is right is a human call. It goes in § Open Questions (owner: team), **never a silent
+which of those is right is a human call. It goes in this file's `## Open Questions` (owner: team), **never a silent
 sixth row.**
 
 ## Structure — Mobile

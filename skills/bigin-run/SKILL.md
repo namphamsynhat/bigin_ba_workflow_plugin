@@ -8,17 +8,41 @@ argument-hint: "[feature slug or UC id — omit to pick up whatever is next]"
 
 Route; don't reimplement. This skill carries **which stage runs when** and nothing else. Every stage's
 own semantics — what it reads, what it writes, what it refuses, what statuses it sets — live in that
-stage's `SKILL.md`, and the shared standard lives in `_bigin/conventions/conventions.md`. When a
+stage's `SKILL.md`, and the shared standard lives in `_bigin/conventions/`. When a
 stage's behaviour matters, read its `SKILL.md`; never summarize one back to the user as fact. A
 pipeline description copied into a router goes stale the day a stage changes, and then reads as
 authoritative while being wrong.
 
-Migration status has one source too: **`conventions.md` § Reconciliation notes** says which stages are
+Migration status has one source too: **`runtime.md` § Reconciliation notes** says which stages are
 live, which are halted, and what each halted one needs. Read it once per session; never hardcode a
 per-stage verdict here.
 
-**Read `conventions.md` by section, not whole.** It opens with a per-stage section table and runs past
-what one `Read` returns. Read that table, then only the sections the stage you are about to run names.
+**Load one stage's rulebook at a time.** `_bigin/conventions/` is one file per concern —
+`core.md`, `use-case.md`, `feature-hub.md`, `intake.md`, `questions.md`, `registers.md`, `runtime.md`,
+plus the `design-*.md` set. `conventions.md` is a map and holds no rules; each stage's `SKILL.md`
+names the files that stage needs. Open those, and no others.
+
+## Compact at every stage boundary
+
+You are the one context that spans the whole pipeline, so you are the one that compounds. A run that
+walks intake → extract → transform → design → PRD in one unbroken context is re-submitting the
+transcripts of stage 1 on every tool call of stage 5.
+
+```text
+at each stage boundary, before starting the next stage:
+  1  write the stage's report          # the vault is the state; the report is the handoff
+  2  COMPACT                           # keep the report and the run's scope, drop the rest
+  3  load the NEXT stage's rulebook only — its SKILL.md's Paths table names the files
+```
+
+What survives a compaction is the report and the scope: which features, which ids, what the last
+stage changed, what it handed back. What does not is every rulebook the last stage read, every hub it
+opened, and every subagent transcript — all of it is on disk and re-readable in seconds, and none of
+it is needed to run the next stage.
+
+**Never carry a stage's rulebook into the next stage.** The files are sized to be read whole, one
+stage's worth at a time; that is the point of the split. Re-reading `feature-hub.md` in the design
+stage costs a few seconds once. Carrying it costs its full length on every remaining tool call.
 
 ## Why this runs in the main session
 
@@ -66,9 +90,8 @@ ETL: **extract** intake into per-feature signals → **transform** them into rev
 | 7 | `sync-entities` | one or more UCs are `approved` with `synced: false`. Run when convenient, not after every approval. Also the repair path for entity docs — `EN-###`/`rebuild` rewrites a doc as the full data dictionary and merges an attribute-shaped fragment into its owner | no |
 | 8 | `bigin-generate-prd` | a feature has `approved` UCs its PRD hasn't folded yet (or folded at an older version). Skips a `built` feature — the CR chain has no PRD | no — fully headless |
 | — | `enrich-feature` | a feature's domain research needs a manual refresh — scope changed materially since the automatic run `/extract-signal` § Step 2a ran at registration, or that run failed/was skipped | no |
-| — | `consolidate-prd` | **never.** Halts unconditionally — § Reconciliation notes. Not the PRD stage; `bigin-generate-prd` is | — |
-| 5b | `bigin-render-design` | **only when a human asks for a prototype.** Never on your own initiative, never "because a spec is ready", and never for every spec at once. It halts when the engine they chose is absent — that is an install to report, not a decision to put to them | **yes — the engine, the feature, and the timing are all theirs.** The platform supplies a default; a BA who wants the other engine says so |
-| — | `prototype-design` | **never.** Retired, superseded by `bigin-generate-design`. Never run both | — |
+| 5b | `bigin-render-design-od` | **only when a human asks for a prototype.** Never on your own initiative, never "because a spec is ready", and never for every spec at once. It halts when Open Design is unreachable — that is an install to report, not a decision to put to them | **yes — the feature(s), the Open Design project, the design system, and the timing are all theirs** |
+| — | `bigin-render-design-od` | **never.** Retired, superseded by `bigin-render-design-od`. Never run both | — |
 | — | `bigin-upgrade-project` | a skill's precondition reported a `workspace_version` mismatch | no |
 
 Order is the usual flow, not a rule: 5 runs in parallel with 6, and 7 and 8 both lag 6 freely — 8
@@ -101,7 +124,7 @@ scope to that feature.
                                                           ask — never a replay of what they answered
 5  a UC has a drafted ## 2 main flow and no current
    design                                               → /bigin-generate-design
-5b THE HUMAN asks for a prototype (never you)           → /bigin-render-design [engine] [slug]
+5b THE HUMAN asks for a prototype (never you)           → /bigin-render-design-od [slug|UX-### ... | --all]
 6  a UC is clear and the human is ready to sign off     → the review flow, below — never headless
 7  a UC is approved with synced: false                  → /sync-entities, when convenient
 8  a feature has approved UCs not in its PRD's

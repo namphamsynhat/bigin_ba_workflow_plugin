@@ -2,7 +2,7 @@
 id: PRD-
 type: prd
 title:                  # the FEATURE, in business words — not "PRD for X", just "<Feature>"
-status: draft           # draft | approved (_bigin/conventions/conventions.md § Status vocabularies).
+status: draft           # draft | approved (`core.md` § Status vocabularies).
                         # /bigin-generate-prd only ever writes draft; approved is human-only (P5).
 version: 1.0
 feature:                # the ONE FEATURES.md slug this PRD covers. One PRD per feature — a re-run
@@ -15,13 +15,13 @@ brs: []                 # BR-### ids mirrored in § 7
 entities: []            # EN-### ids described in § 8
 pain_points: []         # PP-### ids this feature exists to resolve (§ 2)
 uiux: []                # UX-### id(s) whose screens are reported in § 9
-absorbed: []            # UC-<NNN>@<version> — THE staleness record (conventions.md § Absorbed).
+absorbed: []            # UC-<NNN>@<version> — THE staleness record (`runtime.md` § Absorbed).
                         # Only approved UCs that really got a capability row this run. Re-stamped
                         # WHOLE every run, never appended to.
 design_absorbed: []     # UX-<NNN>@<version> for each design reported in § 9. Same discipline.
 sources: []             # INT-### ids, unioned from every UC in uc: — append-only
 chain: full             # full | cr — from the FEATURES.md row's Status (conventions.md
-                        # § Traceability chain). A `built` feature takes the lightweight CR chain,
+                        # `use-case.md` § Traceability chain). A `built` feature takes the lightweight CR chain,
                         # which SKIPS the PRD; a PRD exists here only because a human asked for one.
 engine:                 # which PRD engine produced this: bmad | built-in
 owner: team
@@ -43,7 +43,7 @@ The test (P1): a sentence a developer needs in order to implement, but a busines
 confirm or deny, is in the wrong document.
 
 Ids ARE welcome here and required in §§ 5-7 and § Traceability — this is an internal document and
-traceability is the point. That is the opposite of a RENDER PROMPT, which /bigin-render-design builds
+traceability is the point. That is the opposite of a RENDER PROMPT, which /bigin-render-design-od builds
 at render time and which must carry no ids at all: it runs in a process that has never seen this
 vault, so an id there is a dangling pointer that gets printed on a screen. Do not carry that rule
 across. The prose must still read completely without the ids: cite them, never lean on them.
@@ -64,7 +64,7 @@ below. Never a restatement of the flows — that's § 6. -->
 ## 2. Business Context & Problem
 <!-- The problem in the client's own words. Pain points mirror 01-Requirements/PAIN-POINTS.md rows
 for this feature by id — the register carries the statement, this table carries it read-only
-(conventions.md § Pain Point Register). Never invent a pain point to justify a capability. -->
+(`registers.md` § Pain Point Register). Never invent a pain point to justify a capability. -->
 
 * **Current state, as stated:** `<how the business does this today, from the sources. "not stated">`
 * **What makes it a problem:** `<cost, delay, error, risk — only as stated>`
@@ -132,7 +132,7 @@ ends. Omit the branch table entirely for a UC with no § 3 — never invent a fa
 |-----------|------------------------|-------------|-----|
 
 ## 7. Business Rules & Policies
-<!-- A MIRROR of 01-Requirements/_brs/, never the source (conventions.md § ID scheme: the BR file is
+<!-- A MIRROR of 01-Requirements/_brs/, never the source (`core.md` § ID scheme: the BR file is
 the rule). Edit the BR; this table is refreshed from it on every run.
 
 `Applies at` names the moment in the business flow the rule bites — the capability and step in
@@ -176,7 +176,7 @@ describe screens from imagination to fill it. -->
 | Capability | The path through the screens | Ends on |
 |------------|-----------------------------|---------|
 
-* **Prototype:** `<how one gets made, and whether one exists — e.g. "a clickable prototype is built from UX-<NNN> by /bigin-render-design, against a design system chosen at that point; none has been built yet" or "last rendered <date> against <design system>, see UX-<NNN> § 8">` — never restate a screen or a prompt here, and never point at a `## Prototype Prompt` heading: those blocks left the pipeline, and a spec that still carries one is stale
+* **Prototype:** `<how one gets made, and whether one exists — e.g. "a clickable prototype is built from UX-<NNN> by /bigin-render-design-od, against a design system chosen at that point; none has been built yet" or "last rendered <date> against <design system>, see UX-<NNN> § 8">` — never restate a screen or a prompt here, and never point at a `## Prototype Prompt` heading: those blocks left the pipeline, and a spec that still carries one is stale
 * **Known design gaps:** `<one line per unchecked question on the UX spec's § 6, in business words>`
 
 ## 10. Scope & Release Framing
@@ -210,7 +210,7 @@ This list is why status stays `draft` — a PRD with open decisions is not appro
 
 A decision belongs to the artifact that owns it: answering one means going back through
 /bigin-transform-signal (requirements) or /bigin-generate-design (screens), never editing this
-document into agreement with itself. Wording rules: conventions.md § Open Questions wording —
+document into agreement with itself. Wording rules: `questions.md` § Open Questions wording —
 self-contained, one decision per line, plain business language.
 
 Format:

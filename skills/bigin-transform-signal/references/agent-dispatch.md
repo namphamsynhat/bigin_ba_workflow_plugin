@@ -129,7 +129,7 @@ READ FIRST:
 - _bigin/stages/transform/3-routing.md § Which UC — new or update
 - _bigin/stages/transform/3-lane-uc.md § Ownership, § Granularity, § Creating a new UC,
   § Adopting an existing FR
-- _bigin/conventions/conventions.md § Use Case, § ID scheme, § Frontmatter schema — nothing else
+- `use-case.md` § Use Case, `core.md` § ID scheme, `core.md` § Frontmatter schema — nothing else
 - 01-Requirements/_features/<slug>.md — READ IT TARGETED, not whole: its frontmatter (uc:, br:,
   features), its ## Use Cases table, and only the Signal Log rows this dispatch's signals cite that
   weren't already given to you verbatim above. A hub's Signal Log is append-only and mostly irrelevant
@@ -198,7 +198,7 @@ per `new (unminted)`, in report order, one completing before the next starts:
    Phase A report gave, ## 1-## 6 and the summary block empty
 4  add the id to the owning hub's uc: list and a pointer row to its ## Use Cases
 4b add the id to {requirements_file}'s UC column for the owning feature's row too — same write,
-   same pass (conventions.md § Feature Map format). Skipping this is what lets FEATURES.md's UC
+   same pass (`feature-hub.md` § Feature Map format). Skipping this is what lets FEATURES.md's UC
    column go stale relative to the hub's own uc: list/## Use Cases table, which is otherwise the
    only place that later gets read
 5  record the mapping <hub row #> -> UC-<NNN> — that is what Phase B is resumed with as a

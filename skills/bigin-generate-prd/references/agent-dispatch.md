@@ -58,8 +58,8 @@ DESIGN:              <UX-###@<version> — fold its screens into § 9 | "no desi
 PRD ENGINE:          <bmad | <plugin> | built-in> — <one line on how to use it>
 
 READ FIRST:
-- _bigin/conventions/conventions.md — these sections ONLY: § Feature material, § Traceability
-  chain, § Absorbed, § Status vocabularies, § Open Questions wording, § Pain Point Register
+- _bigin/conventions/conventions.md — these sections ONLY: `feature-hub.md` § Feature material, § Traceability
+  chain, `runtime.md` § Absorbed, `core.md` § Status vocabularies, `questions.md` § Open Questions wording, `registers.md` § Pain Point Register
 - _bigin/stages/prd/2-business.md, 3-flows.md, 4-design.md — your stage guides, in full
 - _bigin/templates/prd.md — the schema. Instantiate it; never compose the sections from memory
 - 01-Requirements/_features/<slug>.md — the hub: ## Pain Points, ## Notes / History (current

@@ -85,41 +85,36 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |                  nothing, so no missing design tool can stop it. It ends at a spec proven
         |                  complete enough to render cold, on any engine, months later.
         |
-/bigin-render-design      [Load, on request] finished UX-###s -> ONE interactive prototype, on
-        |  (a human asks)  Open Design. `/bigin-render-design [slug|UX-### ...]
-        |                  [--design-system <id>] [--project <name|id>]`. Re-designs nothing,
-        |                  WRITES no requirement, and records only pointers (the spec's ## 8
-        |                  Rendered Artifacts). NEVER run unasked, and never across every spec
-        |                  at once.
-        |                  MODULAR, and it ASKS before it spends anything. Step 0 resolves four
-        |                  things and asks about any it cannot: is Open Design connected; share
-        |                  an existing Open Design project or create a new one for this vault;
-        |                  WHICH DESIGN SYSTEM -- listed from Open Design's own catalog
-        |                  resources, or named by the human as the design team's. THIS IS THE ONLY
-        |                  PLACE A VISUAL SYSTEM ENTERS THE PIPELINE, since the vault holds none,
-        |                  so it is never guessed; DESIGN-PRINCIPLES still outranks whichever is
-        |                  picked. And which model, from list_agents rather than a hardcoded id.
-        |                  Then: Step 1 scopes the features; Step 2 builds ONE self-contained
-        |                  prompt per feature (UX spec + UC/BR/ENTITIES data + nav map + each
-        |                  element's semantic role stated IN WORDS for the bound system to
-        |                  resolve + the fidelity bar, every vault id expanded into words);
-        |                  Step 3 fans out one
-        |                  start_run per feature into that ONE shared project, each watched by
-        |                  its own render-screen-worker across the 5-30 minutes a run takes,
-        |                  which reads the artifacts back and checks BOTH halves of the
-        |                  traceability contract -- no /(UC|BR|EN|UX)-\d/ in visible copy, and
-        |                  data-ux/data-screen actually present; Step 4 barriers on all of them
-        |                  and dispatches render-prototype-assembler for one final start_run
-        |                  that wires every screen into one self-contained index.html from
-        |                  navigation-map.md's ## Structure, then proves every nav entry,
-        |                  control target, and route resolves; Step 5 COPIES EVERYTHING BACK to
-        |                  04-UIUX/_prototypes/<date>-<slug>/ with a RENDER.md manifest, because
-        |                  an engine is a dependency that can be uninstalled and the vault is
-        |                  what has to still have the prototype next year.
-        |                  Open Design unreachable -> retries, then hands over the built prompts
-        |                  to paste in by hand. A missing engine never costs this pipeline its
-        |                  output. Aim: output that reads as finished production software, not a
-        |                  wireframe with colour.
+/bigin-render-design-od   [Load, on request] finished UX-###s -> ONE interactive prototype, on
+        |  (a human asks)  Open Design. `/bigin-render-design-od [slug|UX-### ... | --all]
+        |                  [--project <name|id>]`. Re-designs nothing, WRITES no requirement,
+        |                  and records only pointers (the spec's ## 8 Rendered Artifacts). NEVER
+        |                  run unasked, and never across every spec without --all being said.
+        |                  SYNCS FIRST: a script copies the feature hub, its UX doc, UCs, BRs,
+        |                  and entities straight onto disk inside the active Open Design
+        |                  project, overwriting any stale copy, so Open Design's own agent can
+        |                  `@`-mention the real files instead of being handed a fully-expanded
+        |                  prompt. Precondition asks about whatever it can't resolve: is Open
+        |                  Design connected; WHICH DESIGN SYSTEM -- listed from Open Design's
+        |                  own catalog resources, or named by the human as the design team's.
+        |                  THIS IS THE ONLY PLACE A VISUAL SYSTEM ENTERS THE PIPELINE, since the
+        |                  vault holds none, so it is never guessed; DESIGN-PRINCIPLES still
+        |                  outranks whichever is picked. And which model, from list_agents
+        |                  rather than a hardcoded id.
+        |                  Then one `start_run` per feature, SEQUENTIALLY -- never fanned out
+        |                  concurrently -- each watched to a terminal state by its own
+        |                  render-feature-od-worker; then the navigation map is synced the same
+        |                  way and one more start_run assembles every screen into one
+        |                  self-contained index.html. Open Design often renders that assembly
+        |                  blank at first, so a verification pass (Perception-First Design)
+        |                  checks it actually displays before anything is reported done. Then
+        |                  everything COPIES BACK to 04-UIUX/_prototypes/<date>-<slug>/ with a
+        |                  RENDER.md manifest, because an engine is a dependency that can be
+        |                  uninstalled and the vault is what has to still have the prototype
+        |                  next year.
+        |                  Supersedes `/bigin-render-design-od`, retired: that skill built the same
+        |                  outcome from a fully-expanded, id-free prompt per feature, fanned out
+        |                  concurrently. Kept only so old references to it resolve.
         |
 /bigin-generate-prd       [Load] every approved UC of a feature -> one PRD-### per feature:
         |                  business capabilities, business flows (with the screens each step
@@ -128,7 +123,7 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |                  Wraps BMAD's create-PRD workflow in headless mode when BMAD is
         |                  installed; complete on its own when it isn't. Headless.
         |
-(/consolidate-prd)        [Load] HALTED, unmigrated — would generate Epics & User Stories from
+(epics & stories)         NOT BUILT — no skill generates Epics & User Stories from
                            the PRD. Epics/stories are still cut by hand; the PRD itself is now
                            written by /bigin-generate-prd above
 ```
@@ -191,18 +186,18 @@ _bigin/templates/                 blank scaffolds for every artifact type, same 
                                   resolves, the ### Flow Review verdicts, and the ### Coverage
                                   table proving nothing in the requirements went undesigned. Its
                                   ## 8 Rendered Artifacts holds pointers, written only by
-                                  /bigin-render-design
+                                  /bigin-render-design-od
 04-UIUX/_ux/navigation-map.md    the ONE vault-wide navigation shell -- every directly-reachable
                                   menu entry and the screen it opens, append-only, at arbitrary
                                   depth via a dot-path id. A web tree, a mobile tab bar of at most
-                                  five, or one file carrying both. It is /bigin-render-design's
+                                  five, or one file carrying both. It is /bigin-render-design-od's
                                   single source of truth for routing
 04-UIUX/_design-system/          LEGACY, unread. A vault materialized before design systems left
                                   this pipeline may still have design-tokens.md and components/
                                   here. Nothing reads them and nothing deletes them; they are a
                                   record of what earlier runs specced against
 04-UIUX/_prototypes/<run>/       the rendered prototype, COPIED BACK out of Open Design by
-                                  /bigin-render-design: index.html, screens/, assets/, and a
+                                  /bigin-render-design-od: index.html, screens/, assets/, and a
                                   RENDER.md manifest naming the project, design system, model,
                                   and each feature's run id. Written by that skill and nothing
                                   else
@@ -211,11 +206,11 @@ _bigin/templates/                 blank scaffolds for every artifact type, same 
                                   rules and information, the UX-### design, pending scope, and open
                                   business decisions. absorbed: [UC-###@version] is what makes
                                   "this PRD has drifted from its use cases" detectable
-epics.md                          PLANNED — /consolidate-prd is halted, so nothing generates these
-.bigin/  (legacy)                 the pre-migration flat-file layout /consolidate-prd still reads.
-                                  Absent in any project created on the current model, which is
-                                  exactly why that one skill halts. /enrich-feature no longer reads
-                                  this layout -- it's live, and feature-scoped (§ Reconciliation notes)
+epics.md                          PLANNED — no skill generates these; they are cut by hand
+.bigin/  (legacy)                 the pre-migration flat-file layout. Absent in any project created
+                                  on the current model. The one skill that still read it,
+                                  /consolidate-prd, was deleted in 1.8.7. /enrich-feature never read
+                                  it -- it's live, and feature-scoped (§ Reconciliation notes)
 ```
 
 ### Why the rulebook is copied into the project
@@ -227,23 +222,33 @@ rulebook and templates into `_bigin/` at init gives skills, subagents, and the `
 path convention that all three can actually read. It also makes the rules inspectable: a BA can open
 `_bigin/stages/transform/3-lane-uc.md` and see exactly what governed a use case.
 
-`/extract-signal`'s five dispatched subagents are named, versioned agent definitions —
-`agents/signal-extractor.md` (2a), `signal-auditor.md` (2b), `signal-repairer.md` (2b-repair and
-hub repair), `signal-filer.md` (2c), and `signal-batch-verifier.md` (Stage 3) — rather than a fresh
-hand-written prompt per dispatch. Each resolves `{variable}`s from the project's own materialized
+`/extract-signal`'s dispatched subagents are named, versioned agent definitions —
+`agents/signal-extractor.md` (2a: extract, then audit and repair its own table),
+`signal-auditor.md` (2b: the independent blind re-read, dispatched only on the notes that earn it),
+and `signal-filer.md` (2c: anchor and file, and hub repair) — rather than a fresh hand-written prompt
+per dispatch. Each resolves `{variable}`s from the project's own materialized
 `_bigin/conventions/paths.md` and reads its stage's rulebook from `_bigin/stages/extract/` at runtime,
 so a project-level override still applies; the agent file fixes only the identity, tool scope, model,
 and report contract — never the procedure.
 
+**Two agents per note, not five.** Until 1.8.8 the chain was extract → audit → repair → file →
+batch-verify, so a five-note batch cost 25 cold agent starts before anything was reported. Two of
+those five did work that did not need its own model: `signal-repairer` applied findings from a context
+that had never seen the source, and `signal-batch-verifier` re-read, per batch, files that
+`hooks/bigin-lint.py --full` already parses deterministically. The repair now happens inside whichever
+agent *found* the finding, the batch gate is that one Bash command, and the independent audit is spent
+where self-auditing is known to fail — any transcript, a long or multi-block `## Raw`, an unread block,
+or a self-audit that already found an inversion (`_bigin/stages/extract/2b-audit.md` § When the
+independent pass is owed).
+
 **One procedure, one home.** `skills/extract-signal/references/agent-dispatch.md` carries only the
 per-run data handed to each agent (which note, the read plan, this run's mode, the audit's findings).
 It deliberately does *not* restate a procedure: two copies of one rule is how this plugin previously
-shipped a `signal-auditor` missing a mandatory check that the dispatch prompt had, and a batch verifier
-accepting question mirrors in places nothing writes them. A dispatch-prompt copy of a rule also silently
-overrides a project's own `_bigin/` override of that rule, which defeats the point of materializing the
-rulebook at all. The audit stage now has its own `_bigin/stages/extract/2b-audit.md`, so all five agents
-work the same way — that file also owns the table-repair procedure, which is why the repair is a
-dispatched agent rather than orchestrator work.
+shipped a `signal-auditor` missing a mandatory check that the dispatch prompt had. A dispatch-prompt
+copy of a rule also silently overrides a project's own `_bigin/` override of that rule, which defeats
+the point of materializing the rulebook at all. `_bigin/stages/extract/2b-audit.md` owns the
+table-repair vocabulary as well as the audit, which is what lets the extractor and the auditor apply
+the same category to the same edit without either one restating it.
 
 `/bigin-transform-signal`'s Stage 3/4 dispatches follow the same pattern: `agents/uc-router.md` (one
 agent, resumed rather than redispatched between its Phase A UC-identification and Phase B
@@ -296,11 +301,11 @@ for it; **needs authentication** cannot be fixed here at all, since OAuth needs 
 tools** is a name collision, reported rather than reinstalled over. The step never blocks initiation —
 `/bigin-intake direct …` works with no provider at all, and only Mode B's sweep depends on one.
 
-Every UC's own frontmatter `status` (`draft` ⇄ `needs-clarification` → `approved`, human-only per `/approve-uc`) is the authoritative gate. `enriched` and `consolidated` remain defined values for pre-migration vaults that already carry them, but nothing writes either today — enrichment moved off the UC entirely (it's a feature-level, hub-scoped pass now — § Reconciliation notes) and `/consolidate-prd` is still halted, so `draft → approved` is the live path and nothing may gate on `enriched` — `approved` is what `/bigin-generate-prd` folds into a feature's PRD. A feature carries one use case per distinct user goal, so several at different stages at once is normal, and a use case that spans features is owned by one of them (`primary_feature:`) while appearing on every participating hub. Each Feature Hub's `## Requirement Readiness` table is a refreshed snapshot for orientation, not the gate itself. Features are matched by slug across stages, so `/extract-signal` and `/bigin-transform-signal` update an existing hub/UC rather than duplicating one when new signals map to the same feature — and a new signal about an existing *goal* is a step, branch, or rule inside that UC, not a second one.
+Every UC's own frontmatter `status` (`draft` ⇄ `needs-clarification` → `approved`, human-only per `/approve-uc`) is the authoritative gate. `enriched` and `consolidated` remain defined values for pre-migration vaults that already carry them, but nothing writes either today — enrichment moved off the UC entirely (it's a feature-level, hub-scoped pass now — § Reconciliation notes) and the epic/story stage that would have set `consolidated` was never built, so `draft → approved` is the live path and nothing may gate on `enriched` — `approved` is what `/bigin-generate-prd` folds into a feature's PRD. A feature carries one use case per distinct user goal, so several at different stages at once is normal, and a use case that spans features is owned by one of them (`primary_feature:`) while appearing on every participating hub. Each Feature Hub's `## Requirement Readiness` table is a refreshed snapshot for orientation, not the gate itself. Features are matched by slug across stages, so `/extract-signal` and `/bigin-transform-signal` update an existing hub/UC rather than duplicating one when new signals map to the same feature — and a new signal about an existing *goal* is a step, branch, or rule inside that UC, not a second one.
 
-> **Migration note:** `/consolidate-prd` is **halted, not merely stale**. It reads the older `.bigin/features/FR-<id>-*.md` single-file model **and keys on the retired `FR-###` artifact**, and that directory does not exist in a project on the current layout — so every invocation halts with no input to read. It says so in its own first line and keeps its target contract under a heading marked not-runnable, so the design intent survives without looking live. `/enrich-feature` is **not** in this state any more — it was retargeted from that same old per-UC design to a feature-level, hub-scoped domain-research refresh, and is live (§ Reconciliation notes). Consequences the rest of the plugin respects: `enriched` stays unreachable and nothing gates on it, but for a different reason now — enrichment was moved off the UC, not halted; `/approve-uc` no longer mentions enrichment at all, since it's not a UC-level concept; and the `bigin-ba` agent routes to `/enrich-feature` for a manual research refresh, never for `/consolidate-prd`. `/prototype-design` is off the load path too — superseded by `/bigin-generate-design`, kept only so old references resolve.
+> **Migration note:** the **epics/stories stage does not exist.** `/consolidate-prd`, which would have been it, was on the retired `.bigin/features/FR-<id>-*.md` layout and keyed on the retired `FR-###` artifact, so it halted on every invocation against a current project — it was deleted in 1.8.7, along with `/prototype-design` (superseded by `/bigin-generate-design`). Epics and stories are cut by hand from approved UCs until somebody builds the stage. Consequences the rest of the plugin respects: `consolidated` is a legacy-only, unreachable UC status; `enriched` is unreachable too, for an unrelated reason — enrichment moved off the UC when `/enrich-feature` was retargeted to a feature-level, hub-scoped domain-research refresh (live — § Reconciliation notes) — so `/approve-uc` no longer mentions enrichment at all, and the `bigin-ba` agent routes to `/enrich-feature` for a manual research refresh.
 >
-> `/bigin-generate-design`, `/approve-uc`, `/sync-entities`, and `/bigin-generate-prd` **are** on the current model (all four read `_ucs/`/`_entities/` directly), so the design exit, the human-approval exit, and the PRD exit from `/bigin-transform-signal` all work today — only epics/stories still need a person. See `_bigin/conventions/conventions.md` § Reconciliation notes for the per-skill breakdown and the target contract for each halted stage.
+> `/bigin-generate-design`, `/approve-uc`, `/sync-entities`, and `/bigin-generate-prd` **are** on the current model (all four read `_ucs/`/`_entities/` directly), so the design exit, the human-approval exit, and the PRD exit from `/bigin-transform-signal` all work today — only epics/stories still need a person. See `_bigin/conventions/conventions.md` § Reconciliation notes for the per-skill breakdown.
 
 ### The deterministic checker and its hook
 
@@ -353,7 +358,7 @@ Every stage is available three ways: type `/<stage>` yourself, run `/bigin-run` 
 routed for you, or dispatch the `bigin-ba` agent to work one feature unattended. All three read the
 vault to decide what runs next, continue automatically where the next stage needs no decision, and stop
 at the ones that do — `/approve-uc`'s confirmation, `/bigin-new-project`'s engagement config, and
-`/bigin-render-design`, which is never routed to at all: a prototype is something a human asks for, on
+`/bigin-render-design-od`, which is never routed to at all: a prototype is something a human asks for, on
 the Open Design project, design system, and at the moment they choose.
 
 **`/bigin-run` is the home for any run that fans out.** `/extract-signal` dispatches a named worker per

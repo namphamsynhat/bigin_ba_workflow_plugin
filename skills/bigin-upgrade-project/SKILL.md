@@ -47,11 +47,11 @@ with, and nothing does that automatically today. This skill is that something.
 * **No documented procedure → report, never improvise.** A retirement or template change with
   nothing named after it in § 3's scan is drift to name in § 7's report, not a migration to attempt
   from first principles. A best-effort guess at how content should transform is exactly the failure mode
-  every other skill in this plugin halts rather than risks (`_bigin/conventions/conventions.md`
+  every other skill in this plugin halts rather than risks (`_bigin/conventions/core.md`
   hard rule: never invent a validation, field, or structure the source didn't state).
 * **Stage, never approve.** Every migration this skill runs ends in `draft`-status content and
   `## Discussion` entries, the same human gate as any other UC/BR change
-  (`_bigin/conventions/conventions.md` § Status vocabularies, hard rule 4). This skill mints and
+  (`core.md` § Status vocabularies, hard rule 4). This skill mints and
   stages; it never sets `approved`, `enriched`, or `consolidated`, and never folds a `## Discussion`
   entry into `## 1`–`## 6` itself.
 * **Idempotent by construction.** Re-running this skill against an already-upgraded project is a
@@ -74,13 +74,13 @@ Requires `_bigin/system/project.md` to exist. Missing → say `/bigin-new-projec
   snapshots before anything is overwritten.
 * **Action:**
   - **Current** — read `_bigin/system/project.md`'s `workspace_version`, and the *currently
-    materialized* `_bigin/conventions/conventions.md` § ID scheme table, plus two things per
+    materialized* `core.md` § ID scheme table, plus two things per
     `_bigin/templates/*.md`: its section headers (`Grep '^## '` per file) and its **frontmatter keys**
     (the `^[a-z_]+:` lines above the closing `---`, key names only — values are per-project content,
     not template shape). This is what the project was actually built against — read it **before** § 5
     overwrites it.
   - **New** — read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`'s `version`, and the same three
-    things from `${CLAUDE_PLUGIN_ROOT}/workspace/conventions/conventions.md` and
+    things from `${CLAUDE_PLUGIN_ROOT}/workspace/conventions/core.md` and
     `${CLAUDE_PLUGIN_ROOT}/workspace/templates/*.md`.
 * **Rules:**
   - **Compare the two versions as SEMVER, component by component, numerically — never as strings.**
@@ -120,7 +120,7 @@ Requires `_bigin/system/project.md` to exist. Missing → say `/bigin-new-projec
     `/bigin-new-project` needing to run to establish one, not as "assume it's old".
   - Use the `Grep` **tool** for every scan in this skill, never a shell pipeline — a silently denied
     pipeline under an unattended run reads as "nothing changed" instead of "the scan didn't happen"
-    (same reasoning as the ID-scan rule in `_bigin/conventions/conventions.md`).
+    (same reasoning as the ID-scan rule in `_bigin/conventions/core.md`).
 
 ## 2. Diff the two snapshots
 
@@ -294,6 +294,15 @@ nothing**: see the last rule below.
       files look authoritative and neither is live.
       (The earlier 1.8 → 1.9 rename — `design/4-prompt.md`/`design/5-close.md` becoming
       `design/5-prompt.md`/`design/6-close.md` — is the same class, one version back.)
+    - **1.8.8 split `_bigin/conventions/` and needs no prune.** `conventions.md` (1,660 lines) and
+      `design-conventions.md` (806) each became a short **map** plus one file per concern —
+      `core.md`, `use-case.md`, `feature-hub.md`, `intake.md`, `questions.md`, `registers.md`,
+      `runtime.md`, and the seven `design-*.md`. Every section moved **verbatim**; nothing was
+      rewritten or dropped. The whole-directory copy handles it on its own: the two originals are
+      overwritten with their maps and the fourteen new files land beside them, so there is nothing
+      stale to delete. Say in § 6's report that the rulebook is now per-concern and that a stage
+      loads only the files its `SKILL.md` names — a project whose own notes tell a BA to "read
+      conventions.md § Feature Hub" is pointing at a map now, not at the rule.
   - **This copy runs strictly after § 4, and § 4's inputs are why.** § 1 takes its "current" snapshot
     of `_bigin/templates/*.md` — section headers *and* frontmatter keys — before anything is
     overwritten, and § 4 then reads a template's currently *materialized* state again to decide what a

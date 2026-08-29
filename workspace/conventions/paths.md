@@ -23,8 +23,8 @@ and subagent runs in.
 | `{scenarios_file}` | `01-Requirements/SCENARIOS.md` | **Retired, read-only.** Pre-UC `SCN-###` cross-feature register. A cross-feature flow is now one `UC-###` whose `features:` lists every slug it touches. Existing rows stay, marked superseded by the UC that absorbed them. |
 | `{pain_points_file}` | `01-Requirements/PAIN-POINTS.md` | Canonical `PP-###` register. Each hub mirrors its own rows from here. |
 | `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | Durable, cross-cutting design constraints. |
-| `{ux_dir}` | `04-UIUX/` | One UX spec per feature: `UX-<NNN> <Feature>.md`, from `/bigin-generate-design`. Listed here because `/bigin-generate-prd` **reads** it (its § 9 quotes the screens). **Read-only from this side** — everything about *writing* a screen, and the rest of the design `{variable}` table (`{ux_system_dir}`, `{nav_map_file}`, `{template_ux}`, …), lives in `{design_conventions}` § Paths, not here. |
-| `{prototype_dir}` | `04-UIUX/_prototypes/` | Rendered prototypes copied back out of Open Design by `/bigin-render-design`, one folder per render: `<YYYY-MM-DD>-<slug\|multi>/` holding `index.html`, `screens/`, `assets/`, and a `RENDER.md` manifest. **Written by that skill alone** — no requirement stage and no design stage touches it, and nothing downstream reads it. Listed here so a stage that walks `04-UIUX/` knows to skip it, exactly as `00-Inbox/_attachments/` is skipped. |
+| `{ux_dir}` | `04-UIUX/` | One UX spec per feature: `UX-<NNN> <Feature>.md`, from `/bigin-generate-design`. Listed here because `/bigin-generate-prd` **reads** it (its § 9 quotes the screens). **Read-only from this side** — everything about *writing* a screen, and the rest of the design `{variable}` table (`{ux_system_dir}`, `{nav_map_file}`, `{template_ux}`, …), lives in `design-core.md` § Paths, not here. |
+| `{prototype_dir}` | `04-UIUX/_prototypes/` | Rendered prototypes copied back out of Open Design by `/bigin-render-design-od`, one folder per render: `<YYYY-MM-DD>-<slug\|multi>/` holding `index.html`, `screens/`, `assets/`, and a `RENDER.md` manifest. **Written by that skill alone** — no requirement stage and no design stage touches it, and nothing downstream reads it. Listed here so a stage that walks `04-UIUX/` knows to skip it, exactly as `00-Inbox/_attachments/` is skipped. |
 | `{prd_dir}` | `02-PRD/` | One PRD per feature: `PRD-<NNN> <Feature>.md`, written by `/bigin-generate-prd` from that feature's **approved** UCs plus its `UX-###` design. Business-flow, not technical (its own hard rules live in that skill's `SKILL.md`). Status: `draft → approved`, `approved` human-only. |
 
 `{entities_file}`, `{pain_points_file}`, and `{design_principles_file}` are **vault-wide**. A per-feature
@@ -37,11 +37,11 @@ feature**: a `UC-###` is written only by its `primary_feature`'s subagent
 
 | Variable | Path | Notes |
 | :--- | :--- | :--- |
-| `{conventions_reference}` | `_bigin/conventions/conventions.md` | The rulebook. Read the sections your stage needs — it has a stage table at the top. Never read it whole. |
-| `{design_conventions}` | `_bigin/conventions/design-conventions.md` | **The experience rulebook, deliberately separate** — screens, navigation, user flows, semantic roles. **No design system and no tokens:** that is the design team's, or is bound at render time. It carries **its own** `{variable}` table (`{ux_dir}`, `{ux_system_dir}`, `{nav_map_file}`, `{template_ux}`, …), so a design-stage worker resolves paths there, not here. Nothing in this file governs design, and nothing in that file governs requirements. |
+| `{conventions_reference}` | `_bigin/conventions/` | The rulebook, **split one file per concern** — `core.md`, `use-case.md`, `feature-hub.md`, `intake.md`, `questions.md`, `registers.md`, `runtime.md`. Open the file a rule lives in, named directly wherever this plugin cites one. `conventions.md` is a **map only** and holds no rules: read it only if you have no file name. |
+| `{design_conventions}` | `_bigin/conventions/design-*.md` | **The experience rulebook, deliberately separate** — screens, navigation, user flows, semantic roles — and likewise split: `design-core.md` (unconditional, and it carries the design `{variable}` table: `{ux_dir}`, `{ux_system_dir}`, `{nav_map_file}`, `{template_ux}`, …), plus `design-platform.md`, `design-actor-scope.md`, `design-navigation.md`, `design-screens.md`, `design-grounding.md`, `design-review.md` per stage. **No design system and no tokens:** that is the design team's, or is bound at render time. `design-conventions.md` is a **map only**. Nothing in this table governs design, and nothing in those files governs requirements. |
 | `{paths_reference}` | `_bigin/conventions/paths.md` | This file. |
-| `{stages_dir}` | `_bigin/stages/` | `extract/` (`2-extraction`, `2b-audit`, `3-filing`), `transform/`, `design/` (`1-scope`, `2-navigation`, `3-screens`, `4-flow-review`, `5-verify`, `6-close`), and `prd/` (`1-scope`, `2-business`, `3-flows`, `4-design`, `5-close`) — one numbered file per stage. The `design/` guides resolve against `{design_conventions}` § Paths; the `prd/` guides resolve against this file. |
-| `{project_file}` | `_bigin/system/project.md` | The engagement config, and the `workspace_version` every skill's precondition compares against the installed plugin (`{conventions_reference}` § Workspace version check). |
+| `{stages_dir}` | `_bigin/stages/` | `extract/` (`2-extraction`, `2b-audit`, `3-filing`), `transform/`, `design/` (`1-scope`, `2-navigation`, `3-screens`, `4-flow-review`, `5-verify`, `6-close`), and `prd/` (`1-scope`, `2-business`, `3-flows`, `4-design`, `5-close`) — one numbered file per stage. The `design/` guides resolve against `design-core.md` § Paths; the `prd/` guides resolve against this file. |
+| `{project_file}` | `_bigin/system/project.md` | The engagement config, and the `workspace_version` every skill's precondition compares against the installed plugin (`version-check.md` § Workspace version check). |
 | `{conventions_file}` | `.claude/bigin-ba-workflow-plugin.local.md` | Optional per-project overrides. A plugin **setting**, not project data — hence `.claude/`. Absent is normal; fall back to built-in defaults per blank section. |
 
 ## Templates
@@ -71,9 +71,9 @@ the next stage parses; a hand-written variant is how a field a later stage reads
 
 **Copy the structure, not the guidance.** Take the frontmatter keys, headings, and table headers;
 drop the template's `<!-- … -->` guidance blocks — they are the spec for the writer, not artifact
-content, and the rules they restate live in `{stages_dir}` and `{conventions_reference}`. Backtick
+content, and the rules they restate live in `{stages_dir}` and `_bigin/conventions/`. Backtick
 any placeholder you leave unfilled: a bare `<like this>` is parsed as an HTML tag and renders as
-nothing in Obsidian (`{conventions_reference}` § Obsidian-safe markdown).
+nothing in Obsidian (`core.md` § Obsidian-safe markdown).
 
 ## When a path doesn't exist
 

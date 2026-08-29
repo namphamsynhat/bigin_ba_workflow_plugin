@@ -138,7 +138,7 @@ check 17 blocks on it.
 
 ## Part 5 — Render readiness: is the spec enough input for a render?
 
-Rendering is `/bigin-render-design`'s job and runs whenever a human chooses, possibly weeks later and
+Rendering is `/bigin-render-design-od`'s job and runs whenever a human chooses, possibly weeks later and
 on whichever engine they pick. So the spec has to stand on its own as that engine's input **now**,
 while the material is still in hand. Per screen, per spec:
 
@@ -151,7 +151,7 @@ while the material is still in hand. Per screen, per spec:
   rule-driven one. An engine renders the states it is given and no others
 □ every element that carries a ROLE carries one from the closed list, and every element that
   carries none is deliberately unweighted — not a cell somebody forgot
-  ({design_conventions} § Semantic style roles)
+  (`design-screens.md` § Semantic style roles)
 □ the NAV SHELL this screen sits in is resolvable from {nav_map_file}'s ## Structure for this
   platform — an engine with no shell improvises one per screen
 □ a `many` screen names its REAL SCALE in words ("about 10,000 records, page 1 of 200") and carries
@@ -166,7 +166,7 @@ while the material is still in hand. Per screen, per spec:
 
 **The VISUAL SYSTEM is not on this list, and its absence is not a gap.** No colour, no type scale, no
 component library, no token values: this pipeline produces none, and the design system is bound at
-render time by a human ({design_conventions} § Rendering is a separate step). A spec is render-ready
+render time by a human (`design-platform.md` § Rendering is a separate step). A spec is render-ready
 without one. Raising "no design system" as a render-readiness gap puts a permanent unanswerable
 question on every spec in the vault.
 

@@ -94,7 +94,7 @@ Jacobson, Spence and Bittner's Use-Case 2.0 supplies three things this vault use
 3. **Slices** — *"one or more stories selected from a use case to form a work item that is of clear
    value to the customer."* A slice is the delivery unit, and it is what `EP-###`/`US-###` should be
    cut from downstream: basic flow first, then the alternative and exception flows. This is guidance
-   for `/consolidate-prd` when it migrates; this skill does not slice anything.
+   for the epic/story stage (not built — epics and stories are cut by hand from approved UCs); this skill does not slice anything.
 
 UC 2.0 also keeps *special requirements that apply to the whole use case and are often
 non-functional* attached to the use case. This vault has no NFR artifact at all, so `## 6` is where
@@ -152,7 +152,7 @@ load-bearing invariant — zero unchecked `- [ ] Q:` lines ⟺ status is not `ne
 that `/extract-signal` and this skill both enforce by counting checkboxes (`/enrich-feature` is
 feature-scoped now and never writes a UC's questions). A
 second question format would either break that count or duplicate every question into two places,
-which `conventions.md` § One question, two places exists to prevent.
+which `intake.md` § One question, two places exists to prevent.
 
 So `## 5` holds both, doing different jobs: the canonical `- [ ] Q:` list for anything **still open**
 (this is what the invariant counts), and a **decision log** table for items already **settled** —

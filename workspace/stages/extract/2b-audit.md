@@ -1,17 +1,23 @@
 # Source audit rules
 
-Rulebook for the `extract-signal` **source-audit** subagent (2b), and for the **repair** pass that runs
-on its findings (2b-repair).
+Rulebook for the `extract-signal` **source-audit** subagent (`signal-auditor`), and the one home for
+the **repair vocabulary** — which `signal-extractor` also follows for its own § Step 6 self-audit.
 
 ```text
 in:   one note's ## Raw (every ### SRC-n block) and its ## Extracted signals table
 out:  a two-direction gap report — GAPS · UNSUPPORTED · CONTRADICTIONS · SUMMARY
-never: editing the note · re-anchoring · filing · resolving a contradiction
+      AND those findings applied to the table, by you, before you report
+never: re-anchoring · filing · resolving a contradiction · touching status, tags, or Open Questions
 ```
 
-This is the **only** place the table is checked against the raw material, and the only place a missing
-signal can still be caught. Everything downstream reads the table instead of the source, so a claim this
-pass doesn't recover is a requirement that never existed.
+**You find and you fix.** There is no separate repairer agent: handing a report to a third model that
+never saw the source cost a whole dispatch and lost detail at the handoff. Audit blind, then repair
+from what you just read.
+
+The table is checked against the raw material twice — once by the extractor that wrote it
+(`2-extraction.md` § Step 6), and here, by a reader who has not seen it. This pass is the one that can
+still catch what the first one was biased against seeing. Everything downstream reads the table
+instead of the source, so a claim neither pass recovers is a requirement that never existed.
 
 `{variable}` resolves in `_bigin/conventions/paths.md`. `{conventions_file}`, if present, overrides
 anything here.
@@ -82,8 +88,9 @@ A) GAPS (source → rows) — each claim of yours with no matching row:
    GAP <n>: <the claim> | Type: <best type> | quote: "<verbatim>" | Source: <timestamp, or
    sender+date, or attachment section> | Why: <the stated reason, or not stated>
 
-   GIVE THESE IN FULL. The repair pass appends rows from your words and does NOT re-read the source,
-   so an incomplete gap line becomes a lost signal a second time.
+   GIVE THESE IN FULL, even though you are the one who will append them. The gap line is what a
+   human reads later to see what the table nearly lost, and it is the only record of the claim in
+   your own words — "see repair" there is a lost signal a second time.
 
 B) UNSUPPORTED (rows → source), one line each:
    <#> UNSUPPORTED <which case above> | quote: "<closest real text, or none found>"
@@ -97,44 +104,47 @@ D) SUMMARY: <N> blocks read (<SRC-n list>), <N> claims found, <N> gaps, <N> rows
    <N> unsupported, <N> inversions, <N> conflicts
 ```
 
-## When this pass may be skipped
+## When the independent pass is owed
 
-The double read of the source — once by 2a, once here — is roughly half the cost of the whole extract
-chain. It earns that on a transcript, where recall is genuinely hard. It does not always earn it:
+This second read of the source is roughly half the cost of the whole extract chain. Since
+`2-extraction.md` § Step 6, the extractor audits and repairs its own table on every note, so this
+dispatch is no longer the only check — it is the check for the notes where self-auditing is known to
+fail. Spend it there and nowhere else.
 
 ```text
-SKIP the dispatched audit, and have the ORCHESTRATOR check inline instead, when ALL hold:
-    ## Raw is under ~100 lines
-    exactly ONE source block
-    that block's kind is NOT `transcript`   # a direct note, a short email, a one-page attachment
-    the table has no row flagged `derived from #<n>`
+DISPATCH signal-auditor when ANY holds:
+    any source block's kind is `transcript`      # however short — see below
+    ## Raw is ~300 lines or more
+    more than one source block, and any of them is an attachment or a thread
+    2a reported a block it could not read, or `not stated` over 30% of requirement/feedback rows
+    2a's self-audit found an inversion or a contradiction   # it found one; assume it missed one
+    2a's self-audit repaired more than 5 rows
 
-inline check, in the orchestrator, reading ## Raw once:
-    every claim in the source has a row · no row claims more than its quote · no inversion ·
-    every cite resolves. Report it as "audit: inline (<N> lines, <kind>)" — never as a dispatched
-    audit, so a reader can tell which depth ran.
-
-ALWAYS dispatch the full audit when:
-    any block is a transcript (the inversion and unresolved-mechanism cases live there)
-    ## Raw is ~100 lines or more, or has more than one block
-    2a reported an unread block, or `not stated` over 30% of requirement/feedback rows
-    this is a re-audit after a repair
+OTHERWISE the extractor's § Step 6 self-audit stands as the audit. The orchestrator reports it as
+"audit: self (<N> lines, <kind>)" — never as a dispatched audit, so a reader can tell which depth ran.
 ```
 
-Never skip on a transcript, however short it looks. The failures this pass exists to catch — inversion,
-an unresolved mechanism written as settled, a hedge promoted to a commitment — are all artifacts of
-people talking, and none of them are visible without reading the exchange around the cited line.
+**Never skip on a transcript, however short it looks.** The failures this pass exists to catch —
+inversion, an unresolved mechanism written as settled, a hedge promoted to a commitment — are all
+artifacts of people talking, and none of them are visible without reading the exchange around the
+cited line. They are also precisely what the writer of the table is least able to see in their own
+work, which is why a fresh reader is the mechanism and not a formality.
+
+**The orchestrator does not audit inline.** Either the extractor's self-audit stands or a fresh agent
+is dispatched. Pulling `## Raw` into the orchestrator's context to check it by hand is the one thing
+this whole fan-out exists to avoid, and it grows the context that still has to be coherent at the end
+of the batch.
 
 ---
 
 # Repairing the table — on the audit's findings
 
-Runs between 2b and 2c, **from the audit's own quotes** — the source is not re-read. Nothing has been
-filed yet, which is why this is a plain table edit rather than surgery on a themed hub row.
+Applied by whoever found the finding — `signal-auditor` after its blind pass, or `signal-extractor`
+in its own § Step 6 — and always before filing. Nothing has been filed yet, which is why this is a
+plain table edit rather than surgery on a themed hub row.
 
-**Dispatch this as its own scoped subagent** (`signal-repairer`), not inline in the orchestrator: doing it
-inline pulls every table and every audit report into the one context the whole fan-out design exists to
-protect. The repairer is handed the audit report verbatim and the note path, and touches nothing else.
+**This table is the one home for the repair vocabulary.** Both agents follow it, so a category means
+the same thing and produces the same edit whichever pass caught it.
 
 ```text
 gap             → append a row after the highest existing #, verbatim from the audit's gap line
@@ -170,24 +180,28 @@ different claim — the citation still *resolves*, so nothing errors; it just no
 to something nobody said. `2-qualification.md` Gate 3 check 3 is the downstream detector, and it can only
 detect a cite that stopped resolving, never one that resolves to the wrong row.
 
-## Re-auditing after a repair
+## Checking your own repairs
+
+You still have the blocks open, so verify in place rather than asking for another pass:
 
 ```text
-repair touched ≤ 2 rows        → no re-audit; report the repairs and continue to 2c
-repair touched > 2 rows, or appended a gap row that itself needs a cite check
-                              → RE-AUDIT the repaired rows only, scoped: hand the auditor the note,
-                                the row #s touched, and what each repair claims to have fixed
+per row you appended or corrected → re-read the quote in its block, confirm the row now says what
+                                    the source says and cites the block the words are actually in
 ```
 
-Without this, a repair is never verified by anything: an auditor's misquote, or a gap line the repairer
-mis-transcribed, becomes a permanent signal wearing a `Notes: added by source audit` badge that reads as
-*more* trustworthy than an ordinary row.
+Do this before you report, and say `verified: <row #s>`. Without it a repair is verified by nothing:
+a misquote, or a gap line transcribed loosely, becomes a permanent signal wearing a
+`Notes: added by source audit` badge that reads as *more* trustworthy than an ordinary row.
+
+A second dispatched agent for this is not worth its cost — it would re-read the same blocks you have
+in front of you, to check work you did thirty seconds ago.
 
 ## Report
 
 ```text
 repaired: <#> <category> — <what changed, one line> (one line each)
 appended: <#> — <the signal> (one per gap row added)
+verified: <row #s re-checked against their block> (§ Checking your own repairs)
 superseded: <#> → #<n> (or "none")
 re-audit: scoped to #<list> — clean | <what came back> (or "not needed, ≤ 2 rows touched")
 numbering: highest # before <a>, after <b>, none renumbered

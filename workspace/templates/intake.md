@@ -19,7 +19,7 @@ declared_features: []    # direct intake only: feature slug(s) the USER named at
                          # rule 5): only what the human actually selected or typed goes here.
 feature:                 # filled by /extract-signal once known — the RESOLVED single anchor, and the
                          # repair channel a human writes a slug into to close a "which feature?" open
-                         # question (conventions.md § Signal → feature mapping). Distinct from
+                         # question (`registers.md` § Signal → feature mapping). Distinct from
                          # declared_features above: that's the user's up-front declaration, this is the
                          # outcome.
 links: []
@@ -48,7 +48,7 @@ updated:
 
 ## Extracted signals
 <!-- populated by /extract-signal (step 3), NOT at intake. One ROW per signal, each traced to a message (sender + date), transcript timestamp, or attachment — never prose bullets. -->
-<!-- This is the RAW RECORD and it stays flat: arrival order, never merged, never grouped, however many rows describe the same thing. It's what the source audit quotes against and what every later stage re-reads to see what was actually said. Grouping happens only on the feature hub, where these rows file as themed Signal Log rows citing their # back here (conventions.md § Feature Hub) — so the two tables' row counts are not meant to match. -->
+<!-- This is the RAW RECORD and it stays flat: arrival order, never merged, never grouped, however many rows describe the same thing. It's what the source audit quotes against and what every later stage re-reads to see what was actually said. Grouping happens only on the feature hub, where these rows file as themed Signal Log rows citing their # back here (`feature-hub.md` § Feature Hub) — so the two tables' row counts are not meant to match. -->
 <!-- Filled in two passes by /extract-signal: the extraction subagent writes #/Type/Signal/Why/Source and leaves Feature/Status/Notes blank; the filing subagent fills Feature/Status/Notes once it has read FEATURES.md. A row left with both Feature and Status blank is one nobody filed and nobody questioned. -->
 
 | # | Type | Signal | Why | Source | Feature | Status | Notes |
@@ -58,7 +58,7 @@ updated:
 <!-- Every claim is classified as-is / pain / to-be BEFORE it is typed: as-is → decision · pain → pain-point/problem · to-be → requirement. See _bigin/stages/extract/2-extraction.md § Classify first. -->
 <!-- Why: required for requirement/feedback rows. One of three values: the client's stated reason (quoted/tightly paraphrased) · the literal "not stated" · "derived from #<n>, #<n>" for a to-be nobody said aloud. Blank for every other type. -->
 <!-- Source: transcript timestamp link (meeting) · "<sender> <date>" (email) · attachment filename. Cite the timestamp block the quoted words actually appear in. Name a speaker only when who said it matters and is unambiguous — transcript speaker labels merge multiple speakers into one block and cannot be trusted. -->
-<!-- Feature: the FEATURES.md slug this signal anchors to (conventions.md § Signal → feature mapping) — "unresolved — candidates: a / b" or "unresolved — none found" if it can't map yet. Never guessed.
+<!-- Feature: the FEATURES.md slug this signal anchors to (`registers.md` § Signal → feature mapping) — "unresolved — candidates: a / b" or "unresolved — none found" if it can't map yet. Never guessed.
      Separate candidates with " / ", never "|" — a raw pipe inside a table cell splits the row. -->
 <!-- Status: new · question · conflict · rejected — the only four values /extract-signal writes (_bigin/stages/extract/3-filing.md § Scope). held/staged/applied/superseded describe a signal's relationship to a use case and are written later, not here. -->
 <!-- Notes: staging/destination detail ("staged on UC-001 Discussion"), corrections ("corrected: ..."), cross-refs to other rows, superseded-by, or an open question's ↦ FR-### mirror. -->

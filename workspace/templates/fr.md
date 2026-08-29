@@ -5,10 +5,10 @@ status_of_template: retired
 absorbed_by:    # UC-### that took this FR's content over, once one has
 title:
 status: draft   # draft | needs-clarification | enriched | approved | consolidated | removed
-                # (_bigin/conventions/conventions.md § Status vocabularies — in-review and superseded are
+                # (`core.md` § Status vocabularies — in-review and superseded are
                 # retired for FR/BR). /bigin-transform-signal only ever writes
                 # draft/needs-clarification; enriched is permanently unreachable (enrichment is
-                # feature-scoped now, never FR/UC-level), consolidated to /consolidate-prd, and
+                # feature-scoped now, never FR/UC-level), consolidated is legacy-only/unreachable, and
                 # approved/removed are human-only (hard rule 4).
 version: 1.0
 feature:         # the FEATURES.md slug this FR belongs to
@@ -39,7 +39,7 @@ FR. -->
 this FR, not invented. -->
 
 ## Problem & Pain Points
-<!-- Mirror of this FR's rows from 01-Requirements/PAIN-POINTS.md (conventions.md § Pain Point
+<!-- Mirror of this FR's rows from 01-Requirements/PAIN-POINTS.md (registers.md § Pain Point
 Register): PP-### | Statement | Status | Proposed solution | Resolved by. Empty until a
 [pain-point] signal anchors here. -->
 
@@ -48,7 +48,7 @@ Register): PP-### | Statement | Status | Proposed solution | Resolved by. Empty 
 
 ## Functional requirements
 <!-- Numbered FR-<NNN>.1, FR-<NNN>.2, ... one testable, actionable statement per line
-(conventions.md § Signal → artifact mapping). Never written straight here — draft into
+(`registers.md` § Signal → artifact mapping). Never written straight here — draft into
 ## Discussion first, fold in only after the human gate (§ SKILL.md Stage 3 stages it, Stage 1
 folds it in on a later run). A
 policy/conditional constraint on this FR is its own BR-### file (01-Requirements/_brs/), not a
@@ -65,8 +65,8 @@ folds it in) confirms it. Format:
 Never fold an entry into Functional requirements without the gate having resolved it first. -->
 
 ## Open Questions
-<!-- Same format and invariant as an intake note's Open Questions (conventions.md § Open
-Questions wording, § Open Questions ↔ status consistency): zero unchecked boxes here ⟺ status is
+<!-- Same format and invariant as an intake note's Open Questions (questions.md § Open
+Questions wording, `questions.md` § Open Questions ↔ status consistency): zero unchecked boxes here ⟺ status is
 not needs-clarification.
 
 - [ ] Q: ... (owner: client|team) (ref: <INT-###>)

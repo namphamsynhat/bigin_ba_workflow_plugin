@@ -9,7 +9,7 @@ out:  the work-list: per feature, which UCs are NEW, which are CHANGED, which ar
 never: designing anything · reading a whole UC yet · touching a file · looking for a design system
 ```
 
-Read `{design_conventions}` § Staleness and § Platform before this stage. They define the three-way
+Read `design-core.md` § Staleness and `design-platform.md` § Platform before this stage. They define the three-way
 read below and the one project-wide fact this stage resolves for the whole run.
 
 ## Part 1 — Which features are candidates
@@ -84,11 +84,11 @@ tree than one — but one is allowed; just say the shell will be thin.
 
 **Mode is about navigation and nothing else.** There is no design system in this pipeline and no
 token file to look for: colour, type, spacing, and components are supplied later by a design team or
-bound at render time (`{design_conventions}` § Rendering is a separate step). A run that goes looking
+bound at render time (`design-platform.md` § Rendering is a separate step). A run that goes looking
 for `_design-system/` is reading for a vault shape this plugin stopped producing.
 
 Then read `platform:` from `_bigin/system/project.md`'s frontmatter — **once, here, for the whole
-run** (`{design_conventions}` § Platform):
+run** (`design-platform.md` § Platform):
 
 ```text
 platform: web | mobile | both   → that value, announced as STATED
@@ -117,7 +117,7 @@ not read (Part 1). This stage neither hunts for one nor pre-empts one, and a hub
 
 Per candidate feature, count the rows in its hub's `## Pain Points` section that are **not** resolved.
 A count, on the work-list line — nothing more. The statements themselves are Stage 2's and Stage 3's
-input (`{design_conventions}` § User flows and pain points), and reading them here costs the same
+input (`design-navigation.md` § User flows and pain points), and reading them here costs the same
 context the Part 1 rule exists to protect.
 
 The count earns its place because it is what a human scans the work-list for: a feature carrying six
@@ -128,7 +128,7 @@ visible here or nowhere.
 
 This stage is **headless, with no exception.** Print the work-list and continue — no confirmation, no
 question, and **no halt at all**. There used to be one: a required design engine, checked here, that
-stopped the whole run when it was absent. Rendering is now `/bigin-render-design`, a separate skill a
+stopped the whole run when it was absent. Rendering is now `/bigin-render-design-od`, a separate skill a
 human invokes when they want a prototype, so the tool this stage does not use can no longer stop the
 work this stage does. Nothing in this skill renders, so nothing in this skill needs a renderer.
 
@@ -140,7 +140,6 @@ work-list:
 mode: bootstrap | extend (navigation map v<x>)
 platform: web | mobile | both (stated | defaulted)
 method: <wds | figma | <plugin> | built-in>          # the OPTIONAL method layer, never a renderer
-flow review: <pfd | <critique skill> | skipped — not installed>
 ```
 
 `platform:` sits on the announcement line **and** on every work-list line, and the repetition is the
@@ -179,13 +178,13 @@ the run.
   This skill has no halt, and re-introducing one turns an unattended pipeline into one that waits.
 - **Checking for a render engine here.** It was a real precondition once, and removing it was the
   point of splitting rendering out: a stage that reads use cases and writes markdown was stopping
-  because a prototype tool was not installed. `/bigin-render-design` checks its own engine, when a
+  because a prototype tool was not installed. `/bigin-render-design-od` checks its own engine, when a
   human asks it to render.
 - **Naming a design tool, or pasting an install command, into this guide.** Every stage guide is
-  engine-agnostic. The install commands live in `/bigin-render-design`'s own adapter, and a copy
+  engine-agnostic. The install commands live in `/bigin-render-design-od`'s own adapter, and a copy
   here is the copy that goes stale.
 - **Checking for a design system or a token file.** There is none, by design: the visual system is
-  the design team's or the render engine's (`{design_conventions}` § Rendering is a separate step).
+  the design team's or the render engine's (`design-platform.md` § Rendering is a separate step).
   A run that keys its mode on `_design-system/` reads a vault shape this plugin no longer produces,
   reports `bootstrap` forever, and tells Stage 2 to seed something nothing will ever cite.
 - **Reading the pain-point statements here.** Part 5b wants a count. The statements are what Stage 2
@@ -224,7 +223,7 @@ Nothing else in the config is touched, and no design work runs off the back of t
 ```
 
 **That last line is why this section has two branches at all.** `_bigin/system/project.md` is
-outside the design stage's write map (`{design_conventions}` § Write map: `{ux_dir}`,
+outside the design stage's write map (`design-core.md` § Write map: `{ux_dir}`,
 `{nav_map_file}`, and named hub sections — nothing else). A design run that stamped the config
 would be writing a project-wide decision nobody stated, from a run nobody was watching, into the one
 file every other skill reads as settled fact. Defaulting is recoverable and says so in its own
