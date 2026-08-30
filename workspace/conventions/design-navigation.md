@@ -110,6 +110,30 @@ reached only via another screen's control                          → no entry 
                                                                        not a menu item)
 ```
 
+**This is the vault's name for master-detail / drill-down navigation.** The plugin does not pick a
+pattern off a shelf and label a screen with it — it derives the same outcome from one fact,
+reachability, so it covers master-detail, wizard steps, and modals alike without a separate rule for
+each. "Single menu entry, multiple views" is what a `Points to` cell holding more than one screen
+name *is*: one row, one entry, and everything the row's cell lists beyond the first screen is a view
+that entry's own screens open into, never a second door.
+
+**A `Points to` cell listing several screens has an order, and the order carries meaning.** The
+**first** screen named is the one the entry itself opens — the list, the landing screen, the thing a
+user sees the moment they click the menu item. **Every screen after it** is reached only by a
+control on a screen already in that same list (a row click into a detail, a tab, a wizard step) —
+never a second entry, and never, when this map is handed to a render tool, a second persistent link
+sitting beside the first in a sidebar or menu.
+
+```text
+Points to: Applications Queue, Application Review
+           ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^
+           the entry opens      reached by clicking a row in Applications Queue — NOT a
+           this directly        second sidebar link. Two links here is the failure this
+                                 note exists to name: a client sees "Applications Queue" AND
+                                 "Application Review" as siblings in the menu, when only the
+                                 first was ever meant to be one.
+```
+
 Every entry is **grounded** the same way any other design decision is (`design-grounding.md` § Grounding below): a role
 split traces to a `BR-###` or a UC's actors, a nesting decision traces to a stated preference, an
 existing branch of the tree, or a `PP-###` the placement resolves, and a label that nothing in the

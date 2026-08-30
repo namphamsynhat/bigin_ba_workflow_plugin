@@ -263,6 +263,12 @@ not go on a UX spec or a hub — and it never becomes a silent edit.
   navigation nobody asked for, and D1 means it is there forever.
 - **Giving a sub-screen its own nav entry.** It is reached through its parent; a second way in
   drifts from the real navigation the first time one path changes.
+- **Writing a multi-screen `Points to` cell that reads as a flat list instead of door-then-rooms.**
+  `Applications Queue, Application Review` is master-detail — the queue is the entry, the review is
+  reached by clicking a row in it. A render tool asked to "follow the navigation map" without that
+  order stated can flatten the cell into one sidebar link per screen (`bigin-render-design-od`'s
+  `check-navigation.py` is the gate that catches it after the fact); this stage's job is to write the
+  cell so the order is unambiguous the first time.
 - **Minting a child id whose parent id resolves to nothing.** `settings.team.members` with no
   `settings.team` row is an orphan branch — `6-close.md`'s navigation check exists to catch it.
 - **Letting a subagent write the navigation map.** Two features run at once and both add a "Reports"

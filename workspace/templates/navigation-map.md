@@ -67,6 +67,15 @@ example, three levels — Order resets per parent, it is not a global rank:
   settings.team.members   Members   UX-015     admin     UC-031 S2         1st under settings.team
 ```
 
+**A `Points to` cell may list several screens — that is master-detail / drill-down, one entry
+covering both.** The **first** screen named is what the entry opens directly; every screen after it
+is reached only by a control on a screen already in the list (a row click into a detail, a tab, a
+wizard step) — never a second row here, and never, downstream, a second persistent link beside the
+first. `Applications Queue, Application Review` means the entry opens the queue; a user reaches
+Application Review by clicking a row in it. Anyone consuming this file — a render tool included —
+reads a multi-screen cell the same way: first item is the door, the rest are rooms behind it
+(`design-navigation.md` § The navigation map).
+
 **Every `id` is unique within its own `## Structure` section.** On `web` or `mobile` there is one
 section, so that is vault-wide. On `both` the two shells are two trees, not one tree rendered twice:
 the same feature legitimately appears as `settings.team` under Web and `more.team` under Mobile, and

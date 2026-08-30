@@ -89,12 +89,17 @@ prompt into a `start_run`, polls it to completion, and reports back.
 python3 "$SKILL_DIR/scripts/sync_feature.py" --nav-map [--project <name>]
 ```
 
-Then start one more run in the same project:
+Then start one more run in the same project, quoting `references/navigation-contract.md` § The
+block to quote in full — "follow the navigation map" on its own is not enough instruction: a prior
+run read a nav-map row's multi-screen `Points to` cell as a flat list and gave every screen in it its
+own sidebar link instead of treating the first as the entry and the rest as drill-down destinations:
 
 ```text
 Pull all the design features into the full demo prototype. Follow the navigation map for the
 navigation of all actors or portals.
 navigation map: @navigation-map.md
+
+<paste references/navigation-contract.md § The block to quote here, verbatim>
 ```
 
 ### Step 4 — Verify
@@ -105,10 +110,16 @@ they catch the two failures a human eye misses:
 ```bash
 "$SKILL_DIR/scripts/check-traceability.sh" "{prototype_dir}/<run>/" --require
 "$SKILL_DIR/scripts/check-contrast.py" --tokens <the bound design system's tokens>
+"$SKILL_DIR/scripts/check-navigation.py" "{nav_map_file}" "{prototype_dir}/<run>/"
 ```
 
 A leaked `UC-`/`BR-`/`EN-`/`UX-` id in visible copy is never a warning — it is an internal reference
 a client can read, and the render is not deliverable until it is gone.
+
+`check-navigation.py` is a heuristic, not a hard gate (`references/navigation-contract.md` § The
+gate): it flags a screen that a nav-map row's `Points to` cell names as drill-down-only turning up
+inside what looks like its own persistent nav link. Review every finding by eye — a page title
+reusing the same words is fine, a second sidebar entry is the failure to send the run back for.
 
 Open Design also often displays blank right after an assembly run finishes. Run the
 `perception-first-design:evaluate` skill against the result; if that skill is not installed, open the
@@ -131,6 +142,9 @@ Every prompt this skill sends — per feature and at assembly — carries these:
 - Follow the bound design system for every visual decision.
 - Emit the `data-*` provenance attributes, and never print a UC-, BR-, EN-, or UX- id anywhere a
   user can read it — the block to quote is `references/traceability.md` § The block to quote.
+- One persistent nav/sidebar link per navigation-map entry, never one per screen — a multi-screen
+  `Points to` cell is master-detail/drill-down, not a flat list. The block to quote is
+  `references/navigation-contract.md` § The block to quote.
 
 This skill collects data and hands it to Open Design; it does not prescribe a fidelity bar of its
 own. Density, chrome, and visual polish are whatever the **bound design system** (SMB, enterprise, or
@@ -168,6 +182,9 @@ NEVER   ## 1-## 7 of any spec, or anything else in 01-Requirements/    not this 
 - Treating a blank post-assembly canvas as a failed render instead of running Step 4 first.
 - Skipping the copy-back into `{prototype_dir}` and leaving the render only inside Open Design.
 - Cancelling a run that's merely quiet — 5–30 minutes per run is normal.
+- Saying "follow the navigation map" without quoting `references/navigation-contract.md` § The
+  block to quote — a nav-map row's multi-screen `Points to` cell reads as a flat list otherwise, and
+  every screen in it gets its own sidebar link instead of only the first.
 
 ## Resources
 
@@ -179,9 +196,14 @@ NEVER   ## 1-## 7 of any spec, or anything else in 01-Requirements/    not this 
   `data-*` attributes are present. Negative half: no vault id sits anywhere visible.
 - **`scripts/check-contrast.py`** — WCAG 2.1 ratios, computed. `<fg> <bg> …` for pairs,
   `--tokens <file>` for a whole palette, `--pairs <file>` for a named list.
+- **`scripts/check-navigation.py` `<navigation-map.md> <file-or-dir>…`** — Step 4's heuristic gate
+  against a drill-down screen getting its own nav link. See the note under Step 4 above.
 - **`references/open-design-adapter.md`** — the engine contract: § Probe, § The tool surface,
   § Idempotency (`requestId`), § Poll cadence, § Retry ladder, § Copy-back procedure, and the
   `write_file` ban. Read it when a run misbehaves or an MCP call needs its exact shape.
 - **`references/traceability.md`** — the provenance block to quote into every prompt, and what the
   checker asserts about it.
+- **`references/navigation-contract.md`** — the master-detail/drill-down block to quote into the
+  assembly prompt, what actually went wrong the one time it wasn't stated, and what the checker
+  asserts.
 - **`agents/render-feature-od-worker.md`** (plugin root, not this skill) — Step 2's per-feature worker.

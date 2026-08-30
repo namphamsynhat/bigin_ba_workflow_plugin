@@ -24,6 +24,11 @@ agent/model    optional, from the orchestrator
    do not invent a field, status, or screen the attached files don't name.
    Render self-contained HTML: inlined styles and scripts, no external stylesheet or script.
    Do not print a UC-, BR-, EN-, or UX- id anywhere a user can read it.
+   NAVIGATION — this feature's own UX spec § 5 "Nav entries added" names, at most, 0-2 screens
+   that get a persistent nav/sidebar link. Every OTHER screen the attached UX spec's Screen
+   Inventory lists is reached only through a control on a screen that already has one — a row
+   click into a detail, a tab, a wizard step, a "Review"/"Open" button — never its own nav item,
+   menu entry, or sidebar button, even inside this one feature's own internal navigation.
    ```
 2. `start_run{project: od_project, prompt, agent?, model?, requestId}` → `runId`.
 3. `get_run{runId}` every 30-60s until terminal. 5-30 minutes is normal — don't cancel because it
