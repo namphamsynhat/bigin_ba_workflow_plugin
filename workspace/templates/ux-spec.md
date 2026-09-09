@@ -101,8 +101,18 @@ EVERY cell is READ, never assumed. Unresolvable → the narrowest reading, plus 
 |-------|--------------------|----------|------------|-------------|
 
 ## 2. Screen Inventory
-<!-- One row per screen. `Serves` is the step id(s) the screen delivers — every S# must exist in
-that UC and not be removed.
+<!-- One row per screen. `View ID` and `Screen Type` are minted and classified ONCE, here, and never
+re-derived anywhere downstream — a render tool cites `View ID` verbatim instead of slugifying
+`Screen` itself, and reads `Screen Type` instead of inferring reachability from prose
+(`design-screens.md` § View ID and Screen Type):
+    View ID       "<feature slug>-<screen name, kebab-cased>" — mechanical, unique across the
+                  whole vault, never changed once minted even if `Screen` is renamed later
+    Screen Type   Primary | Drill-down | Wizard | Tab. A `Primary` or `Drill-down` row MUST agree
+                  with whichever tag ({nav_map_file}'s `(Landing)` / `(Drill-down)`) names this
+                  screen, when one does — most Drill-down/Wizard/Tab screens carry no nav-map row
+                  at all (Stage 6 check 19)
+
+`Serves` is the step id(s) the screen delivers — every S# must exist in that UC and not be removed.
 
 Two UCs landing on the same place share ONE row ONLY when their actors' scope agrees. Compare the
 Actor & Scope rows above (`design-actor-scope.md` § Actor scope):
@@ -117,16 +127,21 @@ Two rows means two names that make the actor legible — `Member Directory (Admi
 carry: a `many` screen needs a find mechanism and the volume states, a `one` screen must not have
 them (there is nothing to find). -->
 
-| Screen | Actor | Volume | Purpose | Serves | Entities | Key actions |
-|--------|-------|--------|---------|--------|----------|-------------|
+| Screen | View ID | Screen Type | Actor | Volume | Purpose | Serves | Entities | Key actions |
+|--------|---------|--------------|-------|--------|---------|--------|----------|-------------|
 
 ## 3. Screen Specs
 <!-- One block per inventory row. SEMANTIC STRUCTURE ONLY: a role, never a value and never a token
 id (D2). Every element carries what grounds it — a UC step, a BR, an entity field, an existing
-pattern, or a directive (D3). An element grounded in nothing is a question in § 6, not a guess. -->
+pattern, or a directive (D3). An element grounded in nothing is a question in § 6, not a guess.
+
+`View ID` and `Screen Type` are COPIED from this screen's § 2 row, verbatim — never a second
+decision made here (`design-screens.md` § View ID and Screen Type; Stage 6 checks 18-19). -->
 
 ### `<Screen name>`
 
+* **View ID:** `<feature-slug>-<screen-slug>`
+* **Screen Type:** `Primary | Drill-down | Wizard | Tab`
 * **Purpose:** `<one line>`
 * **Serves:** `UC-<NNN> S<n>, S<n>`
 * **Actor:** `<the ONE role this screen is for — from the Actor & Scope table>`

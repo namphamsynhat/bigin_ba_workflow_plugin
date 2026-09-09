@@ -26,17 +26,21 @@ spec's own `## 5 Navigation & Flow Review` names more than one screen per entry:
 NAVIGATION — one persistent link per navigation-map row, never one per screen.
 
   a navigation-map row's `Points to` cell may list several screens — that is master-detail /
-  drill-down, one menu entry covering both, not a flat list of destinations.
+  drill-down, one menu entry covering both, not a flat list of destinations. Each name in the cell
+  carries an explicit tag; read the TAG, never the position:
 
-  the FIRST screen named is what the menu entry opens directly → give it the ONE persistent
-      sidebar/nav link, labelled with the row's own Label
-  every screen named AFTER it is reached ONLY by a control on a screen already in that list
-      (a row click into a detail, a tab, a wizard step, a "Review" button) → it gets NO sidebar
-      link, NO menu item, and NO entry of its own anywhere in the nav shell
+  a screen tagged `(Landing)` → give it the ONE persistent sidebar/nav link, labelled with the
+      row's own Label. There is always exactly one per row (it is always the first name, but check
+      the tag, not the position).
+  a screen tagged `(Drill-down)` → it gets NO sidebar link, NO menu item, and NO entry of its own
+      anywhere in the nav shell. It is reached ONLY by a control on a screen already wired in — a
+      row click into a detail, a tab, a wizard step, a "Review" button.
 
-  example: `Points to: Applications Queue, Application Review` means ONE sidebar link
-  ("Applications"), opening Applications Queue; Application Review is reached by clicking a row
-  in the queue and never appears in the sidebar itself.
+  example: `Points to: Applications Queue (Landing), Application Review (Drill-down)` means ONE
+  sidebar link ("Applications"), opening Applications Queue; Application Review is reached by
+  clicking a row in the queue and never appears in the sidebar itself. The matching UX spec's own
+  `## 2 Screen Inventory` row for each screen carries the same fact as `Screen Type: Primary` /
+  `Screen Type: Drill-down` — use whichever file is at hand, they are required to agree.
 
   a screen not named in ## Structure at all follows the same rule: it is reached only through
   another screen already wired in, never given a persistent link because it exists.

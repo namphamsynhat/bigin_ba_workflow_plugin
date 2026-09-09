@@ -3,7 +3,7 @@
 ```text
 runs: orchestrator, LAST
 in:   every UX spec, nav map file, and hub this run touched
-out:  absorbed: stamped · statuses set from a live count · hubs refreshed · seventeen checks · the report
+out:  absorbed: stamped · statuses set from a live count · hubs refreshed · nineteen checks · the report
 never: a status decided in Stages 1-5 · an absorbed: entry for a UC with no screen
 ```
 
@@ -87,7 +87,7 @@ per UC designed this run:
 
 Nothing else on the UC, ever (D4). Not a step, not a rule, not a question, not a version bump.
 
-## Part 5 — Seventeen checks, every run
+## Part 5 — Nineteen checks, every run
 
 Each is a real failure that otherwise reports as success. **A mismatch is blocking:** repair,
 re-check, then report.
@@ -111,6 +111,8 @@ re-check, then report.
 | 15 | every screen spec carries an `Actor` and a `Scope` line whose actor appears in the Actor & Scope table; every screen at volume `many` carries **at least one find mechanism** (search, filter, or sort) and all five volume states — `empty`, `few`, `many at real scale` (with the real number named, not "several"), `loading`, `error`; and no screen at volume `one` carries find machinery | a `many` screen without find machinery reviews as finished and collapses on the client's real table — and no other check catches it, because every element on it is properly grounded. A `many` state that never names a number gets prototyped at three rows, which tests nothing the client is worried about |
 | 16 | no screen spec carries a bulk action, an export, a "select all matching", a saved view, or a subscription unless a `UC-### S<n>` or a `BR-###` **really grants it** — and every one that was left out because nothing granted it is an unchecked `- [ ] Q:` in `## 6` marked as a requirement gap | D8, the data-side counterpart of check 10. An ungranted bulk affordance reaches the client in a working prototype, they agree it looks right, and it becomes a requirement nobody wrote or costed — except this one deletes five hundred records at a time |
 | 17 | **`## 4`'s `### Coverage` table and `## 5`'s `### Flow Review` table, together.** Coverage exists and is **whole** (`5-verify.md` wrote it): one row per non-removed `S#`/`A#`/`E#` of every in-scope UC, per screen-constraining `BR-###` they cite, per `EN-###` field their steps read or write, **per unresolved hub `PP-###`**, per open hub directive, and per active principle — every row carrying `covered` (with a real screen **and** state in `Covered by`; for a `PP-###`, a real **flow** and where in it), `gap → ## 6 Q<n>` pointing at a question that really exists and is unchecked, or `out of scope — <reason>` citing something that really says so. And Flow Review is equally whole: one row per `## 4` flow, **never** empty and **never** missing — the built-in walk runs every time, so there is no case where the table is legitimately absent | Stage 5's whole output, and the only check that can catch an **omission**. Every other check on this list runs backward — element to ground — and backward passes cleanly on a spec with an entire exception flow missing: nothing on it was invented, because nothing on it was drawn. A `covered` verdict over an empty `Covered by`, or a `gap` pointing at no question, is the table claiming a coverage nobody checked. The Flow Review half catches the same lie one level up: an empty or missing table records that every journey was walked and found sound when nobody walked one |
+| 18 | every in-scope screen's `View ID` is present, kebab-case, mechanically equal to `<feature-slug>-<screen-name-kebab>`, and **unique across every in-scope spec** | a missing or duplicate id is exactly the guess a render tool was supposed to be spared from making — two screens sharing one id collide into one DOM element the moment both render |
+| 19 | every screen's `Screen Type` holds one of the four closed values (`design-screens.md` § View ID and Screen Type); a screen that is the **first** name in some `{nav_map_file}` row's `Points to` cell (tagged `(Landing)`) is `Primary` there and nowhere else; every **other** name in a `Points to` cell (tagged `(Drill-down)`) is `Drill-down` there; and no nav-map row exists for a screen typed `Wizard` or `Tab` | the nav map and the UX spec are two files written by two different stages that never read each other's write — the tag and the type are the same fact stated twice, and Stage 2 tagging a screen `(Landing)` while Stage 3 called it `Drill-down` (or the reverse) means a render tool reading only one of the two builds the wrong shell around it |
 
 **A `PP-###` row is the one to check hardest.** Every other item on the Coverage table is a step, a
 rule, or a field somebody eventually notices missing. A pain point is the thing everybody assumes
@@ -221,3 +223,14 @@ next:      human review of UX-### → then, when they want a prototype in front 
 - **Counting a `many` screen as compliant because it has a filter.** Check 15 wants the find
   mechanism *and* all five volume states, with the real number named in the `many` one. A filter
   over a list whose only rendered state is three sample rows is machinery over nothing.
+- **Slugifying a `View ID` at check time instead of reading the one already on the row.** The
+  inventory row is the one place it is minted (`3-screens.md` Part 2); re-deriving it here is how a
+  second slugifier eventually disagrees with the first, and check 18 exists to compare against the
+  row, not to regenerate a value it can then only agree with.
+- **Passing check 18 without actually comparing every in-scope spec's `View ID`s against each other.**
+  A collision between two features' screens is invisible reading one spec at a time — it only shows
+  up as two rows sharing a string.
+- **Passing check 19 by confirming the value is one of the four, without opening `{nav_map_file}`.**
+  A `Screen Type: Primary` row whose screen is actually the 2nd name in some entry's `Points to` cell
+  — tagged `(Drill-down)` there — is exactly the mismatch this check exists to catch, and it is
+  invisible from the UX spec alone.

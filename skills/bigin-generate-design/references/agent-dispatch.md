@@ -141,7 +141,7 @@ DESIGN BRIEF:        <a ux-brief-assembler report is attached below — start th
 
 READ FIRST:
 - _bigin/conventions/design-conventions.md — these sections ONLY: `design-core.md` § Paths, `design-core.md` § Write map,
-  `design-core.md` § The eight design hard rules, `design-screens.md` § The UX spec, `design-screens.md` § Screen spec, `design-grounding.md` § Grounding, `questions.md` § Open questions,
+  `design-core.md` § The eight design hard rules, `design-screens.md` § The UX spec, `design-screens.md` § Screen spec, `design-screens.md` § View ID and Screen Type, `design-grounding.md` § Grounding, `questions.md` § Open questions,
   `design-actor-scope.md` § Actor scope, `design-review.md` § The relationship model, `design-navigation.md` § The navigation map
 - _bigin/stages/design/3-screens.md — your stage guide, in full
 - 01-Requirements/_features/<slug>.md — the hub: ## Design Directives (Status: open), actors, and
@@ -180,13 +180,19 @@ THEN, one UC at a time, in the order listed:
    FIELDS are visible → still ONE screen, with a `Visible to` cell citing the BR-### that restricts
    it.
 2. Decide which of those screens gets a nav entry (Part 2b): only one the actor opens DIRECTLY from
-   a menu — never a detail, a wizard step, or a modal reached through another screen. Most features
-   contribute 0-2 entries, not one per screen. On MOBILE the shell is a TAB BAR of at most 5
-   top-level entries: a 6th top-level candidate is an Open Question on the nav map (owner: team),
-   never a silent 6th row. On BOTH, say where the feature lives on EACH shell — one line per shell,
-   because the two shells are two trees; an entry on one and not the other is normal and grounded,
-   never mirrored for symmetry.
-3. Write the screen spec (Part 3), starting with its `Actor` and `Scope` lines from the table
+   a menu — never a detail, a wizard step, or a modal reached through another screen. That screen's
+   Screen Type is `Primary`; every screen reached only through it (or through a screen already in
+   that chain) is `Drill-down`, `Wizard`, or `Tab` (`design-screens.md` § View ID and Screen Type).
+   REPORT the whole drill-down chain in `nav_candidates` below, in the order a user reaches them, so
+   the orchestrator writes ONE tagged `Points to` cell (`(Landing)` then `(Drill-down)`) instead of
+   re-deriving the order from your inventory. Most features contribute 0-2 entries, not one per
+   screen. On MOBILE the shell is a TAB BAR of at most 5 top-level entries: a 6th top-level candidate
+   is an Open Question on the nav map (owner: team), never a silent 6th row. On BOTH, say where the
+   feature lives on EACH shell — one line per shell, because the two shells are two trees; an entry
+   on one and not the other is normal and grounded, never mirrored for symmetry.
+3. Mint each screen's `View ID` — `"<slug>-<screen name, kebab-cased>"`, mechanical, never a
+   judgment call — and its `Screen Type` from step 2 (`design-screens.md` § View ID and Screen Type).
+   Then write the screen spec (Part 3), starting with its `Actor` and `Scope` lines from the table
    above: regions in YOUR PLATFORM'S vocabulary (web: header/nav/main/
    aside/footer · mobile: header/content/tab-bar/sheet/fab — a `nav` region on a phone screen or a
    `tab-bar` on a web one asks the tool to build a shell the platform does not have), elements, real
@@ -242,7 +248,8 @@ REPORT, as plain lines:
   platform:             web|mobile|both — source: dispatched (project config)
                         | override: <UC-### S<n> | hub directive #<n> | DESIGN-PRINCIPLES row #<n>>
   ux:                   UX-### created|updated — <N> screens (<N> new, <N> updated)
-  screens:              <screen> | actor: <role> | volume: one|few|many <(real number, when many)>
+  screens:              <screen> | view_id: <id> | screen_type: Primary|Drill-down|Wizard|Tab
+                        | actor: <role> | volume: one|few|many <(real number, when many)>
                         | serves: UC-### S<n>, S<n> | states: <N> (one line each)
   actor_scope:          <actor> | sees: own|assigned|unit|all | volume: one|few|many
                         | may: read one|act on one|act on many
@@ -261,7 +268,8 @@ REPORT, as plain lines:
                         | question raised   (one line each, or "none")
   nav_candidates:       <entry label> | shell: web|mobile (one line per shell on both — the two
                         shells are two trees) | parent: <existing id it nests under, or
-                        "new: <path>", or "top-level"> | points to: <screen> | role(s): <actor(s)>
+                        "new: <path>", or "top-level"> | points to: <candidate screen> (Landing)[,
+                        <chain screen> (Drill-down)]* | role(s): <actor(s)>
                         | grounded by: <UC-### S<n> | BR-### | pattern <name>>
                         | tab-bar cap: <"6th top-level candidate — Open Question, owner team",
                         when a mobile shell hits it>
@@ -348,6 +356,17 @@ per feature in the wave:
                             table, and its per-platform difference lives as a `Layout — Web` /
                             `Layout — Mobile` split INSIDE a ## 3 block. Two inventories is
                             blocking: the second goes stale the first time a UC changes
+12 view id + type        → every ## 2 row carries a `View ID` ("<slug>-<screen-name-kebab>", this
+                            feature's own slug prefix) and a `Screen Type` (Primary | Drill-down |
+                            Wizard | Tab). No two rows across this feature's whole inventory share a
+                            View ID. Every ## 3 block repeats both verbatim from its ## 2 row — it
+                            never re-derives either
+13 screen type sanity    → a row typed `Primary` is one this worker proposed as a nav candidate (or
+                            that already sits in the nav map); a row typed `Wizard` is one step of a
+                            linked sequence this worker also wrote a flow through; a row typed `Tab`
+                            names, in its own `Grounded by`, the UC step, BR, or pattern that put
+                            more than one parallel view on the same place — never assigned just to
+                            make the table look finished
 
 mismatch → BLOCKING. Dispatch one scoped repair worker, re-check that feature, then move on.
 ```

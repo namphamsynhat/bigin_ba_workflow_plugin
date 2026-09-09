@@ -1,9 +1,9 @@
 # Design Conventions — the UX spec and its screens
 
-What the `UX-###` file holds, what a screen spec is, and the semantic style roles that replaced
-design tokens.
+What the `UX-###` file holds, what a screen spec is, the semantic style roles that replaced design
+tokens, and the View ID / Screen Type each screen carries.
 
-**Read by** design stages 3 and 5.
+**Read by** design stages 2, 3, 5, and 6.
 
 ## Semantic style roles — what replaced tokens
 
@@ -72,11 +72,73 @@ next design run (`3-screens.md` § Adopting an existing UX spec).
 would silently invalidate every hub mirror, stage guide, and verification check that cites it by
 number — the section list is append-only for the same reason the navigation map is (D1).
 
+## View ID and Screen Type
+
+Two more facts about each screen, both written once in `## 2 Screen Inventory` and copied verbatim
+into the matching `## 3` screen spec — so a render tool reads them off the spec directly and never
+derives, slugifies, or guesses either one.
+
+### View ID
+
+A stable, kebab-case identifier, mechanically derived and never invented:
+
+```text
+view_id = "<feature slug>-<screen name, lower-cased, non-alphanumeric runs collapsed to one '-'>"
+
+e.g. feature "applications", screen "Application Review"   → applications-application-review
+     feature "settings-team", screen "Members"              → settings-team-members
+```
+
+The feature-slug prefix is what keeps it unique across the whole vault without a registry — two
+features can each legitimately have a "Detail" screen, and their `view_id`s never collide. It never
+changes once minted, the same discipline a nav-map `id` follows (D1's logic applied to a screen): a
+screen renamed on a later run keeps its `view_id`, because a render tool, a prior prototype's
+`data-screen` attribute (`bigin-render-design-od`'s `references/traceability.md`), and any prompt
+already written against it all cite the old one.
+
+### Screen Type
+
+One value from a closed list of four, read off how the screen is actually reached — never assigned
+to make the inventory table look complete:
+
+```text
+Primary      the screen a navigation-map entry opens DIRECTLY — the first name in some
+             `{nav_map_file}` row's `Points to` cell, tagged `(Landing)` there
+             (`design-navigation.md` § The navigation map). One per nav entry.
+Drill-down   reached ONLY via a control on a screen already in the inventory — a row click into a
+             detail, a "view" button, a confirmation step. Most Drill-down screens have no nav-map
+             row at all; a few are the 2nd+ name in an existing entry's `Points to` cell, tagged
+             `(Drill-down)` there. Either way, it never gets a menu item of its own.
+Wizard       one step of a linked, ordered sequence toward a single goal — the STEPPED SHEETS
+             `3-screens.md` Part 2 already produces on mobile for a long form, or an equivalent
+             multi-step web form. A Wizard screen cannot stand alone; it is meaningless without the
+             steps before it.
+Tab          one of several PARALLEL views of the SAME place, switched by an in-screen tab control,
+             never a menu — "Overview / Activity / Files" on one record. Grounded the same way any
+             screen boundary is (`design-grounding.md` § Grounding: a UC step, a BR, or an existing
+             pattern) — never invented to organize content that could just as well be one screen. A
+             screen with an ordinary tab strip that stays lightweight content-in-place is not split
+             into rows at all; only a tab complex enough to earn its own element table, states, and
+             flows becomes its own `Tab`-typed row.
+```
+
+A `(Landing)`-tagged name in the nav map and a `Screen Type: Primary` row in the owning spec are the
+SAME fact, written in two files by two different stages — Stage 2 tags the nav map, Stage 3 types the
+inventory row, and neither reads the other's write. `6-close.md` check 19 is what confirms they still
+agree; a mismatch there means one of the two stages is looking at a screen that has since moved.
+
+**Never invent a fifth type.** A screen that does not cleanly read as one of the four is a `## 6`
+question (owner: team) asking whether the list should grow — the same discipline § Semantic style
+roles applies to an eleventh role.
+
 ## Screen spec — semantic structure only
 
 One entry per screen in `## 3`:
 
 ```text
+view_id      copied verbatim from this screen's ## 2 row (§ View ID and Screen Type) — never
+             re-derived here, and never changed once minted
+screen_type  copied verbatim from this screen's ## 2 row — Primary | Drill-down | Wizard | Tab
 purpose      one line: what the user achieves here
 serves       UC-<NNN> S<n>, S<n> …   the steps this screen delivers
 actor        the ONE role this screen is for (`design-actor-scope.md` § Actor scope). Two actors whose volume band or

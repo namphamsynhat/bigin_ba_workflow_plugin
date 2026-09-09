@@ -117,22 +117,31 @@ each. "Single menu entry, multiple views" is what a `Points to` cell holding mor
 name *is*: one row, one entry, and everything the row's cell lists beyond the first screen is a view
 that entry's own screens open into, never a second door.
 
-**A `Points to` cell listing several screens has an order, and the order carries meaning.** The
-**first** screen named is the one the entry itself opens — the list, the landing screen, the thing a
-user sees the moment they click the menu item. **Every screen after it** is reached only by a
-control on a screen already in that same list (a row click into a detail, a tab, a wizard step) —
-never a second entry, and never, when this map is handed to a render tool, a second persistent link
-sitting beside the first in a sidebar or menu.
+**A `Points to` cell listing several screens has an order, and the order is written as an explicit
+tag, never left implicit.** The **first** screen named always carries `(Landing)` — the thing a user
+sees the moment they click the menu item. **Every screen after it** carries `(Drill-down)` — reached
+only by a control on a screen already in that same list (a row click into a detail, a tab, a wizard
+step) — never a second entry, and never, when this map is handed to a render tool, a second
+persistent link sitting beside the first in a sidebar or menu. A single-screen cell still carries its
+tag: `Team Members (Landing)`, never a bare name.
 
 ```text
-Points to: Applications Queue, Application Review
-           ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^
-           the entry opens      reached by clicking a row in Applications Queue — NOT a
-           this directly        second sidebar link. Two links here is the failure this
-                                 note exists to name: a client sees "Applications Queue" AND
-                                 "Application Review" as siblings in the menu, when only the
-                                 first was ever meant to be one.
+Points to: Applications Queue (Landing), Application Review (Drill-down)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           the entry opens              reached by clicking a row in Applications Queue — NOT a
+           this directly                second sidebar link. Two links here is the failure this
+                                         note exists to name: a client sees "Applications Queue" AND
+                                         "Application Review" as siblings in the menu, when only the
+                                         first was ever meant to be one.
 ```
+
+**The tag is what lets a render tool read the cell mechanically**, without also having to parse
+position: a tool that only checks for the string `(Landing)` never needs a second rule saying "and
+it's always the first one." The same fact is carried on the screen's own side, in its UX spec's
+`## 2 Screen Inventory` — a `(Landing)`-tagged name here is always `Screen Type: Primary` there, and
+a `(Drill-down)`-tagged name here is always `Screen Type: Drill-down` there
+(`design-screens.md` § View ID and Screen Type). The two are written by different stages from
+different files, so they are cross-checked rather than treated as one fact — `6-close.md` check 19.
 
 Every entry is **grounded** the same way any other design decision is (`design-grounding.md` § Grounding below): a role
 split traces to a `BR-###` or a UC's actors, a nesting decision traces to a stated preference, an

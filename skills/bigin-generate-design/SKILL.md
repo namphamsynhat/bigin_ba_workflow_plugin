@@ -176,6 +176,26 @@ whichever brand, palette, or component library gets bound later — which is exa
 where a token name would not. Exactly one `primary action` per screen; a screen needing an eleventh
 role raises a question rather than inventing one nothing else in the vault can map.
 
+## Screen identity — View ID and Screen Type
+
+Two more facts every `## 2 Screen Inventory` row carries, so a render tool never has to guess a DOM
+id or infer how a screen is reached from prose:
+
+```text
+View ID       "<feature slug>-<screen name, kebab-cased>" — mechanical, unique vault-wide, never
+              re-derived and never changed once minted (`design-screens.md` § View ID and Screen
+              Type)
+Screen Type   Primary | Drill-down | Wizard | Tab — Primary is a screen a navigation-map entry
+              opens directly; Drill-down is reached only via a control on a screen already in the
+              inventory; Wizard is one step of a linked sequence; Tab is one of several parallel
+              views of the same place
+```
+
+`{nav_map_file}`'s own `Points to` cell carries the matching half of this fact: the first screen
+named is always tagged `(Landing)`, every screen after it `(Drill-down)` — so a render tool reads
+which name is the door without inferring it from position. The two are written by different stages
+in different files and are cross-checked, never merged into one write (`6-close.md` checks 18-19).
+
 ## Operating modes
 
 | Mode | Behaviour |
@@ -485,11 +505,13 @@ run**, re-stamped whole. Set each status from a live count of unchecked question
 every hub named in `features:`, naming each `PP-###` a flow now resolves — **and never filling that
 row's `Resolved by` cell**, which is the requirement side's.
 
-Then `6-close.md` Part 5's verification checks — **seventeen** today, every one blocking on mismatch.
+Then `6-close.md` Part 5's verification checks — **nineteen** today, every one blocking on mismatch.
 Check 3 is the role list; check 4 bans a raw value *and* a `--token` id; check 7 is that no
 `## Prototype Prompt` heading survives in a spec this run touched; check 17 is Stage 5's coverage
 table **and** Stage 4's flow-review table together, including that an empty flow-review table fails
-either way.
+either way; checks 18-19 are each screen's `View ID` (present, mechanical, unique vault-wide) and
+`Screen Type` (from the closed list, and in agreement with whichever `(Landing)`/`(Drill-down)` tag
+names it in `{nav_map_file}`, when one does).
 
 ```text
 mode · platform (+ any per-feature override) · method layer

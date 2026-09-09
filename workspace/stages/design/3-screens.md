@@ -13,7 +13,7 @@ never: an invented screen · a raw colour/size/token id · an invented nav entry
          export, or saved view the requirements did not grant (D8)
 ```
 
-Read `design-screens.md` § The UX spec, `design-screens.md` § Screen spec, `design-screens.md` § Semantic style roles, `design-grounding.md` § Grounding,
+Read `design-screens.md` § The UX spec, `design-screens.md` § Screen spec, `design-screens.md` § Semantic style roles, `design-screens.md` § View ID and Screen Type, `design-grounding.md` § Grounding,
 `questions.md` § Open questions, `design-actor-scope.md` § Actor scope, `design-navigation.md` § User flows and pain points, `design-review.md` § The relationship model,
 `design-navigation.md` § The navigation map, and `design-platform.md` § Platform first.
 
@@ -130,7 +130,8 @@ carries less, so a run of consecutive steps that is one web page is often severa
 one primary action per screen        two equal-weight actions on one phone screen → two screens,
                                      or one action plus a clearly secondary control
 a long form                          → STEPPED SHEETS, one field group per step, named in order.
-                                     Never one tall scrolling screen.
+                                     Never one tall scrolling screen. Each sheet is its own
+                                     inventory row, `Screen Type: Wizard`.
 a table- or list-heavy screen        → a list or card feed, one record per row/card, the detail
                                      behind a tap
 a side-by-side layout (list+detail)  → two screens: the list, then the detail
@@ -158,12 +159,31 @@ The mobile rules divide work a step already states across more surfaces — they
 surface no step asked for: if you cannot name the step a phone screen delivers, it is invented, and
 a phone is not an excuse.
 
+Mint each row's `View ID` and `Screen Type` before Part 3 reads them
+(`design-screens.md` § View ID and Screen Type):
+
+```text
+View ID       "<feature slug>-<screen name, kebab-cased>" — mechanical, never a judgment call.
+              Minted once; a screen renamed on a later run KEEPS its View ID (append-only in
+              effect — a prior render's data-screen attribute, and any prompt already written
+              against it, cite the old one).
+Screen Type   Primary      — this screen is what a menu entry opens DIRECTLY (Part 2b's own test
+                             decides which). Stage 2 Part B is what actually tags the nav-map row
+                             `(Landing)`; Stage 6 check 19 confirms the two agree.
+              Drill-down   — reached only via a control on a screen already in the inventory
+              Wizard       — one step of a linked, ordered sequence (the mobile stepped-sheets
+                             rule above produces these; an equivalent web multi-step form does too)
+              Tab          — one of several parallel views of the same place, switched in-screen
+              never a fifth value — a screen that does not cleanly read as one of the four is a
+              § 6 question, not a guess
+```
+
 Write the result into `## 2 Screen Inventory`:
 
 ```text
-| Screen | Actor | Volume | Purpose | Serves | Entities | Key actions |
-            ^ ONE role      ^ one|few|many   ^ UC-### S4, S5   ^ EN-###   ^ the real buttons
-              (Part 2a)       (Part 2a)
+| Screen | View ID | Screen Type | Actor | Volume | Purpose | Serves | Entities | Key actions |
+            ^ mechanical  ^ Primary|Drill-down    ^ ONE role  ^ one|few|many ^ UC-### S4, S5 ^ EN-###  ^ real buttons
+                            |Wizard|Tab             (Part 2a)  (Part 2a)
 ```
 
 `Actor` and `Volume` come from `## 1`'s Actor & Scope table, and they are what make the split
@@ -311,8 +331,11 @@ from one that is. Read `design-navigation.md` § The navigation map before this 
 ```text
 per screen in the inventory:
     is it reached ONLY via another screen's control (a detail from a list, a step in a wizard,
-    a modal, a confirmation)?                                          → NO entry
-    is it something the actor opens directly, on its own, from a menu?  → nav candidate
+    a modal, a confirmation)?                                          → NO entry.
+                                                                        Screen Type: Drill-down,
+                                                                        Wizard, or Tab (§ 2a)
+    is it something the actor opens directly, on its own, from a menu?  → nav candidate.
+                                                                        Screen Type: Primary
 
     for each nav candidate, where does it sit in the tree that already exists?
         joins an existing branch, at whatever depth it lives          → cite that branch (e.g.
@@ -326,6 +349,14 @@ per screen in the inventory:
         which roles see it                                            → the UC's § 1 actors, or a
                                                                           BR — never guessed
 ```
+
+**Report each nav candidate's own drill-down chain, when it has one.** Walk this feature's inventory
+from the candidate screen outward: every screen reached only by a control on the candidate itself, or
+on a screen already in the chain, in the order a user actually reaches them. Stage 2 Part B writes
+that whole chain into ONE `Points to` cell — the candidate first, tagged `(Landing)`, then the chain
+in order, each tagged `(Drill-down)` — and it never mints a second row for a chain screen. Reporting
+the chain here is what lets Stage 2 write the tagged cell without re-deriving the order from this
+feature's inventory itself.
 
 Nesting depth is itself a grounded decision, not a default. "Settings → Team → Members" is right
 when the UC actually reads as a sub-area of Team; forcing three levels because it looks tidier is an
@@ -360,6 +391,8 @@ call, not a default this stage may pick.
 ## Part 3 — One screen spec per screen (`## 3`)
 
 ```text
+view_id       copied from ## 2's row for this screen, verbatim — never re-derived here
+screen_type   copied from ## 2's row for this screen, verbatim — never re-derived here
 purpose       one line
 serves        UC-### S<n> …            every S# must exist and not be removed
 actor         the ONE role this screen is for, from ## 1's Actor & Scope table (Part 2a). Two
@@ -723,7 +756,8 @@ feature:            <slug>
 platform:           web|mobile|both — source: dispatched (project config)
                     | override: <UC-### S<n> | hub directive #<n> | DESIGN-PRINCIPLES row #<n>>
 ux:                 UX-### created|updated  — <N> screens (<N> new, <N> updated)
-screens:            <screen> serves UC-### S<n>, S<n>  (one line each)
+screens:            <screen> | view_id: <id> | screen_type: Primary|Drill-down|Wizard|Tab
+                    serves UC-### S<n>, S<n>  (one line each)
                     actor: <role> | volume: one|few|many <(the real number, when many)>
                     regions: <the platform's vocabulary, as specced>
                     on both, add: layout split web|mobile|none — <what differs, in a phrase>
@@ -743,7 +777,8 @@ role_gaps:          <what needed a role the list does not carry> | on: <screen> 
                     (one line each, or "none")
 nav_candidates:     <entry label> | shell: web|mobile (one line per shell on both)
                     | parent: <existing id it nests under, or "new: <path>", or "top-level">
-                    | points to: <screen> | role(s): <actor(s)>
+                    | points to: <candidate screen> (Landing)[, <chain screen> (Drill-down)]*
+                    | role(s): <actor(s)>
                     | grounded by: <UC-### S<n> | BR-### | pattern <name>>
                     | tab-bar cap: <"6th top-level candidate — Open Question, owner team", when hit>
 directives_reflected: hub row #<n> → <screen>  (one line each — only rows a screen really implements)
@@ -851,6 +886,17 @@ Report what you designed; do not report coverage you did not write down.
   the same capability, differing only in which fields they see, are ONE screen with a `Visible to`
   cell. Two near-identical specs drift the first time a shared element changes.
 - **Stamping `absorbed:` yourself.** Stage 6 stamps it, after verifying the screens exist.
+- **Slugifying a `View ID` some other way than the mechanical rule**, or minting one that collides
+  with another screen's. The whole point of writing it down here is that a render tool never has to
+  derive it a second time — a second slugifier eventually disagrees with the first.
+- **Changing a screen's `View ID` when the screen itself is renamed.** Every place that already cites
+  the old id — a prior render's `data-screen` attribute, a prompt already written — silently stops
+  resolving.
+- **Assigning `Screen Type: Primary` to a screen that never became a nav candidate**, or the reverse.
+  The type is read off Part 2b's own test, not assigned to make the table look tidy — and Stage 6
+  check 19 catches the mismatch against the nav map either way.
+- **Giving a `Wizard` step, or a `Tab` view, its own nav-map entry.** Part 2b's test is unchanged by
+  Screen Type: reached only through another screen means no entry, whatever the type.
 
 ## Adopting an existing UX spec
 
@@ -935,6 +981,23 @@ on an existing screen                grants it: granted → cite the ground and 
 That last row is the one that matters: a capability already sitting in a spec has probably already
 been prototyped, so removing it silently loses the fact that somebody was shown it. Raise it, let
 `/bigin-transform-signal` settle whether it was ever meant to exist.
+
+`## 2`'s `View ID` and `Screen Type` columns arrived the same way, and self-heal the same way:
+
+```text
+existing ## 2 rows, no View ID / Screen Type columns   → add both this run, for EVERY row including
+                                                          ones this run did not otherwise touch: mint
+                                                          each View ID mechanically (§ View ID and
+                                                          Screen Type), and classify each Screen Type
+                                                          by re-reading how it is actually reached
+                                                          TODAY — its own nav-map row and tag, or the
+                                                          absence of one. Never a placeholder on
+                                                          either column.
+a screen {nav_map_file} already tags (Landing) or       → its Screen Type is fixed by that tag:
+(Drill-down)                                              Primary for (Landing), Drill-down for
+                                                          (Drill-down). Wizard and Tab apply only to
+                                                          a screen the nav map does not name at all.
+```
 
 Every spec self-heals on the next design run of its feature. A spec whose feature is never redesigned
 keeps working — nothing downstream requires `## 7`, a `Platform` value, an Actor & Scope table, a

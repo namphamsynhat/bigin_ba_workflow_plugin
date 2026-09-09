@@ -52,6 +52,10 @@ column is needed. A row whose only job is to hold children (a section header wit
 own, e.g. "settings") leaves `Points to` as "—". Order is sibling order under the same parent path,
 not a global rank.
 
+Every screen named in `Points to` carries an explicit `(Landing)` or `(Drill-down)` tag — see the
+rule just below the table. A render tool then reads the cell mechanically instead of inferring which
+name is the door from its position alone.
+
 On `platform: both`, rename this heading `## Structure — Web`. On `platform: mobile`, this section
 IS the phone shell — the five-tab cap below applies to it. -->
 
@@ -60,21 +64,33 @@ IS the phone shell — the five-tab cap below applies to it. -->
 
 ```text
 example, three levels — Order resets per parent, it is not a global rank:
-  id                      Label     Points to  Role    Grounded by  Order (among its siblings)
-  settings                Settings  —          everyone  pattern <shell>   1st under root
-  settings.team           Team      UX-014     admin     BR-009            1st under settings
-  settings.billing        Billing   UX-020     admin     UC-040 S1         2nd under settings
-  settings.team.members   Members   UX-015     admin     UC-031 S2         1st under settings.team
+  id                     Label    Points to                                              Role     Grounded by  Order
+  settings               Settings —                                                       everyone pattern <shell> 1st under root
+  settings.team          Team     Team Members (Landing), Team Member Detail (Drill-down) admin    BR-009       1st under settings
+  settings.billing       Billing  Billing (Landing)                                        admin    UC-040 S1    2nd under settings
+  settings.team.members  Members  Members (Landing)                                        admin    UC-031 S2    1st under settings.team
 ```
 
 **A `Points to` cell may list several screens — that is master-detail / drill-down, one entry
-covering both.** The **first** screen named is what the entry opens directly; every screen after it
-is reached only by a control on a screen already in the list (a row click into a detail, a tab, a
-wizard step) — never a second row here, and never, downstream, a second persistent link beside the
-first. `Applications Queue, Application Review` means the entry opens the queue; a user reaches
-Application Review by clicking a row in it. Anyone consuming this file — a render tool included —
-reads a multi-screen cell the same way: first item is the door, the rest are rooms behind it
-(`design-navigation.md` § The navigation map).
+covering both.** Every screen named carries an explicit tag, so a render tool reads the cell without
+guessing which name is the door:
+
+```text
+Points to: <Screen> (Landing)[, <Screen> (Drill-down)]*
+```
+
+The **first** screen named is always `(Landing)` — what the entry opens directly. Every screen after
+it is `(Drill-down)` — reached only by a control on a screen already in the list (a row click into a
+detail, a tab, a wizard step) — never a second row here, and never, downstream, a second persistent
+link beside the first. A single-screen cell still carries its tag — `Team Members (Landing)`, never
+a bare name: a render tool should never have to special-case "no tag present means Landing."
+
+`Applications Queue (Landing), Application Review (Drill-down)` means the entry opens the queue; a
+user reaches Application Review by clicking a row in it. This is the same fact each screen's own UX
+spec carries in its `## 2 Screen Inventory` `Screen Type` cell (`design-screens.md` § View ID and
+Screen Type) — `(Landing)` here always pairs with `Screen Type: Primary` there, and `(Drill-down)`
+here always pairs with `Screen Type: Drill-down` there. The two are written in different files, by
+different stages, so they are cross-checked rather than merged into one fact — Stage 6 check 19.
 
 **Every `id` is unique within its own `## Structure` section.** On `web` or `mobile` there is one
 section, so that is vault-wide. On `both` the two shells are two trees, not one tree rendered twice:
@@ -102,8 +118,9 @@ sixth row.**
 ## Structure — Mobile
 <!-- ONLY on `platform: both` — delete this whole section on `web` (there is no phone shell) and on
 `mobile` (the single ## Structure above already IS the phone shell). Same columns, same dot-path id
-rules, same append-only discipline as the section above; the same feature set, mapped onto the tab
-bar. At most 5 top-level entries (§ the five-tab cap above).
+rules, same append-only discipline, and the same `(Landing)`/`(Drill-down)` tagging as the section
+above; the same feature set, mapped onto the tab bar. At most 5 top-level entries (§ the five-tab cap
+above).
 
 An entry that exists on one shell and not the other is NORMAL and expected — a web sidebar can carry
 an admin area a phone app never surfaces. Say so in that row's `Grounded by` rather than mirroring it

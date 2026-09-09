@@ -10,7 +10,7 @@ never: deleting a nav entry · renaming one · rewriting the file from scratch
        · a token, a colour, a type scale, or a component — none of those exist in this pipeline
 ```
 
-Read `design-navigation.md` § The navigation map, `design-navigation.md` § User flows and pain points, and `design-platform.md` § Platform first.
+Read `design-navigation.md` § The navigation map, `design-navigation.md` § User flows and pain points, `design-screens.md` § View ID and Screen Type, and `design-platform.md` § Platform first.
 
 **The platform arrives as an instruction, not a lookup.** Stage 1 read `platform:` once and passed
 it here; this stage never opens `_bigin/system/project.md` to check. It decides one thing below —
@@ -160,6 +160,11 @@ per reported nav candidate:
 
 **A feature normally contributes 0–2 entries**, not one per screen. Zero is common and correct.
 
+Each nav candidate a worker reports may carry its own **drill-down chain** — every screen in that
+feature's inventory reached only through the candidate (or through a screen already in the chain), in
+the order a user reaches them (`3-screens.md` Part 2b). That chain is what fills the rest of the
+row's `Points to` cell in B3 below — it never becomes a second row.
+
 ### B3. Mint the id, and place the row
 
 Where it nests, not just whether it exists:
@@ -176,6 +181,20 @@ A role split on the entry (who sees it) goes in that row's `Role(s)` cell, citin
 the UC's actors — never invented to "look complete". A `PP-###` that argued for the placement goes in
 `Grounded by` beside whatever grounded the entry's existence — a pain point never grounds the entry
 by itself (A2).
+
+**Write `Points to` as a tagged list, never a bare name.** The candidate itself is always the first
+name, tagged `(Landing)`; every screen in its reported drill-down chain (B2) follows, in the order
+reported, each tagged `(Drill-down)`:
+
+```text
+Points to: <candidate screen> (Landing)[, <chain screen> (Drill-down)]*
+```
+
+A single-screen entry still carries its tag — `Team Members (Landing)`, never a bare name. This is
+the same fact the screen's own UX spec carries in its `## 2` `Screen Type` cell: `(Landing)` here is
+always `Screen Type: Primary` there, and every `(Drill-down)` name here is always `Screen Type:
+Drill-down` there (`design-screens.md` § View ID and Screen Type). Confirm it now, while both files
+are in hand — a mismatch caught here is cheaper than one `6-close.md` check 19 finds later.
 
 **Which `## Structure` the row goes in** — asked before the `id`, on `both`:
 
@@ -294,6 +313,12 @@ not go on a UX spec or a hub — and it never becomes a silent edit.
 - **Looking for a design system to seed.** There is none. A run that reports `bootstrap` because
   `_design-system/` is missing has keyed its mode on a folder this plugin stopped producing, and
   every later stage inherits the wrong mode.
+- **Writing a bare screen name into `Points to`, with no `(Landing)`/`(Drill-down)` tag.** A render
+  tool then has to fall back to inferring the door from position, which is exactly the guess this
+  tagging exists to remove.
+- **Tagging a screen `(Drill-down)` here while its UX spec still says `Screen Type: Primary`, or the
+  reverse.** The two files are written by two different stages that never read each other's write —
+  catch the mismatch here, while both are open, rather than leaving it for `6-close.md` check 19.
 
 ## Adopting an existing navigation map
 

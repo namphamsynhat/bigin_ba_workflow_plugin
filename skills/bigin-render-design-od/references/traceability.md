@@ -31,6 +31,11 @@ content: property, and not in a comment that renders. Visible copy is the human 
 nothing else.
 ```
 
+`data-screen`'s value is that screen's `View ID`, copied VERBATIM from its UX spec's `## 2 Screen
+Inventory` row (or its `## 3` block, which repeats it) — never slugified from the screen's display
+name at render time. `/bigin-generate-design` mints it once, mechanically
+(`design-screens.md` § View ID and Screen Type), specifically so this step never has to invent one.
+
 ## § The gate
 
 ```bash

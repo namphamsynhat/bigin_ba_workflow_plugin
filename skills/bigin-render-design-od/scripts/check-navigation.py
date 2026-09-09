@@ -3,9 +3,11 @@
 
 A navigation-map.md `## Structure` row's `Points to` cell can name several screens — that is
 master-detail / drill-down, one menu entry covering both (`design-navigation.md` § The navigation
-map). The FIRST screen named is the entry's direct destination; every screen after it is a
-drill-down-only destination, reached only through a control on a screen already in that list, and
-must never get a persistent nav link of its own.
+map). Each name carries an explicit `(Landing)` / `(Drill-down)` tag; the FIRST screen named is
+always `(Landing)` — the entry's direct destination — and every screen after it is `(Drill-down)`, a
+destination reached only through a control on a screen already in that list, and must never get a
+persistent nav link of its own. A cell written before the tagging convention existed (a bare,
+untagged name) is read the same way, by position.
 
 This is a HEURISTIC, not a hard gate (`references/navigation-contract.md` § The gate): rendered HTML
 shapes vary too much between Open Design runs for a certain parse. It flags a drill-down-only
@@ -31,6 +33,13 @@ from pathlib import Path
 
 TABLE_ROW_RE = re.compile(r"^\s*\|(.+)\|\s*$")
 SEP_ROW_RE = re.compile(r"^\s*\|[\s:|-]+\|\s*$")
+TAG_RE = re.compile(r"\s*\((?:Landing|Drill-down)\)\s*$", re.IGNORECASE)
+
+
+def strip_tag(screen_name: str) -> str:
+    """Drops a trailing `(Landing)`/`(Drill-down)` tag, leaving the bare screen name to match
+    against rendered output. A cell with no tag (pre-dating the convention) passes through unchanged."""
+    return TAG_RE.sub("", screen_name).strip()
 
 SCAN_SUFFIXES = {".html", ".htm", ".jsx", ".tsx", ".vue", ".svelte", ".js"}
 
@@ -78,7 +87,7 @@ def parse_nav_map(path: Path):
         points_to = cells[3]
         if points_to in ("", "—", "-"):
             continue
-        screens = [s.strip() for s in points_to.split(",") if s.strip()]
+        screens = [strip_tag(s.strip()) for s in points_to.split(",") if s.strip()]
         if len(screens) > 1:
             drilldown_only.update(screens[1:])
 

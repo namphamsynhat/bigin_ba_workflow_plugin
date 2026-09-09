@@ -36,7 +36,9 @@ UX spec exists                → fill § 9 from it, and record UX-###@version f
 
 **What never crosses from the design side into this document** (`{design_conventions}` D2, and P1
 here): a semantic role (`primary action`, `danger`), a hex value, a px value, a font, a component
-name, a region layout, an interaction table. A business reader cannot verify any of it.
+name, a region layout, an interaction table, a screen's `View ID`, or its `Screen Type`
+(`design-screens.md` § View ID and Screen Type). A business reader cannot verify any of it — those
+last two exist for a render tool, not a stakeholder reading a PRD.
 
 **And there is nothing else to cross.** The UX spec carries no design system, no palette, and no
 tokens — `/bigin-generate-design` produces none, and the visual system is bound at render time. So a
