@@ -31,7 +31,7 @@ about *what the system does* is here; a rule about *how a user gets there* is th
 | `/bigin-transform-signal` | `core.md` · `use-case.md` · `feature-hub.md` · `questions.md` |
 | `/bigin-generate-design` | `core.md` + the `design-*.md` files its stage row names |
 | `/bigin-generate-prd` | `core.md` · `feature-hub.md` § Feature material · `use-case.md` § Traceability chain · `questions.md` |
-| `/enrich-feature`, `hub-bookkeeper` | `core.md` · `feature-hub.md` |
+| `/enrich-feature`, `bin/bigin hub refresh` | `core.md` · `feature-hub.md` |
 | `/sync-entities` | `core.md` · `registers.md` |
 | `/approve-uc`, `/restructure-uc` | `core.md` · `use-case.md` |
 | `/bigin-run`, `bigin-ba` | `runtime.md` § Reconciliation notes — for migration status, nothing else |

@@ -23,9 +23,11 @@ else. Two things to expect from one, though — Gate 1 will not fail it (the que
 the one that just got answered), and Stage 3 must draft it **from the decision recorded in its Notes**,
 not from the original signal text (`3-lane-uc.md` § Conflict).
 
-Each gate has exactly one outcome per case — write that outcome, never improvise a new one. A failed
-row is **parked, not deleted**; the next run re-checks it, which is why `held` rows are always
-re-collected.
+Each gate has exactly one outcome per case — write that outcome, never improvise a new one. **Every
+outcome is written by the engine:** `"${CLAUDE_PLUGIN_ROOT}/bin/bigin" hub flip <slug> <n>=<status>[:<dest>][@<note>]`
+— never by editing the Signal Log. A failed row is **parked, not deleted**; the next run re-checks it,
+which is why `held` rows are always re-collected. Hand the qualified rows (and only those) to Stage 3 as
+`bigin worklist route <slug> --rows <n,n,…>`.
 
 ## Gate 1 — Blocked on an answer
 
@@ -57,7 +59,7 @@ reason would change what gets built, and records that decision as a `Notes` mark
 |---|---|
 | `rationale: in question`, its question unchecked | `held` — the FAIL above |
 | `rationale: in question`, its question now checked | **passes**: Stage 3 drafts from the answer |
-| `rationale: non-blocking` | **passes.** Stage 3 carries the gap into the staged entry |
+| `rationale: non-blocking` | **passes.** Stage 3 carries the gap into the change set's text or a question |
 | no marker at all | **passes**, same as non-blocking, and is **named in the report** as a filing gap |
 
 **Never park a row for a missing marker.** An unmarked row was filed before this rule or filing
@@ -65,7 +67,7 @@ skipped the call — a bookkeeping gap, not a requirement defect. Parking it str
 content behind a remedy that cannot clear it: filing declines to raise a question it already
 decided against, and a note at `status: in-review` is not re-queued at all
 (`/extract-signal` Stage 1), so the row would fail every future run forever. The reviewer sees the
-missing rationale on the staged entry, at the gate that already exists for exactly this.
+missing rationale in the change set's Changelog trace and on the UC itself, at `/approve-uc`.
 
 ## Gate 2 — Source materialized
 
@@ -121,7 +123,7 @@ directions.
 |---|---|
 | a cited clause is stale | **Repair that clause from the note** (the note is the source of truth), keep the row `#` and its other clauses, `Notes: refreshed from <INT-###>`, **continue to Gate 4** — a repair, not a block. **Never un-merge a themed row** — that renumbers history and breaks every `#` cited elsewhere. |
 | cite missing/unspecific, and the signal would create **new** UC/BR content | `Status: held`, `Notes: unverifiable source cite — re-run /extract-signal verification`. Report it. |
-| cite weak, but the signal only adds context to an existing UC | continue; note the weak cite in the UC's `## Discussion` entry |
+| cite weak, but the signal only adds context to an existing UC | continue; note the weak cite in the row's Notes (`hub flip … @weak cite`) |
 
 Hold the strict version **only** for signals about to mint new requirement content. Blanket
 re-verification would re-litigate verified work and make an unattended run scale with the whole
@@ -165,15 +167,15 @@ Three cases, three outcomes. Only one touches an existing row; none delete anyth
 
 A themed hub row carries one clause per note row it cites, and its `Type` says so (`requirement +
 constraint`). **Qualify and carry forward every clause**, the way `3-routing.md` routes per clause: a
-row that passes the gates on its dominant clause and drops the rest is a row that reads `staged` while
+row that passes the gates on its dominant clause and drops the rest is a row that reads `applied` while
 half of what the client said never became anything. When one clause fails a gate and another passes,
-the row is `held` with `Notes` naming **which clause** blocked it — never `staged` on the strength of the
+the row is `held` with `Notes` naming **which clause** blocked it — never routed on the strength of the
 half that was fine.
 
 ## Status values this stage may write
 
 `held` · `applied` · `superseded` · `conflict` — plus leaving a row at `new` when it passes all four
-gates (Stage 3 sets `staged`).
+gates (`bigin apply` later sets `applied`, or `staged` while a gated or drifted change waits).
 
 `removed` and `duplicated` are **not** Signal Log values: `removed` belongs to the UC/BR vocabulary and
 is human-gated only; `duplicated` doesn't exist anywhere in the vault. A row whose feature is

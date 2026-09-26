@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigin/signals/1",
+  "title": "signal-extractor output: the rows of one note's ## Extracted signals",
+  "type": "object",
+  "required": [
+    "kind",
+    "int",
+    "rows"
+  ],
+  "properties": {
+    "$schema_version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "signals"
+    },
+    "int": {
+      "type": "string",
+      "pattern": "^INT-\\d+$"
+    },
+    "mode": {
+      "enum": [
+        "fresh",
+        "append",
+        "repair"
+      ],
+      "description": "fresh: table empty; append: new rows after the last #; repair: edits to existing rows by #"
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "signal",
+          "source"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "n": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "row # — required for repair, ignored for fresh/append (the engine numbers)"
+          },
+          "type": {
+            "enum": [
+              "requirement",
+              "constraint",
+              "decision",
+              "feedback",
+              "question",
+              "answer",
+              "concern",
+              "problem",
+              "pain-point",
+              "commitment"
+            ]
+          },
+          "signal": {
+            "type": "string",
+            "minLength": 1
+          },
+          "why": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "self_audit": {
+      "type": "object",
+      "properties": {
+        "not_stated_rate": {
+          "type": "number"
+        },
+        "inversions": {
+          "type": "integer"
+        },
+        "contradictions": {
+          "type": "integer"
+        },
+        "audit_owed": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

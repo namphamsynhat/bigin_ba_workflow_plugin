@@ -38,10 +38,17 @@ human reviews this UC's flow with the rest of its neighborhood in view, not in i
   Re-count `## 5` **Still open** before anything else — a UC with any unresolved `- [ ] Q:` line is
   `needs-clarification`, not approvable, no matter what `status` currently reads
   (`questions.md` § Open Questions ↔ status consistency).
+* **Never approve over a pending change set:** since v1.10.0 a change waiting on a question lives in the
+  ledger (`01-Requirements/_ledger/<slug>.jsonl`), rendered read-only into the UC's `## Pending changes`
+  block. Any `open` or `needs-judgement` ledger entry targeting this UC blocks approval — the approved text
+  would not be the text that lands once the question is answered. Check with
+  `"${CLAUDE_PLUGIN_ROOT}/bin/bigin" --json ledger list` (filter `artifact == UC-###`); the block on the
+  file is the human-readable mirror of the same thing.
 * **Never fold flow drift into the summary silently:** `## 2`/`## 3` are the two sections
-  `/bigin-transform-signal` writes directly, with no human wait (4-sync.md § Part 2) — a UC can reach
+  `/bigin-transform-signal` writes without a human wait (`bigin apply`, 4-sync.md § Part 2) — a UC can reach
   this skill with its flow changed since a human last looked, marked only by a `## Changelog` line
-  ending "flagged for ... review" or "reverts from approved, main flow changed". Surface every one of
+  ending "§ 2 changed — flagged for review" (v1.10.0+, `bigin apply`), or the older "flagged for ... review" /
+  "reverts from approved, main flow changed". Surface every one of
   those lines since this UC's last approval on its own, before anything else in the summary — that flag
   exists so the human gets a chance to catch a wrong flow, and a summary that buries it defeats the
   point.
@@ -79,6 +86,19 @@ guess which file was meant.
 With no id given, list every UC not already `approved`/`consolidated`/`removed` as candidates (grouped
 by feature) and ask which one.
 
+## Engine commands this skill uses
+
+`$BIGIN` = `"${CLAUDE_PLUGIN_ROOT}/bin/bigin"`, run from the vault root. Each is deterministic and
+idempotent; none of them approves anything.
+
+| Step | Command | What it tells / does |
+| :--- | :--- | :--- |
+| pending changes | `$BIGIN --json ledger list` | open / needs-judgement change sets per artifact — any for this UC blocks approval |
+| compact read | `$BIGIN --json context UC-### --sections 1,2,3,5` | steps/flows with ids, open questions, § 4 rows — instead of re-reading the whole file |
+| § 4 mirror | `$BIGIN mirror br UC-###` | refreshes § 4 statements from each BR's current rule, reports bad enforcement points; never invents a rule, never swaps one rule for another |
+| status | `$BIGIN status UC-###` | re-derives draft ↔ needs-clarification from the live open-question count |
+| boundary | `$BIGIN lint --full` | the blocking invariant gate, once, after the approval write |
+
 ## Input
 
 Read `01-Requirements/_ucs/UC-<NNN> <Title>.md` for the id in `$ARGUMENTS` — the only file this skill
@@ -101,20 +121,30 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
        * **Separate "unanswered" from "answered but not folded in".** A line whose `A:` already
          carries an answer is not waiting on the human — it is waiting on a fold-in, because a
          reviewing BA is expected to type answers straight into the file (`questions.md` § Answering a question) and
-         the content only changes when `/bigin-transform-signal` Stage 1 harvests them. Still stop,
-         but say which it is: name the answered-not-applied lines and point at "process UC-###" (the
-         `bigin-ba` agent's process-the-UC pass, or `/bigin-run`) rather than reporting them back as
-         questions the human still owes an answer to. Never fold the answer in from here, and never
-         tick the box to clear the count.
+         the content only changes when `bigin ledger release` (the transform stage's Stage 1) applies the
+         change sets gated on it. Still stop, but say which it is: name the answered-not-applied lines and
+         point at "process UC-###" (the `bigin-ba` agent's process-the-UC pass, or `/bigin-run`) rather
+         than reporting them back as questions the human still owes an answer to. Never fold the answer
+         in from here, and never tick the box to clear the count.
+     * **Check the ledger.** Run `$BIGIN --json ledger list` and keep the entries whose `artifact` is
+       this UC. Any `open` entry → stop: quote each one's question and pending text (the same lines the
+       UC's `## Pending changes` block shows) and say approval waits until they are answered and released.
+       A `needs-judgement` entry (its answer reads as a refusal) → stop too: it needs a verdict
+       (`bigin ledger release --verdicts …`, apply | supersede | revise) before the UC's text is final.
+       Legacy v1.8 vaults may still carry staged `**INT-###** (staged …)` entries in `## Discussion`
+       that `bigin migrate discussion-to-ledger` could not parse: treat each as pending and stop the same way.
      * Find this UC's last human touchpoint: scan `## Changelog` bottom-to-top for the most recent line
        that documents an approval (or, with none yet, treat the `1.0` creation line as the start).
        Collect every line strictly after it — nothing a human has confirmed since — and pull out the
-       ones ending "flagged for ... review" or naming a "main flow changed" revert. Those are exactly
-       the lines `/bigin-transform-signal` Stage 4 Part 2 writes whenever it direct-writes a `## 2`/
-       `## 3` change (4-sync.md § Part 2); this is the flow drift step 2 leads with.
+       ones ending "flagged for review" (`bigin apply`, v1.10.0+) or "flagged for ... review" / naming a
+       "main flow changed" revert (older runs). Those are exactly the lines written whenever a `## 2`
+       change lands without a human wait (4-sync.md § Part 2); this is the flow drift step 2 leads with.
      * Check `## 4`'s rule mirror against each cited `BR-###`'s current statement and enforcement
-       point. `## 4` is a read-only mirror (`use-case.md` § Use Case) — if a human edit left it drifted from the BR
-       file, refresh the mirror to match; never invent a rule that isn't already in a `BR-###` file.
+       point by running `$BIGIN mirror br UC-###`. `## 4` is a read-only mirror (`use-case.md` § Use Case) —
+       the engine refreshes a drifted statement from the BR file and reports (never fixes) an enforcement
+       point naming a missing or dropped step, a BR with no settled statement, or a row that reads as a
+       different rule than its id. Surface every reported finding in the summary; never invent a rule
+       that isn't already in a `BR-###` file, and never hand-edit § 4 to silence a finding.
      * **Say nothing about enrichment.** It's a feature-level pass now (`/enrich-feature`, § Reconciliation
        notes), not a UC-level gate — `enriched` is permanently unreachable as a UC status and
        `draft → approved` is the only live path. Asking "enrichment hasn't run — proceed anyway?" would
@@ -144,7 +174,11 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
        the fix belongs to `/bigin-transform-signal` (whose `uc-router` Phase A already reads this same
        cross-UC context before drafting), and pick this back up once it's resolved.
   3. **On confirmation:** set `status: approved` on the UC, bump `version`, set `synced: false`, and
-     add one `## Changelog` line noting the approval and anything this run corrected.
+     add one `## Changelog` line noting the approval and anything this run corrected. This is the one
+     hand edit the skill makes — the engine deliberately has no command that approves (`bigin status`
+     only ever moves draft ↔ needs-clarification), so nothing but this confirmed step can set `approved`.
+     Then run `$BIGIN lint --full` once; a finding it reports is real. Hub tables are not refreshed here:
+     `/sync-entities` runs `bigin hub refresh` for every hub the UC touches.
   4. **Confirm and point to next.** Tell the user the UC is ready for PRD — `/bigin-generate-prd`
      folds it into its feature's PRD on its next run (worth running once a sitting of approvals ends,
      not after each one), and `/bigin-generate-design` can run off it now, since design waits on

@@ -166,12 +166,25 @@ reads, since the point is to find the field statements, not to load the vault.
        entity shared across features may still be unsettled from another UC's point of view.
      * Most UCs reference no new or changed entity. Skip this step cleanly when that's true — never
        promote or extend one speculatively.
-  2. **Refresh the owning feature hub(s).** For every feature in this UC's `features:` list, update
-     `## Requirement Readiness` to reflect its current status, and flip this UC's Signal Log rows to
-     `applied` if not already (`feature-hub.md` § Feature Hub — Maintenance contract).
+  2. **Refresh the owning feature hub(s) — with the engine, never by hand.** The hub's derived tables
+     are deterministic, so they are the engine's job (v1.9.0; this used to be the retired
+     `hub-bookkeeper` agent plus script backstops). From the vault root, with
+     `$BIGIN` = `"${CLAUDE_PLUGIN_ROOT}/bin/bigin"`:
+     ```text
+     $BIGIN links sync                          # brs:/uc:/features:/sources: + FEATURES.md UC column
+     $BIGIN hub sweep <slug> …                  # staged → applied for rows nothing pending cites any more
+     $BIGIN hub refresh <slug> <slug> …         # every slug in this UC's features: — uc: pointers,
+                                                # ## Use Cases, ## Requirement Readiness (one row per
+                                                # artifact), add-only ## Open Questions / Gates, Changelog
+     ```
+     `## Entities` / `entities:` on each hub stay this skill's own (LLM) write from step 1 — the engine
+     never touches them. Never edit `## Use Cases`, `## Requirement Readiness` or `## Open Questions /
+     Gates` by hand: the next `bigin hub refresh` regenerates them, and a hand edit is either redundant or
+     silently undone (`feature-hub.md` § Feature Hub — Maintenance contract).
   3. **Mark it done.** Set `synced: true` on the UC once both steps above land clean for it — even if
      it referenced no entities, so a later run doesn't rescan it for nothing.
   4. **Continue to the next queued UC** rather than stopping the whole run on one contradiction.
+* **Close the run with `$BIGIN lint --full`** — the blocking invariant gate, once, after the last write.
 * **Report a short summary** once every queued UC is processed: which UCs were synced clean, which
   entities were promoted/rebuilt and **how many fields each dictionary now carries** (and any
   recommended for `approved`), which attribute-shaped docs were merged into which owner and where their

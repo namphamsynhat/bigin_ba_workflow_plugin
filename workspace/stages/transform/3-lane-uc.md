@@ -1,34 +1,27 @@
-# UC lane — drafting and updating a Use Case
+# UC lane — what a UC change set must contain
 
 ```text
-in:   signals routed to UC and to Context
-out:  a new/updated UC-###, its content STAGED into ## Discussion
-never: writing into ## 1-## 6 directly · renumbering an S#/A#/E# · a UC another feature owns
+in:   signals routed to UC and to Context (from the route worklist)
+out:  change sets (schema `changeset`) targeting UC-### — `bigin apply` writes them
+never: editing a UC file · renumbering an S#/A#/E# · minting an id · a rule statement in ## 4
 ```
 
 Read `3-routing.md` § Which UC — new or update first; this guide assumes that lookup is made.
 
 A `UC-###` is the vault's requirement artifact and its review unit: one user goal, its flow, its
-branches, the rules governing it, and its open questions in one reviewable document. It replaced the
-retired per-statement `FR-###`. Why it looks this way: `references/use-case-standard.md`.
+branches, the rules governing it, and its open questions in one reviewable document. Why it looks this
+way: `references/use-case-standard.md`.
 
 ## Ownership — who may write this file
 
-**Only `primary_feature`'s subagent writes a UC file.** A UC may span features, and Stage 3 fans out one
-subagent per feature, so a shared UC has as many potential writers as it has slugs.
+Nobody but the engine writes a UC. A change set may target any UC, including one another feature owns
+(a cross-feature step): the engine applies sets one artifact at a time, refuses a write whose file changed
+underneath it, and records every applied set's id in the Changelog, so a re-run is a no-op. Trace the set
+to **your** hub row (`trace.hub` = your slug); `bigin hub refresh` points every participating hub.
 
-| The UC you need to change… | Do |
-| :--- | :--- |
-| has `primary_feature:` = your dispatched slug | write it normally |
-| is owned by **another** slug | **write nothing** — report a `cross_feature_uc_change`; Stage 4 applies it sequentially |
-| doesn't exist, and the goal belongs to another slug's actor | same. Never mint a UC on someone else's behalf |
-
-`primary_feature` is the feature whose actor holds the goal — a write-ownership fact, not a claim that
-the other features matter less. Every participating hub gets the same `## Use Cases` pointer in Stage 4.
-
-When a cross-feature flow reveals that a participating feature contributes a step nobody described,
-that is a signal-shaped gap worth a question on that feature's hub — never a step invented from the
-narration of the flow.
+`primary_feature` is the feature whose actor holds the goal — the owner hub, not a claim that the other
+features matter less. When a cross-feature flow reveals that a participating feature contributes a step
+nobody described, that is a question for that feature's hub — never a step invented from the narration.
 
 ## Granularity — one UC per user goal
 
@@ -45,133 +38,65 @@ narration of the flow.
 
 ### Recognizing drift — the smell that matters more than step count
 
-A UC does not need to cross ~12 steps to have outgrown one user goal. Across several runs, each adding
-"just one more step" for an *adjacent* goal (a different actor, a different trigger) rather than a
-genuinely new step in the *same* goal, a UC can quietly accumulate two or three distinct workflows well
-under that ceiling — e.g. a Parent's spend goal, an Admin's override goal, and the underlying system's
-own record-keeping, all inside one "UC-011". Step count is the lagging indicator; the leading one is:
-**do every `S#`/`A#`/`E#` on this UC still share one primary actor and one trigger?** Check this every
-time a new step is about to be staged, not only when the count looks large — a signal that reads as "one
-more step for the existing goal" but actually names a different actor or a different triggering event is
-the same smell as the 12-step case, arriving earlier.
+A UC does not need to cross ~12 steps to have outgrown one user goal. Runs that each add "just one more
+step" for an *adjacent* goal (a different actor, a different trigger) quietly accumulate two or three
+workflows under one id. The leading indicator: **do every `S#`/`A#`/`E#` on this UC still share one
+primary actor and one trigger?** Check it every time a new step is about to be added.
 
-**Raising it**: same mechanism as the >12-step case — a `- [ ] Q:` on the UC's `## 5` Still open,
-proposing a concrete boundary: which existing `S#`/`A#`/`E#` ids would move to which new (or other
-existing) use case, a suggested title and primary actor for each, and which `BR-###`/hub each would carry
-along. Never split unilaterally, and never silently keep drafting new steps for the drifted-off goal into
-the original UC while the question sits unanswered — stage those signals `held`, citing the open
-question, exactly as any other decision-gated content would be.
+**Raising it**: an `add_question` on the UC proposing a concrete boundary — which ids move to which new
+(or existing) UC, a suggested title and primary actor for each, which `BR-###` each carries. Never split
+unilaterally, and don't keep drafting steps for the drifted-off goal meanwhile: gate those change sets on
+the split question.
 
-**Executing it**: this lane only ever proposes the split; it never performs one. Once a human answers the
-question, `/restructure-uc` (dispatching the `uc-splitter` subagent) is what mints the new UC(s), moves
-the flagged steps across (marking the originals `removed because — moved to UC-###`, per the permanent-id
-rule below), repoints every affected `BR-###`'s `uc:` field, and dispatches `hub-bookkeeper` per touched
-feature hub. Do not attempt any of that from this lane — identifying the seam and executing the move are
-different skill levels of judgment, the same reason `3-routing.md` keeps "which UC" and "mint the id"
-as separate steps.
+**Executing it** is `/restructure-uc`'s job (the `uc-splitter` agent emits a split plan as change sets —
+`drop_step` on the source, `create_uc`/`new_step_after`/`new_flow` on the targets — and the engine applies
+it, repoints BR `uc:` via `bigin links sync`, and refreshes every hub). Never from this lane.
 
 ## Creating a new UC
 
-Only when no existing UC covers this goal.
+Only when no existing UC covers this goal. Phase A records it as a `new` entry (`key`, `title` — the goal
+as a **short active verb phrase**, "Enrol a student", never "Enrolment" — `goal`, `actor`,
+`primary_feature`, `features`, `level`, `sources`). `bigin mint route` mints the id under the id lock,
+instantiates the lean skeleton (`{template_uc}`: status `draft`, version `1.0`, one guide comment, § 2
+placeholder row, § 3 empty), points every hub in `features:`, and updates `{requirements_file}`'s UC column.
+Phase B then fills it with change sets targeting the minted id (or `new:<key>`).
 
-**Only the orchestrator mints a `UC-###` id, and only one at a time.** Up to four features run
-concurrently in Stage 3, and two concurrent `Grep`s over `{uc_dir}` return the same highest number, so
-two features mint the same id and one file overwrites the other. A subagent that finds a genuinely new
-goal therefore **reports it as `new (unminted)`** with the frontmatter values below; the orchestrator
-mints the id, instantiates the skeleton, and writes the hub pointer between Phase A and Phase B
-(`references/agent-dispatch.md` § Minting new UCs, between Phase A and Phase B). The same rule already covers
-cross-feature news (`4-sync.md` § Part 1) — this just extends it to *every* new id.
-
-The skeleton, once the orchestrator mints it: instantiate `{template_uc}` as
-`{uc_dir}/UC-<NNN> <Title>.md`, id from a `Grep` scan of `{uc_dir}` for the highest number (its own
-sequence; use the `Grep` **tool**, never a Bash pipeline — a denied pipeline silently reuses an id).
-
-| Field | Value |
-| :--- | :--- |
-| `id` / `title` | `UC-<NNN>` and the goal as a **short active verb phrase** — "Enrol a student", never "Enrolment" or "Student enrolment screen". Same as the filename |
-| `status` | `draft`, always |
-| `version` | `1.0` |
-| `level` | `user-goal` unless § Granularity says otherwise |
-| `scope` | the system under design, black-box — usually the product name |
-| `primary_feature` | the slug whose actor holds the goal — the dispatched slug, in the ordinary case |
-| `features` | `[<primary_feature>]`, plus any other slug a **stated** step lands in |
-| `sources` | the `INT-###` this signal traces to |
-| `attachments` | every path from the source note's own `attachments:` — copied, not summarized |
-| `owner` / `updated` | `team`, today |
-
-Leave `links:`, `brs:`, `entities:`, `pain_points:`, `absorbs:` empty unless this run fills them. Leave
-the `> [!summary]-` block blank — nothing writes it any more (`runtime.md` § Reconciliation notes:
-it was `/enrich-feature`'s under its old per-UC design; enrichment is feature-scoped now and never
-touches a UC), so it stays permanently blank. That is fine: a summary written by this lane would be
-this lane's paraphrase of content the human hasn't reviewed yet.
-
-Then add the id to the hub's `uc:` list, a pointer row to its `## Use Cases`, **and the id to
-`{requirements_file}`'s `UC` column for this feature's row** — the same write, the same actor (the
-orchestrator), in the same sequential pass that minted the id (`feature-hub.md` § Feature Map
-format). Skip that third write and `{requirements_file}` silently goes stale the moment this UC is
-minted — nothing else ever refreshes it, and a later reader who trusts that column instead of the
-hub's own `uc:`/`## Use Cases` will scope their work to the wrong, smaller set of UCs.
-
-**Never write into `## 1`–`## 6` on creation.** A new UC is created with its numbered sections empty and
-its first content staged in `## Discussion`, like every later change. The gate applies to the first step
-as much as the hundredth — a UC whose initial content bypassed review is indistinguishable afterwards
-from one that passed it.
+A new UC's first content arrives through change sets like every later change — the first
+`new_step_after` fills the placeholder `S1`. Leave `links:`, `entities:`, `absorbs:` alone unless a change
+set says otherwise; `attachments:` are the source notes' own, copied via a `link` set on `attachments`.
 
 ## Adopting an existing FR
 
-A feature migrated from the pre-UC model has `FR-###` files and no UC. The first signal touching it
-adopts them rather than starting from nothing:
+A feature migrated from the pre-UC model has `FR-###` files and no UC. The first signal touching it adopts
+them: a `new` UC whose change sets carry each FR's functional lines as `new_step_after` sets (trace: the
+FR id in `trace.evidence`), plus a `link` set on `absorbs`. Turning a statement into a positioned step is a
+real interpretation, so an already-approved FR line is not exempt from review. The FR itself is frozen: its
+`absorbed_by:` and one Changelog line are the only edits, made by the orchestrator; a BR whose `fr:` cites an
+adopted FR gets the UC through a `link` set on `uc`. Report the adoption explicitly.
 
-```text
-1  create the UC as above, with absorbs: [FR-###, …] listing every FR on this feature
-2  stage each FR's ## Functional requirements lines into ## Discussion as proposed steps:
-     - **FR-### adoption** (staged <date>): FR-012.3 "<line>" → proposed: new step after S<n>:
-       <actor action> | <system response>
-   → they pass the gate like any other content. An already-approved FR line is NOT exempt:
-     turning a statement into a positioned flow step is a real interpretation
-3  set each adopted FR's absorbed_by: UC-### and append a ## Changelog line saying so
-   → CHANGE NOTHING ELSE. Do not edit its body, do not set `removed` (human-gated).
-     It is frozen history from here on, and its id keeps resolving.
-4  point every BR-### whose fr: cites an adopted FR at the UC too, by adding the UC id to its uc:
-   → leave fr: in place: it is the record of what the rule constrained
-```
+## Writing the change set — new or update, same procedure
 
-Report the adoption explicitly — the one case where one signal produces a large diff.
-
-## Staging a change — new or update, same procedure
-
-```text
-- **<INT-###>** (staged <YYYY-MM-DD>): <the signal, tightly paraphrased or quoted> → proposed:
-  <destination>: <the exact final text>
-```
-
-| Destination phrasing | For | Applied by |
+| Intent | `op` | Must carry |
 | :--- | :--- | :--- |
-| `new step after S4:` | a step added mid-flow — mints the next unused `S#`, placed after `S4` | Stage 4 Part 2, same run |
-| `S6 becomes:` | a step's wording or validation changes | Stage 4 Part 2, same run |
-| `S6 is removed because <reason>` | a step that no longer applies — the row keeps its id, marked removed | Stage 4 Part 2, same run |
-| `new flow E2:` / `A1 becomes:` / `A1 is removed because <reason>` | an exception or alternative path, added, changed, or removed | Stage 4 Part 2, same run |
-| `§ 1 Trigger becomes:` · `§ 1 Business Need becomes:` | any `## 1` line — trigger, actors, pre/post-conditions, **and the Business Need the Context sub-lane produces** | Stage 1, later run |
-| `§ 4: add BR-014, enforced at S5` | the rule mirror — the `BR-###` file itself is the BR lane's job | Stage 1, later run |
-| `§ 6: <text>` | a special requirement / NFR scoped to this workflow | Stage 1, later run |
+| add a step mid-flow | `new_step_after` | `anchor.ref` (S#, `start`, `end`) + `anchor.sha` from the worklist · `cells` {actor, system} — the engine mints the next unused `S#` |
+| change a step | `replace_step` | `anchor` {ref, sha} · `cells` |
+| a step no longer applies | `drop_step` | `anchor` · `reason` → `Dropped — <reason>`, id kept |
+| add / change / drop a flow | `new_flow` · `replace_flow` · `drop_flow` | `flow` {kind A\|E, name, body} · `anchor` for replace/drop · `reason` for drop |
+| any `## 1` line (trigger, actors, pre/post-conditions, Business Need) | `set_field` (replace) · `append_note` (add) | `target.section: "1"`, `target.field`, `text`; `anchor.sha` of the current value when replacing |
+| a special requirement | `append_note` | `target.section: "6"`, `text` |
+| link a rule | `mirror_br` | `br`, `enforced_at` (§ The `## 4` mirror) |
+| a question | `add_question` | `text`, `owner`; the engine appends `(ref: …)` from `trace` |
 
-This lane always **stages**, regardless of which column applies it — never write § 2, § 3, or anything
-else directly from here. Only the § 2 and § 3 rows fast-track, and only in Stage 4, after this lane's
-run finishes — and only § 2 changes trigger Stage 4's review flag (`4-sync.md` Part 2); a § 3-only
-change does not.
-
-- **Final text, not an instruction.** "add a rule about approvals" cannot be folded by a later run.
-- **One entry per signal**, even when three signals produce three adjacent steps — signals resolve at
-  different times and a merged entry cannot be half-folded.
-- **Cite the `INT-###`** — whichever stage applies it reads this out of `## Changelog` to recognize a
-  completed apply.
-- **Copy the note's `attachments:`** onto the UC's own if not already listed.
-- **Carry a missing rationale into the entry.** When the signal's note row has `Why: not stated`,
-  append to the entry: `— rationale not stated at capture` (and `; no rationale call recorded at
-  filing` when the row carried no marker). The reviewer decides at the gate whether it matters —
-  never re-derive the `Why` here (`2-qualification.md` § Gate 1).
-- Flip the Signal Log row: `Status: staged`, `Destination: UC-###` (`UC-012 S6` when the target is
-  specific and already exists).
+- **Final text, not an instruction.** "add a rule about approvals" cannot be applied.
+- **One change set per intended edit**, even for three adjacent steps from three signals — each carries its
+  own trace and lands (or waits) on its own.
+- **`trace` is mandatory:** `int`, `note_rows`, `hub`, `hub_rows` (the row's Source cell), `xr` in codebase mode.
+  It becomes the Changelog line that proves where the content came from.
+- **Gate only what needs a decision:** `gate: {question, owner, blocks: true}` on the set that depends on
+  it. A clean, unambiguous statement lands ungated; § 2 changes are flagged for `/approve-uc` review by the
+  engine either way.
+- **Carry a missing rationale.** When the note row has `Why: not stated`, end the text of the
+  most relevant set (or its question) with `— rationale not stated at capture`; never re-derive a `Why`.
 
 ## Writing a step
 
@@ -206,64 +131,41 @@ A step whose System column would have to say "depends" is two steps or a branch 
 
 ## The `## 4` mirror
 
-`## 4` is a **read-only mirror** of `{br_dir}`. This lane never writes a rule statement here — the BR
-lane owns the file, and this table is refreshed from it.
+`## 4` is a **read-only mirror** of `{br_dir}`: `mirror_br` copies the BR's current statement itself, so
+the router never writes rule text into a UC. What the set supplies is the **enforcement point** —
+`enforced_at`: the `S#`/`A#`/`E#` the rule bites at in THIS workflow, or `pre-condition` /
+`post-condition` when it constrains state. The engine rejects an enforcement point that does not exist
+or names a dropped step.
 
-What this lane *does* write is the **enforcement point**: which `S#` the rule bites at, because that is
-a fact about the rule *in this workflow* and exists nowhere else. `pre-condition` / `post-condition`
-are valid when the rule constrains state rather than a step.
-
-A rule the UC lists but no step enforces is either a missing step or a misfiled rule → **raise a
-question.** Never leave the cell blank, and never invent the step that would justify it.
+A rule this UC should list but no step enforces is either a missing step or a misfiled rule → an
+`add_question`. Never leave the point vague, and never invent the step that would justify it.
 
 ## The Context sub-lane
 
-Two destinations, and only one of them is a direct write.
-
 ```text
-## 1 Business Need / Goal → STAGED, exactly like every other UC change:
-    - **<INT-###>** (staged <date>): <the signal> → proposed: § 1 Business Need becomes: <final text>
+## 1 Business Need / Goal → a `set_field` set, target.section "1", field "Business Need / Goal"
     the client's stated why, IN THE CLIENT'S OWN TERMS, only what was said
     a `decision`-type signal has no Why by design — inventing one launders a guess into the record
-    flip the Signal Log row: Status: staged, Destination: UC-### § 1
-    → Stage 1 folds it in on a later run. `## 1` is not one of the two fast-track sections — only
-      `## 2` and `## 3` are (4-sync.md § Part 2)
-
-pain_points: frontmatter  → a DIRECT write, the one ungated Context destination: the PP-### id.
-    IDS ONLY: the statement lives in {pain_points_file} and is already mirrored on the hub; a third
-    copy is a third thing to keep in sync
-    frontmatter is not a numbered section, so no gate applies → Status: applied, Destination: PP-###
-    NEVER mint a PP-### here — a pain point with no register row is an extraction gap to REPORT
+pain_points: frontmatter  → a `link` set, field `pain_points`, ids only — the statement lives in
+    {pain_points_file} and on the hub. NEVER mint a PP-### here: a pain point with no register row is an
+    extraction gap to report
 ```
-
-**Why `## 1` is gated even though it "only adds provenance."** A Business Need is what every later
-reader takes as the reason the flow exists, and `## 1` sits inside the numbered block that three
-separate blocking checks assert no lane writes directly (`agent-dispatch.md` § Verifying the wave
-check 4, `5-status.md`, and § What this lane never does below). An earlier version of this guide
-called both Context destinations ungated, which made those checks unsatisfiable — every possible
-behaviour failed one of them.
 
 ## Questions, and moving one to the decision log
 
-Raise on `## 5` **only when a decision is genuinely needed** — the wording is ambiguous enough that two
-readers would build different things, or the signal conflicts with existing content. A clean,
-unambiguous statement gets staged, not questioned.
-
-```text
-- [ ] Q: <one concrete question, self-contained> (owner: client|team) (ref: <INT-###>)
-      A:
-```
+Raise one **only when a decision is genuinely needed** — the wording is ambiguous enough that two readers
+would build different things, or the signal conflicts with existing content.
 
 - **Self-contained** — readable by someone who has not seen the signal, the hub, or this run.
 - **Plain business language for `owner: client`** — no `signal`, `slug`, `UC`, `staged`, or other vault
   vocabulary. `owner: team` may use ids, always paired with what they say.
 - **One question per line**; three or more options get `(a)/(b)/(c)`.
 - **One question, two places is a bug.** If the source INT note already asks this, Gate 1 should have
-  parked the signal `held` before it reached this lane.
+  parked the signal `held`.
 
-When a question resolves, Stage 1 folds in the answer and **moves the line into the decision log**
-table — topic, who raised it and what they said, what was decided, the date. The checkbox list holds
-only what is still open, which is what keeps the status invariant countable.
+When the answer arrives, the engine moves the line into the Decision log (`ledger release` for a gate
+question; an `answer_question` set for any other) — the Still-open list holds only what is open, which is
+what keeps the status invariant countable.
 
 ## Conflict with existing content
 
@@ -271,47 +173,28 @@ Two statements that cannot both hold. **Never pick a winner** — recency settle
 not settle a disagreement between two people's requirements.
 
 ```text
-1  BEFORE writing the question: re-open the existing content's own cited INT-### source and read past
-   its cited line into the surrounding exchange — not just the UC's current wording. Existing content
-   is a prior run's *reading* of that source, not the source itself, and a prior extraction can have
-   resolved a genuinely unsettled exchange into one confident sentence (2-extraction.md's "one
-   mechanism, contradictory framings" case, or an older run predating that rule). Find out which:
-     source itself was ambiguous/contested  → word the question as a THREE-(or-more)-way choice
-         naming every framing the source actually contains, not "we already built X, does the new
-         signal contradict it" — that framing hides that X was never firmly settled and biases the
-         human toward defending the status quo instead of picking freely
-     source was clear, the new signal is what's new  → word it as the existing two-sided conflict
-         the procedure below already describes
-   Report which case this was — it is itself a finding worth surfacing, not just a step you did.
-2  flip the new Signal Log row: Status: conflict, Notes: conflicts with #<n>
-3  raise ONE question on the UC naming EVERY side in plain language (two, if the source was clear;
-   three or more, if step 1 found the source itself never converged), and the S#/flow each affects
-4  STAGE NOTHING for this signal
-   → a conflicting proposal in ## Discussion becomes foldable the moment the box is ticked,
-     regardless of which side the answer picked
+1  BEFORE writing the question: re-read the existing content's own cited INT-### source past its cited
+   line. Existing content is a prior run's *reading* of that source; a prior extraction can have resolved
+   a contested exchange into one confident sentence.
+     source itself was contested → word the question as a three-(or-more)-way choice naming every framing
+     source was clear            → word it as the two-sided conflict
+   Report which case this was.
+2  emit ONE `add_question` on the UC naming every side in plain language and the S#/flow each affects —
+   traced to the INT only (no hub_rows, so the engine does not mark the row applied)
+3  list the row under `unrouted` with reason "conflict with #<n>"; the orchestrator runs
+   `bigin hub flip <slug> <row>=conflict@conflicts with #<n>`
+4  emit NO content change set for this signal
 ```
 
-**A `conflict` row is parked, not finished.** Because nothing is staged, no later run would ever pick it
-back up on its own: Stage 1 folds only `staged` rows and Stage 2's worklist is only `new`/`held`. Stage 1
-therefore re-enters it explicitly — once the question this conflict raised carries a filled `A:`, Stage 1
-flips the row back to `new` so this lane drafts it **from the decision** on the next pass
-(`1-foldin.md` § Re-entry). Writing the question well is what makes that re-entry possible: an answer
-that doesn't say which side won, or names a third option, is still an answer and still re-enters.
-
-The same applies to a `question` row (`2-qualification.md` Gate 1's `held` sibling raised on the hub
-rather than the note): answered → re-entered by Stage 1, never left sitting.
+**A `conflict` row is parked, not finished.** Stage 1 re-enters it once its question carries a filled
+`A:` (`1-foldin.md` § Re-entry), and this lane drafts it **from the decision**. The same applies to a
+`question` row raised on the hub.
 
 ## What this lane never does
 
-- Write into `## 1`–`## 6` directly — that is Stage 4 Part 2 for a main-flow step or a flow, same
-  run, or Stage 1's fold-in for everything else, after the gate. Never this lane.
-- Write a UC owned by another `primary_feature`, or touch another feature's hub.
-- Write a rule statement into `## 4`, or any `BR-###` content beyond adding this UC to its `uc:` list.
+- Edit a UC, BR, or hub file — change sets only, applied by `bigin apply`.
+- Write a rule statement into `## 4`, or BR content beyond what the BR lane's sets carry.
 - Renumber, reuse, or delete an `S#`, `A#`, or `E#`.
-- Write `status: approved`, `removed`, `enriched`, or `consolidated` — approval and removal are
-  human-gated; `consolidated` is legacy-only, unreachable; `enriched` is permanently unreachable
-  (enrichment moved off the UC — `feature-hub.md` § Feature Hub).
-- Write the summary block — nothing sets it any more; leave it blank/omitted (§ Reconciliation
-  notes). There is no `## Domain Concerns` section on the UC any more either — enrichment findings
-  land on the feature hub's `## Domain Research` instead.
-- Edit an `FR-###`'s body, or set it `removed`. An absorbed FR is frozen history.
+- Mint an id, or write `status` of any value — `approved`/`removed` are human-gated; `enriched` and
+  `consolidated` are unreachable; Stage 5's `bigin status` re-counts the rest.
+- Write the retired summary block, or edit an `FR-###`'s body.

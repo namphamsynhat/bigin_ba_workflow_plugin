@@ -140,7 +140,11 @@ DESIGN BRIEF:        <a ux-brief-assembler report is attached below — start th
                      threshold">
 
 READ FIRST:
-- _bigin/conventions/design-conventions.md — these sections ONLY: `design-core.md` § Paths, `design-core.md` § Write map,
+- ${CLAUDE_PLUGIN_ROOT}/cards/design-screens.md — YOUR CARD (≤ 3 KB): inputs, output, the rules you can
+  break, a worked example. Read it before anything else; it replaces reading the convention files below
+  whole. Open a convention section below only when the card cites it (‹file § heading›) or your case is
+  not covered by the card. (v1.12.0; materialized as _bigin/cards/design-screens.md in the vault.)
+- _bigin/conventions/design-conventions.md — REFERENCE, only the sections the card cites or you need: `design-core.md` § Paths, `design-core.md` § Write map,
   `design-core.md` § The eight design hard rules, `design-screens.md` § The UX spec, `design-screens.md` § Screen spec, `design-screens.md` § View ID and Screen Type, `design-grounding.md` § Grounding, `questions.md` § Open questions,
   `design-actor-scope.md` § Actor scope, `design-review.md` § The relationship model, `design-navigation.md` § The navigation map
 - _bigin/stages/design/3-screens.md — your stage guide, in full

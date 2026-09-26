@@ -1,263 +1,127 @@
 ---
 name: extract-signal
-description: This skill should be used when the ask is to extract signals, process the intake queue, drain 00-Inbox, or map intake to features. Drains the raw intake queue in 00-Inbox — extracts each INT-### note's signals into a flat raw record on the note and audits that record against the source in both directions, then anchors every signal to a FEATURES.md slug and files it onto that feature's Signal Log grouped by functional theme. A signal that can't be anchored raises a written question instead of a guess. Never drafts or edits a UC.
-argument-hint: "[resume]"
+description: This skill should be used when the ask is to extract signals, process the intake queue, drain 00-Inbox, or map intake to features. Drains the raw intake queue in 00-Inbox — extracts each communication-mode INT-### note's signals into a flat raw record on the note, audits that record against the source where the audit is owed, then anchors every signal to a FEATURES.md slug and files it onto that feature's Signal Log grouped by functional theme. Agents return JSON; the engine (`bin/bigin`) does every write. A signal that can't be anchored raises a written question instead of a guess. Codebase-mode notes are imported by `/bigin-intake` (`bigin intake codebase`) and never come here. Never drafts or edits a UC.
+argument-hint: "[resume <run-id>]"
 disallowed-tools: AskUserQuestion
 ---
 
 # Extract Signal
 
-Per `INT-###` note in `00-Inbox`: extract signals from every source block → audit against the source →
-anchor to a feature → file onto that feature's hub.
+Per `INT-###` note in `00-Inbox`: extract → audit (when owed) → file. Extract stage of extract → transform →
+load. Never drafts or edits a UC or BR. **LLM for judgement, the engine for every write:** agents read a compact
+worklist and return one JSON file; `bin/bigin` validates and writes it.
 
-Extract stage of extract → transform → load. Never drafts or edits a UC or BR.
+`BIN` below = `"${CLAUDE_PLUGIN_ROOT}/bin/bigin"` (run from the vault root).
 
 ## Two tables, on purpose
 
 | Table | Where | Shape |
 |---|---|---|
-| **Raw record** | the note's `## Extracted signals` | one flat row per signal, arrival order, never grouped |
-| **Working register** | the hub's `## Signal Log` | the same signals grouped by theme, one row per theme |
+| **Raw record** | the note's `## Extracted signals` | one flat row per signal, arrival order, never grouped, row `#` permanent |
+| **Working register** | the hub's `## Signal Log` (or `<slug>.signals.md` once split) | the same signals grouped by theme |
 
 Row counts won't match, and shouldn't. Every later stage reads the raw record; nothing re-opens `## Raw`.
 
-## Paths
+## Preconditions
 
-| Variable | Path | Notes |
-| :--- | :--- | :--- |
-| `{inbox_dir}` | `00-Inbox` | intake notes — skip `_attachments/` when scanning |
-| `{requirements_file}` | `01-Requirements/FEATURES.md` | the slug registry; anchors resolve only to slugs listed here |
-| `{hub_dir}` | `01-Requirements/_features/<slug>.md` | one Feature Hub per slug |
-| `{uc_dir}` | `01-Requirements/_ucs` | read-only — scanned for open questions (Stage 1) |
-| `{conventions_reference}` | `_bigin/conventions/` | this stage reads four of them: `core.md` (ID scheme, frontmatter, statuses) · `feature-hub.md` · `registers.md` · `questions.md`. Never `conventions.md`, which is only a map |
-| `{extraction_rules}` | `_bigin/stages/extract/2-extraction.md` | the **extraction** subagent's only rulebook |
-| `{audit_rules}` | `_bigin/stages/extract/2b-audit.md` | `signal-auditor`'s only rulebook. Its § Repairing the table and § When the independent pass is owed are read by `signal-extractor` too — nothing else in it is |
-| `{filing_rules}` | `_bigin/stages/extract/3-filing.md` | the **filing** subagent's only rulebook |
-| `{conventions_file}` | `.agents/bigin-ba-workflow-plugin.local.md` (or `.claude/bigin-ba-workflow-plugin.local.md`) | optional project overrides |
-| `{pain_points_file}` | `01-Requirements/PAIN-POINTS.md` | canonical `PP-###`; each hub mirrors its own rows |
-| `{entities_file}` | `01-Requirements/ENTITIES.md` | candidate `EN-###`; no hub mirror |
-| `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | cross-cutting constraints; no hub mirror |
-| `{template_*}` | `_bigin/templates/*` | `feature-hub`, `pain-points-register`, `entities-register`, `design-principles-register` |
-
-Project-relative, materialized by `/bigin-new-project`. Missing `{extraction_rules}`, `{audit_rules}`,
-`{filing_rules}`, or `{conventions_reference}` → stop, say `/bigin-new-project` must run first. A subagent
-that can't read its rules improvises and reports success.
-
-Then run `version-check.md` § Workspace version check — one `Grep` of `_bigin/system/project.md`
-against the installed plugin's version. Behind → warn and recommend `/bigin-upgrade-project`; **ahead →
-stop**: the materialized rulebook this run would follow is older than the one the vault was built
-against, and filing against an older contract is how a stage silently regresses.
+- `_bigin/stages/extract/` and `_bigin/conventions/` exist — else stop: `/bigin-new-project` must run first.
+- `version-check.md` § Workspace version check — behind → warn, recommend `/bigin-upgrade-project`; ahead → stop.
+- `project.md` `grounding:` — `codebase` notes (`source: codebase`) are skipped here: their rows were written by
+  `bigin intake codebase`, with no LLM. `communication` and `both` vaults run this skill for every other note.
 
 ## Stage 1 — Build the queue
 
 ```text
-questions = every unchecked "- [ ] Q:" in {uc_dir} + {inbox_dir}   # on a UC: its ## 5 Still open
-    if > 40 → keep {inbox_dir}'s, plus {uc_dir}'s for note.declared_features
-
-enqueue(note, mode) = queue += { note, mode,
-                                 sources:   note.raw_sources,   # ## Raw's ### SRC-n blocks, in order
-                                 raw_lines: span of ## Raw }
-queue = []
-for note in {inbox_dir}/INT-*.md:                 # skip _attachments/
-    read frontmatter ONLY
-    kind == info                  → skip          # ops/admin, never refined
-    status == raw                 → enqueue(fresh)
-    status == needs-clarification → enqueue(fold-in) if any "- [ ] Q:" newly ticked
-                                    else park     # still waiting on a human
-    else                          → skip          # in-review, consumed
-
+for note in 00-Inbox/INT-*.md (skip _attachments/), frontmatter ONLY:
+    kind == info or source == codebase     → skip
+    status == raw                          → queue (fresh)
+    status == needs-clarification          → queue (fold-in) if a "- [ ] Q:" was newly ticked, else park
+    else                                   → skip (in-review = consumed)
 queue empty → say so, stop
-else        → report(note · mode · sources · raw_lines), continue
 ```
 
-- **Partial fold-in beats waiting** — holding for every box strands answers behind the slowest question.
-- **`questions` is what makes `answer` typing possible** — without it, a statement resolving someone
-  else's question files as a generic requirement.
-- **`raw_sources` is the read plan.** Empty manifest but blocks visible in `## Raw` → older
-  `/bigin-intake`; plan from the blocks, say so. Neither → the note is empty, not eligible.
-- **`raw_lines` travels with the note** — past ~1500 lines 2a must page `## Raw` instead of reading it whole.
+Partial fold-in beats waiting: a note with some answers is re-queued for what those answers unblock.
+`raw_sources` is the read plan; an empty manifest with visible `### SRC-n` blocks is an older capture — the
+worklist builds the plan from the blocks either way.
 
-## Stage 2 — Process the queue
-
-**Two agents per note** — `signal-extractor`, then `signal-filer` — plus `signal-auditor` on the
-notes that earn it. Never a bare `general-purpose` agent. Each pins its own model and tool set in its
-frontmatter, and each reads its own rulebook from `_bigin/`. Every subagent is fresh: reuse grows
-context instead of resetting it.
-
-**`references/agent-dispatch.md` carries the per-run data to hand each one, and nothing else.** Do not
-paste a procedure into a prompt — that is how two copies of one rule drift apart, and a dispatch-prompt
-copy also overrides a project's own `_bigin/` override of that rule.
+## Stage 2 — Run
 
 ```text
-for batch in chunks(queue, 5):
-
-  # ---- per-note, nothing shared: run these CONCURRENTLY across the batch, <= 4 at a time ----
-  for note in batch, in parallel:
-
-    2a  Agent(signal-extractor)                                  [dispatch § 2a]
-        reads   every SRC block in note.sources · {extraction_rules}
-                       · {audit_rules} §§ Repairing the table, When the independent pass is owed
-        writes  ## Extracted signals — # · Type · Signal · Why · Source
-                Feature and Status left blank
-                THEN re-walks each block against that table and repairs it in place
-                       ({extraction_rules} § Step 6)
-        reports self_audit (what it repaired) · audit_owed (yes + trigger | no + why)
-        if any SRC block unread        → re-spawn scoped to that block
-        if why "not stated" > 30% of requirement/feedback rows
-                                       → re-spawn scoped to those rows
-
-    2b  Agent(signal-auditor), ONLY when 2a reported audit_owed: yes   [dispatch § 2b]
-        the fresh reader — the one pass that catches what the agent who wrote the table
-        could not see in its own work. It both audits and repairs, in one dispatch.
-        reads   ## Raw by line range FIRST (table unseen), then the table · {audit_rules}
-        writes  the table repairs, then verifies them against the blocks it still has open
-        OWED when: any block is a transcript (however short) · ## Raw >= ~300 lines ·
-                   >1 block with an attachment or thread among them · 2a reported an unread
-                   block or >30% not-stated · 2a's self-audit found an inversion or a
-                   contradiction · 2a repaired > 5 rows
-                   [{audit_rules} § When the independent pass is owed]
-        otherwise 2a's self-audit stands — report it as "audit: self", never as dispatched.
-        NEVER audit inline in the orchestrator: that pulls ## Raw into the one context this
-        whole fan-out exists to keep small.
-
-  # ---- shared writes: SEQUENTIAL, one note at a time ----
-  for note in batch, in order:
-
-    2c  Agent(signal-filer)                                      [dispatch § 2c]
-        reads   the repaired table · {filing_rules} · {requirements_file}    # never ## Raw
-        writes  Feature · Status · Notes · themed hub rows · registers
-                · questions · a resolving tick on an earlier note's question (§ Step 5b)
-                · this note's status LAST
-        → sequential because hubs and the three registers are shared: two concurrent notes
-          appending to one hub lose a row
-
-  3   ORCHESTRATOR: python3 "${CLAUDE_PLUGIN_ROOT}/hooks/bigin-lint.py" --full
-      THE batch gate — deterministic, free, and the only one. Table shape, cite resolution,
-      illegal status values, note rows cited by no hub row or cited twice on one hub,
-      status-vs-open-questions consistency.
-      exit 1 → blocking. A filing gap (rows anchored to a slug no hub row cites) → dispatch
-               signal-filer in hub-repair mode scoped to exactly that gap, re-run --full,
-               then move on.
-      unavailable (no python3, path won't resolve, command denied) → SAY SO and check the
-               batch by hand against § Stage 3's shape; never read an unavailable checker
-               as a pass.
-  4   report(batch)                                              # before the next batch starts
+RUN = $(BIN run new --stage extract --scope <n>-notes)
 ```
 
-**Why there is no verification subagent.** Everything a batch-verifier could check mechanically,
-`--full` checks in milliseconds and without judgment. What it could not check mechanically, it was
-not reliably checking either — and paying a cold agent start per batch to re-read files the linter
-already parsed is the trade this pipeline exists to avoid.
+**With the Workflow tool** (preferred — orchestration lives in the script, not in this context):
 
-**Why 2a/2b parallelize and 2c does not.** 2a and 2b touch exactly one file each — that note's own
-table. The shared-write hazard the old sequential loop guarded against lives entirely in 2c, where hubs
-and the vault-wide registers are appended to. Serializing whole notes to protect 2c costs the wall-clock
-of the entire chain per note and protects nothing extra.
+```text
+Workflow(scriptPath: "${CLAUDE_PLUGIN_ROOT}/workflows/extract.js",
+         args: {run: RUN, vault: ".", plugin_root: "${CLAUDE_PLUGIN_ROOT}", notes: [<INT ids>]})
+```
+
+Per note, in parallel: `worklist extract` → `signal-extractor` → `ingest` + `note write-signals`; when the
+extractor reports `audit_owed`: `worklist audit` → `signal-auditor` → `note audit-apply`. Then filing, **serially**
+(a later note's theme may extend a row an earlier note just filed): `worklist file` → `signal-filer` → `ingest` +
+`file apply`. Then `lint --full` and `coverage --stage file`. Resume = re-run with the same `run`
+(completed tasks are skipped via `run done`), or the Workflow tool's `resumeFromRunId`.
+
+**Without it (B.5 fallback)** — the same steps, one `Agent` call per judgement task:
+
+```text
+for note in queue:                                   # extractors may run 4 at a time; filers never overlap
+  BIN worklist extract <INT> --out _runs/RUN/tasks/<INT>.extract.in.json
+  Agent(signal-extractor): "card <plugin>/cards/extractor.md · in <…>.extract.in.json · out <…>.signals.out.json"
+  BIN ingest <out> --kind signals --run RUN         # invalid → SendMessage the errors to the same agent, once
+  BIN note write-signals <out>                       # prints audit_owed
+  owed → BIN worklist audit <INT> --out … ; Agent(signal-auditor) ; BIN ingest … --kind audit ; BIN note audit-apply <out>
+  BIN worklist file <INT> --out … ; Agent(signal-filer) ; BIN ingest … --kind filing ; BIN file apply <out>
+  BIN run record RUN --task filed:<INT> --status ok
+  BIN metrics add --run RUN --stage extract --task <INT> --agent <name> --usage "<usage block>"   # per agent
+BIN lint --full ; BIN coverage --stage file
+```
+
+Between steps read only the one-line agent reply and `BIN run summary RUN` (≤ 20 lines) — never an agent
+transcript, never `## Raw`. **Never audit inline** in this context: either the extractor's self-audit stands or a
+fresh `signal-auditor` is dispatched. The audit-owed triggers live in `2b-audit.md` § When the independent pass is
+owed; report which depth ran on each note (`audit: self` vs `audit: independent (<trigger>)`).
+
+**Gate.** `BIN lint --full` closes the run and is blocking. A filing gap (note rows anchored to a slug that no hub
+row cites) → dispatch `signal-filer` in hub-repair mode scoped to exactly those rows, `BIN file apply`, re-run
+`--full`. Lint unavailable → say so; never read an unavailable checker as a pass.
+
+**Declared slug with no FEATURES.md row.** `file apply` refuses it; add the `proposed` row yourself (the
+declared-slug exception, and the only FEATURES.md write this skill makes), then re-run `file apply`.
+
+**New hubs.** `file apply` reports `hubs_created`. For each, run `3-filing.md` § Step 2a (domain research) and
+append its `## Domain Research` entry — the one write this skill still makes itself.
 
 ## Rules
 
 - **Recall is the point.** A wrong row dies in the audit; a missing row is invisible forever.
-- **Classify before typing** — as-is · pain · to-be. A screen-share of the old system is a `decision`,
-  not a `requirement`. Classifying changes a row's `Type`, never whether it gets written.
-- **Never guess an anchor.** No matching slug → a written question, never the closest slug.
-- **Never mint a feature slug from your own reading.** Permanent, everything downstream anchors to it — a
-  human's call, which is why this skill has no `AskUserQuestion`. **One exception**, and only one: a slug
-  the human themselves typed into `declared_features:` at capture, which has no `{requirements_file}` row
-  yet, gets a `proposed` row added and reported (`{filing_rules}` § The declared-slug exception). That
-  isn't the agent deciding scope; it is recording a decision a human already made.
-- **Never touch a UC or BR.** Hub Signal Log plus the vault-wide registers, nothing else.
-- **The extractor is blind to themes.** One that knows its rows get grouped starts pre-grouping — the
-  raw record is the one place that's unrecoverable.
-- **Audit before filing.** A bad row is corrected in the table, not cut out of a themed hub row later.
-- **An unread block blocks the note.** The table looks complete, the audit checks only what the table
-  cites, the hub shows signals filed — nothing downstream can see the gap.
-- **2c anchors row by row, never by adjacency** — otherwise the tail of a long note lands on the wrong
-  feature permanently. Report the `{requirements_file}` scope phrase matched for each row.
-- **2c sets `status` last**, after confirming every hub write landed. `in-review` drops the note from
-  every future scan.
-- **Row numbers on a note's table are permanent ids.** A re-extraction or a repair corrects a row in
-  place, supersedes it with a new row, or appends — it never renumbers. Hub `Source` cites point at these
-  numbers, and a renumber re-points every one of them at a different claim without breaking anything
-  visibly (`{extraction_rules}` § Row numbers are permanent ids).
-- **An answer folds back to the note that asked.** When a row of this note resolves a question raised on
-  a hub or an earlier note, 2c ticks **both** copies and cites this note. Otherwise the earlier note sits
-  `needs-clarification` forever with an unticked box, reading as blocking when it isn't
-  (`{filing_rules}` § Step 5b).
-- **Resume = re-run.** The vault is the only state; every run rescans `{inbox_dir}` fresh.
+- **Classify before typing** — as-is · pain · to-be. Classifying changes a row's `Type`, never whether it exists.
+- **Never guess an anchor, never mint a slug from an agent's reading.** Only a slug a human typed into
+  `declared_features:` at capture may gain a `proposed` FEATURES.md row (`3-filing.md` § The declared-slug exception).
+- **The extractor is blind to themes; audit before filing; filing is serial; the note's status is set last** (the
+  engine does this last in `file apply`).
+- **Row numbers on a note are permanent ids** — the engine numbers, appends, and never renumbers.
+- **Questions are add-only; ticking needs a filled `A:`.** An answer folds back to the note that asked (`answers`).
+- **Never touch a UC or BR.** Hubs and the three registers only — and only through `file apply`.
+- **Resume = re-run.** The vault and `_runs/<id>/results.jsonl` are the only state.
 
 ## Stage 3 — Report
 
 ```text
-processed: N notes
-sources:   INT-###: N/N blocks read (<kind × n>) — ## Raw N lines in N reads · unread: <what + why | none>
-coverage:  INT-###: M segments, N rows (0-row segments: <list|none>) · field tables: <N fields → N rows|none>
-mix:       INT-###: as-is N · pain N · to-be N · derived N · commitments N
-           why: N of M stated (X% not stated) — <ok | re-ran 2a>
-           rationale: N in question · N non-blocking · N unmarked <row #s | none>
-audit:     INT-###: <self | independent (<trigger>)> — N claims in source, N gaps appended,
-           N narrowed, N inversions re-typed, N conflicts paired, N downgraded to question
-filed:     <slug>: N signals in M themed rows (Signal Log #a-#b)
+run:       <RUN> — BIN run summary RUN
+sources:   INT-###: N/N blocks read · unread: <what + why | none>
+mix:       INT-###: as-is N · pain N · to-be N · derived N · why stated N of M (X% not stated)
+audit:     INT-###: <self | independent (<trigger>)> — gaps N, narrowed N, inversions N, conflicts N
+filed:     <slug>: N signals in M themed rows (#a-#b) · new hubs: <slugs + research entry>
 registers: PP minted <ids> · PP matched <ids> · entities N · design N
-parked:    INT-### awaiting an answer (N open) · INT-### awaiting a feature mapping
-gate:      bigin-lint --full: clean | repaired (<what>) | UNAVAILABLE (<why>) — checked by hand
-remaining: N in queue — re-run to continue
-```
-
-These four lines are the only place quality is visible: `sources` catches a source nobody read ·
-`coverage` under-extraction · `mix` mis-classification · `audit` fidelity. A run that appended gaps or
-re-typed inversions is never folded into "clean".
-
-**`audit:` must say which depth ran on each note.** `self` and `independent` are not
-interchangeable, and a note that says neither is a note where nobody can tell whether a transcript
-got the fresh reader it was owed.
-
-## Themed hub rows
-
-One hub row answers "what did this note say about this feature?", not "what was signal #4?".
-
-Test: *would a drafter write these into one requirement statement?* Adjacency isn't a theme; sharing a
-slug isn't a theme; a theme of one is normal.
-
-```text
-note INT-014 ## Extracted signals — flat, unchanged
-  #3 requirement  age computed from date of birth
-  #5 decision     cut-off is 1 September
-  #7 constraint   under-18s need guardian consent
-
-hub  enrolment-eligibility ## Signal Log — one row
-| # | Signal | Type | Source | Status | Destination | Notes |
-| 7 | **Age eligibility** — age computed from date of birth; cut-off is 1 September; under-18s need
-  guardian consent | requirement + constraint + decision | INT-014 #3, #5, #7 — Jane Doe 2026-08-05 | new | | |
-```
-
-The `Source` row numbers are the traceability that replaces one-row-per-signal; Stage 2's verify pass
-checks every anchored row appears in exactly one hub row **per feature it anchored to**. A signal spanning
-two features is filed to both hubs and cited once on each — that is the dual-anchor rule working, not a
-duplicate.
-
-Never merge across: **different notes or runs** (cite the older row as `Notes: extends #<n>`) ·
-**different `Status`** (only `new` consolidates) · **presentation vs behavioural** (different lanes) ·
-**contradictions** (that's a `conflict`).
-
-Over-merging is the failure mode: a row that reads like one ask but hides four. Full rules:
-`{filing_rules}` § Step 2 — File to the Feature Hub.
-
-## Feature-mapping loop
-
-```text
-no {requirements_file} slug matches
-    → question on the INT note (owner: team, tag needs-review), status → needs-clarification
-        ambiguous among existing slugs → ask which one
-        nothing fits                   → ship a drafted slug + one-line scope to confirm or edit
-    → human writes the slug into the A: line, ticks the box
-    → next run folds it in and anchors properly       # no re-extraction, no separate command
+parked:    INT-### awaiting an answer (N open) · awaiting a feature mapping
+gate:      bigin lint --full: clean | repaired (<what>) | UNAVAILABLE (<why>) · coverage --stage file: missing N
+tokens:    BIN metrics report --run RUN
 ```
 
 ## Additional resources
 
-- **`references/agent-dispatch.md`** — the per-run data to hand each of the three named agents, the
-  audit-owed test, and the parallelism rule. Their procedures live in `_bigin/`
-  (`{extraction_rules}`, `{audit_rules}`, `{filing_rules}`) — one home each, never a second copy here.
-- **`hooks/bigin-lint.py --full`** (plugin root) — Stage 2 step 3's batch gate. It replaced the
-  `signal-batch-verifier` agent in 1.8.8, along with `signal-repairer`, whose work now happens inside
-  whichever agent found the finding.
+- `references/agent-dispatch.md` — the prompt shape for each agent in the fallback loop, and the audit-owed test.
+- `cards/extractor.md`, `cards/auditor.md`, `cards/filer.md` — what each agent reads (≤ 3 KB each).
+- `_bigin/stages/extract/` — the human reference the cards are derived from.

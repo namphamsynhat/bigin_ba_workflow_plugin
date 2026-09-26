@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigin/audit/1",
+  "title": "signal-auditor output: findings and repairs for one note",
+  "type": "object",
+  "required": [
+    "kind",
+    "int",
+    "findings"
+  ],
+  "properties": {
+    "$schema_version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "audit"
+    },
+    "int": {
+      "type": "string"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "missed",
+              "unsupported",
+              "inverted",
+              "merged",
+              "mistyped",
+              "miscited"
+            ]
+          },
+          "n": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "repairs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "enum": [
+              "append",
+              "edit",
+              "flag"
+            ]
+          },
+          "n": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "signal": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "verdict": {
+      "enum": [
+        "stands",
+        "repaired",
+        "needs-human"
+      ]
+    }
+  }
+}

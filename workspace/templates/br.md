@@ -2,39 +2,25 @@
 id: BR-
 type: business-rule
 title:
-status: draft   # draft | needs-clarification | enriched | approved | consolidated | removed
-                # (`core.md` § Status vocabularies — in-review and superseded are
-                # retired for FR/BR) — same discipline as an FR; /bigin-transform-signal only ever
-                # writes draft/needs-clarification.
+status: draft
 version: 1.0
-feature:         # the FEATURES.md slug this BR belongs to
-uc: []           # UC-### id(s) this rule governs — [] if it's a feature-level rule not yet tied to
-                 # one workflow (`registers.md` § Signal → artifact mapping). This file is the SOURCE
-                 # of the rule; each listed UC's § 4 is a read-only mirror of it (BABOK § 10.47 —
-                 # rules are captured separately so a rule change doesn't force a use-case change).
-fr: []           # RETIRED. Pre-UC FR-### id(s) this rule constrained, kept as traceability so old
-                 # ids still resolve. Nothing writes here any more.
-sources: []      # INT-### id(s) this BR traces to
+feature:
+uc: []
+fr: []
+sources: []
 links: []
 owner: team
 updated:
 ---
 
 # `BR-<NNN> <Title>`
+<!-- guide: _bigin/templates/br.guide.md -->
 
-`<the rule itself, stated as a testable constraint: "If CONDITION, then the system must / must not ...">`
-
-Not a restatement of the step it constrains — a rule narrows or governs how the workflow behaves.
-A rule about an entity field also names it: "Governs EN-004 Vendor → tax_code."
+`<If CONDITION, then the system must / must not EFFECT — one testable rule>`
 
 ## Discussion
-<!-- Staged, not-yet-applied change proposals, cleared into the rule statement above once the
-human gate (SKILL.md Stage 3 raises it / Stage 1 folds it in) confirms it. Same format as
-_bigin/templates/use-case.md's ## Discussion. -->
 
 ## Open Questions
-<!-- Same format and invariant as a use case's § 5 Still open list (`questions.md` § Open Questions
-wording, `questions.md` § Open Questions ↔ status consistency). -->
 
 ## Changelog
 - 1.0 (YYYY-MM-DD) — created from `<INT-###>`

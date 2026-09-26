@@ -319,6 +319,13 @@ to `/bigin-run` (or name the feature instead of the id). It reads what you wrote
 re-counts what's still open, and comes back once — either with genuine follow-up questions, or
 an approval ask if you've cleared everything.
 
+**Pending changes.** A use case may show a `## Pending changes` block: drafted edits that are
+waiting on one of its open questions (each line names the change, where it lands, and the
+question). It is read-only — don't edit it. Answer the question on its `A:` line; the next
+run (or `bin/bigin ledger release`) applies the change and moves the settled question into the
+Decision log. A use case can't be approved while a pending change is open. If your answer is
+a "no", the change is not applied blindly — it's set aside for a decision instead.
+
 To formally sign off a use case once it's ready:
 
 ```
@@ -349,6 +356,22 @@ assembles everything into one interactive `index.html`, which gets copied back i
 `04-UIUX/_prototypes/<date>-<slug>/` in your repo. Requires Open Design to be connected —
 `/bigin-new-project` will have told you if it isn't.
 
+### Rendering modular UX frames
+
+```
+/bigin-render-ux-frame <UX-### | feature-slug>
+```
+
+Renders modular, self-contained HTML screen frames (`ux-###-scr-##-*.html`) for a feature, tagged with machine-readable `data-*` attributes (`data-ux`, `data-screen-id`, `data-role`, `data-type`).
+
+### Assembling master prototype
+
+```
+/bigin-assemble-prototype [--all | <UX-### ...> | --layout <auto|top-nav|side-nav|rail|bottom-nav>]
+```
+
+Assembles modular UX screen frames into a unified, full-fidelity interactive master prototype (`index.html`) following the navigation map and the native app shell of the selected design system (top-nav horizontal tabs, side-nav, rail, or mobile bottom bar). Supports multi-state scenario simulation (`active`, `empty`, `loading`, `error`), cross-audits spec coverage in a closed loop, and updates existing prototypes in-place.
+
 ### Generating the PRD
 
 ```
@@ -373,6 +396,8 @@ it after every single one.
 | `/sync-entities [UC-id \| EN-id \| rebuild]` | Promote/refresh entities and hubs after approvals | No |
 | `/enrich-feature <feature-slug>` | Manually refresh domain research for one feature | No |
 | `/bigin-generate-design [feature\|UC-###]` | Produce/update a UX spec | No |
+| `/bigin-render-ux-frame <UX-### \| feature>` | Render modular HTML screen frames | No |
+| `/bigin-assemble-prototype [--all \| --layout ...]` | Assemble modular frames into master prototype | No |
 | `/bigin-render-design-od [feature... \| --all]` | Render an interactive prototype | **Yes — never run unasked** |
 | `/bigin-generate-prd [feature\|UC-###]` | Roll approved UCs into a PRD | No |
 | `/bigin-run [feature\|UC-id]` | Figure out what's next and run it | Stops only at real decisions |
@@ -392,12 +417,41 @@ _bigin/                    engagement config + the materialized rulebook (plugin
   _ucs/UC-### <Title>.md   one use case per user goal — the core requirement artifact
   _brs/BR-### <Title>.md   one business rule per file
   _entities/EN-### <Title>.md   promoted, fully data-modeled entities
+  _features/<slug>.signals.md   a hub's append-only signal log (v1.12, once split out of the hub)
+  _ledger/<slug>.jsonl     drafted changes waiting on a question — shown on each UC as "Pending changes"
+_runs/                     the engine's run records, backups and pre-migration snapshots (don't edit)
 04-UIUX/UX-### <Feature>.md    UX spec per feature: screens, flows, navigation
 04-UIUX/_prototypes/<run>/     a rendered prototype, once you've asked for one
 02-PRD/PRD-### <Feature>.md    one PRD per feature, rolled up from approved use cases
 ```
 
 A full field-by-field breakdown lives in [README.md](README.md#workflow).
+
+### Two ways requirements arrive (v1.12)
+
+`_bigin/system/project.md` has a `grounding:` field. **communication** (the default) is
+everything above: meetings, email and notes, captured verbatim. **codebase** is for an existing
+product whose rules are read out of its code: rule cards (for example from
+`code-modernization:modernize-extract-rules`) are imported with
+
+```
+"${CLAUDE_PLUGIN_ROOT}/bin/bigin" intake codebase --cards analysis/_rules-store.json
+```
+
+which writes the intake notes and files every card onto its feature hub without an AI pass;
+only cards it can't place on a feature are left for one filing step. Disagreements between two
+readings are then checked against the code before anyone is asked. **both** does both. See
+[docs/CODEBASE-INTAKE.md](docs/CODEBASE-INTAKE.md).
+
+### The engine, in one paragraph
+
+Bookkeeping — numbering, hub tables, statuses, links, applying drafted changes — is done by a
+command-line engine inside the plugin (`bin/bigin`), not by AI agents. You rarely need to run
+it yourself; the skills do. Useful by hand: `bin/bigin lint --full` (is the vault consistent?),
+`bin/bigin coverage --stage transform` (did every signal reach a use case or rule?),
+`bin/bigin ledger list` (what's waiting on an answer?). Every file it rewrites is backed up
+under `_runs/_backups/`. After a plugin upgrade, `/bigin-upgrade-project` migrates the vault
+with a snapshot first ([docs/MIGRATION.md](docs/MIGRATION.md)).
 
 ## 9. Troubleshooting
 
@@ -415,7 +469,7 @@ OAuth-gated one ("needs authentication"), authorize it in claude.ai connector se
 `od mcp install claude`, or see the app's own Settings → MCP server instructions. Nothing else
 in the pipeline needs it.
 
-**A write gets rejected with a lint finding** — `hooks/bigin-lint.py` checks structural
+**A write gets rejected with a lint finding** — `hooks/bigin-lint.py` (since v1.9 `bin/bigin lint`) checks structural
 invariants (duplicate IDs, malformed tables, bad statuses) on every write into `00-Inbox/` or
 `01-Requirements/`. The finding is fed back to whichever stage made the write — that's the
 hook doing its job, not a bug. If it's noisy, ask whoever manages the plugin about

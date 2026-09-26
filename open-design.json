@@ -1,0 +1,30 @@
+{
+  "specVersion": "1.0.0",
+  "name": "bigin-ba-workflow",
+  "title": "Bigin BA Workflow",
+  "version": "1.8.12",
+  "description": "Bigin Business Analysis & Rapid Prototyping Plugin with modular frame rendering and automated prototype assembly.",
+  "compat": {
+    "claudePlugins": [
+      {
+        "path": "./.claude-plugin/plugin.json"
+      }
+    ],
+    "agentSkills": [
+      {
+        "path": "./skills/bigin-assemble-prototype/SKILL.md"
+      },
+      {
+        "path": "./skills/bigin-render-ux-frame/SKILL.md"
+      }
+    ]
+  },
+  "od": {
+    "kind": "skill",
+    "taskKind": "new-generation",
+    "mode": "prototype",
+    "surface": "web",
+    "platform": "desktop",
+    "scenario": "design"
+  }
+}

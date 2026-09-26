@@ -1,0 +1,122 @@
+{
+  "XR-CALC-001": {
+    "slug": "rates",
+    "cap": "C1.1",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-CALC-002": {
+    "slug": "rates",
+    "cap": "C1.1",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-CALC-003": {
+    "slug": "rates",
+    "cap": "C1.1",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-VALI-004": {
+    "slug": "rates",
+    "cap": "C1.2",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-VALI-005": {
+    "slug": "rates",
+    "cap": "C1.2",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-POLI-006": {
+    "slug": "rates",
+    "cap": "C1.2",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-LIFE-007": {
+    "slug": "rates",
+    "cap": "C1.2",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-CALC-008": {
+    "slug": "rates",
+    "cap": "C1.3",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-VALI-009": {
+    "slug": "rates",
+    "cap": "C1.3",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-LIFE-010": {
+    "slug": "rates",
+    "cap": "C1.3",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-VALI-011": {
+    "slug": "bookings",
+    "cap": "C2.1",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-VALI-012": {
+    "slug": "bookings",
+    "cap": "C2.1",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-LIFE-013": {
+    "slug": "bookings",
+    "cap": "C2.1",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-LIFE-014": {
+    "slug": "bookings",
+    "cap": "C2.2",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-POLI-015": {
+    "slug": "bookings",
+    "cap": "C2.2",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-CALC-016": {
+    "slug": "bookings",
+    "cap": "C2.2",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-LIFE-017": {
+    "slug": "bookings",
+    "cap": "C2.3",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-POLI-018": {
+    "slug": "bookings",
+    "cap": "C2.3",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-VALI-019": {
+    "slug": "bookings",
+    "cap": "C2.3",
+    "lane": "BR",
+    "surface": "backend"
+  },
+  "XR-CALC-020": {
+    "slug": "bookings",
+    "cap": "C2.3",
+    "lane": "BR",
+    "surface": "backend"
+  }
+}

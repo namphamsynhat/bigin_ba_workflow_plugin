@@ -35,7 +35,7 @@ the hub has no `## Coverage Gaps` section at all                    # never chec
 $ARGUMENTS named this slug explicitly                               # a human asked about this feature
 ```
 
-The first is what keeps the cost proportional: a run that only staged a rule mirror re-checks nothing.
+The first is what keeps the cost proportional: a run that only added a rule mirror re-checks nothing.
 The second is the one-time backfill for a feature whose UCs predate this stage. The third is why an
 **empty Stage 2 worklist does not skip this pass** when a slug was named — `/bigin-transform-signal
 donor-module` with no new signals is exactly someone asking "is this feature complete?", and the
@@ -47,7 +47,7 @@ Skip a feature with **no UC at all** — there is no set to reason about, and it
 ## The lens — six tests, in this order
 
 Run every one. Each names a gap only when **both** halves hold: the business plainly needs it, **and**
-the record is silent — no UC, no `## Discussion` entry, no BR, no open question, and no signal that
+the record is silent — no UC, no pending change, no BR, no open question, and no signal that
 says it lives somewhere else.
 
 | Lens | The test | A gap reads like |
@@ -66,7 +66,7 @@ NOT a gap:
   an entity ANOTHER feature owns          → its lifecycle is that feature's coverage question
   reference/config data the client said is set up once, elsewhere, or imported
   a stage the client explicitly ruled out ("we never delete a donor") — that is a stated answer
-  something already sitting as an open question, a `held` signal, or a `## Discussion` entry
+  something already sitting as an open question, a `held` signal, or a pending ledger change
   a stage a UC covers under a different name — read ## 2 and ## 3, never the title alone
 STILL a gap:
   a stage nobody has mentioned in either direction. Silence is the finding.
@@ -109,8 +109,9 @@ re-status every EXISTING row before appending a new one:
     a UC now covers it            → `covered`, Notes: covered by UC-###
     a human answered it on the hub → `answered` — leave it for /bigin-intake to capture as a signal
     still silent                  → leave it `open`. Do NOT re-raise it as a second row
-mirror every `open` and `answered` row into `## Open Questions / Gates`, same sentence
 append one `## Changelog` line: coverage pass, N new gap(s), N closed
+then `bin/bigin hub refresh <slug>` — it mirrors every `open`/`answered` row into `## Open Questions / Gates`,
+same sentence (add-only), so never copy them by hand
 ```
 
 An `answered` row is **not** content and never becomes content here. The answer is new raw material:
@@ -128,7 +129,7 @@ from an answer typed onto a hub is how unsourced scope enters the vault.
 - **Never raise a gap as a `- [ ] Q:`** on a UC or a BR, and never write one onto an intake note.
 - **Never write a Signal Log row.** No signal was received; inventing one to carry a gap breaks the
   one thing that table guarantees — that every row traces to something somebody said.
-- **Never flip a row to `covered` on the strength of a `## Discussion` entry.** Staged is not written.
+- **Never flip a row to `covered` on the strength of a pending (gated) change set.** Pending is not written.
 - **Never touch another feature's hub.** A gap that turns out to belong to another feature is raised on
   **that** feature's hub, by that feature's own pass — name it in the report instead.
 
@@ -171,5 +172,5 @@ and "nobody looked".
 - **Skipping the pass because the run "only" updated a UC.** A new step is exactly how a
   pre-condition nothing satisfies gets introduced.
 - **Letting a per-feature Stage 3 subagent do this.** It sees one feature's signals, not its whole UC
-  set, and it holds an `Edit` tool over files this pass must only read. This runs in the orchestrator,
+  set, and it writes only its own JSON output. This runs in the orchestrator,
   after every subagent has reported, like the rest of Stage 4.

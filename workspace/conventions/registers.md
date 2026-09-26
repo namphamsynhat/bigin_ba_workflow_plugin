@@ -146,7 +146,9 @@ cites its id on the signal row instead of creating a near-duplicate. Ids are vau
 numbered like `BR-###` (scan `01-Requirements/PAIN-POINTS.md`, not any UC, since a pain point can
 predate its feature's UC) — tracked in `01-Requirements/PAIN-POINTS.md`
 (`type: pain-point-register`, singleton, instantiate from
-`_bigin/templates/pain-points-register.md`):
+`_bigin/templates/pain-points-register.md`). Since v1.10.0 `/extract-signal`'s filer only decides the match
+(`filing.json` `pain_points[].match`); `bin/bigin file apply` mints the id, writes the register row and the hub
+mirror, and cites the id on the note row:
 
 | PP-### | Statement | Feature | Source | Status | Proposed solution | Resolved by |
 |--------|-----------|---------|--------|--------|--------------------|--------------|

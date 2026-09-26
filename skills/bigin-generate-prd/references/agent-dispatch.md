@@ -58,7 +58,11 @@ DESIGN:              <UX-###@<version> — fold its screens into § 9 | "no desi
 PRD ENGINE:          <bmad | <plugin> | built-in> — <one line on how to use it>
 
 READ FIRST:
-- _bigin/conventions/conventions.md — these sections ONLY: `feature-hub.md` § Feature material, § Traceability
+- ${CLAUDE_PLUGIN_ROOT}/cards/prd-writer.md — YOUR CARD (≤ 3 KB): inputs, output, the rules you can break,
+  a worked example. Read it before anything else; it replaces reading the convention files whole. Open a
+  convention section below only when the card cites it (‹file § heading›) or your case is not covered.
+  (v1.12.0; materialized as _bigin/cards/prd-writer.md in the vault.)
+- _bigin/conventions/conventions.md — REFERENCE, only these sections, and only as the card sends you: `feature-hub.md` § Feature material, § Traceability
   chain, `runtime.md` § Absorbed, `core.md` § Status vocabularies, `questions.md` § Open Questions wording, `registers.md` § Pain Point Register
 - _bigin/stages/prd/2-business.md, 3-flows.md, 4-design.md — your stage guides, in full
 - _bigin/templates/prd.md — the schema. Instantiate it; never compose the sections from memory

@@ -24,7 +24,7 @@ Routing decides **the artifact the signal becomes**. It is deliberately *not* a 
 | a conditional or policy constraint — feature-level, or governing one workflow | **BR** | `3-lane-br.md` |
 | presentation only: look, layout, tone, visual style, copy voice, interaction feel, accessibility affordance | **Design** | `3-lane-design.md` |
 | a thing the business tracks and its attributes — a data field or entity | **Entity** | § Entity — cite, never promote, below |
-| narrative context — the client's stated why, not actionable alone | **Context** → the UC's `## 1`, **staged in `## Discussion`** like any other UC content | `3-lane-uc.md` |
+| narrative context — the client's stated why, not actionable alone | **Context** → the UC's `## 1` Business Need (a `set_field` change set, gated when a decision is needed) like any other UC content | `3-lane-uc.md` |
 | a named frustration or cost with no requirement attached | **Context** → `PP-###` on the UC's `pain_points:` | `3-lane-uc.md` |
 
 A `pain-point` with no attached requirement is **not a gap to fill**. It stays on record until a later
@@ -81,18 +81,16 @@ Decide by **reading**, never by how the signal is phrased. "We also need…" is 
 is warranted; most new signals are a step, branch, or rule inside a workflow that already exists.
 
 ```text
-1  read the hub's `uc:` list — and, if the signal sounds cross-feature, the `uc:` lists of the other
-   hubs it plausibly touches
-2  open each listed UC and read its ACTUAL CONTENT: the goal in `title`, ## 1, and the flow
+1  read the worklist's `candidates` (every UC on this hub) — and, if the signal sounds cross-feature,
+   find the other feature's UCs in `uc_index` (ask for them with `--uc` on a re-run if their cards are needed)
+2  read each candidate's ACTUAL CONTENT: the goal in `title`, the § 1 summary, and the steps/flows
 3  SAME GOAL   → update that UC in place, AT ANY STATUS
                  (approval does not freeze a UC, and neither does a shipped feature)
                  "same goal" = the same actor sitting down to accomplish the same thing
                  a new step, a new branch, a changed validation, a new rule are ALL updates
-4  DIFFERENT GOAL → a new UC. Report it as `new (unminted)`: the ORCHESTRATOR mints the id and the
-                 skeleton, one at a time, between Phase A and Phase B — never a per-feature subagent, or
-                 two concurrent features Grep the same highest number and mint the same id
-                 (when the orchestrator mints: use the Grep TOOL, never a Bash pipeline — a denied
-                 pipeline silently reuses an id)
+4  DIFFERENT GOAL → a new UC. Record it as a `new` entry with a `key` (title, goal, actor,
+                 primary_feature, features): the ENGINE mints the id between Phase A and Phase B
+                 (`bigin mint route`, serial, file-locked) — never a subagent, never a hand-picked number
 ```
 
 Two tests worth applying literally:
@@ -103,8 +101,8 @@ Two tests worth applying literally:
   correct rather than fragmentation. What it must not get is two UCs for one goal.
 
 For a cross-feature UC, also decide **`primary_feature`** — the feature whose actor holds the goal.
-That decides which subagent may write the file; every other participating feature is listed in
-`features:` and gets a hub pointer in Stage 4.
+It becomes the UC's owner hub; every other participating feature goes in `features:` and gets its hub
+pointer from `bigin hub refresh`.
 
 ## Durable vs. feature-scoped — the Design lane's lookup
 
@@ -139,29 +137,21 @@ row — there is no `EN-###` id to cite yet, and minting one is not this skill's
 
 ## Recording the routing decision
 
-The hub row's `Destination` cell — the column extraction deliberately leaves blank — records where the
-signal went. A themed row lists every destination its clauses reached, ` · `-joined, and only reaches a
-terminal `Status` once all of them are recorded.
+The router never writes a row. It records each decision in its output: Phase A's `route` entry
+(row, clause, lane, target), then Phase B's change sets, each carrying `trace.hub` + `trace.hub_rows`.
+`bigin apply` then writes the row's `Destination` (every clause's target, ` · `-joined) and `Status`:
 
-| Lane | `Destination` | `Status` |
+| Outcome | `Destination` written | `Status` |
 |---|---|---|
-| UC | `UC-###`, or `UC-### S<n>` / `UC-### E<n>` when the target exists | `staged` |
-| BR | `BR-###` | `staged` |
-| Design, durable | `DESIGN-PRINCIPLES #<n>` | `applied` |
-| Design, feature-scoped | `<slug> ## Design Directives #<n>` | `applied` |
-| Entity | `ENTITIES.md proposed` — never promoted here | `applied` |
-| Context, Business Need | `UC-### § 1` | `staged` — it is content inside `## 1`, so it passes the gate |
-| Context, pain point | `PP-###` | `applied` — frontmatter, not a numbered section |
+| UC / BR / Context change applied | `UC-### S<n>` · `UC-### § 1` · `BR-###` … (where it landed) | `applied` |
+| change gated on a question | `UC-### pending` | `staged` until `ledger release` applies it |
+| drift (text reworded since the worklist) | `UC-### drift question` | `staged` until the question is answered |
+| Design, feature-scoped (`add_directive`) | `<slug> Design Directives #<n>` | `applied` |
 
-Design, Entity, and a Context **pain point** are `applied` on write because nothing about them is staged
-behind a gate — the gate exists to protect UC/BR content from entering approved scope unreviewed, and
-none of these enter it. A Context **Business Need** is the exception, and the reason the two Context
-destinations are listed separately: it writes into a UC's `## 1`, which *is* UC content, so it stages
-like everything else in that block (`3-lane-uc.md` § The Context sub-lane).
-
-`Destination` for a feature-scoped design directive names the hub row it created (`#<n>`), not just the
-section — `5-status.md` check 2 asserts an `applied` row's content is findable at the id its
-`Destination` names, and "somewhere in `## Design Directives`" isn't findable.
+Rows with no change set — Design durable (a `DESIGN-PRINCIPLES.md` row the orchestrator writes),
+Entity citation (`ENTITIES.md proposed`), a Context pain point cited by id, or a row the router lists under
+`unrouted` — are flipped by the orchestrator: `bigin hub flip <slug> <n>=applied:<destination>`.
+A themed row reaches `applied` only when every clause's change set landed.
 
 Entity's `applied` marks the *citation* as done, not the entity as modelled — the row still waits on
 `/approve-uc` + `/sync-entities` for that.

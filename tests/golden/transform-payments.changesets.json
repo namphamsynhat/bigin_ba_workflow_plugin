@@ -1,0 +1,11 @@
+{"$schema_version":1,"kind":"changesets","feature":"payments","changesets":[
+ {"id":"cs-golden-4a","trace":{"int":"INT-002","note_rows":[6],"hub":"payments","hub_rows":["4"]},
+  "target":{"kind":"UC","id":"UC-003","section":"2"},"op":"new_step_after","anchor":{"ref":"S1","sha":"33649690f016"},
+  "cells":{"actor":"Finance officer checks the applicant confirmed their bank details.","system":"System blocks release until the details are confirmed."}},
+ {"id":"cs-golden-4b","trace":{"int":"INT-002","note_rows":[6],"hub":"payments","hub_rows":["4"]},
+  "target":{"kind":"UC","id":"UC-003","section":"4"},"op":"mirror_br","br":"BR-006","enforced_at":"S3"},
+ {"id":"cs-golden-4c","trace":{"int":"INT-002","note_rows":[6],"hub":"payments","hub_rows":["4"]},
+  "target":{"kind":"UC","id":"UC-003","section":"1","field":"Pre-conditions"},"op":"append_note","text":"The applicant has confirmed their bank details"},
+ {"id":"cs-golden-3a","trace":{"int":"INT-002","note_rows":[4],"hub":"payments","hub_rows":["3"]},
+  "target":{"kind":"BR","id":"BR-005"},"op":"set_rule","text":"If a payment exceeds $10,000, then finance must sign it off before release, and the sign-off is recorded with the approver's name."}
+]}

@@ -1,0 +1,284 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigin/filing/1",
+  "title": "signal-filer output: anchoring, themed hub rows, registers, questions for one note",
+  "type": "object",
+  "required": [
+    "kind",
+    "int",
+    "rows"
+  ],
+  "properties": {
+    "$schema_version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "filing"
+    },
+    "int": {
+      "type": "string",
+      "pattern": "^INT-\\d+$"
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "n",
+          "feature",
+          "status"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "n": {
+            "type": "integer"
+          },
+          "feature": {
+            "type": "string",
+            "description": "slug, 'a / b' for two anchors, or 'unresolved — candidates: a / b' / 'unresolved — none found'"
+          },
+          "status": {
+            "enum": [
+              "new",
+              "question",
+              "conflict",
+              "rejected"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "hub_rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "hub",
+          "signal",
+          "type",
+          "note_rows",
+          "status"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "hub": {
+            "type": "string"
+          },
+          "signal": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "note_rows": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 1
+          },
+          "cite": {
+            "type": "string",
+            "description": "the note row's own cite, e.g. 'Jane Doe 2026-08-05'"
+          },
+          "status": {
+            "enum": [
+              "new",
+              "question",
+              "conflict",
+              "rejected"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "conflicts_with": {
+            "type": "string",
+            "description": "existing row # on that hub this row contradicts"
+          }
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "where",
+          "text"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "where": {
+            "enum": [
+              "note",
+              "hub"
+            ]
+          },
+          "hub": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "owner": {
+            "enum": [
+              "client",
+              "team"
+            ]
+          },
+          "ref": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pain_points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "statement",
+          "feature",
+          "n"
+        ],
+        "properties": {
+          "statement": {
+            "type": "string"
+          },
+          "feature": {
+            "type": "string"
+          },
+          "n": {
+            "type": "integer"
+          },
+          "match": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "proposed_solution": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "object",
+          "feature"
+        ],
+        "properties": {
+          "object": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "feature": {
+            "type": "string"
+          },
+          "n": {
+            "type": "integer"
+          },
+          "match": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "design_principles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "principle"
+        ],
+        "properties": {
+          "principle": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "answers": {
+      "type": "array",
+      "description": "Step 5b: a row of this note answers a question on another note",
+      "items": {
+        "type": "object",
+        "required": [
+          "int",
+          "question",
+          "answer"
+        ],
+        "properties": {
+          "int": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "note_status": {
+      "enum": [
+        "in-review",
+        "needs-clarification"
+      ]
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "new_features": {
+      "type": "array",
+      "description": "declared-slug exception only: slugs the human declared at capture",
+      "items": {
+        "type": "object",
+        "required": [
+          "slug"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

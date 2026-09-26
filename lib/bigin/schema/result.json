@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigin/result/1",
+  "title": "per-task result line written to _runs/<id>/results.jsonl",
+  "type": "object",
+  "required": [
+    "task",
+    "status"
+  ],
+  "properties": {
+    "task": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "blocked",
+        "failed",
+        "skipped"
+      ]
+    },
+    "counts": {
+      "type": "object"
+    },
+    "note": {
+      "type": "string"
+    },
+    "at": {
+      "type": "string"
+    }
+  }
+}

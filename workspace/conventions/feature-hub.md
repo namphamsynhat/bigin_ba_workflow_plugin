@@ -4,7 +4,8 @@ The hub's own schema — its frontmatter, its tables, what each one is derived f
 `FEATURES.md` feature-map format and the feature-material handoff a PRD reads.
 
 **Read by** `/extract-signal` (filing), `/bigin-transform-signal` (sync), `/enrich-feature`,
-`hub-bookkeeper`, and `/bigin-generate-prd` (§ Feature material).
+and `/bigin-generate-prd` (§ Feature material). Every derived table here is written by the engine
+(`bin/bigin hub refresh`, `hub flip`, `hub sweep`, `links sync`), never by hand or by an agent.
 
 ## Feature material (the approve → process handoff)
 
@@ -108,8 +109,9 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   - **`Status` values**: `new` (just landed, not yet triaged) · `held` (anchored to the feature, no
     UC exists yet — resting state pre-UC, no gate, no urgency; once a UC exists, a new signal
     against it moves straight to `staged` rather than resting here, regardless of the UC's status
-    — hard rule 7, approval no longer freezes it) · `staged` (a proposed change sitting in a UC's
-    `## Discussion`, not yet applied) · `applied` (folded into UC content) · `question` (the signal
+    — hard rule 7, approval no longer freezes it) · `staged` (a change set routed from this row is
+    waiting — gated in the ledger on a question, or not applied because of a drift question; legacy
+    v1.8 vaults: a `## Discussion` entry) · `applied` (landed in UC/BR content) · `question` (the signal
     *is* an open question, not a requirement — tracked until answered) · `conflict` (contradicts
     an earlier row — needs human resolution before either can be applied) · `superseded` (an older
     row a resolved conflict/newer decision overrode) · `rejected` (explicitly out of scope). This
@@ -125,9 +127,10 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
     in `Notes`. Raise an Open Question (never guess which one wins) on the UC it belongs to (its
     most recent open one, if any exist; otherwise the closest applicable UC) or on this note if
     none exists. Once the human answers, the losing row flips to `superseded` (`Notes: "superseded
-    by #N, resolved <date>"`), the winning row flips to `staged`/`applied`, and the content updates
-    **in place** (version bump + changelog), regardless of whether that UC is still unapproved or
-    already `approved` (hard rule 7 — an approved UC's fold-in also flips it back to `draft`).
+    by #N, resolved <date>"`), the winning row re-enters as `new` and is drafted from the decision, and
+    the content updates **in place** (version bump + changelog), whether that UC is unapproved or
+    already `approved` (hard rule 7 — a § 2 change on an approved UC is flagged for `/approve-uc`
+    re-review in its Changelog line). Every flip is `bin/bigin hub flip`.
 - `## Use Cases` — one row per `UC-###` in this hub's `uc:` list: `UC | Goal | Role | Status`, where
   `Role` is `owns` (this feature is the UC's `primary_feature`) or `participates`. A cross-feature UC
   appears on every participating hub with the same id — that is the artifact working, not duplication
@@ -228,18 +231,17 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
   UC exists. **On a brand-new hub only** (§ Step 2a), also appends the first `## Domain Research`
   entry — the one and only time this stage writes that section; a signal filed to an already-existing
   hub never touches it.
-- `/bigin-transform-signal`: drafts/updates UC/BR files under `_ucs`/`_brs` (`intake.md` § Feedback handling),
-  after each confirmed human-gate fold-in flips the affected Signal Log row from `staged` to
-  `applied`, and refreshes `## Use Cases`, `## Requirement Readiness`, `uc:`/`br:` frontmatter. It
+- `/bigin-transform-signal`: its router emits change sets; `bin/bigin apply` writes the UC/BR files
+  (`intake.md` § Feedback handling), flips each traced Signal Log row (`applied`, or `staged` while a
+  gated/drifted change waits; `bin/bigin ledger release` applies a gated one once answered), and
+  refreshes `## Use Cases`, `## Requirement Readiness`, `## Open Questions / Gates`, `uc:`/`br:`. It
   never touches `## Entities`/`entities:` — it doesn't promote an entity, only cites a `proposed` row
-  by name (`registers.md` § Entity Data Model); `/sync-entities` is what refreshes those. For a UC spanning features it
-  writes `## Use Cases` and `uc:` on **every** participating hub, in its
-  sequential Stage 4 pass. Also appends to `## Design Directives` for
-  every presentation-only signal it routes down the Design chain, and fills each processed Signal
-  Log row's `Destination` cell (the column `/extract-signal` leaves blank) with where the signal
-  actually landed. **Appends to `## Coverage Gaps`** (and re-statuses its existing rows) on every
-  feature whose UC set it changed, mirroring the `open`/`answered` ones into
-  `## Open Questions / Gates` — its Stage 4 Part 4. It never sets a hub's own `status:` — that mirrors
+  by name (`registers.md` § Entity Data Model); `/sync-entities` is what refreshes those. For a UC spanning features the
+  refresh writes `## Use Cases` and `uc:` on **every** participating hub. `add_directive` change sets
+  append to `## Design Directives`, and the engine fills each processed row's `Destination` cell with
+  where the signal landed. The orchestrator itself **appends to `## Coverage Gaps`** (and re-statuses its
+  rows) on every feature whose UC set changed — Stage 4 Part 4 — and the next `hub refresh` mirrors the
+  `open`/`answered` ones into `## Open Questions / Gates`. It never sets a hub's own `status:` — that mirrors
   the `FEATURES.md` row's scope state, not a workflow state, and there is no "ready for PRD" feature
   status.
 - `/enrich-feature`: appends to `## Domain Research` only, on manual re-run. (The automatic first
@@ -330,12 +332,11 @@ the template first if it doesn't exist yet) — the two copies must never drift,
 is what's actually read.
 
 That "never drift" rule applies past the row's creation, too: whenever a later run adds a `UC-###`
-to a hub's `uc:` list — `/bigin-transform-signal` minting a new UC (`3-lane-uc.md` § Minting new
-UCs, `4-sync.md` § Part 1b) or `/restructure-uc` moving one between hubs — the same actor writes
+to a hub's `uc:` list — `/bigin-transform-signal` minting a new UC (`3-lane-uc.md` § Creating a new
+UC, `4-sync.md` § Part 1b) or `/restructure-uc` moving one between hubs — the same actor writes
 the matching id onto that feature's `FEATURES.md` `UC` column in the same pass, never leaving it
-for a later run to notice. This is always the orchestrating skill's own write, never
-`hub-bookkeeper`'s (`agents/hub-bookkeeper.md` never writes `FEATURES.md`) — mirroring a hub's own
-tables and mirroring the registry are different writers by design. Skip it and `FEATURES.md`'s `UC`
+for a later run to notice. Since v1.9.0 that write is the engine's: `bin/bigin mint` and
+`bin/bigin links sync` re-derive every feature's `UC` column from the UC files themselves. Skip it and `FEATURES.md`'s `UC`
 column goes stale relative to the hub's own `uc:`/`## Use Cases`, silently, with nothing else ever
 catching the drift — which is how a reader (human or agent) ends up trusting the registry's
 stale, smaller UC set instead of the hub's current one.

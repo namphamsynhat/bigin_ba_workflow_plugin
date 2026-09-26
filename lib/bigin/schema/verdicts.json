@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigin/verdicts/1",
+  "title": "ledger release verdicts from a judging agent",
+  "type": "object",
+  "required": [
+    "kind",
+    "verdicts"
+  ],
+  "properties": {
+    "kind": {
+      "const": "verdicts"
+    },
+    "verdicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "verdict"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "verdict": {
+            "enum": [
+              "apply",
+              "supersede",
+              "revise"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "changeset": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

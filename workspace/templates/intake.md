@@ -4,7 +4,8 @@ type: intake
 kind: requirement        # requirement | feedback | mixed | info (ops/admin — captured, never processed into signals). The ONLY judgement /intake makes.
 title:
 status: raw
-source: email            # email | meeting | direct
+source: email            # email | meeting | direct — communication mode · codebase — rule cards imported by `bin/bigin intake codebase` (no LLM extraction)
+grounding:               # codebase notes only: `codebase` — transform treats the cited code as the tie-breaker (project.md conflict_policy). Blank on communication notes.
 source_ref:              # email: thread subject; meeting: name + date; direct: URL, filename, or "user input YYYY-MM-DD"
 source_ids: []           # email: provider's conversation id + message ids (Outlook), or thread id (Spark); meeting: provider's meeting id (Fathom, Spark, or Firefly); direct: URL (for link intakes) — used for re-run dedup. Provider chosen by email_provider/meeting_provider in project.md.
 attachments: []          # vault-relative paths to attached files — 00-Inbox/_attachments/<INT-id>/<filename>

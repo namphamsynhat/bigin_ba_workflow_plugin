@@ -1,0 +1,22 @@
+{
+  "specVersion": "1.0.0",
+  "name": "bigin-render-ux-frame",
+  "title": "Bigin Render UX Frame",
+  "version": "1.8.12",
+  "description": "Render pure, modular UX design frames for a specified feature directly from the requirements vault.",
+  "compat": {
+    "agentSkills": [
+      {
+        "path": "./SKILL.md"
+      }
+    ]
+  },
+  "od": {
+    "kind": "skill",
+    "taskKind": "new-generation",
+    "mode": "prototype",
+    "surface": "web",
+    "platform": "desktop",
+    "scenario": "design"
+  }
+}

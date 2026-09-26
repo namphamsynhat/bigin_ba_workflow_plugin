@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigin/route/1",
+  "title": "uc-router Phase A output: which UC each qualified row/clause belongs to",
+  "type": "object",
+  "required": [
+    "kind",
+    "feature",
+    "routes"
+  ],
+  "properties": {
+    "$schema_version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "route"
+    },
+    "feature": {
+      "type": "string"
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "row",
+          "lane",
+          "target"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "row": {
+            "type": [
+              "string",
+              "integer"
+            ]
+          },
+          "clause": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "lane": {
+            "enum": [
+              "uc",
+              "br",
+              "design",
+              "context",
+              "question",
+              "reject",
+              "hold"
+            ]
+          },
+          "target": {
+            "type": "string",
+            "pattern": "^((UC|BR)-\\d+|new:[A-Za-z0-9_-]+|none)$"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "new": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "primary_feature"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "goal": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "primary_feature": {
+            "type": "string"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "level": {
+            "enum": [
+              "summary",
+              "user-goal",
+              "subfunction"
+            ]
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "owner": {
+            "enum": [
+              "client",
+              "team"
+            ]
+          },
+          "row": {
+            "type": [
+              "string",
+              "integer"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

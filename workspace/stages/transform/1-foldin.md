@@ -1,246 +1,125 @@
-# Stage 1 — Resumable fold-in
+# Stage 1 — Release, re-entry, orphan answers
 
 ```text
 runs: orchestrator, FIRST, every invocation
-in:   every UC/BR whose feature has a `staged` Signal Log row pointing at it
-      + every `conflict`/`question` row whose linked question has since been answered (§ Re-entry)
-      + every answered question with no Signal Log row behind it (§ Orphan answers)
-out:  the staged change folded into the artifact · mirrors reconciled · re-entered rows back to `new`
-never: status — Stage 5 sets it, from a live re-count
+in:   the ledger (01-Requirements/_ledger/*.jsonl) · conflict/question rows whose question is answered
+      · answered questions no row points at
+out:  answered gated change sets applied · re-entered rows back to `new` · mirrors reconciled
+never: status — Stage 5 re-counts it
 ```
 
 Stage 1 before Stage 2 is what makes a rerun useful: it harvests answers a human wrote since the last
-run before anything new gets staged. A run that starts by drafting re-asks questions already answered
-on disk.
+run before anything new is drafted. `BIN="${CLAUDE_PLUGIN_ROOT}/bin/bigin"`.
 
-`{variable}` resolves in `_bigin/conventions/paths.md`. Full checkpoint rationale:
-`runtime.md` § Resumable unattended apply — the procedure here is complete on
-its own.
-
-A UC/BR with no `staged` row pointing at it and no filled `A:` line is not this stage's business,
-whatever its status.
-
-**Build the worklist grep-first, never by reading the vault.** `Grep` `{hub_dir}` for
-`Status.*staged` and for `Status.*conflict|Status.*question`, and open only the hubs that hit; open only
-the UC/BR ids those rows' `Destination` cells name. Third grep, same discipline: `{uc_dir}` and
-`{br_dir}` for `^\s*A: \S` — a filled `A:` line only ever exists under a question that is still open
-(a settled one moves into the decision log and takes its `A:` with it), so that one grep is the exact
-set of answers waiting on this stage, including the ones no hub row points at (§ Orphan answers).
-
-Reading every hub and every UC to discover that nothing is pending makes "nothing to fold in" cost the
-whole vault, and that cost grows with every append-only Signal Log row forever. Three greps and an
-early exit make the same answer a two-second one.
-
-## The three-way read
-
-A bare "is the box ticked?" check can't tell (b) from a half-applied (c) on a resumed run.
-
-| State | How to tell | Do |
-| :--- | :--- | :--- |
-| **(a) unanswered** | the `A:` line is still blank | nothing — wait for a human |
-| **(b) already applied** | `## Changelog` already cites this fold-in's `INT-###` | write nothing to the artifact — this is a retry. **Still run § Reconcile mirrors.** |
-| **(c) answered, not applied** | neither of the above | § The atomic write, then § Reconcile mirrors |
-
-## The atomic write
+## Legacy vaults first
 
 ```text
-compose the ENTIRE change first, then write the file ONCE:
-1  fold the ## Discussion entry into the section its `proposed:` line names
-       a numbered UC section (## 1-## 6, § Folding into a UC) or a BR's rule statement
-2  move the resolved question out of ## 5 Still open into the Decision log table
-       topic · who raised it and what they said · the decision · the date
-       an answer still needing a client round-trip STAYS an unchecked "- [ ] Q:"
-3  bump version
-4  append the ## Changelog line, citing the INT-###
-5  leave status alone                                                    # Stage 5 owns it
+any UC/BR ## Discussion still holding `- **INT-###** (staged …)` entries (v1.8.x)?
+    → $BIN migrate discussion-to-ledger       # snapshots the vault, converts each entry to change sets:
+                                              # mechanical ones (§ 2/§ 3/§ 4 mirror) apply now, prose ones
+                                              # tied to an open question on the same hub row go to the
+                                              # ledger gated on it, the rest apply now
+    → entries it reports as `unparsed` stay in ## Discussion: route them through Stage 3 as ordinary
+      rows (their hub row is still `staged`), or leave them for a human — never hand-apply them
 ```
 
-**One write, not five.** Before it lands nothing has changed on disk, so a mid-run kill leaves the
-artifact exactly as it was and correctly still eligible next run. After it lands the fold-in is done,
-and everything downstream is a re-derivable mirror.
-
-Never re-append a `## Changelog` or `## Discussion` line because this run started before checking (b).
-
-## Folding into a UC
-
-A main-flow step (`new step ...`, `S# becomes:`, `S# is removed because ...`) or a flow (`new flow
-A#/E#:`, `A#/E# becomes:`, `A#/E# is removed because ...`) is never this stage's job. Stage 4 Part 2
-(`4-sync.md`) is the only place that ever applies them, and it sweeps EVERY in-scope UC's own
-`## Discussion` on EVERY invocation — not just what this run staged — so an entry like this should
-never survive to a second run. If one is still sitting in `## Discussion` when this stage reads it,
-leave it alone: it is Stage 4's worklist, not this stage's, and Part 2 later in this same run will
-pick it up regardless of whether Stage 1 or Stage 3 touched this UC at all.
+## Release the ledger
 
 ```text
-when folding in a ## 4 enforcement point → check the S#/A#/E# it names still exists on § 2/§ 3 as
-                        they stand on disk right now, and isn't marked removed
-    a rule enforced at an already-removed step, or citing an id that was never minted, is a real
-    inconsistency
-    → fold in the rule mirror anyway, then raise ONE question naming both
-    → NEVER silently re-point a citation at a neighbouring step
+$BIN ledger release
+    per open change set: its gate question ticked with a filled A: (or already in the decision log)
+      → applied through the same engine path as any change set; the settled question moves to the
+        UC's Decision log; the ledger entry becomes `released`; the hub row flips to `applied`
+    answer reads as a refusal ("no", "reject", "out of scope", …) → `needs-judgement`, NOT applied
+    still unanswered → waits
 ```
 
-`## 4` rows fold in as **mirror updates only** — the rule statement comes from the `BR-###` file; this
-stage copies its current text plus the staged enforcement point.
+**Needs-judgement.** `$BIN worklist release all --out _runs/$RUN/tasks/release.in.json` lists each one with
+its question, answer, and change set. The orchestrator (or one `uc-router` dispatch for many) decides per
+item — `apply` (the answer does support it), `supersede` (the answer contradicts it), or `revise` (a
+corrected change set) — writes `{"kind":"verdicts","verdicts":[…]}` and runs
+`$BIN ledger release --verdicts <file>`. A superseded set leaves its hub row `staged`; flip it with
+`$BIN hub flip <slug> <n>=superseded@<the decision>` or re-enter it (§ Re-entry) when the answer is new
+content.
 
-### The human may have edited the section first — two rules
+## The human may have edited the section first
 
-A staged entry carries verbatim final text, and the human is explicitly invited to edit a UC directly
-while reviewing it (`/approve-uc`). So the text an entry expects to replace can already be gone.
+A reviewer is invited to edit a UC directly while reviewing it, so text a change set expects to replace
+can be gone. The engine enforces the rule on every apply, including a release:
 
 ```text
-BEFORE writing, compare the entry's anchor text against what is on disk RIGHT NOW:
-
-content already present, verbatim (or semantically identical)
-    → TREAT AS APPLIED: state (b). Remove the entry, append the Changelog line, reconcile mirrors.
-      Do not write it a second time — a manual apply with no Changelog cite otherwise lands twice.
-
-the anchor text MATERIALLY DIFFERS from what the entry expected to replace
-    (`§ 1 Trigger becomes:` against a Trigger a human has since reworded; a `§ 4` row whose rule
-     statement no longer matches)
-    → DO NOT APPLY, and do not overwrite. Raise ONE question on the artifact naming both wordings
-      and asking which stands, leave the entry in ## Discussion, and leave the row `staged`.
-      Silently overwriting is how a reviewer's own correction disappears with no diff anyone reads.
-
-a whitespace, punctuation, or capitalization difference is NOT material — apply normally
+anchor sha still matches            → apply
+current text already IS the proposal → counts as applied (a hand-applied change); nothing written twice
+anchor text materially changed       → DRIFT: not applied, never overwritten; ONE question on the
+                                       artifact naming both wordings; the hub row stays `staged`
 ```
 
-## Reconcile mirrors — unconditionally, every run
-
-Mirrors are read from the artifact's *current* state and corrected to match. Setting an already-correct
-field again is a no-op, so this step needs no resume logic. **Run it for (b) as well as (c)** — a prior
-run killed between the artifact write and the hub refresh is exactly what this repairs.
-
-```text
-1  the hub's Signal Log row        → `applied`, if the artifact now shows the fold-in
-2  EVERY participating hub         → the ## Use Cases pointer + `uc:` frontmatter on EACH slug in
-                                     the UC's features:
-                                     → a UC on only its primary_feature reads as complete while the
-                                       other features have no idea they're part of it
-3  the source INT's ## Open Questions copy → ticked, if the artifact's copy is resolved
-                                     → one question, TWO PLACES — never two questions
-                                     → AND: if the answer arrived on a DIFFERENT, later note, tick
-                                       the ORIGINATING note's box too and cite the resolving id
-                                       ("resolved by INT-041"). A note whose question was answered
-                                       elsewhere otherwise sits `needs-clarification` forever with
-                                       an unticked box, and reads as still blocking when it isn't.
-4  {requirements_file}             → re-derive the touched feature's UC column from its hub's
-                                     CURRENT uc: list/## Use Cases table, not from what this
-                                     fold-in itself changed — a UC minted or moved in an earlier
-                                     run (Stage 3/4's own mint-time write, or /restructure-uc) can
-                                     already have left the registry row behind this hub, and this
-                                     is the backstop that catches it even when the immediate write
-                                     site missed it
-```
-
-Never renumber, delete, or rewrite the `Signal`/`Source` text of a Signal Log row.
-
-**Delegating this step.** Items 1–2 are pure re-derivation from facts already decided, so they may be
-handed to one `hub-bookkeeper` dispatch **per hub, sequentially** rather than run in the orchestrator's
-own context — that agent's whole contract is mirroring decisions it is given (`agents/hub-bookkeeper.md`).
-Never two hubs concurrently, and never delegate item 3 or 4: those touch `{inbox_dir}` and
-`{requirements_file}`, which that agent must not write.
+A drift question is an ordinary open question: when answered, Stage 3 drafts from the answer (the row is
+still `staged` with the drift noted; re-enter it per § Re-entry).
 
 ## Re-entry — an answered `conflict` or `question` row
 
-The one silent-loss path this stage exists to close. A `conflict` row stages **nothing** by design
-(`3-lane-uc.md` § Conflict); a `question` row never had a lane at all (`3-routing.md` § `Type` is a
-hint). Neither is `staged`, so this stage's fold-in ignores both — and neither is `new`/`held`, so
-Stage 2's worklist ignores them too. Without this section a qualified, recorded requirement is
-permanently stranded the moment a human answers it.
+A `conflict` row stages nothing by design; a `question` row never had a lane. Neither is in the ledger
+nor `new`/`held`, so without this step an answered requirement is stranded forever.
 
 ```text
-scan every in-scope hub for rows with Status: conflict or Status: question
-per row, find the question it raised — the `- [ ] Q:` its Notes/Destination points at, on the UC's
-    ## 5, the BR's ## Open Questions, or the source INT note
-
-A: line still blank            → leave the row exactly as it is. Not this stage's business yet.
-A: line filled (ticked or not) → RE-ENTER:
-    1  flip the row: Status: new
-       Notes: append "re-entered <date>: <the question>, answered on <artifact> — <A: in ≤10 words>"
-       → keep every existing Note; the conflict history is the reason the answer means anything
-    2  the LOSING side of a conflict, if the answer picked one: flip THAT row Status: superseded,
-       Notes: "superseded by the decision on #<n>"
-       → never rewrite either row's Signal text. History is append-only.
-    3  a conflict pair whose answer names a THIRD option neither row proposed → both rows
-       `superseded`, and the re-entered row is the one carrying the decision, with the answer's own
-       wording in its Notes
-    4  move the resolved question into the decision log, per § The atomic write step 2
+scan in-scope hubs for Status conflict | question; find the question each raised (Notes/Destination
+point at it: a UC § 5, a BR's Open Questions, the hub's Gates, or the source INT note)
+A: blank  → leave it
+A: filled → $BIN hub flip <slug> <n>=new@"re-entered <date>: <question> answered on <artifact> — <A: ≤10 words>"
+            losing side of a conflict → $BIN hub flip <slug> <m>=superseded@"superseded by the decision on #<n>"
+            a third option neither row proposed → both old rows superseded; the re-entered row carries it
+            settle the question (§ Orphan answers, first case)
 ```
 
-Stage 2 then collects the row in its ordinary `new` worklist **this same run**, and Stage 3 drafts it.
-
-- **Draft from the decision, never by copying the losing wording.** The answer is new content: "we
-  decided the school approves, not the fund" is the requirement, not either original signal's text.
-  A verbatim re-stage of whichever side lost is the failure this whole path exists to avoid.
-- **An answer that resolves nothing is not an answer.** A reply restating the disagreement, or naming a
-  further question, leaves the row `conflict` and the box unticked. Say so in the report.
-- **Report every re-entry explicitly** — it is the one case where a row's `Status` moves backwards, and
-  a reader who doesn't see it named will read it as a stage that lost track of its own bookkeeping.
+Stage 2 collects the re-entered row this same run and Stage 3 drafts it **from the decision**, never by
+re-staging whichever side lost. An answer that resolves nothing leaves the row `conflict`, unticked —
+report it. Report every re-entry: it is the one case where a row's status moves backwards.
 
 ## Orphan answers — an answered question no row points at
 
-Most `## 5` questions arrive with a Signal Log row behind them, so the worklist above reaches them.
-Two kinds don't: the `## 4` inconsistency question **this stage itself** raises (its row is `applied`
-by the time anyone answers), and a gap question a human or the `bigin-ba` review wrote directly onto a
-UC. Answer one of those and no row changes anywhere — without this section the answer sits on disk
-forever, the box stays unchecked, `status` stays `needs-clarification`, and `/approve-uc` blocks on a
-question that was in fact answered days ago.
-
-The third grep finds them. Take each filled `A:` the first two greps did not already account for —
-judge it per question, not per artifact: a UC can carry a `staged` row for one question and an orphan
-alongside it. Then read what the answer actually decides:
+A `## 4` inconsistency question, a drift question, or a gap question a reviewer wrote onto a UC has no
+row behind it. Find filled `A:` lines with `Grep {uc_dir} {br_dir} "^\s*A: \S"` not already accounted
+for above, and read what each decides:
 
 ```text
-the answer CONFIRMS what the artifact already says, or decides something that needs no new content
-    (a clarification, a "yes, as written", a choice between two readings of text already there)
-    → resolve it here: move the line into the decision log per § The atomic write step 2, bump
-      version, changelog. No content write — there is nothing to apply.
-      a BR has no decision log: drop the resolved line from its ## Open Questions and put the
-      decision in the ## Changelog line instead, so the settled history still exists somewhere.
-
-the answer ADDS content the artifact does not have — a step, a branch, a rule, a changed trigger
-    → NOT this stage's write, and NOT a Stage 3 draft either: there is no signal behind it, so
-      there is nothing qualified and nothing to trace it to. Leave the question open, leave the
-      answer where it is, and report it as needing /bigin-intake — capture what was said as its
-      own note (citing the UC and the question), then extraction files it and the next transform
-      run drafts it with a row, a source, and a citation like every other requirement.
-      Never draft it inline to save a round trip; a step in a UC with no traceable source is the
-      one thing this vault's chain is built to prevent (`use-case.md` § Traceability chain).
-
-the answer does not settle the question at all — it restates it, defers it ("ask the client"),
-    or asks a new one
-    → leave it exactly as it is, unchecked. Report it as answered-but-unresolved, saying why, so
-      whoever answered gets told rather than re-answering it the same way next round.
+confirms what the artifact says / needs no new content
+    → an `answer_question` change set (anchor = the question text, text = the decision) through
+      $BIN apply: the line moves to the UC's Decision log (a BR: ticked with its A:), version bump,
+      Changelog line
+adds content the artifact lacks (a step, branch, rule, trigger)
+    → NOT drafted here — there is no signal to trace it to. Leave it open; report it as needing
+      /bigin-intake (capture it as a note citing the UC and question)
+settles nothing (restates, defers, asks anew)
+    → leave it unchecked; report it as answered-but-unresolved, saying why
 ```
 
-A ticked box over an answer of the second or third kind is a mis-tick, not a resolution: report it,
-never untick it silently, and never let the tick alone clear the count.
+A ticked box over the second or third kind is a mis-tick: report it, never untick silently.
+
+## Reconcile mirrors — every run
+
+```text
+$BIN links sync            # brs:/uc:/features:/sources: and the FEATURES.md UC column
+$BIN hub sweep             # staged → applied where nothing pending (Discussion or ledger) cites the row
+$BIN hub refresh <slugs>   # every in-scope hub AND every hub a touched cross-feature UC names
+```
+
+All three are idempotent. One mirror stays manual: when an artifact's question is resolved and the same
+question sits on the source `INT` note's `## Open Questions`, tick the note's copy with the answer (and
+"resolved by INT-###" when the answer arrived on a later note) — one question, two places.
 
 ## Hand-off
 
-Report per artifact: `<slug>: UC-### | BR-### — folded in (INT-###) | already applied, mirrors
-reconciled | waiting on a human | drift question raised (§ The human may have edited…)`, plus
-`re-entered: <slug> #<n> — <the decision>` per row § Re-entry moved back to `new`, plus `orphan
-answer: UC-### — <the question> → settled into the decision log | needs /bigin-intake | answered but
-unresolved` per § Orphan answers. Stage 2 never re-collects a row this stage just set to `applied`; it
-always collects one this stage just set to `new`.
+Report: `ledger: N released · N superseded · N need judgement · N waiting`, `re-entered: <slug> #<n> — <the
+decision>` per row, `orphan answer: UC-### — <question> → settled | needs /bigin-intake | unresolved`,
+`drift: <artifact> <ref>` per drift question.
 
 ## Failure modes
 
-- **Renumbering steps.** Every `S#` is cited from a branch point, a rule, a story, a prototype screen.
-- **Deleting a removed step's row.** Every citation of that id becomes a dead reference.
-- **Skipping the mirror reconcile on state (b).** The hub reads `staged` forever with nothing staged.
-- **Reconciling only the primary hub.** A cross-feature UC's other hubs silently drift.
-- **Writing the artifact in several passes.** A kill between passes is indistinguishable from "not
-  started".
-- **Setting `status` here.** Stage 3 may edit the same artifact after; Stage 5 re-counts.
-- **Ticking a box to make the count zero.** An answer that doesn't resolve the question stays unchecked.
-- **Ignoring a filled `A:` because no row points at it.** § Orphan answers exists because the two
-  commonest review-time questions — this stage's own `## 4` inconsistency question and a gap question
-  written straight onto a UC — never had a row to begin with.
-- **Skipping § Re-entry because "nothing is staged on that feature".** A hub can carry a dozen answered
-  `conflict`/`question` rows and zero `staged` ones. Those rows are the whole reason this section runs
-  on its own scan rather than as a sub-step of the fold-in worklist.
-- **Applying a staged entry over a section the human already edited.** The reviewer's wording vanishes
-  with nothing in any diff a human reads — see § The human may have edited the section first.
+- **Hand-applying a pending change** instead of answering its question and releasing — it lands without
+  a Changelog trace and is applied a second time by the next release.
+- **Skipping § Re-entry because nothing is in the ledger** — a hub can carry a dozen answered
+  `conflict`/`question` rows and zero ledger entries.
+- **Applying a refusal answer** — needs-judgement exists because "No" is an answer that kills the change.
+- **Ticking a box to make the count zero** — an answer that doesn't resolve the question stays unchecked.
+- **Setting `status` here** — Stage 5 re-counts.

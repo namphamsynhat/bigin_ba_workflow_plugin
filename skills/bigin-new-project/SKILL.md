@@ -16,7 +16,8 @@ so every later skill and dispatched subagent can reach them project-relatively. 
 plugin context, so a path into the install directory is unreachable to them.
 
 > **Artifact Standard:** Outputs:
->> **The materialized workspace** — `_bigin/conventions/`, `_bigin/stages/`, `_bigin/templates/`: plugin-owned, overwritten every run, reachable to every subagent.
+>> **The materialized workspace** — `_bigin/conventions/`, `_bigin/stages/`, `_bigin/templates/` (skeletons + `*.guide.md`), `_bigin/cards/` (the per-role instruction cards agents read): plugin-owned, overwritten every run, reachable to every subagent.
+>> **Not copied: the engine.** `bin/bigin` + `lib/bigin/` stay inside the plugin; skills call `"${CLAUDE_PLUGIN_ROOT}/bin/bigin" …`. For agents that cannot resolve `CLAUDE_PLUGIN_ROOT` (every subagent, including the interactive `bigin-ba`), `bigin launcher` writes `_bigin/bin/bigin` — a two-line shim holding the absolute path of the installed plugin — and refreshes `_bigin/cards/`. Regenerated every run, because the plugin path changes with each version.
 >> **The engagement config** — `_bigin/system/project.md`: client, contacts, providers, greenfield vs. ongoing, web vs. mobile vs. both, plus the project brief, domain-research pointer, and provider/design-engine readiness snapshot.
 >> **The project agent** — repo-root `CLAUDE.md`: a delimited, plugin-owned section orienting any Claude Code session to the engagement, the workspace map, and the skill sequence, regenerated every run.
 
@@ -25,7 +26,7 @@ plugin context, so a path into the install directory is unreachable to them.
 ## Non-Negotiable Core Rules
 
 * **Record, never guess:** client name, contacts, and email addresses come from the human. Unknowns stay `<unknown>` and get asked. Only the git remote (§ 3) and the codebase map (§ 6) may be derived, both read from the repo rather than from intent.
-* **Plugin-owned vs. project data:** overwrite `_bigin/{conventions,stages,templates}/` every run; never touch `_bigin/system/project.md`, `00-Inbox/`, `01-Requirements/`, `PRD.md`, `prototypes/`, `epics.md`. Project overrides belong in `.claude/bigin-ba-workflow-plugin.local.md`. `CLAUDE.md` is a special case — see § 5.4: only the plugin's own delimited section inside it is overwritten; whatever else is in that file, including a pre-existing codebase CLAUDE.md, is never touched.
+* **Plugin-owned vs. project data:** overwrite `_bigin/{conventions,stages,templates,cards}/` every run; never touch `_bigin/system/project.md`, `00-Inbox/`, `01-Requirements/`, `PRD.md`, `prototypes/`, `epics.md`. Project overrides belong in `.claude/bigin-ba-workflow-plugin.local.md`. `CLAUDE.md` is a special case — see § 5.4: only the plugin's own delimited section inside it is overwritten; whatever else is in that file, including a pre-existing codebase CLAUDE.md, is never touched.
 * **Verify, don't assume:** a partial copy surfaces later as a subagent silently unable to read its lane guide — reported as a clean run. Confirm the file count before continuing.
 * **Use the template, not memory:** `_bigin/templates/project.md` *is* the schema `/bigin-intake` parses. A hand-written variant is how a field it reads goes missing.
 * **Never improvise an install:** § 7.3's table for a provider, § 7.6's adapter for a design engine, or nothing. `claude mcp add` is the only install this skill ever runs itself — never `sudo`, never a package manager, never re-add a server that already has a row, and never install a design engine (§ 7.6: a plugin install and a third-party desktop app are the user's call).
@@ -73,10 +74,17 @@ plugin context, so a path into the install directory is unreachable to them.
   ```
   ${CLAUDE_PLUGIN_ROOT}/workspace/conventions/  →  _bigin/conventions/
   ${CLAUDE_PLUGIN_ROOT}/workspace/stages/       →  _bigin/stages/       (incl. extract/, transform/, design/)
-  ${CLAUDE_PLUGIN_ROOT}/workspace/templates/    →  _bigin/templates/
+  ${CLAUDE_PLUGIN_ROOT}/workspace/templates/    →  _bigin/templates/    (skeletons + *.guide.md)
   ```
 
-  Then list all three recursively and confirm the file count matches the source. Anything missing:
+  then run the engine's own materializer for the rest — never hand-write the shim or copy the cards:
+
+  ```
+  "${CLAUDE_PLUGIN_ROOT}/bin/bigin" launcher     →  _bigin/bin/bigin  (shim → the installed plugin, chmod +x)
+                                                   _bigin/cards/     (per-role cards, ≤ 3 KB each)
+  ```
+
+  Then list all four directories recursively and confirm the file count matches the source. Anything missing:
   stop and report rather than continue to § 3.
 
   What lands, and who reads it — nothing reads all of it, and this skill reads none of it itself:
@@ -85,7 +93,11 @@ plugin context, so a path into the install directory is unreachable to them.
   |---|---|
   | `_bigin/conventions/` | every skill and subagent, but only its own named section or file — never the whole tree |
   | `_bigin/stages/` | the orchestrator or per-feature subagent for whichever stage is currently running — never the whole directory |
-  | `_bigin/templates/*.md` | whichever skill creates that artifact type, the first time it's needed |
+  | `_bigin/templates/*.md` | the engine (`bin/bigin mint …`) and whichever skill creates that artifact type — a skeleton carries one `<!-- guide: … -->` pointer; the matching `*.guide.md` holds all the writing guidance, for people |
+  | `_bigin/cards/*.md` | each dispatched agent — its own card only (`cards/README.md`); never a whole convention file |
+  | `_bigin/bin/bigin` | any agent that cannot resolve `CLAUDE_PLUGIN_ROOT` — the same engine CLI, via the shim |
+
+  Also create the empty engine directories if absent: `01-Requirements/_ledger/` (gated change sets) and `_runs/` (run ledger, snapshots, backups). Suggest adding `_runs/` to `.gitignore` alongside `_bigin/` when `_bigin/` is untracked — it holds backups of client content.
 
 * **Rules:**
   - **Copy every stage file, not just the ones this project will use.** Which files a run reads is decided at read time, per signal and per lane; a project that skipped `3-lane-design.md` because its first intake had no presentation-only signal breaks the first run that does.
@@ -134,6 +146,13 @@ plugin context, so a path into the install directory is unreachable to them.
   | `codebase_path` | `ongoing` only. Default the repo root (absolute); ask if the product lives elsewhere |
   | `intake_lookback_days` | Default `14`; don't ask unless the user raises it |
   | `repo` | **Detect, don't ask** — `git remote -v`. Blank if not a git repo |
+  | `grounding` | `AskUserQuestion`: **communication** (default — requirements arrive as email, meetings, notes) · **codebase** (requirements are read out of existing code: rule cards via `bin/bigin intake codebase`) · **both**. `codebase`/`both` enables the adjudication stage (`workflows/adjudicate.js`) |
+  | `repos` | `grounding: codebase\|both` only. Read-only code roots with their role, e.g. `[repos/backend, repos/fe-web]`. Nothing ever writes under them |
+  | `conflict_policy` | `grounding: codebase\|both` only. `AskUserQuestion`: **code-first** (code settles a factual disagreement between two readings) or **ask** (default — a human decides) |
+  | `coverage_id_pattern` | Only when rule cards carry ids, e.g. `XR-[A-Z]+-\d{3}`; `bin/bigin coverage` then traces ids instead of note rows. Don't ask otherwise |
+  | `budgets` | Optional, don't ask: `{transform_per_feature_tokens: 600000, extract_per_note_tokens: 150000}` — `bin/bigin metrics report` flags overruns |
+  | `signal_log` | Default **split** for a new vault (hub Signal Logs live in `<slug>.signals.md`); `inline` keeps them in the hub. Don't ask |
+  | `engine` | Always `engine`. `legacy` is only the one-minor-version escape hatch `/bigin-upgrade-project` documents |
 
   Ask explicitly whether `_bigin/` should be committed. On no, add `_bigin/` to `.gitignore` (create if
   missing); on yes, do nothing. Record the answer in `## Notes`. Either way add `.claude/*.local.md` —
@@ -144,6 +163,7 @@ plugin context, so a path into the install directory is unreachable to them.
   - **Ask both provider fields rather than defaulting silently.** `/bigin-intake` is forbidden from falling back to an unconfigured provider, so an unasked field becomes a run that skips a source without saying so.
   - **Ask `platform`; never infer it from what the product sounds like.** Before this field existed every design run silently produced a desktop web app, so a phone product got designed as a browser one — the right screens in the wrong shell, and nobody finds out until a client opens the prototype. It is also a separate question from `project_mode`: that one is new-vs-ongoing, this one is browser-vs-phone, and a greenfield mobile product answers both. `platform` never reaches a use case — a UC stays platform-blind by design — it drives `/bigin-generate-design` only: the regions vocabulary, the navigation shell, how many prototype-prompt blocks get written, and which design engine § 7.6 checks for.
   - **Intake holds verbatim client email and transcripts,** so whether `_bigin/` is tracked is the user's call, never a default.
+  - **Ask `grounding`; don't infer it from `project_mode`.** An `ongoing` product can still be specified purely from client conversation, and a `new` one can inherit a legacy codebase to reverse-engineer. The field decides whether code is ever read as evidence and whether conflicts are refereed against it.
 
 ## 4. Write the config
 
@@ -339,8 +359,8 @@ applies to it directly.
 
 ## 8. Report
 
-1. **Workspace** — the three directories materialized or refreshed at version `<version>`, with file count. On a refresh add: local edits to plugin-owned files were overwritten, `.claude/bigin-ba-workflow-plugin.local.md` is where overrides belong, and whether a legacy `_bigin/rules/` was removed.
-2. **Config** — paths created or updated, the captured `project_mode` and `platform` (both, and as two separate facts — new-vs-ongoing and browser-vs-phone), and whether `_bigin/` is tracked or ignored.
+1. **Workspace** — the four directories (`conventions`, `stages`, `templates`, `cards`) materialized or refreshed at version `<version>`, with file count. On a refresh add: local edits to plugin-owned files were overwritten, `.claude/bigin-ba-workflow-plugin.local.md` is where overrides belong, and whether a legacy `_bigin/rules/` was removed.
+2. **Config** — paths created or updated, the captured `grounding` (and `repos`/`conflict_policy` when code-grounded), the captured `project_mode` and `platform` (both, and as two separate facts — new-vs-ongoing and browser-vs-phone), and whether `_bigin/` is tracked or ignored.
 3. **Unknowns** — fields still `<unknown>`, editable in `_bigin/system/project.md`. Call out an empty `client_emails` specifically, with its consequence for the sweep.
 4. **Settings** — `.claude/bigin-ba-workflow-plugin.local.md` scaffolded, or already existed and left alone.
 5. **Domain-research skill** — `bmad-domain-research` already present, freshly installed, install skipped (opt-out or an existing method override), or install failed and why. Say plainly which method future domain-research passes (this project's and every feature's) will actually use.

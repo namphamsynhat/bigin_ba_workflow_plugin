@@ -1,10 +1,9 @@
 # BR lane — drafting and updating a Business Rule
 
 ```text
-in:   signals routed to BR
-out:  a new/updated BR-### file, its rule STAGED into ## Discussion
-      + the `§ 4: add BR-###, enforced at S<n>` mirror staged on each governed UC
-never: a rule statement written directly · a UC's ## 4 edited directly
+in:   signals routed to BR (from the route worklist)
+out:  change sets: create_br / set_rule / append_rule_clause on the BR, mirror_br on each governed UC
+never: editing a BR or UC file · a rule statement typed into a UC's ## 4
 ```
 
 A BR is **always its own file** under `{br_dir}` — never a section of a UC, never a subsection of an
@@ -32,20 +31,11 @@ the UC lane.
 
 ## Creating a new BR
 
-Instantiate `{template_br}` as `{br_dir}/BR-<NNN> <Title>.md`, id from a `Grep` scan of `{br_dir}` — its
-own sequence, unrelated to UC numbering.
-
-| Field | Value |
-|---|---|
-| `id` / `title` | `BR-<NNN>` and a short title naming what is constrained |
-| `status` | `draft`. Stage 5 may move it to `needs-clarification`; nothing else here |
-| `version` | `1.0` |
-| `feature` | the hub's slug |
-| `uc` | the `UC-###` id(s) this rule governs — **`[]` is valid and common**: a feature-level rule no workflow owns yet keeps an empty list |
-| `sources` | the `INT-###` this traces to |
-| `owner` / `updated` | `team`, today |
-
-Add the id to the hub's `br:` frontmatter list.
+A `create_br` change set with a `key` and `create`: `title` (what is constrained), `feature` (the hub's
+slug), `uc` (the UC id(s) it governs — **`[]` is valid and common**: a feature-level rule no workflow owns
+yet), `sources`, `statement`. The engine mints the id (its own sequence) under the lock, writes the file
+from `{template_br}`, adds it to the hub's `br:` list, and resolves `new:<key>` in the same batch — so a
+`mirror_br` with `br: "new:<key>"` can link it at once. Status is `draft`; `bigin status` moves it later.
 
 ## Writing the rule statement
 
@@ -65,10 +55,10 @@ Stated so a tester can produce a pass case and a fail case from it alone.
   approved. Missing → question.
 
 ```text
-STAGE it, never write it directly:
-- **<INT-###>** (staged <YYYY-MM-DD>): <the signal> → proposed rule: If <condition>, then <effect>.
-→ flip the Signal Log row: Status: staged, Destination: BR-###
-→ Stage 1 folds it in after the gate
+new rule        → create_br   create.statement: "If <condition>, then <effect>."
+changed rule    → set_rule    text: the whole new statement · anchor.sha: the worklist's statement sha
+added clause    → append_rule_clause   text: the clause, as a full sentence
+decision needed → the same set with gate: {question, owner, blocks: true} — it waits in the ledger
 ```
 
 ## Keeping the UC's `## 4` mirror in step
@@ -83,13 +73,12 @@ invisible constraint on it. **Exactly two facts travel to the UC:**
 
 | The governed UC… | Do |
 | :--- | :--- |
-| is owned by the feature you were dispatched for | stage `§ 4: add BR-###, enforced at S<n>` into that UC's `## Discussion`, same run |
-| is owned by another `primary_feature` | report a `cross_feature_uc_change`; Stage 4 applies it |
-| doesn't exist yet | leave `uc: []` — the rule is real before the workflow is written |
+| exists (on any feature) | a `mirror_br` set on that UC: `br`, `enforced_at` — the engine copies the statement and adds the UC to the BR's `uc:` |
+| doesn't exist yet | nothing — `uc: []`; the rule is real before the workflow is written |
 
-**Never edit `## 4` directly**, and **never guess an enforcement point** by picking the step that
-"looks like" the right one: if no step enforces the rule, that is either a missing step or a misfiled
-rule, and it is a question.
+**Never guess an enforcement point** by picking the step that "looks like" the right one: if no step
+enforces the rule, that is a missing step or a misfiled rule, and it is a question. A wording change needs
+no UC set at all — `bigin mirror br` refreshes every mirror from the BR.
 
 ## Field-level rules
 
@@ -106,7 +95,7 @@ It does **not** become a row or subsection inside `{entity_dir}`. `## Fields` re
 the BR records what must hold of it. That split is what lets one rule govern fields on two entities
 without either doc owning it.
 
-Never write to `{entities_file}` or `{entity_dir}` from inside a per-feature subagent, and never
+Never write to `{entities_file}` or `{entity_dir}`, and never
 report this as a candidate for the orchestrator to promote — **entity promotion doesn't happen in
 this skill any more.** A `proposed` row stays a row until `/sync-entities` promotes it, run once a UC
 or one of its BRs is actually approved and confirmed to reference it (`registers.md` § Entity Data Model).
@@ -114,21 +103,18 @@ or one of its BRs is actually approved and confirmed to reference it (`registers
 ## Updating an existing BR
 
 ```text
-edit in place, at ANY status                    # approval does not freeze a BR
-stage it as "the rule becomes: <new text>"      # unambiguous about replacement vs addition
+at ANY status                                   # approval does not freeze a BR
+rewording / narrowing → set_rule (the whole new statement, anchor.sha from the worklist)
+an extra clause       → append_rule_clause
+a change to WHICH workflow it governs or WHERE → mirror_br on the UC(s) concerned
 
-a wording change needs NO UC edit at all        # the whole point of separate rule files
-only a change to WHICH workflow it governs, or WHERE it is enforced, touches a UC's ## 4
-
-a dropped constraint is NOT deleted:
-    stage "the rule is removed because <reason>"
-    → the human gate resolves it, Stage 1 folds it in as a version bump + ## Changelog line
-    → a HUMAN sets status: removed — never this skill
-    → stage the matching `§ 4:` mirror removal on EVERY UC that listed it
+a dropped constraint is NOT deleted and NOT set removed here:
+    add_question to the BR proposing the removal (owner: team), gated or not
+    → a HUMAN sets status: removed; then the UC mirrors are dropped by /restructure-uc or a human
 ```
 
 ## Questions and conflicts
 
-Identical to the UC lane (`3-lane-uc.md` § Questions, § Conflict with existing content), written on the
-BR's own `## Open Questions`. Two rules that cannot both hold are a `conflict`, raised once naming
+Identical to the UC lane (`3-lane-uc.md` § Questions, § Conflict with existing content), as `add_question`
+sets targeting the BR (its `## Open Questions`). Two rules that cannot both hold are a `conflict`, raised once naming
 both — never a silent narrowing of whichever one this run touched second.

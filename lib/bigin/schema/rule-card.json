@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigin/rule-card/1",
+  "title": "Generic codebase rule card (docs/CODEBASE-INTAKE.md)",
+  "type": "object",
+  "required": [
+    "id",
+    "plainEnglish"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "description": "repo-relative path:lines"
+    },
+    "plainEnglish": {
+      "type": "string"
+    },
+    "given": {
+      "type": "string"
+    },
+    "when": {
+      "type": "string"
+    },
+    "then": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": "string"
+    },
+    "suspectedDefect": {
+      "type": "string"
+    },
+    "smeQuestion": {
+      "type": "string"
+    },
+    "feature": {
+      "type": "string"
+    },
+    "capability": {
+      "type": "string"
+    },
+    "surface": {
+      "type": "string"
+    },
+    "verified": {
+      "type": "boolean",
+      "description": "true when an independent referee confirmed the citation"
+    }
+  }
+}

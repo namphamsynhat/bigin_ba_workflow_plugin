@@ -143,19 +143,19 @@ their own time, types on the `A:` lines, and comes back later. Everything downst
 and nothing else, so:
 
 - **The answer goes on the question's own `A:` line, verbatim.** An answer given in chat, in a comment,
-  or in prose above the question is invisible to every skill: the fold-in's three-way read
-  (`transform/1-foldin.md`) looks at the `A:` line to tell "unanswered" from "answered, not applied".
+  or in prose above the question is invisible to every skill: `bin/bigin ledger release`
+  (`transform/1-foldin.md`) reads the `A:` line (and the tick) to decide whether a waiting change applies.
   Whoever relays such an answer moves it onto the `A:` line first; that is the one edit allowed.
 - **Tick the box only if the answer genuinely settles the question.** "Ask the client", "TBD after the
   demo", a reply restating the disagreement, or one that answers a *different* question, all leave the
   box unchecked — the box is what the status invariant counts (§ Open Questions ↔ status consistency),
   so ticking an unsettled one is what makes a parked artifact read as approvable.
 - **An answer still needing a client round-trip stays unchecked but is still worth writing.** A partial
-  answer set is normal: the fold-in applies what settled and leaves the rest.
-- **Don't hand-edit the numbered sections to match your own answer.** The fold-in applies the answer
-  into the content and moves the question into the decision log; editing both is how the same change
-  lands twice, or how a staged change silently overwrites the reviewer's wording (`1-foldin.md`
-  § The human may have edited the section first).
-- **Then say "process UC-###".** That pass reads the answers instead of re-asking them, folds in once,
+  answer set is normal: the release applies what settled and leaves the rest.
+- **Don't hand-edit the numbered sections to match your own answer.** The release applies the waiting
+  change and moves the question into the decision log; if you edited the text too, the engine sees a
+  drift and asks which wording stands instead of applying (`1-foldin.md` § The human may have edited the
+  section first). Editing is fine when no change is waiting — the next apply compares against your text.
+- **Then say "process UC-###".** That pass reads the answers instead of re-asking them, applies once,
   and returns either the follow-up questions it produced or the flow and an approval ask
   (`agents/bigin-ba.md` § Answers already written: the process-the-UC pass).

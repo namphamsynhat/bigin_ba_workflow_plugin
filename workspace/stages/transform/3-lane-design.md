@@ -2,7 +2,7 @@
 
 ```text
 in:   signals routed to Design
-out:  a {design_principles_file} row (durable) and/or a hub ## Design Directives row (feature-scoped)
+out:  an `add_principle` change set (durable) and/or an `add_directive` change set (feature-scoped)
 never: a UC step · a BR · anything in PRD.md · Status: reflected
 ```
 
@@ -38,8 +38,8 @@ found one → re-route to the UC lane
             name it in the report
 ```
 
-Ambiguity *inside* the directive still raises a question — on the hub's `## Open Questions / Gates`, in
-plain client language. "Warmer" needs no clarification; "use the new brand palette" does, if nobody has
+Ambiguity *inside* the directive still raises a question — an `add_question` set targeting the hub
+(`target.kind: HUB`), in plain client language. "Warmer" needs no clarification; "use the new brand palette" does, if nobody has
 said which palette.
 
 ## Destination 1 — durable, cross-cutting
@@ -48,11 +48,14 @@ Brand, tone, accessibility, interaction, layout, content, or platform preference
 feature. Destination: `{design_principles_file}`.
 
 **Check the register before writing.** `/extract-signal` files durable design constraints there at
-extraction time, so the row usually exists already.
+extraction time, so the row usually exists already. A new principle is an `add_principle`
+change set (target `{"kind":"DESIGN","id":"principles"}`, `text` = the principle, `reason` = why, `trace` =
+the row); `bigin apply` appends the row and flips the Signal Log row. Refinements and contradictions below
+stay an orchestrator call.
 
 | Case | Action |
 |---|---|
-| row exists, unchanged | cite it. Signal Log: `Status: applied`, `Destination: DESIGN-PRINCIPLES #<n>`, `Notes: already registered` |
+| row exists, unchanged | cite it: `bigin hub flip <slug> <n>=applied:DESIGN-PRINCIPLES #<n>@already registered` |
 | row exists, this signal **refines** it | append a **new** row; flip the old to `Status: superseded`, `Notes: superseded by #<n>`. Never edit the old row's text — append-only |
 | row exists, this signal **contradicts** it | append the new row `Status: conflict` and raise one question naming both. Never pick a winner |
 | no row | append one, creating the file from `_bigin/templates/design-principles-register.md` if absent |
@@ -71,29 +74,21 @@ serves a different reader.
 ## Destination 2 — feature-scoped
 
 This screen, this flow, this component. Destination: the hub's `## Design Directives`, which
-`/bigin-generate-design` reads as the feature's presentation brief. Create the section from
-`_bigin/templates/feature-hub.md` if the hub predates it — immediately before `## UX Spec`, since
-directives are the input and the UX spec is the output.
+`/bigin-generate-design` reads as the feature's presentation brief. One change set:
 
-```text
-| # | Directive | Source | Status | Notes |
+```json
+{"id":"cs-<slug>-<row>","trace":{"int":"INT-014","note_rows":[7],"hub":"<slug>","hub_rows":["12"]},
+ "target":{"kind":"DESIGN","id":"<slug>"},"op":"add_directive","text":"<the directive>"}
 ```
 
-- **`#` is permanent**, hub-local, never renumbered or deleted.
-- **`Directive`** — what the design must do, in one sentence, in the client's own terms. Not a
-  paraphrase that generalizes it into a principle; if it generalizes, it also belongs in Destination 1.
-- **`Source`** — `<INT-###> — <the Signal Log row's own Source cite>`.
-- **`Status`** — `open` (not yet in a prototype) · `reflected` (a prototype implements it, set by
-  `/bigin-generate-design`) · `superseded` · `conflict`. **Leave `open` — this skill never sets `reflected`.**
-
-Then set the Signal Log row: `Status: applied`, `Destination: <slug> ## Design Directives #<n>` —
-naming the directive row this signal became, not the section it sits in. Two reasons it is not
-`## UX Spec`: this lane never writes `## UX Spec` (§ What this lane never does, below), and
-`5-status.md` check 2 asserts an `applied` row's content is findable at the id its `Destination`
-names, which "somewhere in a section" is not.
-
-Leave the hub's `uiux:` field alone — it points at a UX artifact that doesn't exist until
-`/bigin-generate-design` runs.
+- **`text`** — what the design must do, in one sentence, in the client's own terms. If it generalizes, it
+  also belongs in Destination 1.
+- The engine appends the row with the next permanent `#`, `Source` from the trace, `Status: open`
+  (creating the section if the hub predates it), and flips the Signal Log row to `applied` with
+  `Destination: <slug> Design Directives #<n>` — the row, not the section, so `5-status.md` check 2 can
+  find it.
+- `open` → `reflected` is `/bigin-generate-design`'s claim; `superseded` / `conflict` on an existing
+  directive are orchestrator edits named in the report. Leave the hub's `uiux:` field alone.
 
 ## Where this lane goes next
 

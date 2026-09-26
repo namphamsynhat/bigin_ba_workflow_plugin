@@ -1,11 +1,12 @@
 # Filing rules
 
-Rulebook for the `extract-signal` **filing** subagent (2c).
+Human reference for the `extract-signal` **filing** subagent (2c, card `cards/filer.md`).
 
 ```text
-in:   a note whose ## Extracted signals table is COMPLETE and already audited against the source
-out:  each row anchored to a feature · filed onto that hub grouped by theme · registers mirrored
-      · questions raised · the note's status set
+in:   `bigin worklist file <INT>` — the note's audited rows, FEATURES.md slugs, declared features, recent hub rows
+out:  a `filing` JSON (lib/bigin/schema/filing.json): each row anchored · themed hub rows · register matches
+      · questions · cross-note answers. `bigin file apply` writes all of it — hub Signal Log rows, registers,
+      the note's Feature/Status/Notes, questions — and sets the note's status LAST
 never: ## Raw, a transcript, or an attachment
        → that judgment was made by a stronger model with the source properly segmented,
          and any disagreement here would silently overwrite it
@@ -16,6 +17,9 @@ never: ## Raw, a transcript, or an attachment
 present, overrides anything here.
 
 ## Scope
+
+What each decision below turns into is a field of `filing.json`; the engine performs the write, so "may write"
+means "may decide".
 
 | May write | Never writes |
 |---|---|
@@ -92,6 +96,10 @@ declared slug has NO row but LOOKS like a typo/plural/hyphenation variant of one
       meant: if they did mean a new feature, that erases it.
 ```
 
+**Who writes that row.** `bigin file apply` refuses a hub for a slug with no `{requirements_file}` row. The filer
+reports the declared-but-missing slug in its reply; the orchestrating skill adds the `proposed` row (the one
+FEATURES.md write it makes) and then runs `file apply`.
+
 Everything else — an unmatched row, an ambiguous row, a new-scope proposal you drafted yourself — still
 goes through the question path. Those are your reading; this one is the human's declaration.
 
@@ -145,10 +153,10 @@ Columns — `# | Signal | Type | Source | Status | Destination | Notes`:
 
 | Column | Rule |
 |---|---|
-| `#` | hub-local, one per theme. Permanent, never renumbered or deleted. A signal superseding an earlier row gets a **new** row; update the old row's `Status`/`Notes` to point at it. |
+| `#` | hub-local, one per theme, assigned by the engine (next after the hub's highest). Permanent, never renumbered or deleted. A signal superseding or contradicting an earlier row gets a **new** row; `conflicts_with: <old #>` makes the engine flip the old row to `conflict` with a pointer. |
 | `Signal` | `**<Theme>** — <detail>; <detail>; <detail>` — every member's claim as its own clause, in note-row order. **Grouping, not summarizing:** no clause compressed away, none claiming more than its note row did. A theme of one is just that row's text, no prefix. |
 | `Type` | member types in catalog order, joined ` + ` — `requirement + constraint`. A theme of one keeps its plain value. |
-| `Source` | `<INT-###> #<n>, #<n> — <the note row's own cite>`, e.g. `INT-014 #3, #5, #7 — Jane Doe 2026-08-05`. This is the traceability that replaces one-row-per-signal, and it is what verification checks. |
+| `Source` | `<INT-###> #<n>, #<n> — <the note row's own cite>`, e.g. `INT-014 #3, #5, #7 — Jane Doe 2026-08-05` — built by the engine from `note_rows` + `cite` (default: the first member row's Source). This is the traceability that replaces one-row-per-signal, and it is what verification checks. |
 | `Status` | the four values above. A themed row is always `new`. |
 | `Destination` | blank. This stage never stages a signal into a use case. |
 | `Notes` | `extends #<n>` · the `PP-###`/entity/design ids its members minted · otherwise blank. |
@@ -156,10 +164,10 @@ Columns — `# | Signal | Type | Source | Status | Destination | Notes`:
 Over-merging is the failure mode to watch: a row that reads like one ask but hides four. The detail is
 still on the page but no longer legible as separate obligations.
 
-**Hub frontmatter.** New hub: `feature`, `name` (the `{requirements_file}` Feature column), `status`
-(that row's, mirrored once), `sources: [<INT-###>]`, `updated`. Leave `fr`, `code_areas`, `prd`,
-`epics`, `stories`, `uiux`, `entities` at template defaults. Existing hub: add this `INT-###` to
-`sources` if absent, bump `updated`, touch nothing else.
+**Hub frontmatter** (engine). New hub: created from `{template_hub}` for a `{requirements_file}` slug —
+`feature`, `name`, `status` mirrored from that row; a vault whose Signal Logs are split gets the
+`<slug>.signals.md` companion too. Existing hub: this `INT-###` added to `sources`, `updated` bumped, nothing
+else. `file apply` reports `hubs_created`; the orchestrating skill then runs § Step 2a for each.
 
 ## Step 2a — Domain research (new hub only)
 
@@ -244,7 +252,10 @@ commitment   → its own Signal Log row, Status: new, never consolidated (a prom
                  → append "— awaiting: <the commitment>" to the question
 ```
 
-Cite the minted ids in the themed hub row's `Notes` as well.
+In `filing.json`: `pain_points[]` (`statement`, `feature`, `n`, `match`: an existing `PP-###` or null → the engine
+mints the next id in the register and the hub's `## Pain Points`, and writes the id into the note row's Notes) ·
+`entities[]` (`object`, `fields`, `feature`, `n`, `match`) · `design_principles[]`. Cite a MATCHED id in the themed
+hub row's `notes` yourself; a freshly minted id is reported by `file apply` and lands on the note row.
 
 ## Step 5 — Questions
 
@@ -257,6 +268,9 @@ raise a - [ ] Q: for:  every unresolved anchor · every audit-flagged row · eve
 - [ ] Q: <what's missing> (owner: client|team) ↦ —
       A:
 ```
+
+In `filing.json` a question is `{where: note|hub, hub?, text, owner, ref?}`; the engine writes the line (and the
+`↦ —` on a note question) and never adds a question that is already open in the same words.
 
 Anchoring uses one of two specific shapes instead of the generic one — a human should tell them apart
 at a glance:
@@ -287,8 +301,10 @@ a row of this note ANSWERS an open question on a hub, a UC, or another INT note
 never invent the link: the row must actually ANSWER the question, not merely share its topic
 ```
 
-Ticking a checkbox and filling an `A:` line on another `INT-###` note is allowed for exactly this reason
-and nothing else. A **UC-side** copy of that question is still not yours: report it, and
+In `filing.json` this is `answers[]`: `{int: <the originating note>, question: <its wording>, answer}` — the
+engine ticks that note's copy and writes `A: <answer> (answered by <this INT>)`. A hub copy of the same question
+is reported, not ticked, until the engine supports it. Ticking a checkbox on another `INT-###` note is allowed for
+exactly this reason and nothing else. A **UC-side** copy of that question is still not yours: report it, and
 `/bigin-transform-signal`'s Stage 1 strikes it (`1-foldin.md` § Reconcile mirrors, item 3).
 
 **Missing rationale is ONE batched question, not one per row — and every row gets marked:**
@@ -324,8 +340,11 @@ these markers and nothing else to decide whether a `not stated` row blocks
 
 ## Step 6 — Before finalizing
 
+The engine does the writes in a safe order (hub rows and registers, then questions, then the note's status last)
+and `bigin lint --full` re-checks the result. What remains yours is the content check before you write the JSON:
+
 ```text
-GATE: re-open or grep every {hub_dir}/<slug>.md touched this run, confirm it cites this INT-###
+GATE (engine + lint): every {hub_dir}/<slug>.md touched this run cites this INT-###
       → status: in-review drops the note from every future scan; an unlanded write is then invisible
       → turns running short? finish the pending hub writes first, in order
       → genuinely can't finish? DON'T finalize — report which slugs are done vs pending
@@ -345,6 +364,7 @@ then:
   every pain-point row's Notes carries a PP-### (minted in both places, or matched)
   every "derived from #<n>" row was filed with a client question
   status: in-review if every ## Open Questions box is checked, else needs-clarification
+          (the engine's default when `note_status` is omitted)
 ```
 
 ## Partial fold-ins

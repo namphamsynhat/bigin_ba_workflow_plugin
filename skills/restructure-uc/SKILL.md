@@ -1,6 +1,6 @@
 ---
 name: restructure-uc
-description: Split a Use Case that has outgrown one user goal into two or more use cases, once a human has judged the seam — live, while reviewing a UC, or by answering a `/bigin-transform-signal` Stage 3 granularity question (`3-lane-uc.md` § Recognizing drift). Moves existing `S#`/`A#`/`E#` content to its new home (marking the source's originals `removed because`, never renumbering), repoints every affected `BR-###`, and refreshes every touched feature hub. Assumes the split reorganizes signals already on file — it never invents a new intake note for the reorganization itself, only for a genuinely new decision the human explicitly names. Use when a UC mixes more than one primary actor or trigger, when `/bigin-transform-signal` has raised (and a human has answered) a granularity question, or when asked to "split this UC", "restructure UC-###", or "this use case isn't created well, break it apart".
+description: Split a Use Case that has outgrown one user goal into two or more use cases, once a human has judged the seam — live, while reviewing a UC, or by answering a `/bigin-transform-signal` Stage 3 granularity question (`3-lane-uc.md` § Recognizing drift). Moves existing `S#`/`A#`/`E#` content to its new home (the source's originals become `Dropped — moved to UC-###`, never renumbered) through engine change sets, repoints every affected `BR-###`, and refreshes every touched feature hub. Assumes the split reorganizes signals already on file — it never invents a new intake note for the reorganization itself, only for a genuinely new decision the human explicitly names. Use when a UC mixes more than one primary actor or trigger, when `/bigin-transform-signal` has raised (and a human has answered) a granularity question, or when asked to "split this UC", "restructure UC-###", or "this use case isn't created well, break it apart".
 argument-hint: "<UC id, e.g. UC-011> [proposed split, e.g. \"spend channels into 3 UCs, switch into its own\"]"
 ---
 
@@ -21,16 +21,17 @@ said — not "this UC mixes two goals" but "actually, here's a third thing the c
 `INT-###` id as an input the same way it takes everything else, never inventing one to fill the gap.
 
 > **Artifact Standard:** Outputs:
->> **The source UC**, narrowed, `## 2`/`## 3` rows marked `removed because — moved to UC-###` where
+>> **The source UC**, narrowed, `## 2`/`## 3` rows marked `Dropped — moved to UC-###` where
 >> content left, retitled if its remaining scope no longer matches its old title, flagged for
 >> `/approve-uc` review.
 >> **One or more destination UCs**, new or existing, each `status: draft` if newly created (or
 >> re-recounted if existing), carrying the moved content and its original citations, also flagged for
 >> review.
 >> **Every affected `BR-###`**, `uc:` repointed to whichever destination(s) actually enforce it now.
->> **Every touched feature hub**, refreshed via `hub-bookkeeper` (`uc:`/`br:` frontmatter, `## Use Cases`,
->> `## Requirement Readiness`, resolved `## Open Questions / Gates` lines, any moved `## Pain Points`
->> pointer), and `01-Requirements/FEATURES.md`'s UC column for every touched feature.
+>> **Every touched feature hub**, refreshed by the engine — `bin/bigin hub refresh` (`uc:` pointers,
+>> `## Use Cases`, `## Requirement Readiness`, the add-only `## Open Questions / Gates` mirror) and
+>> `bin/bigin links sync` (`brs:`/`uc:`/`features:`/`sources:` and `01-Requirements/FEATURES.md`'s UC
+>> column). No agent edits a hub's derived tables.
 
 ---
 
@@ -45,20 +46,23 @@ said — not "this UC mixes two goals" but "actually, here's a third thing the c
   destination content already carry. Only create or reference a fresh `INT-###` when the human
   explicitly says a new statement — not a reorganization — is driving the split, and even then, take the
   id as given rather than minting the intake note from inside this skill.
-* **Permanent ids, always.** A source `S#`/`A#`/`E#` that moves is marked `removed because`, in place,
-  never renumbered or deleted. A destination that is a brand-new UC gets its own fresh `S#`/`A#`/`E#`
+* **Permanent ids, always.** A source `S#`/`A#`/`E#` that moves becomes `Dropped — moved to UC-###`
+  (a `drop_step` / `drop_flow` change set), in place, never renumbered or deleted. A destination that is a brand-new UC gets its own fresh `S#`/`A#`/`E#`
   sequence starting at 1 — it is not required to preserve the source's old numbers.
-* **The orchestrator mints, `uc-splitter` executes.** Any brand-new UC id in the plan is minted here (one
-  `Grep` of `{uc_dir}` for the highest number, per `3-lane-uc.md` § Creating a new UC) before dispatching
-  `uc-splitter` — never let the subagent mint, for the same concurrent-mint-race reason the rest of the
-  pipeline reserves minting to the orchestrator.
-* **Feature hubs and `FEATURES.md` are this skill's own writes, not `uc-splitter`'s.** The subagent
-  reports what changed; this skill dispatches `hub-bookkeeper` once per touched hub, sequentially (never
-  two hubs concurrently for one restructuring), and edits `FEATURES.md`'s UC column itself.
-* **Verify before reporting done.** Run `bigin-lint --full` after every file this skill or its subagent
-  touched, and resolve every finding the restructuring itself caused (a citation that stops resolving once
-  its content moves to a new `sources:` list, a hub pointer the bookkeeper pass hasn't caught up to yet)
-  before telling the human it's done — a clean restructuring that leaves lint findings behind just
+* **`uc-splitter` drafts, the engine writes.** Since v1.10.0 `uc-splitter` writes nothing in the vault:
+  it turns the settled plan into one `changesets` JSON (`drop_step`/`drop_flow` on the source, `create_uc`
+  with a `key` or `new_step_after`/`new_flow` on each destination, `mirror_br` for every rule that follows,
+  `link` for `sources:`/`features:`). `bin/bigin apply` mints any new UC id under the id lock, applies every
+  set with one write per artifact, flags each UC whose § 2 changed for review, and refreshes the hubs it
+  touched. Nobody greps for the highest id by hand any more.
+* **Feature hubs and `FEATURES.md` are the engine's.** `bigin apply` already runs `links sync` and
+  `hub refresh` for every hub it touched; run `bin/bigin hub refresh <slug> …` again only if a hub was
+  touched outside the apply. Never edit `## Use Cases`, `## Requirement Readiness`, `## Open Questions /
+  Gates`, `uc:` or `FEATURES.md`'s UC column by hand.
+* **Verify before reporting done.** Run `bin/bigin lint --full` once after the apply, and resolve every
+  finding the restructuring itself caused (a citation that stops resolving once its content moves to a new
+  `sources:` list, a § 4 row on the source for a rule that no longer applies there) before telling the
+  human it's done — a clean restructuring that leaves lint findings behind just
   relocates the review burden instead of closing it.
 
 ---
@@ -101,19 +105,25 @@ for the same reason: no restructuring decision should be made blind to the UC's 
    Surface anything genuinely ambiguous as a written question rather than guess — the same discipline
    `/bigin-transform-signal` applies to every other drafting decision.
 
-3. **Mint.** For every brand-new destination, `Grep` `{uc_dir}` for the highest `UC-###` in use and assign
-   the next id, one at a time, same as `3-lane-uc.md` § Creating a new UC.
+3. **Build the worklist.** `bin/bigin worklist split UC-### --out _runs/<run>/tasks/UC-###.split.in.json`
+   (the full UC card: summary, every step/flow with its `sha`, § 4 rows, open questions), and write the
+   settled plan from step 2 next to it as `UC-###.plan.json` — destinations (existing id, or `key` +
+   title + primary actor + `primary_feature` + `features`), the `S#`/`A#`/`E#` → destination mapping with
+   any reworded text, the BR → destination/enforcement mapping, and, only if step 2 found one, the
+   `INT-###`/row # a genuinely new decision should cite.
 
-4. **Dispatch `uc-splitter`** with the full plan: source UC, every destination (new ids + frontmatter, or
-   existing ids), the `S#`/`A#`/`E#` → destination mapping with any reworded text, the BR → destination
-   mapping, and — only if step 2 found one — the `INT-###`/row # a genuinely new decision should cite.
+4. **Dispatch `uc-splitter`** with its card (`cards/splitter.md`), the worklist and the plan; it writes
+   `_runs/<run>/tasks/UC-###.split.out.json` (schema `changesets`) and replies with one line.
+   Then `bin/bigin ingest <out> --kind changesets --run <run>` — on schema errors, resume the same agent
+   once with the errors.
 
-5. **Reconcile hubs.** From `uc-splitter`'s report, dispatch `hub-bookkeeper` once per feature hub it
-   named, sequentially — never two hubs from one dispatch, never two hubs concurrently. Edit
-   `01-Requirements/FEATURES.md`'s UC column for every touched feature directly (`uc-splitter` never
-   touches this file).
+5. **Apply.** `bin/bigin apply _runs/<run>/tasks/UC-###.split.out.json --run <run>`. The engine mints each
+   `create_uc` id (locked), drops the moved source rows with their reason, lands every destination step,
+   flow and mirror, records the change-set ids in each UC's Changelog (re-running is a no-op), and
+   refreshes every touched hub and `FEATURES.md`. A `drift` result means the UC was edited after the
+   worklist was built — rebuild the worklist and re-dispatch; an `invalid` result names the set to fix.
 
-6. **Verify.** Run `bigin-lint --full`. Fix anything the restructuring caused; report anything genuinely
+6. **Verify.** Run `bin/bigin lint --full`. Fix anything the restructuring caused; report anything genuinely
    pre-existing (not caused by this run) without fixing it — a restructuring is not a license to clean up
    every unrelated finding in the vault, only the ones this operation introduced.
 
@@ -127,7 +137,6 @@ for the same reason: no restructuring decision should be made blind to the UC's 
 - **`_bigin/stages/transform/3-lane-uc.md` § Granularity / § Recognizing drift** — the detection-side
   rule this skill is the execution-side counterpart to; read it for the exact conditions that should
   have raised the split question in the first place.
-- **`_bigin/stages/transform/4-sync.md` § Part 1b** — the per-hub sequential-dispatch pattern this skill's
-  step 5 reuses.
-- **`agents/uc-splitter.md`** — the subagent this skill dispatches; its own report format names exactly
-  what step 5 and step 6 need.
+- **`cards/splitter.md`** — the splitter's whole rulebook (inputs, the change-set shapes, the rules it can
+  break, a worked example).
+- **`agents/uc-splitter.md`** — the subagent this skill dispatches; JSON out, no vault writes.

@@ -14,7 +14,14 @@ project_mode: new        # new | ongoing
 platform: web             # web | mobile | both — drives design screen composition, nav shape, and prototype prompts
 codebase_path:            # absolute path to the product repo — required when project_mode: ongoing
 repo:                     # git remote or repo name — blank if this isn't a git repo
-workspace_version:        # the plugin version that last materialized _bigin/{conventions,stages,templates}
+grounding: communication  # communication | codebase | both — where requirements come from (v1.12.0)
+repos: []                 # grounding: codebase|both — read-only code roots, e.g. [repos/backend, repos/fe-web]
+conflict_policy: ask      # ask | code-first — who settles a factual conflict between two readings
+coverage_id_pattern:      # optional: trace rule-card ids instead of note rows, e.g. XR-[A-Z]+-\d{3}
+budgets:                  # optional: {transform_per_feature_tokens: 600000, extract_per_note_tokens: 150000}
+signal_log: split         # split | inline — hub Signal Logs in <slug>.signals.md (split) or in the hub
+engine: engine            # engine | legacy — legacy = the v1.8 behaviour, for one minor version only
+workspace_version:        # the plugin version that last materialized _bigin/{conventions,stages,templates,cards}
 updated: <YYYY-MM-DD>
 ---
 
@@ -40,6 +47,21 @@ updated: <YYYY-MM-DD>
 >   design engine is required. It never reaches a use case — a UC stays platform-blind by design.
 >   Absent on a project initiated before this field existed → treated as `web`.
 > - `codebase_path` — absolute path to the product repo (only relevant when `project_mode: ongoing`).
+> - `grounding` — `communication` (email, meetings, notes: extracted by agents), `codebase` (rule cards
+>   mined from code, imported by `bin/bigin intake codebase` with no LLM call), or `both`. `codebase`/`both`
+>   enables the adjudication stage (`workflows/adjudicate.js`): a `conflict`/`held` Signal Log row is
+>   refereed against the code by `code-adjudicator`.
+> - `repos` — the read-only code roots adjudication and codebase intake may read. Nothing writes under them.
+> - `conflict_policy` — `code-first`: the code settles a factual disagreement between two readings;
+>   `ask` (default): the facts are settled from code but the decision goes to a human as a gated question.
+>   Intent ("should …") is never settled by code under either value.
+> - `coverage_id_pattern` — when rule cards carry permanent ids, `bin/bigin coverage` traces those ids
+>   through extract → file → transform instead of note rows.
+> - `budgets` — token budgets per stage unit; `bin/bigin metrics report <run>` flags overruns.
+> - `signal_log` — `split` keeps each hub's append-only Signal Log in `_features/<slug>.signals.md`
+>   (agents read rows only through `bin/bigin worklist`); `inline` keeps it in the hub.
+> - `engine` — `engine` (default). `legacy` is the one-minor-version escape hatch that lets a
+>   half-migrated vault finish a run on v1.8 behaviour (`docs/MIGRATION.md`).
 > - `workspace_version` — written by `/bigin-new-project`; the plugin version whose rulebook and
 >   templates are currently materialized under `_bigin/`. Re-run `/bigin-new-project` after a plugin
 >   upgrade to refresh them.

@@ -1,13 +1,28 @@
 ---
 name: bigin-intake
-description: This skill is used when BA starts the new working day, capture project raw material in the last `x` days. Capture raw requirement intake (a meeting transcript, email thread, or direct note) into the workspace, unmodified, for later signal extraction process.
-argument-hint: "[auto|direct] <pasted text, file path, or note>"
+description: This skill is used when BA starts the new working day, capture project raw material in the last `x` days. Capture raw requirement intake (a meeting transcript, email thread, or direct note) into the workspace, unmodified, for later signal extraction process. Also imports mined code rule cards (codebase mode, `bigin intake codebase`) straight into INT notes and hub rows with no LLM extraction.
+argument-hint: "[auto|direct|codebase] <pasted text, file path, note, or rule-card file>"
 model: haiku
 ---
 
 # Bigin Intake
 
 Land raw input in `00-Inbox/` verbatim so nothing is lost or paraphrased before `/extract-signal` runs.
+
+**Two intake modes, one pipeline** (`_bigin/system/project.md` `grounding: communication | codebase | both`):
+
+| Mode | Input | What runs next |
+|---|---|---|
+| **communication** (Modes A/B below) | email, meeting transcript, direct note — captured verbatim | `/extract-signal` (extractor → auditor → filer) |
+| **codebase** (§ Stage 2C) | rule cards mined from `repos/` (e.g. `code-modernization:modernize-extract-rules`) | nothing for extraction: `bigin intake codebase` writes the notes, signal rows and hub rows itself |
+
+`grounding: codebase` or `both` also enables the transform stage's code adjudication. `BIN` below =
+`"${CLAUDE_PLUGIN_ROOT}/bin/bigin"`, run from the vault root.
+
+**Ids are minted by the engine, under a lock.** Never compute "the next INT-###" yourself: two captures running
+at once read the same highest number. Mint with `BIN intake communication --spec <spec.json>` (it instantiates
+`{template_intake}` at the next id, with the `## Raw` blocks you pass, and prints `INT-### <path>`), or
+`BIN mint int --spec <spec.json>`; then append anything else to the file it created.
 
 **Outputs:**
 
@@ -151,7 +166,9 @@ MODE = first token of $ARGUMENTS:
        ≤ 3 features → exact multi-select + "Skip — let /extract-signal anchor it"
        > 3 features → "Skip" + "I'll name them", slugs listed in the description
 
-8. WRITE — instantiate {template_intake} at the next INT-###, log to {intake_log}:
+8. WRITE — `BIN intake communication --spec <spec.json>` mints the next INT-### under the lock and
+   instantiates {template_intake}; spec = {title, kind, source, source_ref, source_ids, attachments,
+   declared_features, blocks: [{kind, ref, text}]}. Log to {intake_log}. Resulting frontmatter:
        source:      direct                # → meeting/email if step 1 resolved it
        source_ref:  <URL | "user YYYY-MM-DD" | filename | input>
        source_ids:  [<URL>]               # + <provider>:<id> once resolved
@@ -186,13 +203,39 @@ MODE = first token of $ARGUMENTS:
                extend raw_sources, and if status is not `raw` → RE-OPEN it to `raw`
                → re-opening is what makes an appended update get processed; never edit the
                  downstream sections yourself
-       new   → next sequential INT-###, one block per fetched artifact
+       new   → `BIN intake communication --spec …` (locked id), one block per fetched artifact
 
 5. KIND — the same three rules as Mode A
 ```
 
 A meeting yields **two** blocks, `transcript` and `summary`. A sweep storing only the recap silently
 caps every downstream stage at what the recap happened to mention.
+
+## Stage 2C — Codebase mode: rule cards
+
+```text
+input: a rule-card file — the modernize-extract-rules store (analysis/_rules-store.json), a JSON list of
+       generic cards, or a CSV (docs/CODEBASE-INTAKE.md) — plus, optionally, a card → feature assignment map
+
+BIN intake codebase --cards <path> [--assignment <map.json>] [--group-by capability|feature|group|none]
+                    [--unmapped-out _runs/<run>/tasks/codebase.file.in.json]
+```
+
+What the engine does, with no LLM call: one INT note per group (`source: codebase`, `grounding: codebase`,
+the provenance header and the asymmetry warning, the rule pack saved as its attachment) · one `decision` row per
+card with its id verbatim and its citation as Source, plus a separate `problem` row per suspected defect and a
+`question` row per SME question · filing by (feature, card theme) straight onto the hubs · the note's status.
+Re-running skips cards already imported (idempotent).
+
+Features come from `--assignment` first, then the card's own feature/capability, then path heuristics. Only
+rows it cannot map (or maps ambiguously) are left `unresolved — …` with a question, and written to
+`--unmapped-out` as ONE `signal-filer` classification task: dispatch the filer with that input
+(`cards/filer.md`), `BIN ingest <out> --kind filing`, `BIN file apply <out>`. Finish with `BIN lint --full` and
+`BIN coverage --stage file --id-pattern '<card id regex>' --universe <cards>` — every card id must be filed.
+
+Codebase mode never edits `repos/` and never reproduces secrets, credentials, e-mail addresses or internal
+hostnames a card quotes — the engine copies card text as given, so check the report and raise any such text with
+the human instead of filing it on.
 
 ## Source blocks
 
@@ -230,7 +273,8 @@ header    resolved email_provider · meeting_provider · timeframe
 saved     | INT ID | Source | Blocks (kind × n) | Participants / Ref | Status | Re-opened? |
 skipped   | Subject / Title | Provider | Reason |
 flags     declared_features with no {requirements_file} row — /extract-signal creates them as proposed
-next      run /extract-signal to extract each note's signals and anchor them to features
+codebase  cards N (already imported N) · notes INT-### [group] · hub rows N · unmapped → filer task: N
+next      communication notes → /extract-signal · codebase notes → /bigin-transform-signal (already filed)
 ```
 
 Update `{intake_log}`.

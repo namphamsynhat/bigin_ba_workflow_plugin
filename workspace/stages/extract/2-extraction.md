@@ -1,11 +1,14 @@
 # Extraction rules
 
-Rulebook for the `extract-signal` **extraction** subagent (2a).
+Human reference for the `extract-signal` **extraction** subagent (2a). The agent itself reads
+`cards/extractor.md`, which is derived from this file and cites its sections.
 
 ```text
-in:   every ### SRC-n block in a note's ## Raw, plus any file a block names
-out:  one row per discrete signal in that note's ## Extracted signals, self-audited
+in:   `bigin worklist extract <INT>` — the note's ### SRC-n blocks as line ranges, plus any file a block names
+out:  a `signals` JSON (lib/bigin/schema/signals.json): one row per discrete signal, self-audited;
+      `bigin note write-signals` numbers the rows and writes ## Extracted signals
 never: anchoring · hubs · registers · questions · status · grouping of any kind   → those are 3-filing.md
+       · writing any vault file — the engine is the only writer
 ```
 
 The split is deliberate: an extractor that knows its rows get grouped downstream starts pre-grouping
@@ -28,8 +31,8 @@ claim's `Type`, never whether it gets written.
 ## Procedure
 
 ```text
-1. LOCATE      grep -n "^## \|^### SRC-" <note>           # block starts + where ## Raw ends
-               read each block by line range (offset/limit), ONE AT A TIME
+1. LOCATE      the worklist's src_blocks give every block's line range (1-based, inclusive)
+               read each block by line range (offset/limit), ONE AT A TIME — never the whole note
                → a single Read truncates at 2000 lines WITHOUT SAYING SO
                → two blocks in one read is how a whole attachment gets skipped
                a block naming a file path → open that file
@@ -93,7 +96,7 @@ that actually reaches the build.
 
 | Column | Rule |
 |---|---|
-| `#` | Sequential, assigned once, **permanent and append-only**. New rows append after the highest `#` **ever used on this note**. Never renumbered, never reused, never closed up to fill a gap — see § Row numbers are permanent ids. |
+| `#` | Assigned by the engine (`bigin note write-signals`), once, **permanent and append-only**: new rows append after the highest `#` **ever used on this note**. Never renumbered, never reused, never closed up to fill a gap — see § Row numbers are permanent ids. The agent emits rows in arrival order and never numbers them (a `repair` names the existing `n`). |
 | `Type` | `requirement · constraint · decision · feedback · question · answer · concern · problem · pain-point · commitment`. Assigned **after** the as-is/pain/to-be call. |
 | `Signal` | The claim, tightly paraphrased. Not a verbatim wall, not a summary of several claims. |
 | `Why` | `requirement`/`feedback` only, blank elsewhere. Exactly one of: the stated reason · `not stated` · `derived from #<n>`. |
@@ -182,7 +185,8 @@ note came back with questions answered:
 ```
 
 An existing note is verified and extended, never re-extracted: a row still supported keeps its `#`, a
-wrong one is corrected in place (`Notes: corrected: …`), new signals append. `## Raw` is never edited.
+wrong one is corrected in place (`mode: repair`, the row's `n`, `notes: corrected: …`), new signals append
+(`mode: append`). `## Raw` is never edited.
 
 ## Row numbers are permanent ids
 
@@ -207,8 +211,8 @@ This binds a re-extraction, a fold-in run, and a repair pass equally
 
 ## Step 6 — audit your own table, and repair it
 
-You wrote the table; you close it. Re-walk each block **against the table you just wrote** and fix
-what you find, in place, before you report. The categories and the exact repair for each are in
+You wrote the rows; you close them. Re-walk each block **against the rows you are about to emit** and fix
+what you find before you write the JSON. The categories and the exact repair for each are in
 `2b-audit.md` § Repairing the table — that file is the one home for the repair vocabulary, and it
 governs here too.
 
@@ -238,8 +242,8 @@ permanent ids): correct in place, append after the highest `#` ever used, never 
 0  numbering    no # renumbered, reused, or re-sorted; every new row appends after the highest # ever
                 used on this note (§ Row numbers are permanent ids). Report the highest # before and
                 after this run.
-1  shape        every row has exactly 8 cells: | # | Type | Signal | Why | Source | Feature | Status | Notes |
-                no row starts or ends with "||"        # a malformed row shifts every column downstream
+1  shape        the JSON validates against the `signals` schema (`bigin ingest` checks it; an invalid file is
+                handed back to you once with the errors)
 2  blocks       every ### SRC-n read (summary excepted), each with its own segment list
                 a block left unread is REPORTED as unread, never omitted
 3  segments     every segment has a row count; counts sum to rows written this run
@@ -256,8 +260,8 @@ permanent ids): correct in place, append after the highest `#` ever used, never 
 13 self-audit   § Step 6 walked every block against the table; every category it found is repaired,
                 and the repairs are reported by row # and category
 14 audit owed   the note is judged against `2b-audit.md` § When the independent pass is owed, and the
-                verdict (owed / not owed, and which trigger) is REPORTED — the orchestrator dispatches
-                on it, so an unstated verdict silently downgrades a transcript to no audit at all
+                verdict goes in `self_audit.audit_owed` + `reason` — the workflow dispatches on it, so an
+                unstated verdict silently downgrades a transcript to no audit at all
 ```
 
 ## Safety

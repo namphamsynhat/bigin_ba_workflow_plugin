@@ -1,0 +1,35 @@
+{
+  "specVersion": "1.0.0",
+  "name": "bigin-assemble-prototype",
+  "title": "Bigin Assemble Prototype",
+  "version": "1.8.12",
+  "description": "Assembles modular UX design frame artifacts into a unified, full-fidelity clickable prototype following the project navigation map and selected design system app shell.",
+  "compat": {
+    "agentSkills": [
+      {
+        "path": "./SKILL.md"
+      }
+    ]
+  },
+  "context": {
+    "skills": [
+      {
+        "path": "./SKILL.md"
+      }
+    ],
+    "designSystem": {
+      "primary": true
+    },
+    "assets": [
+      "./navigation-map.md"
+    ]
+  },
+  "od": {
+    "kind": "skill",
+    "taskKind": "new-generation",
+    "mode": "prototype",
+    "surface": "web",
+    "platform": "desktop",
+    "scenario": "design"
+  }
+}

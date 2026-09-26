@@ -3,8 +3,9 @@
 What a `UC-###` is, what its sections hold, how it traces back to the signal that caused it, and
 the summary block that keeps it scannable.
 
-**Read by** `/bigin-transform-signal` and its `uc-router` / `uc-applier` / `uc-splitter` workers,
-`/restructure-uc`, `/approve-uc`, and `/bigin-generate-prd` (for § Traceability chain).
+**Read by** people, `/bigin-transform-signal`, `/restructure-uc`, `/approve-uc`, and `/bigin-generate-prd` (for
+§ Traceability chain). Agents read their card (`cards/router.md`, `cards/splitter.md`) instead; every card
+rule cites the heading here it came from.
 
 ## Use Case
 
@@ -31,7 +32,8 @@ approvable.
 | `## 4. Business Rules & Compliance Constraints` | A **read-only mirror** of `BR-###` files: id, short statement, and the enforcement point (which `S#` the rule bites at) |
 | `## 5. Open Questions & Decision Log` | The canonical `- [ ] Q:` list for what is still open, plus a decision-log table of settled items with speaker context |
 | `## 6. Special Requirements & Related Information` | Optional. Workflow-scoped non-functional constraints, priority, frequency, performance target |
-| `## Discussion` · `## Changelog` | The staging gate and history |
+| `## Pending changes` | Read-only, engine-rendered (`bin/bigin ledger render`): change sets gated on a question in `01-Requirements/_ledger/`. Present only while something waits |
+| `## Discussion` · `## Changelog` | Human discussion (never read as pending content since v1.10.0) · history: one line per engine apply, citing its trace and change-set ids |
 
 **Goal level.** `level:` is `user-goal` (the default — real work, one sitting, 3–9 main-flow steps,
 passing Cockburn's *boss test*), `summary` (several user goals composed, only ever to group UCs that
@@ -48,11 +50,9 @@ invalidate all of them silently. That is the same failure the retired `SCN-###` 
 still resolves.
 
 **A use case may span features.** `features: []` lists every slug it touches, and `primary_feature:`
-names the one that **owns the file** — the feature whose actor holds the goal. Ownership is a
-write-ownership fact, not importance: only that feature's `/bigin-transform-signal` subagent writes the
-file, because Stage 3 fans out per feature and a shared UC would otherwise have concurrent writers. A
-change reported from a participating feature is applied by the orchestrator in Stage 4
-(`_bigin/stages/transform/3-lane-uc.md` § Ownership). Every participating hub carries the same
+names the one that **owns** it — the feature whose actor holds the goal (its owner hub), not a claim of
+importance. Only the engine writes the file: change sets from any feature's router are applied one
+artifact at a time, idempotently (`_bigin/stages/transform/3-lane-uc.md` § Ownership). Every participating hub carries the same
 `## Use Cases` pointer.
 
 **A feature may carry several use cases** — one per genuinely distinct user goal. This is the deliberate
@@ -65,8 +65,8 @@ a rule change does not force a use-case change — and one rule routinely govern
 no single one of them can own it. The one fact the mirror adds is the enforcement point.
 
 **Updated many times, never re-forked.** New signals keep arriving for the life of a feature; each one
-edits the UC in place (version bump + `## Changelog`, hard rule 7 — approval doesn't freeze it), staged
-through `## Discussion` and folded in after the human gate. A use case filled only as far as pass 2 is
+edits the UC in place (version bump + `## Changelog`, hard rule 7 — approval doesn't freeze it), as a
+change set `bin/bigin apply` lands — at once, or after its gate question is answered (`ledger release`). A use case filled only as far as pass 2 is
 not defective: Cockburn's own template guidance is to fill it in several passes, and Use-Case 2.0 starts
 a narrative as a bulleted outline before it becomes a table.
 

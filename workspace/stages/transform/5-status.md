@@ -3,129 +3,75 @@
 ```text
 runs: orchestrator, LAST
 in:   every artifact this run touched
-out:  every status set from a LIVE RE-COUNT · hubs refreshed · nine checks · the report
+out:  every status set from a LIVE RE-COUNT · hubs refreshed · checks run · the report
 never: a status decided in Stages 1-4 — they write content and leave status alone
 ```
 
-A status decided mid-stage and left stale by a later edit to the same artifact is this vault's most
-common drift.
+`BIN="${CLAUDE_PLUGIN_ROOT}/bin/bigin"`. A status decided mid-stage and left stale by a later edit is this
+vault's most common drift — so a program re-counts it, last.
 
 ## Part 1 — Set every status from a live re-count
 
 ```text
-per artifact, in this order:
-1  apply every accepted change to the question list first
-     a UC's ## 5 Still open · a BR's ## Open Questions
-     tick NOTHING that isn't genuinely resolved
-     move genuinely resolved lines into the UC's decision-log table
-2  RE-COUNT the remaining unchecked "- [ ] Q:" lines BY READING THE SECTION ON DISK
-     on a UC, count the Still open list ONLY — a decision-log row is answered history
-3  set the status:
-     count > 0 → needs-clarification
-     count = 0 → draft, or the stage the artifact had already reached if this run only resolved a
-                 question without editing content
+$BIN status          # every UC/BR: unchecked "- [ ] Q:" in a UC's § 5 Still open (never the Decision log)
+                     # or a BR's ## Open Questions → needs-clarification; none → draft
 ```
 
-Two hard limits:
+It only ever moves between `draft` and `needs-clarification`. `approved`, `removed`, `enriched`,
+`consolidated` are never touched — and never written by this skill (`in-review`/`superseded` are retired on
+a UC/BR). **An approved UC whose § 2 changed stays `approved`**: the engine's Changelog line `§ 2 changed —
+flagged for review` is what sends it back through `/approve-uc`. List every flagged UC in the report.
 
-- **Never write `in-review` or `superseded` on a UC/BR** — both retired. Never write `removed` either —
-  human-gated only.
-- **Editing content on an `enriched`/`approved`/`consolidated` artifact sets it back** to
-  `draft`/`needs-clarification`. Approval does not freeze a UC. This is exactly what makes Stage 4
-  Part 2's review flag real rather than cosmetic: a § 2 change on an already-`approved` UC lands here
-  and drops it back automatically — Part 2's Changelog line just makes the reason legible without a
-  diff.
-
-## Part 2 — Refresh the hub, don't restate it
-
-Per touched hub — **including every hub a cross-feature UC named in `features:`**, not just the ones
-whose own signals were processed:
+## Part 2 — Refresh the hubs, don't restate them
 
 ```text
-refresh ## Requirement Readiness   # a snapshot for orientation, re-derived from each UC's/BR's own
-                                   # status. NOT the gate — each artifact's own status is
-confirm ## Use Cases and uc: match the UC's features:   # Stage 4 Part 1b wrote them; this is read-back
-confirm every `open`/`answered` ## Coverage Gaps row is mirrored in ## Open Questions / Gates
-LEAVE ## Coverage Gaps ITSELF ALONE  # Stage 4 Part 4 owns it (4b-coverage.md). Never re-derive,
-                                   # re-status, or add a row here — and never delete the section
-                                   # because it is empty: empty means the set adds up, MISSING means
-                                   # nobody has checked, which is the coverage pass's backfill trigger
-append one ## Notes / History bullet
-DO NOT change the hub's status:    # it mirrors the {requirements_file} row — a SCOPE state, not a
-                                   # workflow state. There is no "ready for PRD" feature status.
+$BIN hub refresh <every touched slug, and every slug a touched cross-feature UC names>
 ```
+
+Readiness (one row per artifact: Ready = status ≠ needs-clarification ∧ 0 open questions ∧ nothing
+pending in the ledger or a legacy ## Discussion), `uc:` + `## Use Cases`, and the add-only Gates mirror
+(including every `open`/`answered` Coverage Gaps row) are all derived here. The orchestrator adds only one
+`## Notes / History` bullet per touched hub. **Leave `## Coverage Gaps` itself alone** (Stage 4 Part 4 owns
+it) and **never change the hub's `status:`** — it mirrors the `{requirements_file}` scope state.
 
 ## Part 3 — Verify before reporting
 
-Each is a real failure that otherwise reports as success. Check all nine, every run. **A mismatch is
-blocking:** repair and re-check rather than report a count the vault doesn't support.
-
-### Run the deterministic checker first
-
-Four of the nine, plus parts of two more, are pure counting — and a program that counts beats an agent
-that counts, both in cost and in not being able to talk itself into a pass:
-
 ```text
-ORCHESTRATOR ONLY, once, before working the table below:
-    Bash: python3 "${CLAUDE_PLUGIN_ROOT}/hooks/bigin-lint.py" --full
-    exit 0 → checks 1, 5, 7, 8 and the mechanical halves of 4 and 6 are clean; skip re-doing them
-    exit 1 → its findings ARE Part 3 mismatches. Blocking, same as any other. Repair, re-run it.
-
-    ${CLAUDE_PLUGIN_ROOT} does not resolve, python3 is missing, or the command is denied
-        → SAY SO in the report, then do all nine checks by hand as below.
-        NEVER treat an unavailable checker as a pass: a run that silently skipped verification
-        is exactly the failure this whole section exists to prevent.
+$BIN lint --full                      # exit 1 → its findings ARE mismatches: blocking, repair, re-run
+$BIN coverage --stage transform       # every traced unit reaches a UC/BR, or is parked on a question
+                                      # (codebase vaults: --id-pattern from project.md coverage_id_pattern)
+$BIN run summary $RUN                 # dispatched vs landed
 ```
 
-**A subagent cannot run this** — `${CLAUDE_PLUGIN_ROOT}` only resolves in the orchestrator, which is
-where Part 3 runs anyway. Don't hand the command to a dispatched agent.
+The binary unavailable, `python3` missing, or the command denied → **say so** and do the checks by hand.
+Never treat an unavailable checker as a pass.
 
-| # | The checker covers | Still yours |
+| # | Check | Who |
 | :--- | :--- | :--- |
-| 1 | fully | — |
-| 2 | — | all of it: "would the existing text satisfy a tester checking this signal" is judgment |
-| 3 | — | all of it: needs to know what changed *this run*, which only you know |
-| 4 | the `- [ ] Q:` exists on the artifact named | whether it duplicates a question already open on the source note |
-| 5 | fully | — |
-| 6 | duplicate ids, and every `## 3`/`## 4` reference resolving to a live step | whether anything was renumbered *this run* |
-| 7 | fully | — |
-| 8 | fully | — |
-| 9 | — | all of it: the row → question link is prose, not a parseable field |
+| 1 | every `staged` row has something pending behind it — an open ledger entry, a drift question on the artifact citing the row, or (legacy) a `## Discussion` entry | lint |
+| 2 | every `applied` row's content is findable at the id its `Destination` names, or it carries a pointer explaining why no change was needed | **you** — "would the text satisfy a tester checking this signal" is judgment |
+| 3 | no Signal Log row renumbered, deleted, un-merged, or had its `Signal`/`Source` rewritten (except a Gate 3 refresh noted `refreshed from <INT-###>`) | **you** |
+| 4 | every question raised exists once on the artifact named and duplicates none already open on the source `INT` note | lint (exists) + **you** (duplicates) |
+| 5 | each artifact's `status` matches its live open-question count | lint (after `bigin status`) |
+| 6 | no `S#`/`A#`/`E#` reused or renumbered; every branch/enforcement point resolves to a live step | engine (never renumbers) + lint |
+| 7 | every slug in a UC's `features:` lists it in `uc:` and `## Use Cases`, and no hub claims a UC that doesn't name it | lint (after `hub refresh`) |
+| 8 | no two files share a `UC-###`/`BR-###` id | lint (the engine's id lock prevents it) |
+| 9 | no `conflict`/`question` row whose linked question carries a filled `A:` — Stage 1 should have re-entered it | **you** |
 
-The checker is an accelerator, not a replacement. It cannot see intent, and it cannot see history.
-
-**Coverage gaps are deliberately not a tenth check.** The nine are consistency invariants — a
-statement the vault either satisfies or doesn't. "This feature's use-case set doesn't add up" is a
-judgment about the business, made once per touched feature in Stage 4 Part 4 with the whole set in
-view, and it moves no artifact's status. The one thing Part 2 above does assert is the *mirror*: an
-`open` gap row that never reached `## Open Questions / Gates` is invisible to the human, which is a
-bookkeeping failure and does belong here.
-
-| # | Check | Why |
-| :--- | :--- | :--- |
-| 1 | every `staged` row has a matching `## Discussion` entry citing its `INT-###` | a `staged` row with nothing staged is stranded — it no longer reads as pending, so no future run collects it |
-| 2 | every `applied` row shows its content at the id its `Destination`/`Notes` names, or carries a pointer explaining why no change was needed | `2-qualification.md` Gate 4 |
-| 3 | no Signal Log row renumbered, deleted, un-merged, or had its `Signal`/`Source` rewritten — except a Gate 3 clause refresh carrying `Notes: refreshed from <INT-###>` | row `#`s are permanent, and a themed row's `Source` cite is the only trail back to the note rows it covers |
-| 4 | every question raised exists as an unchecked `- [ ] Q:` on the artifact named, and duplicates no question already open on the source `INT` note | one question, two places — never two questions |
-| 5 | each touched artifact's `status` matches its live unchecked-question count | the invariant Part 1 exists to hold |
-| 6 | **no `S#`/`A#`/`E#` reused, renumbered, or deleted this run**, and every `## 3` branch point and `## 4` enforcement point resolves to a step id that exists and isn't removed | these ids are cited from rules, flows, stories, and prototypes; a renumber breaks all of them silently |
-| 7 | for every UC touched, each slug in its `features:` has a `## Use Cases` row and the id in its `uc:` list — and no hub lists a UC that doesn't name it | a cross-feature UC on one hub reads as complete while the other features have no idea they're involved |
-| 8 | **no two files in `{uc_dir}` carry the same `UC-###` id** (`Grep '^id:' {uc_dir}`, compare against the filenames) — same for `{br_dir}` and `BR-###` | the backstop on the id-mint race. Up to four features process concurrently; only the orchestrator may mint (`4-sync.md`), and this check is what catches it if that discipline slipped. Two UCs sharing an id means every citation of it is ambiguous forever |
-| 9 | **no `conflict`/`question` Signal Log row on a touched hub whose linked question now carries a filled `A:`** — those should have been re-entered as `new` by Stage 1 and drafted by Stage 3 this same run | `1-foldin.md` § Re-entry. A row left here is an answered, qualified requirement that no future stage will ever collect: not `staged` (so fold-in skips it) and not `new`/`held` (so qualification skips it) |
+A mismatch is **blocking**: repair (through the engine) and re-check rather than report a count the vault
+doesn't support. Coverage gaps are deliberately not a check — they are a judgment, made in Stage 4 Part 4.
 
 ## Part 4 — Report
 
 ```text
-Stage 1 (fold-in): <N> UC/BR resolved — <slug>: UC-### now draft
+Stage 1 (release): <N> released · <N> superseded · <N> need judgement · <N> waiting
                    <N> re-entered — <slug> #<n>: <the decision that unblocked it>   # 1-foldin § Re-entry
-                   <N> drift question(s) raised instead of applied
+                   <N> legacy entries migrated (discussion-to-ledger), <N> unparsed left for a human
 Stage 2 (qualify): <N> qualified, <N> held (<reason>), <N> applied as duplicate/already-covered
-Stage 3 (draft):   <N> UC created, <N> updated, <N> BR created, <N> BR updated
-                   — <slug>: UC-### (staged, needs-clarification | staged, draft)
-                   steps staged: <slug> UC-### — <N> new, <N> changed, <N> flow(s)
+Stage 3 (route):   <N> UC minted, <N> updated, <N> BR created, <N> BR updated — <slug>: UC-### (status)
                    design: <N> directive(s) — <slug> ## Design Directives, <N> DESIGN-PRINCIPLES row(s)
-Stage 4 (sync):    <N> UC id(s) minted, <N> cross-feature UC change(s),
-                   <N> UC(s) with § 2/§ 3 drafted, <N> flagged for review, <N> conflict(s) — or none
+Stage 4 (apply):   <N> applied · <N> already · <N> gated · <N> drift · <N> invalid
+                   <N> flagged for review (§ 2 changed): UC-###, … · <N> conflict(s) · <N> adjudicated
                    dispatch coverage: <N> dispatched / <N> accounted for              # 4-sync § Part 2b
                    set coverage: <slug> — <N> new gap(s) (<lens>, <lens>), <N> closed,
                        <N> held back | <slug> — clean                              # 4b-coverage.md

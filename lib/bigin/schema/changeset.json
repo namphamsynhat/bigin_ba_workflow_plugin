@@ -1,0 +1,432 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigin/changeset/1",
+  "title": "Bigin change set — one intended edit to one artifact",
+  "type": "object",
+  "required": [
+    "id",
+    "target",
+    "op"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^cs-[A-Za-z0-9._-]+$",
+      "description": "unique; recorded in the artifact Changelog so re-applying is a no-op"
+    },
+    "trace": {
+      "type": "object",
+      "description": "Where this change comes from — carried into the artifact's Changelog line.",
+      "properties": {
+        "int": {
+          "type": "string",
+          "pattern": "^INT-\\d+$"
+        },
+        "ints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^INT-\\d+$"
+          }
+        },
+        "note_rows": {
+          "type": "array",
+          "items": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          }
+        },
+        "hub": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "hub_rows": {
+          "type": "array",
+          "items": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          }
+        },
+        "xr": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "target": {
+      "type": "object",
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "UC",
+            "BR",
+            "HUB",
+            "ENTITY_REF",
+            "DESIGN"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^((UC|BR)-\\d+|new:[A-Za-z0-9_-]+|[a-z0-9][a-z0-9-]*)$",
+          "description": "UC-###/BR-###, new:<key> for an id minted by a create_* set in the same batch, or a hub slug for HUB/DESIGN"
+        },
+        "section": {
+          "type": "string",
+          "description": "UC: 1-6 · BR: rule | questions · HUB: gates | directives"
+        },
+        "field": {
+          "type": "string",
+          "description": "§ 1 field name for set_field/append_note, e.g. Trigger, Pre-conditions"
+        }
+      }
+    },
+    "op": {
+      "enum": [
+        "set_field",
+        "append_note",
+        "new_step_after",
+        "replace_step",
+        "drop_step",
+        "new_flow",
+        "replace_flow",
+        "drop_flow",
+        "mirror_br",
+        "add_question",
+        "answer_question",
+        "set_rule",
+        "append_rule_clause",
+        "create_br",
+        "create_uc",
+        "link",
+        "add_directive",
+        "unmirror_br",
+        "flag_conflict",
+        "add_principle"
+      ]
+    },
+    "anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "type": "string",
+          "description": "S#, A#, E#, 'start', 'end', a § 1 field name, or the question text prefix"
+        },
+        "sha": {
+          "type": "string",
+          "description": "sha of the anchor text as the worklist showed it; mismatch = drift"
+        }
+      }
+    },
+    "text": {
+      "type": "string",
+      "description": "final text, exactly as it should land"
+    },
+    "cells": {
+      "type": "object",
+      "required": [
+        "actor",
+        "system"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "actor": {
+          "type": "string"
+        },
+        "system": {
+          "type": "string"
+        }
+      }
+    },
+    "flow": {
+      "type": "object",
+      "required": [
+        "name",
+        "body"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "A",
+            "E"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string",
+          "description": "the flow's lines under its heading: Branch point, Condition, numbered steps, Rejoins/Ends"
+        }
+      }
+    },
+    "br": {
+      "type": "string",
+      "pattern": "^(BR-\\d+|new:[A-Za-z0-9_-]+)$"
+    },
+    "enforced_at": {
+      "type": "string"
+    },
+    "owner": {
+      "enum": [
+        "client",
+        "team"
+      ]
+    },
+    "ref": {
+      "type": "string",
+      "description": "(ref: …) tag for add_question"
+    },
+    "field": {
+      "type": "string",
+      "description": "frontmatter list for link: features|entities|pain_points|links|sources|uc|attachments"
+    },
+    "ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "key": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "create_*: the new:<key> other sets use to point at the minted id"
+    },
+    "create": {
+      "type": "object",
+      "description": "create_uc: title, primary_feature, features, level, scope, sources · create_br: title, feature, uc, sources, statement"
+    },
+    "reason": {
+      "type": "string",
+      "description": "drop_*: why — lands as 'Dropped — <reason>'"
+    },
+    "gate": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "question"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "question": {
+              "type": "string"
+            },
+            "owner": {
+              "enum": [
+                "client",
+                "team"
+              ]
+            },
+            "blocks": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "flags": {
+      "type": "object",
+      "properties": {
+        "review": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "enum": [
+              "new_step_after",
+              "replace_step"
+            ]
+          }
+        }
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "cells"
+            ]
+          },
+          {
+            "required": [
+              "text"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "enum": [
+              "replace_step",
+              "drop_step",
+              "replace_flow",
+              "drop_flow",
+              "answer_question"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "anchor"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "enum": [
+              "drop_step",
+              "drop_flow"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "reason"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "enum": [
+              "new_flow",
+              "replace_flow"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "flow"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "mirror_br"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "br",
+          "enforced_at"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "enum": [
+              "create_uc",
+              "create_br"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "create",
+          "key"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "link"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "field",
+          "ids"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "enum": [
+              "set_field",
+              "append_note",
+              "set_rule",
+              "append_rule_clause",
+              "add_question",
+              "answer_question",
+              "add_directive",
+              "flag_conflict",
+              "add_principle"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "text"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "op": {
+            "const": "unmirror_br"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "br",
+          "reason"
+        ]
+      }
+    }
+  ]
+}

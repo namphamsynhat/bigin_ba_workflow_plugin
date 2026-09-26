@@ -1,13 +1,15 @@
 # Source audit rules
 
-Rulebook for the `extract-signal` **source-audit** subagent (`signal-auditor`), and the one home for
-the **repair vocabulary** — which `signal-extractor` also follows for its own § Step 6 self-audit.
+Human reference for the `extract-signal` **source-audit** subagent (`signal-auditor`, card
+`cards/auditor.md`), and the one home for the **repair vocabulary** — which `signal-extractor` also follows
+for its own § Step 6 self-audit.
 
 ```text
-in:   one note's ## Raw (every ### SRC-n block) and its ## Extracted signals table
-out:  a two-direction gap report — GAPS · UNSUPPORTED · CONTRADICTIONS · SUMMARY
-      AND those findings applied to the table, by you, before you report
+in:   `bigin worklist audit <INT>` — the note's ### SRC-n blocks as line ranges, and its rows
+out:  an `audit` JSON (lib/bigin/schema/audit.json): findings (GAPS · UNSUPPORTED · CONTRADICTIONS)
+      AND the repairs for them; `bigin note audit-apply` applies the repairs to the table
 never: re-anchoring · filing · resolving a contradiction · touching status, tags, or Open Questions
+       · writing any vault file — the engine is the only writer
 ```
 
 **You find and you fix.** There is no separate repairer agent: handing a report to a third model that
@@ -25,8 +27,8 @@ anything here.
 ## Order is load-bearing
 
 ```text
-1  write your own list of claims from the source          ← BEFORE opening the table
-2  only then read ## Extracted signals, and diff
+1  write your own list of claims from the source          ← BEFORE looking at the worklist's rows
+2  only then read the rows, and diff
 ```
 
 An agent that reads the table first **confirms** it rather than auditing it: every row looks supported
@@ -36,7 +38,7 @@ them. This ordering is the whole mechanism, not a style preference.
 ## Step 1 — The independent pass
 
 ```text
-grep -n "^## \|^### SRC-" <note>        # where ## Raw starts and ends, every ### SRC-n inside it
+src_blocks in the worklist                # every ### SRC-n block's line range
 
 read ONE BLOCK AT A TIME by line range (offset/limit)
     → a single Read truncates at 2000 lines WITHOUT SAYING SO
@@ -60,7 +62,7 @@ table is the single highest-loss shape in this pipeline.
 
 ## Step 2 — Diff
 
-Now read `## Extracted signals` and compare it against your own list, both directions.
+Now read the worklist's `rows` and compare them against your own list, both directions.
 
 ## What counts as UNSUPPORTED
 
@@ -82,6 +84,9 @@ client`. These are declared inferences. Instead verify the rows they cite exist,
 the derivation is one step, not a chain.
 
 ## Report
+
+The report goes in the `audit` JSON's `findings[]` (kind `missed` · `unsupported` · `inverted` · `merged` ·
+`mistyped` · `miscited`, with `n` and a full `detail`); the shapes below are what each `detail` carries.
 
 ```text
 A) GAPS (source → rows) — each claim of yours with no matching row:
@@ -139,9 +144,10 @@ of the batch.
 
 # Repairing the table — on the audit's findings
 
-Applied by whoever found the finding — `signal-auditor` after its blind pass, or `signal-extractor`
-in its own § Step 6 — and always before filing. Nothing has been filed yet, which is why this is a
-plain table edit rather than surgery on a themed hub row.
+Applied by whoever found the finding — `signal-auditor` after its blind pass (as `repairs[]` in its
+`audit` JSON: `append` · `edit` · `flag`), or `signal-extractor` in its own § Step 6 (by fixing the rows it
+emits) — and always before filing. `bigin note audit-apply` performs the edit. Nothing has been filed yet,
+which is why this is a plain table edit rather than surgery on a themed hub row.
 
 **This table is the one home for the repair vocabulary.** Both agents follow it, so a category means
 the same thing and produces the same edit whichever pass caught it.
@@ -159,10 +165,12 @@ inversion       → TWO PARTS, both required:
                   dropping part 2 leaves the client's actual ask unrecorded
 bad cite        → replace the timestamp with the block holding the quoted words
                   Notes: "corrected: cite"
-no support      → NEVER delete. Notes: "unsupported by source — needs confirmation", and tell 2c to
-                  file it Status: question with a plain-language client confirmation question
-contradiction   → leave both rows as written; pass the pair to 2c as Status: conflict.
-                  Never resolve one here.
+no support      → NEVER delete. `flag` the row, notes "unsupported by source — needs confirmation"
+                  (the engine writes "audit: …"); 2c files it Status: question with a client question
+contradiction   → leave both rows as written; `flag` each "conflicts with #<n>" so 2c files the pair
+                  Status: conflict. Never resolve one here.
+                  (`edit` sets Type/Signal/Why/Source and appends Notes; it cannot blank a cell — an
+                  inversion's Why is rewritten to "" only by a human until the engine supports it)
 ```
 
 ## Row numbers are permanent, in a repair too
@@ -196,7 +204,7 @@ a misquote, or a gap line transcribed loosely, becomes a permanent signal wearin
 A second dispatched agent for this is not worth its cost — it would re-read the same blocks you have
 in front of you, to check work you did thirty seconds ago.
 
-## Report
+## Report (the agent's one-line reply carries the counts; the lines below are for a human re-run)
 
 ```text
 repaired: <#> <category> — <what changed, one line> (one line each)

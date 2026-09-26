@@ -44,53 +44,24 @@ manual re-check, and note that explicitly in the report rather than assuming the
 
 ## Resumable unattended apply (checkpoint + idempotent writes)
 
-An unattended fold-in — matching a human's already-written inline answer to its UC and folding it
-in, whether that's `/bigin-transform-signal`'s Stage 1 fold-in, `/extract-signal`'s per-note batch
-processing, or a future `--auto` mode — is a multi-file write: the UC itself, the feature hub,
-sometimes `FEATURES.md`, sometimes the source INT note. Nothing here runs inside a database
-transaction — the process can be killed between any two of those writes by an external timeout or
-a session running out of budget, which kills the parent process while an orphaned child keeps
-mutating files in the background. Applying an answer directly (rather than staging it for a later
-human confirm) removes one failure mode but must not introduce a worse one — a fold-in that's
-half-applied across files, with no way to tell "not started" from "partially done" from "fully
-done."
+An unattended apply is a multi-file write — the UC or BR, its hubs, `FEATURES.md`, sometimes the source
+INT note — with no database transaction, and a run can be killed between any two writes. Since v1.10.0
+the engine (`bin/bigin apply`, `bin/bigin ledger release`) is the one place that guarantee lives:
 
-The fix is the same one durable-execution agent runtimes converge on for exactly this problem —
-checkpointed writes, idempotent retries, an append-only decision trail — applied with the vault's
-existing tools, not a new ledger file:
+1. **Idempotent by change-set id.** Every applied set's id is recorded in the artifact's `## Changelog`
+   (`cs: …`); re-applying it is a no-op reported as `already`. A created UC/BR records `created by <id>`.
+2. **One write per artifact, verified.** All of an artifact's sets are composed in memory and written
+   once: backup → atomic replace → re-read verify (every heading present, no untouched section changed,
+   no unset frontmatter key changed) → restore on failure. A write whose file changed on disk since it
+   was read is refused, never merged blindly.
+3. **Mirrors are re-derived, never appended once.** Signal Log flips, `links sync`, `hub refresh`,
+   `status` are recomputed from the artifacts' current state; running them again is a no-op.
+4. **Run state is machine-readable.** `_runs/<run-id>/` holds `plan.json`, the agents' task files,
+   `results.jsonl`, and `metrics.jsonl`; re-running a workflow with the same run id skips finished tasks
+   (`bin/bigin run done`). A kill leaves a clean resume point because every write is atomic and engine-only.
 
-1. **Dedup-check before writing anything.** Before applying an answer, check whether it's already
-   landed: does the UC's `## Changelog` already cite this INT id's fold-in, or does the
-   `## Open Questions` line already read as resolved (not merely ticked) rather than unticked? If
-   yes, this run is a retry of an already-completed apply — do nothing to that UC, and move
-   straight to reconciling any mirror that's still behind (step 3). Never re-append a changelog or
-   Discussion line just because this run started before checking.
-2. **The UC's own file write is the checkpoint — make it one atomic write, and make it first.**
-   Compose the *entire* change (requirement body wording, `version` bump, `## Changelog` line,
-   re-counted `status`) and write the UC file once. Before that single write lands, nothing has
-   changed on disk — a kill at any point up to here leaves the note exactly as it was, correctly
-   still eligible for a future run to pick up (no special "in progress" marker needed; there is
-   nothing to distinguish from "not started yet"). After it lands, the fold-in is **done** —
-   everything downstream is a re-derivable mirror, never the source of truth.
-3. **Mirrors are always safe to reconcile, never a one-shot append.** The feature hub's Signal Log
-   row, `FEATURES.md`, and the source INT note's own tick/status are all *read from the UC's
-   current state* and corrected to match — flip a Signal Log row to `applied` if the UC it points
-   at now shows the fold-in, tick the INT note's copy if the UC copy is already resolved. Setting
-   an already-correct mirror field again is a no-op, not a duplicate, so this step never needs its
-   own resume logic: run it every time, unconditionally, whether this is the first pass or the
-   tenth.
-4. **A subsequent run's gate check is therefore a 3-way read, not a 2-way one.** For any UC
-   carrying a fold-in candidate: (a) **genuinely unanswered** — the INT note's `A:` line is still
-   blank → wait for a human, not eligible. (b) **already applied** — the UC's
-   `## Changelog`/body already reflect it → not eligible for another apply, but still worth a
-   mirror-reconciliation pass (step 3) in case a prior run's kill landed the UC write but not the
-   hub refresh. (c) **neither** → apply it now (steps 1–3). This replaces a bare "is the box
-   ticked?" check, which can't tell (b) from a half-applied (c) on a resumed run.
-
-No new state file, ledger, or `status:` value is introduced — the artifacts remain the only ground
-truth. A stuck fold-in is never a dead end: the next run of the same skill re-derives exactly
-where it left off from steps 1 and 4 above, applies what's missing, and reconciles the rest — safe
-to invoke repeatedly, including from a fresh session with no memory of the interrupted one.
+The artifacts plus the ledger (`01-Requirements/_ledger/*.jsonl`, gated change sets) are the ground truth.
+Re-running the same skill from a fresh session re-derives where it left off.
 
 ## Reconciliation notes for this plugin
 
@@ -102,12 +73,11 @@ scattered inline caveats — resolve and delete each line as the corresponding s
   (`_bigin/conventions/`, `_bigin/stages/`, `_bigin/templates/`), and every skill, dispatch prompt, and
   template refers to them project-relatively. Anything still pointing at `references/…`,
   `skills/*/SKILL.md`, or `skills/*/template/…` for a file a subagent has to read is a bug.
-  `${CLAUDE_PLUGIN_ROOT}` has exactly four legitimate uses, all of them in the orchestrator and none
-  in a subagent: `/bigin-new-project` § 2 and `/bigin-upgrade-project` § 5 resolve the copy source;
-  every skill's precondition reads `plugin.json`'s `version` for `version-check.md` § Workspace version check; and
-  `5-status.md` Part 3 plus `/extract-signal`'s batch check invoke the plugin's own deterministic
-  checker (`hooks/bigin-lint.py --full`). A stage file may name that path because Part 3 and the batch
-  check both run in the orchestrator — never hand it to a dispatched agent, which cannot resolve it.
+  `${CLAUDE_PLUGIN_ROOT}` is used only in the orchestrator, never in a subagent: `/bigin-new-project` and
+  `/bigin-upgrade-project` resolve the copy source; every skill's precondition reads `plugin.json`'s
+  `version` (`version-check.md` § Workspace version check); and every engine call runs
+  `"${CLAUDE_PLUGIN_ROOT}/bin/bigin" …` (v1.9.0+; `hooks/bigin-lint.py` remains as a shim for
+  `bin/bigin lint`). Agents get absolute card and task-file paths instead — never the variable.
   An unavailable checker is always **reported**, never read as a pass.
 - ~~**The design stage was on the old layout.**~~ **Resolved.** `/prototype-design` is superseded by
   **`/bigin-generate-design`**, which reads `01-Requirements/_ucs/` directly, accepts a feature

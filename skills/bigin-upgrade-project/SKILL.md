@@ -49,8 +49,13 @@ with, and nothing does that automatically today. This skill is that something.
   from first principles. A best-effort guess at how content should transform is exactly the failure mode
   every other skill in this plugin halts rather than risks (`_bigin/conventions/core.md`
   hard rule: never invent a validation, field, or structure the source didn't state).
+* **Engine format migrations are the one documented exception to "discover, never hardcode".**
+  From v1.9.0 the vault's *storage format* (the ledger, lean artifacts, split Signal Logs) is owned by
+  the engine, and its migrations ship as code: `bin/bigin migrate` (§ 3b). This skill never re-implements
+  one — it only runs the engine's plan. Content migrations (a retired prefix, a new template section)
+  still follow §§ 2–4.
 * **Stage, never approve.** Every migration this skill runs ends in `draft`-status content and
-  `## Discussion` entries, the same human gate as any other UC/BR change
+  pending change sets (the ledger, or `## Discussion` on a pre-1.10 vault), the same human gate as any other UC/BR change
   (`core.md` § Status vocabularies, hard rule 4). This skill mints and
   stages; it never sets `approved`, `enriched`, or `consolidated`, and never folds a `## Discussion`
   entry into `## 1`–`## 6` itself.
@@ -196,6 +201,40 @@ Requires `_bigin/system/project.md` to exist. Missing → say `/bigin-new-projec
     accounted for in § 7's report as run, or as explicitly not-run-and-why. Naming the owning file and
     stopping there is the failure mode the Core Rules call out by name.
 
+## 3b. Engine format migrations (`bin/bigin migrate`, v1.9.0+)
+
+* **Goal:** move the vault's storage format forward with the engine that owns it, safely.
+* **Action:** `B="${CLAUDE_PLUGIN_ROOT}/bin/bigin"` — run from the repo root:
+
+  ```text
+  1  $B migrate plan --from <workspace_version> --to <plugin version>   # lists the engine steps due
+  2  $B migrate all  --from <workspace_version> --to <plugin version> --dry
+     → show the human the per-step summary (entries converted, bytes saved, hubs split, anything unparsed)
+  3  $B migrate all  --from <workspace_version> --to <plugin version>
+     → snapshots FIRST: _runs/migrate-<to>-<stamp>.tgz (01-Requirements + 00-Inbox — vaults are often untracked)
+     → runs each step, then links sync, hub refresh --all, status recount, and stamps workspace_version
+  4  $B lint --full                                                       # must be clean; a finding blocks § 6
+  ```
+
+  Steps by version (`docs/MIGRATION.md` has what each changes on disk):
+
+  | Version | Step | What it does |
+  |---|---|---|
+  | 1.9.0 | — | no format change (engine + scripted bookkeeping only) |
+  | 1.10.0 | `discussion-to-ledger` | legacy staged `## Discussion` entries → change sets; mechanical ones applied, prose ones gated on their question go to `01-Requirements/_ledger/`; unparseable entries stay in `## Discussion` and are listed |
+  | 1.12.0 | `strip-guidance`, `split-signal-log` | drop template guidance comments from UC/BR/hub instances (one guide pointer stays); move each hub's Signal Log to `<slug>.signals.md` |
+
+* **Rules:**
+  - **`check` mode runs only steps 1–2** (plan + `--dry`) and reports them; it never snapshots or writes.
+  - **Rollback** is the snapshot: `tar xzf _runs/migrate-<to>-<stamp>.tgz` from the repo root restores
+    `01-Requirements/` and `00-Inbox/` exactly; then set `workspace_version` back. Name the snapshot path in § 7.
+  - **Legacy hatch, one minor version.** If a half-migrated vault must finish a run on the old
+    behaviour, set `engine: legacy` in `_bigin/system/project.md` and skip this section; the next
+    upgrade removes the hatch. Report it as drift, never as migrated.
+  - **Unparsed / invalid items are drift, not failures to hide.** List every entry `migrate` left in
+    `## Discussion` and every invalid change set in § 7's `drift` table with what a human should decide.
+  - `migrate all` stamps `workspace_version` itself; § 6 then only appends the Changelog line.
+
 ## 4. Run each discovered migration
 
 Skip this section entirely in `check` mode — report what *would* run instead (§ 7), and **ask the user
@@ -268,7 +307,10 @@ nothing**: see the last rule below.
   snapshot (§§ 1–4) has read it.
 * **Action:** Same mechanical copy `/bigin-new-project` § 2 already performs —
   `${CLAUDE_PLUGIN_ROOT}/workspace/{conventions,stages,templates}/` → `_bigin/{conventions,stages,templates}/`,
-  whole directories, then verify the file count matches the source.
+  whole directories, then verify the file count matches the source. Then run
+  `"${CLAUDE_PLUGIN_ROOT}/bin/bigin" launcher`, which regenerates `_bigin/bin/bigin` (the shim pointing at the
+  **newly installed** plugin path — the old one points at the previous version's cache) and refreshes
+  `_bigin/cards/` (new in 1.12.0). The engine itself is never copied.
 * **Rules:**
   - Identical to `/bigin-new-project` § 2's rules (report the refresh, copy every stage file
     regardless of whether this project uses it yet). This skill doesn't duplicate that section's
@@ -360,7 +402,8 @@ migrated  one row per § 3 match, in whichever of the two shapes fits it:
           A § 3 match that did NOT run belongs here too, in its own shape's row, with the reason in
           place of the result — never dropped, and never left implied by the drift table
 drift     | What changed | Why nothing ran | What a human should decide |
-refresh   file counts for conventions/ stages/ templates/, same shape as /bigin-new-project § 8
+engine    migrate steps run (per step: summary line), snapshot path, lint --full result
+refresh   file counts for conventions/ stages/ templates/ cards/, same shape as /bigin-new-project § 8
           pruned    <N> stale stage file(s) removed, by name (0 is the normal result)
 agent     CLAUDE.md: created | merged into existing file | regenerated (delimited section only)
 next      point at /bigin-transform-signal (or the relevant review skill) for every id in the

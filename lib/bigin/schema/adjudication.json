@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigin/adjudication/1",
+  "title": "code-adjudicator verdict for one conflict pair / held row",
+  "type": "object",
+  "required": [
+    "kind",
+    "feature",
+    "verdicts"
+  ],
+  "properties": {
+    "$schema_version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "adjudication"
+    },
+    "feature": {
+      "type": "string"
+    },
+    "verdicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "rows",
+          "outcome"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "integer"
+              ]
+            },
+            "minItems": 1
+          },
+          "outcome": {
+            "enum": [
+              "settled",
+              "not_settleable"
+            ]
+          },
+          "winner": {
+            "type": [
+              "string",
+              "integer",
+              "null"
+            ]
+          },
+          "loser": {
+            "type": [
+              "string",
+              "integer",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.-]+:[^ ]+"
+            },
+            "description": "repo:path:symbol :lines — never invented"
+          },
+          "custom_layer": {
+            "type": "string",
+            "description": "which layer wins (base vs Custom/ override) and why"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "tick": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "question",
+                "answer"
+              ],
+              "properties": {
+                "question": {
+                  "type": "string"
+                },
+                "answer": {
+                  "type": "string"
+                },
+                "target": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "changesets": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    }
+  }
+}

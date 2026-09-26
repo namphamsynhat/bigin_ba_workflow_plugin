@@ -7,13 +7,25 @@ feedback on an already-built thing is handled.
 
 ## Intake sources
 
-`/bigin-intake` accepts three source types, recorded in the `source:` frontmatter field:
+`/bigin-intake` accepts four source types, recorded in the `source:` frontmatter field. The first three are
+**communication mode**; `codebase` is **codebase mode** (`_bigin/system/project.md` `grounding: communication |
+codebase | both` says which the engagement uses — `both` for a codebase that may later receive client mail):
 
 | `source:` | What it is | `source_ref:` | `source_ids:` |
 |---|---|---|---|
 | `email` | Message or thread from the project's `email_provider` (Outlook MCP, or Spark Desktop via the `spark` CLI) | Thread subject | Conversation id + message id(s) (Outlook) or thread id (Spark) |
 | `meeting` | Transcript from the project's `meeting_provider` (Fathom MCP, Spark CLI, or a connected Firefly MCP) — or drop-folder fallback | Meeting name + date | Provider's meeting id |
 | `direct` | User-typed description, fetched URL, or local file | URL · filename · "user input YYYY-MM-DD" | URL (link intakes only) |
+| `codebase` | Rule cards mined from the read-only `repos/` (e.g. `code-modernization:modernize-extract-rules`), imported by `bigin intake codebase` — one note per capability group | card file + group + import date | — |
+
+**Codebase notes skip LLM extraction.** The cards ARE the signals: `bigin intake codebase` writes one `decision`
+row per card (card id verbatim, citation as Source), a `problem` row per suspected defect and a `question` row per
+SME question, and files them deterministically. The note carries `grounding: codebase`, the provenance header and
+the asymmetry warning (a card speaks for the surface it cites, never for all of them). Only unmapped rows reach a
+`signal-filer`. Contract: `docs/CODEBASE-INTAKE.md`.
+
+**INT ids are minted by the engine under a lock** (`bin/bigin intake communication --spec` / `bin/bigin mint int`),
+never by reading the highest existing number — two concurrent captures would mint the same id.
 
 **Provider config**: `email_provider` and `meeting_provider` in `_bigin/system/project.md`
 frontmatter select which tool `/bigin-intake` talks to for each source type (default `outlook` /
