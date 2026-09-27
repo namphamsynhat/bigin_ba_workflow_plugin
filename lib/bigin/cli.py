@@ -61,6 +61,15 @@ def cmd_lint(args, rest):
     return lint.main(argv)
 
 
+def cmd_audit(args, rest):
+    from bigin import audit
+    v = vault_of(args)
+    results, passed = audit.audit_vault(v, baseline=args.baseline, strict=args.strict, id_pattern=args.id_pattern)
+    rep = audit.report(results, strict=args.strict)
+    out(args, results, rep)
+    return 0 if passed else 1
+
+
 def cmd_hub(args, rest):
     from bigin import hub
     v = vault_of(args)
@@ -315,6 +324,12 @@ def build_parser():
     s.add_argument("--quiet", action="store_true")
     s.add_argument("--apply", action="store_true")
     s.set_defaults(fn=cmd_lint, mode="full")
+
+    s = sub.add_parser("audit", help="mechanical audit comparing vault to baseline")
+    s.add_argument("--baseline", help="baseline snapshot (.tgz or directory)")
+    s.add_argument("--strict", action="store_true", help="fail on WARN")
+    s.add_argument("--id-pattern", help="pattern for ID-based coverage (e.g. XR-[A-Z]+-\\d+)")
+    s.set_defaults(fn=cmd_audit)
 
     s = sub.add_parser("hub", help="refresh derived hub tables; flip/sweep Signal Log rows")
     s.add_argument("action", choices=["refresh", "flip", "sweep", "citers", "fix-tables"])
