@@ -20,6 +20,7 @@ $B lint --full                               # must be clean
 | **1.10.0** — change sets, ledger, single writes | `discussion-to-ledger` | Staged `## Discussion` entries become change sets; `01-Requirements/_ledger/` appears; `## Pending changes` blocks appear on UCs/BRs with gated sets. |
 | **1.11.0** — workflow orchestration | none | `_runs/<id>/` appears on the first workflow run. |
 | **1.12.0** — slim inputs | `strip-guidance`, `split-signal-log` | Guidance comments leave UC/BR/hub instances; each hub's Signal Log moves to `<slug>.signals.md`. `_bigin/cards/` materialized by the upgrade skill. |
+| **1.12.1** — audit & hardening | none | No format change. `bigin audit --baseline <tgz>` checks baseline integrity; engine guards prevent question loss and Changelog loss; `ux-brief-assembler` card/JSON contract; e2e workflow fixture tests; codebase intake docs. |
 
 ## The steps
 
@@ -63,6 +64,16 @@ For each hub with a `## Signal Log`, writes `_features/<slug>.signals.md` (front
 section verbatim) and replaces the hub's section body with a one-line pointer (the heading stays). Lint, coverage,
 `hub flip/sweep/citers`, worklists and `file apply` read the companion file from then on; new hubs in a split vault
 are created split.
+
+### Hardening & verification (1.12.1)
+No schema migration required. Upgrading to 1.12.1 activates:
+- `bigin audit --baseline <snapshot.tgz>`: 11-point veracity and integrity audit across coverage, step numbering,
+  unmodified history, and gate preservation.
+- Engine write guards: `Doc.verify` and `hub.py` refuse any write where questions in `## Open Questions / Gates`
+  or lines under `## Changelog` would be lost.
+- Role card for `ux-brief-assembler` (`cards/ux-brief.md`) with lean JSON output contract.
+- End-to-end fixture coverage for `workflows/transform.js`.
+
 
 ## Rollback
 

@@ -448,6 +448,7 @@ readings are then checked against the code before anyone is asked. **both** does
 Bookkeeping — numbering, hub tables, statuses, links, applying drafted changes — is done by a
 command-line engine inside the plugin (`bin/bigin`), not by AI agents. You rarely need to run
 it yourself; the skills do. Useful by hand: `bin/bigin lint --full` (is the vault consistent?),
+`bin/bigin audit --baseline <snapshot.tgz>` (did any question, step numbering, or changelog regress?),
 `bin/bigin coverage --stage transform` (did every signal reach a use case or rule?),
 `bin/bigin ledger list` (what's waiting on an answer?). Every file it rewrites is backed up
 under `_runs/_backups/`. After a plugin upgrade, `/bigin-upgrade-project` migrates the vault
