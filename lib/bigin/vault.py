@@ -608,6 +608,58 @@ class Doc:
                 continue
             if _strip_trailing_blank(got or []) != _strip_trailing_blank(lines):
                 raise EngineError(f"{self.name}: section '{k[0]}' changed without being edited")
+
+        # Guard Changelog heading and history lines
+        orig_cl_lines = None
+        for (t, occ), lines in self._orig_sections.items():
+            if t.lower() == "changelog":
+                orig_cl_lines = lines
+                break
+        if orig_cl_lines is not None:
+            new_cl = new.section("Changelog")
+            if new_cl is None:
+                raise EngineError(f"{self.name}: ## Changelog heading lost")
+            def _cl_lines(lines):
+                entries = []
+                in_comment = False
+                for line in lines:
+                    s = line.strip()
+                    if "<!--" in s:
+                        in_comment = True
+                    if in_comment:
+                        if "-->" in s:
+                            in_comment = False
+                        continue
+                    if s.startswith("- ") or s.startswith("* "):
+                        entries.append(s)
+                return entries
+            orig_entries = _cl_lines(orig_cl_lines)
+            new_entries = set(_cl_lines(new.lines[new_cl.start:new_cl.end]))
+            for e in orig_entries:
+                if e not in new_entries:
+                    raise EngineError(f"{self.name}: ## Changelog history line lost: {e}")
+
+        # Guard Open Questions / Gates questions
+        orig_gates_lines = None
+        for (t, occ), lines in self._orig_sections.items():
+            if t.lower() == "open questions / gates":
+                orig_gates_lines = lines
+                break
+        if orig_gates_lines is not None:
+            new_gates = new.section("Open Questions / Gates")
+            if new_gates is None:
+                raise EngineError(f"{self.name}: ## Open Questions / Gates heading lost")
+            from .edit import q_core
+            orig_doc = Doc(self.original_text, self.path)
+            s_orig = orig_doc.section("Open Questions / Gates")
+            orig_qs = questions_in(orig_doc, s_orig.start, s_orig.end) if s_orig else []
+            new_qs = questions_in(new, new_gates.start, new_gates.end)
+            new_cores = {q_core(q.text) for q in new_qs}
+            for q in orig_qs:
+                qc = q_core(q.text)
+                if qc and qc not in new_cores:
+                    raise EngineError(f"{self.name}: refused — question in ## Open Questions / Gates disappeared: {q.text}")
+
         return True
 
 

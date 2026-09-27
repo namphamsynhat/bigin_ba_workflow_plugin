@@ -968,10 +968,18 @@ def run_full(root):
     for check in TIER2:
         check(vault, findings)
 
+    ver = "unknown"
+    try:
+        from bigin import __version__
+        ver = __version__
+    except ImportError:
+        pass
+    ppath = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
     if not findings.total():
-        sys.stdout.write("bigin-lint: clean (tier 1 + tier 2) over %s\n" % vault)
+        sys.stdout.write("bigin-lint v%s (%s): clean (tier 1 + tier 2) over %s\n" % (ver, ppath, vault))
         return 0
-    sys.stdout.write("bigin-lint: %d finding(s) over %s\n\n%s\n" % (findings.total(), vault, findings.render()))
+    sys.stdout.write("bigin-lint v%s (%s): %d finding(s) over %s\n\n%s\n" % (ver, ppath, findings.total(), vault, findings.render()))
     return 1
 
 

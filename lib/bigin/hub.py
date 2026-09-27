@@ -220,10 +220,18 @@ def refresh(vault, slug, ix=None, dry=False):
         changes.append("Requirement Readiness")
 
     # ## Open Questions / Gates — add-only
+    s_orig = doc.section("Open Questions / Gates")
+    orig_qs = questions_in(doc, s_orig.start, s_orig.end) if s_orig else []
     changes += _gates(doc, ix, slug, part)
     n = dedupe_exact(doc)
     if n:
         changes.append(f"removed {n} exact duplicate question line(s)")
+    s_new = doc.section("Open Questions / Gates")
+    new_qs = questions_in(doc, s_new.start, s_new.end) if s_new else []
+    new_cores = {q_core(q.text) for q in new_qs}
+    lost = [q for q in orig_qs if q_core(q.text) and q_core(q.text) not in new_cores]
+    if lost:
+        raise EngineError(f"{slug}: refused — question line in ## Open Questions / Gates would disappear: {lost[0].text}")
 
     if changes:
         touch_updated(doc)
