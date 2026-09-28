@@ -81,3 +81,39 @@ def test_lint_full_prints_version_and_plugin_path():
     assert f"bigin-lint v{__version__}" in out
     plugin_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     assert plugin_path in out
+
+
+def test_lint_tier2_question_row_without_question_fires_and_passes_with_question():
+    root, v = fresh("comm-vault")
+    code, out = run(root, "lint", "--full")
+    assert code == 0, out
+
+    # Add a note row to INT-002.md
+    note_path = os.path.join(root, "00-Inbox", "INT-002.md")
+    with open(note_path, encoding="utf-8") as f:
+        ntext = f.read()
+    note_row = "| 22 | question | Free text cap | policy | [00:20] | payments | new | |\n"
+    with open(note_path, "w", encoding="utf-8") as f:
+        f.write(ntext.replace("## Open Questions", note_row + "\n## Open Questions"))
+
+    # Add a broken question row without a matching question (booking-lifecycle #22 fixture)
+    hub_path = v.hub_path("payments")
+    with open(hub_path, encoding="utf-8") as f:
+        htext = f.read()
+    broken_row = "| 22 | Free text on a lifecycle action is capped at 150 characters across the group | constraint + question | INT-002 #22 | question | | |\n"
+    with open(hub_path, "w", encoding="utf-8") as f:
+        f.write(htext.replace("## Use Cases", broken_row + "\n## Use Cases"))
+
+    code, out = run(root, "lint", "--full")
+    assert code == 1, out
+    assert "question row with no question" in out
+
+    # Now add the matching question to ## Open Questions / Gates
+    q_line = "\n- [ ] Q: Is free text on a lifecycle action capped at 150 characters? (ref: INT-002 #22)\n  A: Pending.\n"
+    updated_htext = htext.replace("## Use Cases", broken_row + "\n## Use Cases").replace("## Open Questions / Gates", "## Open Questions / Gates" + q_line)
+    with open(hub_path, "w", encoding="utf-8") as f:
+        f.write(updated_htext)
+
+    code, out = run(root, "lint", "--full")
+    assert code == 0, out
+

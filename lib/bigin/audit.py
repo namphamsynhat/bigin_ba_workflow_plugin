@@ -14,6 +14,7 @@ Read-only. Compares the live vault with a baseline snapshot and verifies vault i
   C9 approvals   — no UC/BR is approved by automated passes
   C10 repos      — repos/* have no working-tree changes
   C11 secrets    — no unmasked emails or secret keys in UC, BR, or hub text
+  C12 partials   — unticked questions with filled A: are folded or marked not settleable
 """
 import collections
 import glob
@@ -27,7 +28,7 @@ import tarfile
 import tempfile
 
 from . import coverage, lint, model
-from .vault import Vault
+from .vault import Vault, mask_lines
 
 
 def uncomment(s):
@@ -267,6 +268,64 @@ def audit_vault(vault, baseline=None, strict=False, id_pattern=None):
             if KEY.search(s):
                 hits.append(f"{os.path.basename(p)[:40]}: key-like string")
         add("C11 secrets", not hits, f"{len(hits)} sensitive value(s) in UC/BR/hub text", sorted(set(hits)))
+        # C12 partials
+        partials_records = set()
+        for pfile in glob.glob(os.path.join(vault.root, "**", "*PARTIALS*.md"), recursive=True):
+            try:
+                ptext = open(pfile, encoding="utf-8", errors="ignore").read()
+                for m in re.finditer(r"`([^`]+:\d+)`.*?\|\s*(folded-before|folded-now|no target)", ptext):
+                    partials_records.add(m.group(1))
+                    parts = m.group(1).split(":")
+                    partials_records.add(f"{os.path.basename(parts[0])}:{parts[1]}")
+            except Exception:
+                pass
+
+        all_target_paths = sorted(set(list(ucs.values()) + list(brs.values()) + list(hubs.values()) + vault.note_paths()))
+        partials = []
+        unaddressed = []
+        for p in all_target_paths:
+            if not os.path.exists(p) or p.endswith(".signals.md"):
+                continue
+            rel = os.path.relpath(p, vault.root)
+            base = os.path.basename(p)
+            try:
+                with open(p, encoding="utf-8", errors="ignore") as f:
+                    raw_lines = f.readlines()
+            except Exception:
+                continue
+            lines = mask_lines(raw_lines)
+            for i, line in enumerate(lines):
+                if re.match(r"^\s*- \[ \] Q:\s*", line):
+                    j = i + 1
+                    block = [line]
+                    a_val = None
+                    checked_first = False
+                    while j < len(lines):
+                        l = lines[j]
+                        if re.match(r"^\s*- \[[ xX]\]", l) or re.match(r"^#{1,6}\s+", l):
+                            break
+                        block.append(l)
+                        if l.strip() and not checked_first:
+                            checked_first = True
+                            m = re.match(r"^\s*(?:\*\*)?A:(?:\*\*)?\s*(.*)", l)
+                            if m and m.group(1).strip():
+                                a_val = m.group(1).strip()
+                        j += 1
+                    if a_val:
+                        line_no = i + 1
+                        btext = "".join(block)
+                        partials.append((rel, line_no, line.strip(), a_val))
+                        has_folded = bool(re.search(r"^\s*Folded(?:\s*\(as-built half\))?:\s*\S+", btext, re.M | re.I))
+                        has_not_settleable = "not settleable" in btext.lower()
+                        in_records = (f"{rel}:{line_no}" in partials_records or
+                                      f"{base}:{line_no}" in partials_records)
+                        if not (has_folded or has_not_settleable or in_records):
+                            unaddressed.append(f"{base}:{line_no} {line.strip()[:40]}")
+
+        add("C12 partials", not unaddressed,
+            f"{len(unaddressed)} unticked question(s) with an unfolded partial answer" if unaddressed
+            else f"{len(partials)} partial answer(s) verified (folded or not settleable)",
+            unaddressed, warn=True)
 
     finally:
         if temp_dir and os.path.exists(temp_dir):

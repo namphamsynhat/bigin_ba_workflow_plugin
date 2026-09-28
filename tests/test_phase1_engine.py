@@ -222,7 +222,7 @@ def test_coverage_row_and_id_modes():
 
 def test_lint_self_test_and_fixtures_clean():
     code, out = run(FIX + "/comm-vault", "lint", "--self-test")
-    assert code == 0 and "15/15" in out, out
+    assert code == 0 and "16/16" in out, out
     lint_clean(os.path.join(FIX, "comm-vault"))
     lint_clean(os.path.join(FIX, "code-vault"))
 

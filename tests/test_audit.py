@@ -104,3 +104,42 @@ def test_audit_fails_when_changelog_dropped():
     finally:
         if os.path.exists(baseline):
             os.remove(baseline)
+
+
+def test_audit_c12_partials():
+    root, v = fresh("code-vault")
+    baseline = _make_baseline(root)
+    hub_path = os.path.join(root, "01-Requirements", "_features", "rates.md")
+    with open(hub_path, encoding="utf-8") as f:
+        orig = f.read()
+
+    try:
+        # Unticked question with filled A: and no fold marker -> WARN C12
+        partial_q = "\n- [ ] Q: Does the rate calculation cap at 500?\n  A: Code fact: calculation caps at 500.\n"
+        with open(hub_path, "w", encoding="utf-8") as f:
+            f.write(orig.replace("## Open Questions / Gates", "## Open Questions / Gates" + partial_q))
+
+        code, out = run(root, "audit", "--baseline", baseline)
+        assert "WARN  C12 partials" in out
+        assert "1 unticked question(s) with an unfolded partial answer" in out
+
+        # Now add Folded (as-built half): marker -> PASS C12
+        folded_q = "\n- [ ] Q: Does the rate calculation cap at 500?\n  A: Code fact: calculation caps at 500.\n  Folded (as-built half): cs-test-123\n"
+        with open(hub_path, "w", encoding="utf-8") as f:
+            f.write(orig.replace("## Open Questions / Gates", "## Open Questions / Gates" + folded_q))
+
+        code, out = run(root, "audit", "--baseline", baseline)
+        assert "PASS  C12 partials" in out
+        assert "partial answer(s) verified" in out
+
+        # Alternatively not settleable marker -> PASS C12
+        settle_q = "\n- [ ] Q: Does the rate calculation cap at 500?\n  A: not settleable from code.\n"
+        with open(hub_path, "w", encoding="utf-8") as f:
+            f.write(orig.replace("## Open Questions / Gates", "## Open Questions / Gates" + settle_q))
+
+        code, out = run(root, "audit", "--baseline", baseline)
+        assert "PASS  C12 partials" in out
+        assert "partial answer(s) verified" in out
+    finally:
+        if os.path.exists(baseline):
+            os.remove(baseline)

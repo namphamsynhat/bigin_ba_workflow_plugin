@@ -4,4 +4,4 @@ LLM for judgement, scripts for bookkeeping, JSON between them, one write per art
 Pure Python 3.9+, standard library only. Entry point: ``bin/bigin`` → ``cli.py``.
 """
 
-__version__ = "1.12.1"
+__version__ = "1.12.2"

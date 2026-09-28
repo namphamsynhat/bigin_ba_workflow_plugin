@@ -857,8 +857,113 @@ def check_secrets(vault, findings):
                              "%s: %s (%s) — describe it, never reproduce it" % (rel(vault, path), label, shown))
 
 
+# --- T13: question-status rows have a matching question -----------------------
+
+Q_START = re.compile(r"^\s*(is|should|which|what|does|can|confirm|whether|where|how|why|are|who|when)\b", re.I)
+BEARS_ON = re.compile(r"\b(bears?\s+on|bearing\s+on|extends|restates|duplicate\s+of|cross-reference|pain-point|inferred|gap|precedence)\b", re.I)
+
+
+def check_question_rows(vault, findings):
+    """A Signal Log row at status question/conflict must have a matching open question
+    on its hub, or on the UC/BR it names (booking-lifecycle #22 fixture)."""
+    hub_qs = {}
+    for hub in hub_files(vault):
+        slug = os.path.splitext(os.path.basename(hub))[0]
+        text = read_text(hub)
+        hub_qs[slug] = [l for l in text.splitlines() if re.search(r"-\s*\[[ xX]\]\s*Q:", l)]
+
+    art_qs = {}
+    for p in sorted(glob.glob(os.path.join(vault, "01-Requirements", "_ucs", "*.md"))) + \
+             sorted(glob.glob(os.path.join(vault, "01-Requirements", "_brs", "*.md"))):
+        ident = os.path.basename(p).split()[0].split(".")[0]
+        text = read_text(p)
+        art_qs[ident] = [l for l in text.splitlines() if re.search(r"-\s*\[[ xX]\]\s*Q:", l)]
+
+    note_qs = {}
+    for p in sorted(glob.glob(os.path.join(vault, "00-Inbox", "INT-*.md"))):
+        ident = os.path.basename(p).split()[0].split(".")[0]
+        text = read_text(p)
+        note_qs[ident] = [l for l in text.splitlines() if re.search(r"-\s*\[[ xX]\]\s*Q:", l)]
+
+    for hub in hub_files(vault):
+        slug = os.path.splitext(os.path.basename(hub))[0]
+        sp = signal_log_file(hub)
+        for offset, cells in table_rows(section(read_text(sp), r"^##\s+Signal Log")):
+            if len(cells) < 6:
+                continue
+            status = cells[4].strip().lower()
+            if status not in ("question", "conflict"):
+                continue
+
+            num = cells[0].strip()
+            sig = cells[1].strip() if len(cells) > 1 else ""
+            source = cells[3].strip() if len(cells) > 3 else ""
+            dest = cells[5].strip() if len(cells) > 5 else ""
+            notes = cells[6].strip() if len(cells) > 6 else ""
+
+            if "?" in sig or "SME question" in sig or "Q-" in notes or "Q-" in sig:
+                continue
+            if BEARS_ON.search(notes) or BEARS_ON.search(sig) or Q_START.match(sig):
+                continue
+
+            cites = set()
+            for int_id in CITE.findall(source):
+                for token in re.findall(r"#(\d+)", re.split(r"—|--", source)[0]):
+                    cites.add((int_id, int(token)))
+
+            matched = False
+            for q in hub_qs.get(slug, []):
+                if cites and any(f"{nid} #{n}" in q or f"{nid} #{n:03d}" in q or f"#{n}" in q for nid, n in cites):
+                    matched = True
+                    break
+                if re.search(rf"\b(?:hub\s+rows?|rows?)\s*(?:#[0-9a-z,-–\s]*\b)?#{re.escape(num)}\b", q, re.I):
+                    matched = True
+                    break
+
+            if matched:
+                continue
+
+            for aid in re.findall(r"\b(?:UC|BR)-\d+\b", dest):
+                for q in art_qs.get(aid, []):
+                    if cites and any(f"{nid} #{n}" in q or f"{nid} #{n:03d}" in q or f"#{n}" in q for nid, n in cites):
+                        matched = True
+                        break
+                    if re.search(rf"\b(?:hub\s+rows?|rows?)\s*(?:#[0-9a-z,-–\s]*\b)?#{re.escape(num)}\b", q, re.I):
+                        matched = True
+                        break
+                if matched:
+                    break
+
+            if matched:
+                continue
+
+            for h_slug, q_list in hub_qs.items():
+                if h_slug != slug:
+                    for q in q_list:
+                        if cites and any(f"{nid} #{n}" in q or f"{nid} #{n:03d}" in q or f"#{n}" in q for nid, n in cites):
+                            matched = True
+                            break
+                    if matched:
+                        break
+
+            if not matched and cites:
+                for nid, n in cites:
+                    for q in note_qs.get(nid, []):
+                        if f"#{n}" in q or f"#{n:03d}" in q:
+                            matched = True
+                            break
+                    if matched:
+                        break
+
+            if not matched:
+                findings.add(
+                    "question row with no question",
+                    f"{rel(vault, hub)} row #{num} is `{status}` but has no matching question on its hub or destination",
+                )
+
+
 TIER1_GLOBAL = [check_ids]
-TIER2 = [check_secrets, check_staged_has_entry, check_status_invariant, check_pointers, check_note_coverage,
+TIER2 = [check_secrets, check_staged_has_entry, check_question_rows, check_status_invariant, check_pointers, check_note_coverage,
          check_step_references]
 
 
@@ -1167,6 +1272,9 @@ def run_self_test():
                   "| :--- | :--- | :--- |\n"
                   "| BR-004 | Only PDF is accepted | S3 |\n")
          .replace("* **Branch point:** S3", "* **Branch point:** S1"))
+
+    case("question row with no question", "question row with no question",
+         hub=CLEAN_HUB.replace("| applied | UC-001 S3 |", "| question | |"))
 
     failures = []
     for name, expect, kw in cases:

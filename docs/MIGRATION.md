@@ -21,6 +21,7 @@ $B lint --full                               # must be clean
 | **1.11.0** — workflow orchestration | none | `_runs/<id>/` appears on the first workflow run. |
 | **1.12.0** — slim inputs | `strip-guidance`, `split-signal-log` | Guidance comments leave UC/BR/hub instances; each hub's Signal Log moves to `<slug>.signals.md`. `_bigin/cards/` materialized by the upgrade skill. |
 | **1.12.1** — audit & hardening | none | No format change. `bigin audit --baseline <tgz>` checks baseline integrity; engine guards prevent question loss and Changelog loss; `ux-brief-assembler` card/JSON contract; e2e workflow fixture tests; codebase intake docs. |
+| **1.12.2** — coverage, lint & audit hardening | none | No format change. `bigin coverage` classifies open-gated staged hub rows as parked; `bigin lint` tier 2 checks question-status rows carry a matching question; `bigin audit` check C12 verifies partial answers are folded or marked not settleable. |
 
 ## The steps
 
@@ -73,6 +74,12 @@ No schema migration required. Upgrading to 1.12.1 activates:
   or lines under `## Changelog` would be lost.
 - Role card for `ux-brief-assembler` (`cards/ux-brief.md`) with lean JSON output contract.
 - End-to-end fixture coverage for `workflows/transform.js`.
+
+### Hardening & verification (1.12.2)
+No schema migration required. Upgrading to 1.12.2 activates:
+- `bigin coverage`: note rows whose hub row is staged behind an open, gated ledger change set are correctly classified as parked (not missing).
+- `bigin lint`: tier 2 check `check_question_rows` ensures Signal Log rows at status `question`/`conflict` carry a matching open question on the hub, destination artifact, or note.
+- `bigin audit`: check C12 verifies that unticked questions with filled `A:` lines carry a `Folded (as-built half):` line, a `not settleable` marker, or a record in a PARTIALS ledger.
 
 
 ## Rollback

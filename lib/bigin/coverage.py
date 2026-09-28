@@ -33,16 +33,37 @@ def _note_ids(vault, notes=None):
 
 def _hub_index(vault, ids):
     """(row_dest, row_state, hub_named_text) over every hub Signal Log."""
+    from . import ledger
+    ledger_entries = ledger.entries(vault)
+    hub_row_cs = {}
+    for e in ledger_entries:
+        cs = e.get("changeset") or {}
+        tr = cs.get("trace") or {}
+        hub = tr.get("hub") or (e.get("_file", "").replace(".jsonl", "") if e.get("_file") != "_vault.jsonl" else None)
+        rows = tr.get("hub_rows") or []
+        if isinstance(rows, (str, int)):
+            rows = [rows]
+        for r_num in rows:
+            hub_row_cs.setdefault((hub, str(r_num).strip().lstrip("#")), []).append(e)
+
     row_dest, row_state, cited, named = {}, {}, set(), []
     for slug in vault.slugs():
         doc = model.signal_doc(vault, slug)
         for r in model.signal_rows(doc):
             dests = {d for d in re.findall(r"\b(?:UC|BR)-\d+\b", r.destination) if d in ids}
             named.append(" ".join(r.cells))
+            status = r.status
+            if status == "staged":
+                cs_list = hub_row_cs.get((slug, str(r.num).strip().lstrip("#")), [])
+                if cs_list and all(
+                    c.get("state") == "open" and bool(c.get("question") or (c.get("changeset") or {}).get("gate", {}).get("question"))
+                    for c in cs_list
+                ):
+                    status = "staged-gated"
             for key in model.expand_int_cites(r.source):
                 cited.add(key)
                 row_dest.setdefault(key, set()).update(dests)
-                row_state.setdefault(key, set()).add(r.status)
+                row_state.setdefault(key, set()).add(status)
     return row_dest, row_state, cited, "\n".join(named)
 
 
@@ -102,7 +123,7 @@ def run(vault, stage=None, id_pattern=None, universe_file=None, notes=None):
                     reach.setdefault(x, set()).add(d[:2])
         transformed = set(reach)
         parked = {x for x in filed - transformed
-                  if all(row_state.get(k) and row_state[k] <= model.PARKED for k in rows[x])}
+                  if all(row_state.get(k) and row_state[k] <= (model.PARKED | {"staged-gated"}) for k in rows[x])}
         res.update(universe=len(universe), extracted=len(extracted & set(universe) or extracted),
                    filed=len(filed), transformed=len(transformed), parked=len(parked),
                    br=sum(1 for v in reach.values() if "BR" in v), uc=sum(1 for v in reach.values() if "UC" in v))
@@ -126,7 +147,7 @@ def run(vault, stage=None, id_pattern=None, universe_file=None, notes=None):
         filed = {u for u in units if u in cited or unit_status[u] == "rejected"}
         transformed = {u for u in filed if unit_status[u] == "rejected" or
                        (row_dest.get(u) and (row_state.get(u, set()) & model.PROCESSED))}
-        parked = {u for u in filed - transformed if row_state.get(u) and row_state[u] <= model.PARKED | model.PROCESSED}
+        parked = {u for u in filed - transformed if row_state.get(u) and row_state[u] <= model.PARKED | model.PROCESSED | {"staged-gated"}}
         parked |= {u for u in extracted - filed if unit_status[u] in ("question", "conflict")}
         res.update(notes_without_table=empty_notes, units=len(units), extracted=len(extracted), filed=len(filed),
                    transformed=len(transformed), parked=len(parked))
