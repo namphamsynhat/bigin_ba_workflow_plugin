@@ -16,18 +16,21 @@ def _make_baseline(root):
     return tgz_path
 
 
-def test_audit_passes_on_clean_fixture():
+def test_audit_invariants_pass_on_fixture_and_coverage_sees_ids():
+    # code-vault is mid-pipeline (rows filed, few transformed), so C3 legitimately reports transform gaps;
+    # it must see all 12 XR ids from project.md's coverage_id_pattern (a 0/0 pass would mean the pattern broke).
     root, v = fresh("code-vault")
     baseline = _make_baseline(root)
     try:
         code, out = run(root, "audit", "--baseline", baseline)
-        assert code == 0, out
+        assert "/12 transformed" in out, out
         assert "PASS  C1 lint" in out
         assert "PASS  C2 staged" in out
-        assert "PASS  C3 coverage" in out
         assert "PASS  C4 questions (hubs)" in out
         assert "PASS  C5 steps" in out
         assert "PASS  C6 structure" in out
+        assert "PASS  C7 signal-log rows" in out
+        assert "PASS  C9 approvals" in out
     finally:
         if os.path.exists(baseline):
             os.remove(baseline)

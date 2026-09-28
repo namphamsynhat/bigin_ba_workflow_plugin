@@ -22,6 +22,7 @@ $B lint --full                               # must be clean
 | **1.12.0** — slim inputs | `strip-guidance`, `split-signal-log` | Guidance comments leave UC/BR/hub instances; each hub's Signal Log moves to `<slug>.signals.md`. `_bigin/cards/` materialized by the upgrade skill. |
 | **1.12.1** — audit & hardening | none | No format change. `bigin audit --baseline <tgz>` checks baseline integrity; engine guards prevent question loss and Changelog loss; `ux-brief-assembler` card/JSON contract; e2e workflow fixture tests; codebase intake docs. |
 | **1.12.2** — coverage, lint & audit hardening | none | No format change. `bigin coverage` classifies open-gated staged hub rows as parked; `bigin lint` tier 2 checks question-status rows carry a matching question; `bigin audit` check C12 verifies partial answers are folded or marked not settleable. |
+| **1.12.3** — review fixes | none | No format change. Quoted frontmatter values decode YAML escapes (a `coverage_id_pattern: "XR-[A-Z]+-\\d{3}"` in `project.md` now matches); `bigin coverage` tolerates a ledger entry with `gate: null`; `ux-brief-assembler` card/skill wording aligned with its `.out.json` write. |
 
 ## The steps
 
@@ -68,8 +69,8 @@ are created split.
 
 ### Hardening & verification (1.12.1)
 No schema migration required. Upgrading to 1.12.1 activates:
-- `bigin audit --baseline <snapshot.tgz>`: 11-point veracity and integrity audit across coverage, step numbering,
-  unmodified history, and gate preservation.
+- `bigin audit --baseline <snapshot.tgz>`: read-only invariant audit (checks C1–C12: lint, staged gating, coverage, add-only questions,
+  step ids, structure, Signal Log rows, status, approvals, repos untouched, secrets, partial answers).
 - Engine write guards: `Doc.verify` and `hub.py` refuse any write where questions in `## Open Questions / Gates`
   or lines under `## Changelog` would be lost.
 - Role card for `ux-brief-assembler` (`cards/ux-brief.md`) with lean JSON output contract.

@@ -70,7 +70,10 @@ def audit_vault(vault, baseline=None, strict=False, id_pattern=None):
             temp_dir = tempfile.mkdtemp(prefix="audit-baseline-")
             with tarfile.open(baseline) as t:
                 members = [m for m in t.getmembers() if m.name.startswith("01-Requirements") and "/._" not in m.name]
-                t.extractall(temp_dir, members=members)
+                if hasattr(tarfile, "data_filter"):
+                    t.extractall(temp_dir, members=members, filter="data")
+                else:
+                    t.extractall(temp_dir, members=members)
             bdir = os.path.join(temp_dir, "01-Requirements") if os.path.isdir(os.path.join(temp_dir, "01-Requirements")) else temp_dir
 
     try:

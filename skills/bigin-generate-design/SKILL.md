@@ -625,7 +625,7 @@ judgment work — the same reason `/bigin-transform-signal` fans out on the defa
   threshold for `agents/ux-brief-assembler.md`.
 - **`agents/ux-brief-assembler.md`** (plugin-root `agents/`, not this skill's `references/`) — the
   named subagent dispatched per qualifying feature at Stage 3, ahead of the screens worker. It never
-  writes a file and never finalizes a screen boundary; it only assembles.
+  writes a vault file (only its own `.out.json` brief) and never finalizes a screen boundary; it only assembles.
 - **`/bigin-render-design-od`'s `references/open-design-adapter.md`** — where the Open Design tool
   contract, the design-system choice, and the halt text live. **This skill never reads it**, and that
   is the point: a design run has no engine and no design system to resolve.

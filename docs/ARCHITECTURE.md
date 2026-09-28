@@ -49,6 +49,7 @@ Exit codes: `0` ok · `1` findings/missing (lint, coverage) · `2` refused (bad 
 | `metrics.py` | `metrics add\|report` | Token/agent accounting per run, budget overruns from project `budgets:`. |
 | `intake/` | `intake codebase\|communication` | Codebase rule-card import (no LLM) and locked note scaffolding (§ 6). |
 | `migrate.py` | `migrate snapshot\|plan\|all\|discussion-to-ledger\|strip-guidance\|split-signal-log` | Vault format migrations (`docs/MIGRATION.md`). |
+| `audit.py` | `audit [--baseline <tgz\|dir>] [--strict] [--id-pattern]` | Read-only invariant audit (C1–C12) against a pre-run snapshot: questions add-only, step ids kept, Signal Log rows kept, no automated approvals. |
 | `cli.py` | `launcher` | writes `_bigin/bin/bigin` and refreshes `_bigin/cards/`. |
 | `edit.py`, `util.py` | — | Shared write helpers (Changelog, version bump, question matching), ids, JSON. |
 

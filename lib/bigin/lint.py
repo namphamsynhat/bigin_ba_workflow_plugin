@@ -916,7 +916,7 @@ def check_question_rows(vault, findings):
                 if cites and any(f"{nid} #{n}" in q or f"{nid} #{n:03d}" in q or f"#{n}" in q for nid, n in cites):
                     matched = True
                     break
-                if re.search(rf"\b(?:hub\s+rows?|rows?)\s*(?:#[0-9a-z,-–\s]*\b)?#{re.escape(num)}\b", q, re.I):
+                if re.search(rf"\b(?:hub\s+rows?|rows?)\s*(?:#[0-9a-z,\-–\s]*\b)?#{re.escape(num)}\b", q, re.I):
                     matched = True
                     break
 
@@ -928,7 +928,7 @@ def check_question_rows(vault, findings):
                     if cites and any(f"{nid} #{n}" in q or f"{nid} #{n:03d}" in q or f"#{n}" in q for nid, n in cites):
                         matched = True
                         break
-                    if re.search(rf"\b(?:hub\s+rows?|rows?)\s*(?:#[0-9a-z,-–\s]*\b)?#{re.escape(num)}\b", q, re.I):
+                    if re.search(rf"\b(?:hub\s+rows?|rows?)\s*(?:#[0-9a-z,\-–\s]*\b)?#{re.escape(num)}\b", q, re.I):
                         matched = True
                         break
                 if matched:

@@ -56,7 +56,7 @@ def _hub_index(vault, ids):
             if status == "staged":
                 cs_list = hub_row_cs.get((slug, str(r.num).strip().lstrip("#")), [])
                 if cs_list and all(
-                    c.get("state") == "open" and bool(c.get("question") or (c.get("changeset") or {}).get("gate", {}).get("question"))
+                    c.get("state") in ("open", "needs-judgement") and bool(c.get("question") or ((c.get("changeset") or {}).get("gate") or {}).get("question"))
                     for c in cs_list
                 ):
                     status = "staged-gated"

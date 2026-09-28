@@ -263,7 +263,7 @@ class Frontmatter:
         v = v.strip()
         if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
             inner = v[1:-1]
-            return inner.replace('\\"', '"') if v[0] == '"' else inner.replace("''", "'")
+            return _yaml_unescape(inner) if v[0] == '"' else inner.replace("''", "'")
         return v
 
     def get(self, key, default=None):
@@ -327,7 +327,7 @@ class Frontmatter:
         else:
             s = "" if value is None else str(value)
             if style == "quoted" or (s and _NEEDS_QUOTE.search(s)):
-                rendered = [f'{key}: "' + s.replace('"', '\\"') + '"']
+                rendered = [f'{key}: "' + _yaml_escape(s) + '"']
             else:
                 rendered = [f"{key}: {s}".rstrip()]
         if key in self.entries:
@@ -365,12 +365,21 @@ def _split_inline_list(inner):
     return [x for x in out if x]
 
 
+def _yaml_escape(v):
+    return v.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _yaml_unescape(v):
+    """Undo YAML double-quoted escapes for backslash, quote and slash; any other escape is kept verbatim."""
+    return re.sub(r'\\(["\\/])', lambda m: m.group(1), v)
+
+
 def _q(v):
-    return '"' + v.replace('"', '\\"') + '"' if _NEEDS_QUOTE.search(v) and not re.match(r"^[\w./@-]+$", v) else v
+    return '"' + _yaml_escape(v) + '"' if _NEEDS_QUOTE.search(v) and not re.match(r"^[\w./@-]+$", v) else v
 
 
 def _q_inline(v):
-    return '"' + v.replace('"', '\\"') + '"' if re.search(r"[,\[\]]|^\s|\s$|: ", v) else v
+    return '"' + _yaml_escape(v) + '"' if re.search(r"[,\[\]]|^\s|\s$|: ", v) else v
 
 
 # ---------------------------------------------------------------------------- document

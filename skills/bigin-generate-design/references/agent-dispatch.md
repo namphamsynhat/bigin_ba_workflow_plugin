@@ -22,8 +22,8 @@ and active design principles into one Design Brief: known gaps verbatim, a mecha
 screen-boundary proposal (Part 2's rule applied, never finalized), an entity field table per
 candidate screen, cross-UC merge candidates, existing-pattern matches from sibling UX specs, and the
 raw entity-field material Part 4b's trigger test will need later. **Its brief carries the platform too** — supplied to it in its own dispatch,
-exactly as it is to the screens worker, and never inferred by it (`agents/ux-brief-assembler.md`
-§ What you're handed). Below that threshold, the screens worker reads `3-screens.md` Part 1 directly
+exactly as it is to the screens worker, and never inferred by it (`cards/ux-brief.md`
+rule 6). Below that threshold, the screens worker reads `3-screens.md` Part 1 directly
 — a second dispatch to save a few inline reads costs more than it returns.
 
 Fold the brief into the screens worker's prompt as its `READ FIRST` starting point (§ The prompt,

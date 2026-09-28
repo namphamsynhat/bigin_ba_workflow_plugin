@@ -12,7 +12,7 @@
 6. **Platform signal:** Use the platform you were handed; report any source explicitly stating a platform constraint as fact on `platform_signal`.
 7. **Sibling patterns:** Grep `{ux_dir}` for keywords (`queue`, `wizard`, `approval`); inspect at most one matching spec.
 8. **Relationship signals:** Surface entity fields storing per-user history/preference (material for Part 4b trigger; do not render verdict).
-9. **Never write any vault file:** You have no Write/Edit permissions.
+9. **Never write any vault file:** your only write is the `.out.json` you were given (`01-Requirements/`, `00-Inbox/`, `_bigin/` are off-limits).
 
 ## Output Schema
 ```json
@@ -21,7 +21,7 @@
   "brief": "<summary paragraph: actors, platform, principles, directives>",
   "known_gaps": ["<verbatim gap question>"],
   "candidate_screens": [
-    {"name": "<screen name>", "serves": ["UC-### S1", "..."], "entities": ["EN-###"], "pattern": "<existing pattern or none>"}
+    {"name": "<screen name>", "serves": ["UC-### S1", "..."], "entities": ["EN-###"], "fields": {"EN-###": ["<field>"]}, "pattern": "<existing pattern or none>"}
   ],
   "merges": [
     {"ucs": ["UC-###", "UC-###"], "target_screen": "<screen>", "actors": "<actor A> vs <actor B>", "scope_agrees": "yes|no|unknown"}

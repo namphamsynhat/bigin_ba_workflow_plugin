@@ -162,11 +162,12 @@ bigin coverage --stage file --universe analysis/_rules-store.json
 bigin audit --baseline analysis/ba/snapshots/vault-baseline.tgz
 ```
 
-The audit checks:
-1. `check_xr_coverage`: 1,114 rules in store == 1,114 rules on hubs (100% recall).
-2. `check_orphaned_rules`: No hub rows cite unassigned rule cards.
-3. `check_asymmetry_warnings`: Multi-surface warnings preserved on INT notes.
-4. `check_no_lost_questions`: No existing questions or gates were dropped.
+`bigin coverage` proves every rule id in the store reached a hub row (id mode). `bigin audit` is read-only and
+reports PASS/WARN/FAIL for checks C1–C12. The ones that matter most after an intake run:
+- **C3 coverage**: 0 unexplained gaps. Unfiled cards are counted separately as human feature mapping.
+- **C4 questions**: no question in the baseline disappeared (add-only).
+- **C7 signal-log**: every baseline Signal Log row still exists.
+- **C9 approvals**: no UC or BR was approved by an automated pass.
 
 ### 5. Transform & code adjudication
 
