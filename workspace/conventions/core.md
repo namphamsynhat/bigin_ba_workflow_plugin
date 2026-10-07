@@ -21,9 +21,9 @@ Everything else lives in a sibling file, loaded only by the stage that needs it 
 | EN | Entity data model | 01-Requirements/_entities | Implemented — `/bigin-transform-signal` only cites an `ENTITIES.md` `proposed` row, by name; `/sync-entities` is the only skill that promotes one into its own file, `EN-<NNN> <Entity>.md`, and only once an approved UC (or a BR it mirrors) actually references it. Deferring promotion until after approval means a still-drafting UC never leaves behind an entity doc nobody ended up needing |
 | FR | ~~Feature requirement~~ | 01-Requirements/_frs | **Retired**, replaced by `UC-###`. Existing files stay on disk, frozen, carrying `absorbed_by: UC-###`; ids keep resolving and nothing writes there any more (`use-case.md` § Use Case → What it replaced) |
 | SCN | ~~Business scenario (cross-feature flow)~~ | 01-Requirements/SCENARIOS.md | **Retired**, replaced by a `UC-###` whose `features:` lists every slug it touches. Existing rows stay, `superseded`, naming the UC that absorbed them (`registers.md` § Business Scenarios (retired)) |
-| PRD | Product requirements doc | 02-PRD | Implemented — **one file per feature**, `PRD-<NNN> <Feature>.md`, written by `/bigin-generate-prd` from that feature's **`approved`** UCs (`feature-hub.md` § Feature material) plus its `UX-###` design. Granularity is settled: per feature, not per-UC and not one vault-wide document (§ Reconciliation notes). A business-flow document, never a technical spec — its six hard rules live in that skill's `SKILL.md`, not here, the same way design's live in `design-conventions.md`. Status: `draft → approved`, `approved` human-only (§ Status vocabularies). Carries `absorbed: [UC-###@version]`, which is what makes PRD drift detectable (`runtime.md` § Absorbed) |
-| EP | Epic | 03-Epics-Stories | **Not built** — nothing writes epics or stories today; they are cut by hand from approved UCs. Same `draft → approved` status vocab once split out |
-| US | User story | 03-Epics-Stories | **Planned** — stories live nested under their epic in `epics.md` today, not as their own `US-###` files. Same `draft → approved` status vocab once split out |
+| PRD | ~~Product requirements doc~~ | 02-PRD | **Retired** in 1.13.0 along with `/bigin-generate-prd`. Existing `PRD-<NNN> <Feature>.md` files stay on disk, frozen (hard rule 1), and their ids keep resolving; nothing writes a PRD any more. `/bigin-generate-stories` may read one as optional context for priority and scope, never as a required input. The chain now runs `INT → UC/BR → UX (+ prototype) → approve → EP → US` (`use-case.md` § Traceability chain) |
+| EP | Epic | 03-Epics-Stories | Implemented (1.13.0) — one per feature, a folder `EP-<NNN> <Feature>/` holding `EP-<NNN> <Feature>.md`, its stories, and `_snapshot/` (the frozen prototype captures). Written by `/bigin-generate-stories` from the feature's **approved** UCs + `UX-###` + prototype; approved by `/approve-story` once every story is. Carries `absorbed:` (`runtime.md` § Absorbed) |
+| US | User story | 03-Epics-Stories/EP-<NNN> <Feature>/ | Implemented (1.13.0) — one file per **use-case slice** (`US-<NNN> <Title>.md`, vault-global ids), main path first, then A#/E# flows or rule groups. Business-only: story, flow, flowchart, state changes, screens (snapshot image + fields + actions + states), Gherkin acceptance criteria, Definition of Ready. `snapshot:` pins the prototype capture it was written against. Approved per story by `/approve-story` |
 | UX | UI/UX spec | 04-UIUX | Implemented — one `UX-<NNN> <Feature>.md` per feature, written by `/bigin-generate-design` from the feature's UC(s). Its `## 8 Rendered Artifacts` is the one section that skill never writes: `/bigin-render-design-od` appends a pointer row there when a human asks for a prototype. **Its rules are not in this file:** the design rulebook is `_bigin/conventions/design-conventions.md`, deliberately separate, and it carries UX's own status vocabulary (`draft → needs-clarification → accepted`), paths, and hard rules. The deleted `/prototype-design` wrote `<feature-id>-prototype.md` with no id |
 
 Next-ID: scan the relevant folder for the highest existing number and increment —
@@ -182,8 +182,8 @@ four:
 | `draft` | Content exists — created or last folded in by `/bigin-transform-signal`. The default resting state until a human approves it. |
 | `needs-clarification` | At least one unresolved `- [ ] Q:` line in the artifact's question list — a UC's `## 5` **Still open**, a BR's `## Open Questions` (`questions.md` § Open Questions ↔ status consistency's invariant — unchanged, just now one value in this list rather than sitting alongside a separate `in-review`). Once every question resolves, status moves to whatever it would otherwise be — `draft`, or `approved`/`consolidated` if a later-stage edit is what raised the question. Never a fixed placeholder. |
 | `enriched` | Permanently unreachable on a UC — enrichment moved off the UC entirely to a feature-scoped, hub-level pass (§ Reconciliation notes, `feature-hub.md` § Feature Hub). Kept only as a defined value for a pre-migration vault that already carries it. |
-| `approved` | A human has approved it via `/approve-uc`; it's feature material (`feature-hub.md` § Feature material) and `/bigin-generate-prd` will fold it into its feature's PRD on the next run. Epics/stories still wait on a migrated stage (§ Reconciliation notes). |
-| `consolidated` | **Legacy-only, unreachable.** It meant an epic/story had been generated back from the UC. No skill sets it — the epic/story stage was never built — so nothing may gate on it. |
+| `approved` | A human has approved it via `/approve-uc`; it's feature material (`feature-hub.md` § Feature material) and `/bigin-generate-stories` will slice it into its feature's epic and stories on the next run. |
+| `consolidated` | **Legacy-only, unreachable.** It meant an epic/story had been generated back from the UC. No skill sets it — `/bigin-generate-stories` tracks slicing through the epic's `absorbed:`, not a UC status — so nothing may gate on it. |
 | `removed` | A human decided this UC/BR is no longer relevant/wanted (`intake.md` § Feedback handling's "Removing scope") — human-gated like `approved`, never set by an agent. Not deletion (hard rule 1): the file, id, and history stay intact. |
 
 An earlier draft of this document specified `raw | draft | in-review | needs-clarification |
@@ -194,10 +194,10 @@ placeholder "reviewed" state needed), and there's no separate "old version" stat
 hard rule 7 already means every edit lands in place, not as a fork.
 
 **PRD / Epic / Story** (`02-PRD/`, `03-Epics-Stories/`): `draft → approved`, where `approved` means
-ready for / queued into development — nothing more granular than that. **PRD is real now**: one file
-per feature, written by `/bigin-generate-prd`, which only ever writes `draft` — a human approves a PRD
-the same way a human approves a UC (hard rule 4). Epic/Story are still **Planned** as their own files
-(see § Reconciliation notes).
+ready for / queued into development — nothing more granular than that. **PRD is retired** (1.13.0):
+existing files keep whatever status they carry, frozen, and nothing writes one. **Epic/Story are real** (1.13.0):
+`/bigin-generate-stories` writes only `draft`; `/approve-story` sets `approved`, per story, and on the epic once
+every story is. An approved story is never rewritten by a later run — it is reported as drifted.
 
 **EN** (entities): its own vocab, `proposed → draft → approved`, plus one side-state — see § Entity
 Data Model. Simpler because an entity doc is a field list assembled from already-approved-adjacent

@@ -30,7 +30,7 @@ about *what the system does* is here; a rule about *how a user gets there* is th
 | `/extract-signal` | `core.md` · `feature-hub.md` · `questions.md` — plus `registers.md` **only** when a note actually holds a pain-point, entity, or design row (`agents/signal-filer.md` § Your only rulebook) |
 | `/bigin-transform-signal` | `core.md` · `use-case.md` · `feature-hub.md` · `questions.md` |
 | `/bigin-generate-design` | `core.md` + the `design-*.md` files its stage row names |
-| `/bigin-generate-prd` | `core.md` · `feature-hub.md` § Feature material · `use-case.md` § Traceability chain · `questions.md` |
+| `/bigin-generate-stories` | `core.md` · `feature-hub.md` § Feature material · `use-case.md` § Traceability chain · `questions.md` |
 | `/enrich-feature`, `bin/bigin hub refresh` | `core.md` · `feature-hub.md` |
 | `/sync-entities` | `core.md` · `registers.md` |
 | `/approve-uc`, `/restructure-uc` | `core.md` · `use-case.md` |

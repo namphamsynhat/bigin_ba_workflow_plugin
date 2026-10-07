@@ -47,6 +47,9 @@ def test_run_ledger_resume():
     root, v = fresh("comm-vault")
     code, out = run(root, "run", "new", "--stage", "transform", "--scope", "payments")
     rid = out.strip()
+    # the Workflow tool only takes a scriptPath inside the working dir — run new stages the scripts there
+    for wf in ("transform.js", "extract.js", "adjudicate.js"):
+        assert os.path.isfile(os.path.join(root, "_runs", rid, "workflows", wf))
     run(root, "run", "record", rid, "--task", "close:payments", "--status", "ok")
     code, out = run(root, "run", "done", rid)
     assert "close:payments" in out

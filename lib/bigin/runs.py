@@ -8,6 +8,7 @@ import shutil
 
 from . import jsonschema_lite
 from .util import EngineError, append_jsonl, dump_json, load_json, load_jsonl, today
+from .vault import PLUGIN_ROOT
 
 KINDS = ("changesets", "route", "signals", "audit", "filing", "adjudication", "verdicts")
 
@@ -23,7 +24,14 @@ def new_run(vault, stage, scope=None):
     rid = f"{stamp}-{stage or 'run'}" + (f"-{re.sub(r'[^A-Za-z0-9-]', '-', scope)}" if scope else "")
     d = run_dir(vault, rid)
     os.makedirs(os.path.join(d, "tasks"), exist_ok=True)
-    plan = {"id": rid, "stage": stage, "scope": scope, "created": today(), "tasks": []}
+    # The Workflow tool only accepts a scriptPath inside the working directory, so the plugin-cache
+    # copy is unusable; stage the scripts under the run (pinned to this plugin version).
+    src = os.path.join(PLUGIN_ROOT, "workflows")
+    wf = os.path.join(d, "workflows")
+    if os.path.isdir(src):
+        shutil.copytree(src, wf, dirs_exist_ok=True)
+    plan = {"id": rid, "stage": stage, "scope": scope, "created": today(), "tasks": [],
+            "workflows": os.path.relpath(wf, vault.root)}
     dump_json(plan, os.path.join(d, "plan.json"))
     return plan
 

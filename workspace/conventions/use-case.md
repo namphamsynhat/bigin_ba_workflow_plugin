@@ -3,7 +3,7 @@
 What a `UC-###` is, what its sections hold, how it traces back to the signal that caused it, and
 the summary block that keeps it scannable.
 
-**Read by** people, `/bigin-transform-signal`, `/restructure-uc`, `/approve-uc`, and `/bigin-generate-prd` (for
+**Read by** people, `/bigin-transform-signal`, `/restructure-uc`, `/approve-uc`, and `/bigin-generate-stories` (for
 § Traceability chain). Agents read their card (`cards/router.md`, `cards/splitter.md`) instead; every card
 rule cites the heading here it came from.
 
@@ -80,16 +80,16 @@ not during a run.
 
 ## Traceability chain
 
-`/bigin-generate-prd` branches on the UC's `primary_feature:`
+`/bigin-generate-stories` branches on the UC's `primary_feature:`
 slug looked up in `01-Requirements/FEATURES.md` — the feature's `Status` there decides which of two
 valid chains applies. `/approve-uc` itself doesn't branch on this: it approves the UC regardless of
 which chain the feature will take, and stops there (`feature-hub.md` § Feature material):
 
 - **Full** — feature `proposed` / `committed` / `not-built` (new scope):
-  `INT → UC/BR → PRD → EP → US → UX`.
+  `INT → UC/BR → UX (+ prototype) → approve → EP → US`. (The PRD step was retired in 1.13.0.)
 - **Lightweight CR** — feature already `built` (a change/fix/improvement on something shipped):
-  `INT → UC/BR → US → UX`, skipping PRD and EP. The US cites the UC directly in `sources` instead
-  of an EP, and the UC's `links` points at the US id(s) instead of a PRD id.
+  `INT → UC/BR → US → UX`, skipping EP. The US cites the UC directly in `sources` instead
+  of an EP, and the UC's `links` points at the US id(s).
 
   A UC spanning several features whose `Status` values disagree takes the chain of its
   `primary_feature` — the feature that owns the goal — and the disagreement is worth naming in the
@@ -97,12 +97,12 @@ which chain the feature will take, and stops there (`feature-hub.md` § Feature 
 
   Cutting the epics and stories is where Use-Case 2.0's **slices** belong: a slice is one or more of a
   UC's flows taken together as a work item of clear value, basic flow first, then the alternative and
-  exception flows. `/bigin-transform-signal` never slices anything — this is guidance for
-  the epic/story stage (not built — epics and stories are cut by hand from approved UCs), if it is ever built.
+  exception flows. `/bigin-transform-signal` never slices anything — slicing is
+  `/bigin-generate-stories`'s job (`_bigin/stages/stories/3-slice.md`).
 - **Design** — a presentation-only signal, at any feature status: `INT → design directive → UX`,
-  skipping UC, PRD, EP, and US entirely. A statement about look, layout, tone, copy voice,
+  skipping UC, EP, and US entirely. A statement about look, layout, tone, copy voice,
   interaction feel, or an accessibility affordance produces **no functional scope**, so there is
-  nothing for a PRD section to carry and nothing for a story to decompose. It becomes a directive
+  nothing for an epic to carry and nothing for a story to decompose. It becomes a directive
   in one of two places — a `DESIGN-PRINCIPLES.md` row when it's durable and cross-cutting, or a row
   in its feature hub's own `## Design Directives` section when it's scoped to one feature — and
   `/bigin-generate-design` reads both directly. The directive carries no id of its own; its
@@ -116,16 +116,13 @@ which chain the feature will take, and stops there (`feature-hub.md` § Feature 
   `_bigin/stages/transform/3-lane-design.md` and `_bigin/stages/transform/3-routing.md` hold the
   boundary test and the destination rules.
 
-**Partly live.** The **PRD stage distinguishes the two chains**: `/bigin-generate-prd` reads the
-`FEATURES.md` row's `Status` and skips a `built` feature, because the CR chain has no PRD in it —
-writing one anyway is how a chain quietly changes. It stamps `chain:` with which one applied. What is
-still **Planned** is the CR chain's *destination*: nothing cuts the `US-###` a CR is supposed to land
-in, so a CR against a shipped feature today ends at its reviewed UC plus its design, and the story is
-cut by hand. The **Design chain is live**: `/bigin-transform-signal` files directives to both
+**Partly live.** The **stories stage distinguishes the two chains**: `/bigin-generate-stories` reads the
+`FEATURES.md` row's `Status` and, for a `built` feature, cuts `US-###` that cite the UC directly with
+no epic, stamping `chain:` with which one applied. The **Design chain is live**: `/bigin-transform-signal` files directives to both
 destinations, and `/bigin-generate-design` reads both — `DESIGN-PRINCIPLES.md` and each hub's
 `## Design Directives` — plus the UC itself, and writes the `UX-###` the chain ends at. It runs off
-`UC-###` directly and needs no PRD, so a design-only feature and a feature whose PRD isn't written
-yet both reach `UX` normally. See § Reconciliation notes for the stages still on the old layout.
+`UC-###` directly and needs no approval, so a design-only feature and a feature not yet approved
+both reach `UX` normally. See § Reconciliation notes for the stages still on the old layout.
 
 Every link in the chosen chain must resolve; if one can't be established, add an Open Question
 instead of guessing.

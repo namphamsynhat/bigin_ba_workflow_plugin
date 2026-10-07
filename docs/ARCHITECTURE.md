@@ -1,6 +1,6 @@
 # Architecture — the engine, the agents, and the contract between them
 
-Plugin v1.12.0. The design principle of the restructure (`docs/RESTRUCTURE-PLAN.md`):
+Plugin v1.12.0. The design principle of the restructure:
 
 > **LLM for judgement, scripts for bookkeeping, JSON between them, one write per artifact.**
 
@@ -152,7 +152,7 @@ Model tiering (agent frontmatter): `uc-router`, `code-adjudicator`, `uc-splitter
            bigin file apply                              path; filed per (feature, theme) deterministically;
                                                         only the unmapped remainder goes to one filer task
   transform (identical)  route → changesets → apply → adjudicate (grounding: codebase|both) → status/coverage/lint
-  load     design / approve-uc / sync-entities / prd — unchanged
+  load     design / approve-uc / sync-entities / stories (PRD retired 1.13.0)
 ```
 
 `project.md` carries `grounding: communication | codebase | both`, `repos:` (read-only code roots),

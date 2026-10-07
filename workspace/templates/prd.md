@@ -1,9 +1,11 @@
 ---
 id: PRD-
 type: prd
+status_of_template: retired   # /bigin-generate-prd was retired in 1.13.0. Existing 02-PRD files stay frozen;
+                              # nothing writes a PRD any more. /bigin-generate-stories may read one as context.
 title:                  # the FEATURE, in business words — not "PRD for X", just "<Feature>"
 status: draft           # draft | approved (`core.md` § Status vocabularies).
-                        # /bigin-generate-prd only ever writes draft; approved is human-only (P5).
+                        # (retired) the PRD stage only ever wrote draft; approved was human-only.
 version: 1.0
 feature:                # the ONE FEATURES.md slug this PRD covers. One PRD per feature — a re-run
                         # updates it in place, never forks it.

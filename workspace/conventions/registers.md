@@ -85,7 +85,7 @@ fields it governs in its own body. An earlier draft of this document described a
 
 ### The doc is a data dictionary, not a diff of the last approval
 
-What a developer, a PRD reader, or a designer opens an `EN-###` for is **the whole shape of one
+What a developer, a story reader, or a designer opens an `EN-###` for is **the whole shape of one
 business object** — every field it carries, each field's type, whether it's required, and what values
 it may take. Three rules make it that, and each one exists because the obvious incremental behaviour
 produces a document that is worse than useless: an authoritative-looking file that is quietly a
@@ -214,14 +214,12 @@ single feature:
   `## Changelog` line, so the register's own history is auditable over time, same as any other
   vault artifact.
 
-Downstream: `/bigin-generate-prd` reaches it only **through** the `UX-###` that already applied it —
-its § 9 quotes the design's stated intent (`Principles applied`) rather than re-reading this register,
-so a PRD can never claim a client preference the screens don't actually reflect. An earlier draft of
-this document had a PRD stage reading the register directly and citing rows in a design-goals section;
-that reading is deliberately not what got built. `/bigin-generate-design`
-reads it **directly** (not via a PRD at all) and seeds the shared design system's `## Foundations` from its
-`active` rows — so it stays authoritative even if a given PRD section forgot to transcribe a
-preference, and so a feature that reaches design before its PRD is finished still produces screens
+Downstream: `/bigin-generate-stories` reaches it only **through** the `UX-###` and prototype that
+already applied it, so a story can never claim a client preference the screens don't actually reflect.
+`/bigin-generate-design`
+reads it **directly** and seeds the shared design system's `## Foundations` from its
+`active` rows — so it stays authoritative even if a later story forgot to transcribe a
+preference, and so a feature that reaches design before approval still produces screens
 consistent with what the client has said. That register is **read-only** to the design stage: it
 holds client-stated preferences, and a token or pattern an agent chose is not one.
 

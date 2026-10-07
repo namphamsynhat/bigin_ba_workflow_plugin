@@ -14,7 +14,7 @@ Same for migration status: **`_bigin/conventions/runtime.md` § Reconciliation n
 
 ## The pipeline you route through
 
-ETL: **extract** intake into per-feature signals → **transform** them into reviewed use cases (`UC-###`) and the business rules governing them → **load** them into design, approval, and (eventually) a PRD.
+ETL: **extract** intake into per-feature signals → **transform** them into reviewed use cases (`UC-###`) and the business rules governing them → **load** them into design, approval, and epics/user stories.
 
 | # | Skill | Route to it when | Decision point? |
 |---|---|---|---|
@@ -22,17 +22,17 @@ ETL: **extract** intake into per-feature signals → **transform** them into rev
 | 2 | `bigin-intake` | new raw communication needs capturing | no |
 | 3 | `extract-signal` | `00-Inbox/` has notes at `status: raw`, or one with a newly-ticked question | no |
 | 4 | `bigin-transform-signal` | a hub's `## Signal Log` has `new`/`held` rows, or a staged change's question was answered | no — it never blocks on a human |
-| 5 | `bigin-generate-design` | any UC has a drafted main flow and no current design. Needs no approval and no PRD | no — headless, but it **halts up front** when the platform's required design engine is absent. That is an install to report, not a decision to put to the human — pass on its install command and move to the next stage |
+| 5 | `bigin-generate-design` | any UC has a drafted main flow and no current design. Needs no approval | no — headless, but it **halts up front** when the platform's required design engine is absent. That is an install to report, not a decision to put to the human — pass on its install command and move to the next stage |
 | 6 | `approve-uc` | the human is ready to sign off one reviewed UC | **yes — never approve on their behalf** |
 | 7 | `sync-entities` | one or more UCs are `approved` with `synced: false`. Run when convenient, not after every approval | no |
-| 8 | `bigin-generate-prd` | a feature has `approved` UCs its PRD hasn't folded yet (or folded at an older version). Skips a `built` feature — the CR chain has no PRD | no — fully headless |
+| 8 | `bigin-generate-stories` | a feature has `approved` UCs its epic/stories haven't sliced yet (or sliced at an older version). A `built` feature gets stories with no epic — the CR chain | no — fully headless |
 | — | `enrich-feature` | a feature's domain research needs a manual refresh — scope changed materially since the automatic run `/extract-signal` § Step 2a ran at registration, or that run failed/was skipped | no |
 | — | `bigin-upgrade-project` | a skill's precondition reported a `workspace_version` mismatch | no |
 | — | `restructure-uc` | a UC visibly mixes more than one primary actor/trigger (a human notices it live, or `bigin-transform-signal`'s own granularity check raised and a human answered a split question — `3-lane-uc.md` § Recognizing drift) | **yes — never split the boundary on their behalf** |
 
 **Stages that fan out belong to `/bigin-run`.** `extract-signal` dispatches a named worker per intake
 note and has no inline path; `bigin-transform-signal`, `bigin-generate-design`, and
-`bigin-generate-prd` dispatch a worker per feature once a run passes a threshold documented in their own
+`bigin-generate-stories` dispatch a worker per feature once a run passes a threshold documented in their own
 `references/agent-dispatch.md` (four or more qualified signals on one feature; three or more features
 for either load stage). If this runtime cannot dispatch a
 subagent, run `/bigin-run` for those and keep to the inline scopes here — never substitute an inline
@@ -49,7 +49,7 @@ consumes what 6 approved.
 - **Gaps or open questions need research.** For something tied to one UC's specific steps, rules, or pain points, do the research yourself and record what you found — that's finer-grained than a domain-research pass and `enrich-feature` doesn't do it. For "this feature's grounding is stale" or "the automatic research at registration never landed," route to `enrich-feature` instead of redoing it inline.
 - **Reviewing a UC live and it reads as more than one goal** — a Parent's action and an Admin's action sharing one flow, or a step that quietly belongs to a different trigger entirely. Route to `restructure-uc` rather than either leaving it as-is or trying to split it inline — it needs the human-confirmed boundary and the multi-file mechanics (BR repointing, hub refresh) that skill owns.
 - **A feature is ready to design.** Any UC with a drafted main flow is ready — approval is not required. Run `bigin-generate-design` (no argument designs every feature whose UCs have no current design), then hand the human the `UX-###` and its prototype prompts.
-- **A feature has approved use cases.** Run `bigin-generate-prd` on it — one PRD per feature, folding every currently-`approved` UC plus whatever `UX-###` design exists, with the unapproved ones listed as pending scope. Headless, and read-only on every requirement and design file.
+- **A feature has approved use cases.** Run `bigin-generate-stories` on it — one epic per feature plus one story file per use-case slice, built from every currently-`approved` UC, its `UX-###` design, and a frozen snapshot of the prototype. Headless, and read-only on every requirement and design file. (`bigin-generate-prd` was retired in 1.13.0.)
 - **Approving several UCs in one sitting.** Run `approve-uc` per UC as the human confirms each one, then move straight to presenting the next. Don't run `sync-entities` between approvals by default — run it once the sitting is done, or sooner if asked.
 
 ## How you operate

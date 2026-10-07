@@ -10,11 +10,11 @@ what you need to install it and use it.
 It's a Claude Code plugin that turns raw client communication — meeting transcripts, emails,
 a note you dictate — into structured requirement documentation: signals → use cases and
 business rules → an approved requirement set → a UX design spec → (on request) an interactive
-prototype → a PRD. Epics and user stories are still cut by hand; everything before that is
-driven by the plugin.
+prototype → business-only epics and user stories for development. The whole chain is driven by
+the plugin.
 
 Everything the pipeline writes lands as plain markdown inside the current repo (`00-Inbox/`,
-`01-Requirements/`, `04-UIUX/`, `02-PRD/`), so it's readable, diffable, and reviewable without
+`01-Requirements/`, `04-UIUX/`, `03-Epics-Stories/`), so it's readable, diffable, and reviewable without
 opening Claude Code at all.
 
 ## 2. Prerequisites
@@ -246,7 +246,7 @@ What it does for you automatically:
 
 It's safe — and expected — to re-run `/bigin-new-project` later: after a plugin upgrade (to
 refresh the materialized rulebook), or to edit a config field. It never touches your captured
-intake, requirements, or PRDs.
+intake, requirements, or epics and stories.
 
 ## 6. The day-to-day workflow
 
@@ -274,7 +274,8 @@ If you'd rather run stages by hand, here's the order they normally happen in:
 /sync-entities             →  catch up entity/hub bookkeeping after approvals
 /bigin-generate-design     →  produce a UX spec for anything newly approved
 /bigin-render-design-od    →  (on request only) render an interactive prototype
-/bigin-generate-prd        →  roll approved use cases into a per-feature PRD
+/bigin-generate-stories    →  slice approved use cases + prototype into epics & user stories
+/approve-story             →  sign off reviewed stories (the epic follows once all are approved)
 ```
 
 ### A typical morning
@@ -372,15 +373,15 @@ Renders modular, self-contained HTML screen frames (`ux-###-scr-##-*.html`) for 
 
 Assembles modular UX screen frames into a unified, full-fidelity interactive master prototype (`index.html`) following the navigation map and the native app shell of the selected design system (top-nav horizontal tabs, side-nav, rail, or mobile bottom bar). Supports multi-state scenario simulation (`active`, `empty`, `loading`, `error`), cross-audits spec coverage in a closed loop, and updates existing prototypes in-place.
 
-### Generating the PRD
+### Generating epics and user stories
 
 ```
-/bigin-generate-prd [feature-slug | UC-### | omit for everything ready]
+/bigin-generate-stories [feature-slug | UC-### | omit for everything ready]
 ```
 
-Rolls every approved use case for a feature — its rules, entities, pain points, and design —
-into one business-flow PRD. Fully headless; run it any time after an approval, no need to run
-it after every single one.
+Slices every approved use case for a feature into one epic and one user story per slice, using its
+UX spec and a frozen snapshot of the prototype. Fully headless; run it any time after an approval.
+(`/bigin-generate-prd` was retired in 1.13.0; existing `02-PRD/` files stay as they are.)
 
 ## 7. Command reference
 
@@ -399,7 +400,8 @@ it after every single one.
 | `/bigin-render-ux-frame <UX-### \| feature>` | Render modular HTML screen frames | No |
 | `/bigin-assemble-prototype [--all \| --layout ...]` | Assemble modular frames into master prototype | No |
 | `/bigin-render-design-od [feature... \| --all]` | Render an interactive prototype | **Yes — never run unasked** |
-| `/bigin-generate-prd [feature\|UC-###]` | Roll approved UCs into a PRD | No |
+| `/bigin-generate-stories [feature\|UC-###]` | Slice approved UCs + prototype into epics & stories | No |
+| `/approve-story <US-###…\|EP-###>` | Approve reviewed stories (and the epic once all are) | Yes — human gate |
 | `/bigin-run [feature\|UC-id]` | Figure out what's next and run it | Stops only at real decisions |
 
 Everything above is also reachable by dispatching the `bigin-ba` agent for unattended,
@@ -422,7 +424,8 @@ _bigin/                    engagement config + the materialized rulebook (plugin
 _runs/                     the engine's run records, backups and pre-migration snapshots (don't edit)
 04-UIUX/UX-### <Feature>.md    UX spec per feature: screens, flows, navigation
 04-UIUX/_prototypes/<run>/     a rendered prototype, once you've asked for one
-02-PRD/PRD-### <Feature>.md    one PRD per feature, rolled up from approved use cases
+03-Epics-Stories/EP-### <Feature>/   one epic + one story file per use-case slice, plus _snapshot/
+02-PRD/PRD-### <Feature>.md    retired (1.13.0) — older PRDs, kept frozen
 ```
 
 A full field-by-field breakdown lives in [README.md](README.md#workflow).

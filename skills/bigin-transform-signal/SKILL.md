@@ -74,7 +74,7 @@ Stage 1 first harvests answers written since the last run. Load a stage file whe
 available** (invoking this skill is the opt-in). Stages 3–4 per feature and the close step run inside it:
 
 ```text
-Workflow(scriptPath: "${CLAUDE_PLUGIN_ROOT}/workflows/transform.js",
+Workflow(scriptPath: "<vault root>/_runs/$RUN/workflows/transform.js",   # staged by `run new`; never the plugin cache path
          args: {run: $RUN, vault: <vault root>, plugin_root: "${CLAUDE_PLUGIN_ROOT}",
                 features: [<in-scope slugs with qualified rows>], grounding: <project.md grounding>,
                 max_agents: 6})

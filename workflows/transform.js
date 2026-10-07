@@ -123,7 +123,7 @@ const results = await pipeline(
   // 4 — adjudicate (code-grounded only): one referee per conflict/held row, verdicts applied by the engine
   async (s) => {
     if (!s || s.error || !CODE) return s
-    const res = await workflow({ scriptPath: `${A.plugin_root}/workflows/adjudicate.js` },
+    const res = await workflow({ scriptPath: `${VAULT}/_runs/${RUN}/workflows/adjudicate.js` },
       { run: RUN, vault: VAULT, plugin_root: A.plugin_root, feature: s.slug, p0_panel: A.p0_panel !== false })
     return { ...s, adjudicated: res }
   },

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigin/epic/1",
+  "title": "Epic (EP-###) frontmatter — 03-Epics-Stories/EP-<NNN> <Feature>/EP-<NNN> <Feature>.md",
+  "type": "object",
+  "required": ["id", "title", "status", "feature", "source_ucs", "snapshot", "stories"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^EP-\\d{3,}$"},
+    "type": {"const": "epic"},
+    "title": {"type": "string", "minLength": 1},
+    "status": {"enum": ["draft", "approved"]},
+    "version": {"type": "string", "pattern": "^\\d+(\\.\\d+)?$"},
+    "feature": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "source_ucs": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^UC-\\d{3,}$"}},
+    "absorbed": {"type": "array", "items": {"$ref": "#/$defs/absorbed"}},
+    "snapshot": {"$ref": "#/$defs/snapshot"},
+    "stories": {"type": "array", "items": {"type": "string", "pattern": "^US-\\d{3,}$"}},
+    "after": {"type": "array", "items": {"type": "string", "pattern": "^EP-\\d{3,}$"}}
+  },
+  "$defs": {
+    "absorbed": {"type": "string", "pattern": "^(UC|UX|PRD)-\\d{3,}@\\d+(\\.\\d+)?$"},
+    "snapshot": {"type": "string", "pattern": "^(none|\\d{4}-\\d{2}-\\d{2}-v\\d+)$"}
+  }
+}

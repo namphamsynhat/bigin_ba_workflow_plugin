@@ -31,4 +31,4 @@ Named a feature → batch the beats across its flow. Single UC, or answers that 
 4. Display the reviewable set as one flow, scenario after scenario.
 5. One batched verdict (approve / hold / add information) with named ids, then `approve-uc` per id in flow
    order. Anything `approve-uc` surfaces that the human didn't read drops that UC out for an individual confirm.
-After approval, name `sync-entities` / design / PRD as available — never run them.
+After approval, name `sync-entities` / design / stories as available — never run them.

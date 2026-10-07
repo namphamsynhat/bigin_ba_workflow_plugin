@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigin/story/1",
+  "title": "User story (US-###) frontmatter — 03-Epics-Stories/EP-<NNN> <Feature>/US-<NNN> <Title>.md",
+  "type": "object",
+  "required": ["id", "title", "epic", "status", "priority", "slice_of", "snapshot"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^US-\\d{3,}$"},
+    "type": {"const": "user-story"},
+    "title": {"type": "string", "minLength": 1},
+    "epic": {"type": "string", "pattern": "^EP-\\d{3,}$"},
+    "status": {"enum": ["draft", "approved"]},
+    "version": {"type": "string", "pattern": "^\\d+(\\.\\d+)?$"},
+    "priority": {"enum": ["P1", "P2", "P3"]},
+    "slice_of": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/slice"}},
+    "rules": {"type": "array", "items": {"type": "string", "pattern": "^BR-\\d{3,}$"}},
+    "screens": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "entities": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "after": {"type": "array", "items": {"type": "string", "pattern": "^US-\\d{3,}$"}},
+    "snapshot": {"type": "string", "pattern": "^(none|\\d{4}-\\d{2}-\\d{2}-v\\d+)$"},
+    "absorbed": {"type": "array", "items": {"type": "string", "pattern": "^(UC|UX|PRD)-\\d{3,}@\\d+(\\.\\d+)?$"}}
+  },
+  "$defs": {
+    "slice": {
+      "type": "string",
+      "description": "UC-### then step/flow ids or ranges: 'UC-003 S1–S6', 'UC-003 A2', 'UC-003 S1-S3, E1'",
+      "pattern": "^UC-\\d{3,}\\s+[SAE]\\d+(\\s*[–-]\\s*S\\d+)?(\\s*,\\s*[SAE]\\d+(\\s*[–-]\\s*S\\d+)?)*$"
+    }
+  }
+}

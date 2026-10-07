@@ -48,7 +48,7 @@ rules, or a review gate.
 
 ## The design boundary test
 
-The routing call most likely to drift, because the Design lane skips the PRD and the approval gate —
+The routing call most likely to drift, because the Design lane skips the use case and the approval gate —
 which makes it the cheap path, and cheap paths attract traffic that doesn't belong on them.
 
 ```text

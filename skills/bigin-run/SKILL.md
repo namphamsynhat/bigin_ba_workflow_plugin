@@ -1,6 +1,6 @@
 ---
 name: bigin-run
-description: Drive the Bigin BA pipeline from the main session — read the vault, work out which stage runs next, run it, and keep going while nothing needs a decision. Use when asked to "move this feature forward", "what's next", "what's next on UC-00X", "process the inbox", "drain the intake queue", "import the mined rules", "run the next stage", "take this feature through to a prototype", "process UC-00X" / "process the UC" after a team BA typed their answers straight into the file, or "drive the pipeline". **This is the only home for a run that fans out.** Extract, multi-feature transform, adjudication, design and PRD runs dispatch named workers — through the Workflow tool (workflows/*.js) when available, else one Agent call per task — and a subagent cannot dispatch subagents, so they are driven from here, never from inside the `bigin-ba` agent.
+description: Drive the Bigin BA pipeline from the main session — read the vault, work out which stage runs next, run it, and keep going while nothing needs a decision. Use when asked to "move this feature forward", "what's next", "what's next on UC-00X", "process the inbox", "drain the intake queue", "import the mined rules", "run the next stage", "take this feature through to a prototype", "process UC-00X" / "process the UC" after a team BA typed their answers straight into the file, or "drive the pipeline". **This is the only home for a run that fans out.** Extract, multi-feature transform, adjudication, design and stories runs dispatch named workers — through the Workflow tool (workflows/*.js) when available, else one Agent call per task — and a subagent cannot dispatch subagents, so they are driven from here, never from inside the `bigin-ba` agent.
 argument-hint: "[feature slug or UC id — omit to pick up whatever is next]"
 ---
 
@@ -38,7 +38,8 @@ With no argument, sweep; with a slug or UC id, scope to it. Determine the stage 
 6b THE HUMAN asks for a prototype (never you)          → /bigin-render-design-od
 7  a UC is clear and the human is ready to sign off    → the review flow (cards/ba-review.md) — never headless
 8  approved UCs with synced: false                     → /sync-entities, when convenient
-9  approved UCs not yet in the feature's PRD           → /bigin-generate-prd
+9  approved UCs with no current epic/stories           → /bigin-generate-stories
+10 draft stories the human has reviewed               → /approve-story — human-only, like step 7
 ```
 
 Steps 3–6 are momentum: run them back to back. Step 7 is the only decision point; 8–9 lag it freely.
@@ -49,7 +50,8 @@ Steps 3–6 are momentum: run them back to back. Step 7 is the only decision poi
 ```text
 1  RUN=$($BIGIN run new --stage <extract|transform> --scope <slug|inbox>)
 2  Workflow tool available and opted in →
-     Workflow(scriptPath: ${CLAUDE_PLUGIN_ROOT}/workflows/<stage>.js,
+     Workflow(scriptPath: <repo root>/_runs/RUN/workflows/<stage>.js,   ← staged by `run new`; the
+              Workflow tool rejects a scriptPath in the plugin cache (outside the working directory)
               args: {run: RUN, vault: <repo root>, plugin_root: ${CLAUDE_PLUGIN_ROOT},
                      features: [slug…] | notes: [INT-…], grounding: <project.md grounding>,
                      max_agents: 6})
@@ -68,7 +70,7 @@ Steps 3–6 are momentum: run them back to back. Step 7 is the only decision poi
 5  $BIGIN lint --full        → the blocking gate at the stage boundary
 ```
 
-Inline thresholds (one feature with ≤ 3 qualified rows; 1–2 features for design/PRD) are the stages' own —
+Inline thresholds (one feature with ≤ 3 qualified rows; 1–2 features for design/stories) are the stages' own —
 read them in their dispatch references. Never talk yourself past one to avoid a dispatch.
 
 ## Grounding

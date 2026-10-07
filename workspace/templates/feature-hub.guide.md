@@ -24,7 +24,7 @@ fr: []          # RETIRED. Pre-UC FR-### id(s), kept so old ids still resolve. N
 code_areas: []  # mirrors the FEATURES.md row's Code areas column — populated for
                 # project_mode: ongoing only, blank/omitted otherwise
 sources: []     # mirrors the FEATURES.md row's Sources column — INT-###/document ids/paths
-prd:
+prd:            # LEGACY — set by the retired /bigin-generate-prd; kept readable, never written
 epics: []
 stories: []
 uiux:
@@ -90,7 +90,7 @@ set adds up; a MISSING section means nobody has checked yet. -->
 |---|-----|------|--------|--------|-------|
 
 ## Requirement Readiness
-<!-- A refreshed snapshot for orientation — NOT the authoritative gate. The authoritative gate is always the UC/BR's own frontmatter status, checked live by /bigin-transform-signal, /prd, /uiux at run time (see `feature-hub.md` § Feature material). This table just saves a human (or agent) from opening every UC/BR to see what's ready. An approved UC can still receive new signals later (hard rule 7 — approval doesn't freeze it); when that happens it's staged and re-applied via /bigin-transform-signal's normal discussion round, not held in a separate backlog — note it here the same way as any other pending change (e.g. "approved — 2 new signal(s) since approval, not yet run through /bigin-transform-signal"). -->
+<!-- A refreshed snapshot for orientation — NOT the authoritative gate. The authoritative gate is always the UC/BR's own frontmatter status, checked live by /bigin-transform-signal, /bigin-generate-design, /bigin-generate-stories at run time (see `feature-hub.md` § Feature material). This table just saves a human (or agent) from opening every UC/BR to see what's ready. An approved UC can still receive new signals later (hard rule 7 — approval doesn't freeze it); when that happens it's staged and re-applied via /bigin-transform-signal's normal discussion round, not held in a separate backlog — note it here the same way as any other pending change (e.g. "approved — 2 new signal(s) since approval, not yet run through /bigin-transform-signal"). -->
 
 | Artifact | Status | Ready for next step? | Blocking |
 |----------|--------|------------------------|----------|
@@ -124,19 +124,15 @@ each of their hubs — expected, not duplication to fix. Refreshed by /bigin-tra
 <!-- Mirror of this feature's rows from 01-Requirements/PAIN-POINTS.md (registers.md § Pain
 Point Register): PP-### | Statement | Status | Proposed solution | Resolved by. Empty until a
 [pain-point] signal anchors here — can be populated even before any UC exists. Refreshed by
-/bigin-transform-signal/`/enrich-feature` (creation/updates) and /prd (Resolved by backfill once
+/bigin-transform-signal/`/enrich-feature` (creation/updates) and /bigin-generate-stories (Resolved by backfill once
 EP-###/US-### exist). -->
 
 | PP-### | Statement | Status | Proposed solution | Resolved by |
 |--------|-----------|--------|--------------------|--------------|
 
 ## PRD
-<!-- link + status, or "not started." Refreshed by /bigin-generate-prd together with the `prd:`
-frontmatter field, one PRD per feature (`core.md` § ID scheme):
-  [[PRD-<NNN> <Feature>]] — draft, N capabilities, M pending
-`N capabilities` is how many approved UCs the PRD folded; `M pending` is how many of this feature's
-UCs are listed in its § 10 Pending Scope because they are not approved yet. Both counts come from
-the PRD file, not from this hub's own tables. -->
+<!-- LEGACY. The PRD stage (/bigin-generate-prd) was retired in 1.13.0. A hub that already carries a
+PRD link keeps it, readable; nothing writes this section or the `prd:` field any more. -->
 
 ## Epics & Stories
 <!-- table: id | title | status -->
@@ -144,9 +140,9 @@ the PRD file, not from this hub's own tables. -->
 ## Design Directives
 <!-- Feature-scoped presentation directives — look, layout, tone, interaction feel — routed here by
 /bigin-transform-signal's design lane (_bigin/stages/transform/3-lane-design.md).
-These reach /bigin-generate-design WITHOUT passing through a UC, a PRD, or an approval gate
+These reach /bigin-generate-design WITHOUT passing through a UC, an epic/story, or an approval gate
 (`use-case.md` § Traceability chain, the Design chain), because a presentation-only statement has
-no functional scope for a PRD to carry. A directive that changes what the system DOES is a
+no functional scope for a story to carry. A directive that changes what the system DOES is a
 misroute — it belongs in a UC step.
 Durable, cross-cutting preferences go to 01-Requirements/DESIGN-PRINCIPLES.md instead (or as well);
 this section is only for what is scoped to this feature.

@@ -57,6 +57,9 @@ def highest(vault, kind):
         nums = _scan_numbers(glob.glob(os.path.join(vault.uc_dir, "*.md")), "UC")
     elif kind == "BR":
         nums = _scan_numbers(glob.glob(os.path.join(vault.br_dir, "*.md")), "BR")
+    elif kind in ("EP", "US"):
+        # vault-global: every epic folder, plus anything left under 03-Epics-Stories by hand
+        nums = _scan_numbers(glob.glob(os.path.join(vault.stories_dir, "**", f"{kind}-*.md"), recursive=True), kind)
     elif kind == "INT":
         nums = _scan_numbers(glob.glob(os.path.join(vault.inbox, "INT-*.md")), "INT")
     elif kind in ("PP", "EN"):
@@ -252,6 +255,68 @@ def mint_int(vault, spec):
     return nid, path
 
 
+def mint_ep(vault, spec):
+    """Create one epic folder and its EP file. ``spec``: title (the feature name), feature,
+    source_ucs[], snapshot. Returns (id, path). One epic per feature: a second for the same slug is
+    refused."""
+    title = (spec.get("title") or "").strip()
+    if not title or not spec.get("feature"):
+        raise EngineError("mint ep: spec needs title and feature")
+    with id_lock(vault):
+        for p in vault.epic_paths():
+            if (vault.load(p).fm_get("feature") or "").strip() == spec["feature"]:
+                raise EngineError(f"REFUSED: feature '{spec['feature']}' already has an epic ({os.path.basename(p)})")
+        eid = fmt("EP", highest(vault, "EP") + 1)
+        values = {
+            "id": eid, "type": "epic", "title": title, "status": "draft", "version": 1,
+            "feature": spec["feature"], "source_ucs": list(spec.get("source_ucs") or []), "absorbed": [],
+            "snapshot": spec.get("snapshot") or "none", "stories": [], "after": [], "updated": today(),
+        }
+        text = instantiate(vault, "epic.md", values, f"{eid} {title}",
+                           lambda body: _replace_changelog(body, values["source_ucs"]))
+        name = f"{eid} {safe_title(title)}"
+        path = os.path.join(vault.stories_dir, name, f"{name}.md")
+        vault.create(path, text)
+    return eid, path
+
+
+def mint_us(vault, spec):
+    """Create one story beside its epic and list it on the epic's ``stories:``. ``spec``: title, epic,
+    priority, slice_of, rules[], screens[], entities[], after[], snapshot. Returns (id, path)."""
+    title = (spec.get("title") or "").strip()
+    if not title or not spec.get("epic"):
+        raise EngineError("mint us: spec needs title and epic")
+    with id_lock(vault):
+        ep_path = vault.find(spec["epic"])
+        if not ep_path:
+            raise EngineError(f"mint us: {spec['epic']}: no such epic")
+        ep = vault.load(ep_path)
+        folder = os.path.dirname(ep_path)
+        for p in vault.story_paths():
+            if os.path.dirname(p) == folder and (vault.load(p).fm_get("title") or "").strip().lower() == title.lower():
+                raise EngineError(f"REFUSED: {spec['epic']} already has a story titled '{title}' ({os.path.basename(p)})")
+        sid = fmt("US", highest(vault, "US") + 1)
+        slice_of = spec.get("slice_of") or ""
+        values = {
+            "id": sid, "type": "user-story", "title": title, "epic": spec["epic"], "status": "draft",
+            "version": 1, "priority": spec.get("priority", "P2"), "slice_of": slice_of,
+            "rules": list(spec.get("rules") or []), "screens": list(spec.get("screens") or []),
+            "entities": list(spec.get("entities") or []), "after": list(spec.get("after") or []),
+            "snapshot": spec.get("snapshot") or ep.fm_get("snapshot") or "none", "absorbed": [],
+            "updated": today(),
+        }
+        src = slice_of if isinstance(slice_of, list) else [slice_of] if slice_of else []
+        text = instantiate(vault, "user-story.md", values, f"{sid} {title}",
+                           lambda body: _replace_changelog(body, src))
+        path = os.path.join(folder, f"{sid} {safe_title(title)}.md")
+        vault.create(path, text)
+        stories = ep.fm_list("stories")
+        if sid not in stories:
+            ep.fm_set("stories", stories + [sid])
+            vault.write(ep)
+    return sid, path
+
+
 def mint_route(vault, route_path):
     """Mint every `new` UC a uc-router Phase A route.json proposes (serially, under the lock) and
     write the key → id map next to it as <route>.minted.json. Idempotent: a key already minted is
@@ -284,5 +349,5 @@ def mint_from_spec(vault, kind, spec_path):
         return mint_route(vault, spec_path)
     spec = load_json(spec_path)
     specs = spec if isinstance(spec, list) else [spec]
-    fn = {"uc": mint_uc, "br": mint_br, "int": mint_int}[kind]
+    fn = {"uc": mint_uc, "br": mint_br, "int": mint_int, "ep": mint_ep, "us": mint_us}[kind]
     return [fn(vault, s) for s in specs]

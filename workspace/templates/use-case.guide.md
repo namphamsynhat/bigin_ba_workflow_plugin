@@ -34,7 +34,7 @@ entities: []        # EN-### ids this UC's steps reference
 pain_points: []     # PP-### ids this UC exists to resolve — ids only; the register and the hub carry
                     # the statements (`registers.md` § Pain Point Register)
 sources: []         # INT-### id(s) this UC traces to — append-only, never pruned
-links: []           # downstream PRD-###/EP-###/US-###/UX-### ids, once they exist
+links: []           # downstream EP-###/US-###/UX-### ids, once they exist
 attachments: []     # vault-relative paths, copied over from every sources: INT note's own attachments
 absorbs: []         # FR-### / SCN-### ids this UC took over from the pre-UC model (migration only)
 owner: team

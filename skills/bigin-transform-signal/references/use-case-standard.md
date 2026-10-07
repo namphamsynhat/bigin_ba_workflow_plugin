@@ -107,7 +107,7 @@ functional requirements get **derived** from them. Taken literally that argues f
 alongside the UC.
 
 The reason this vault doesn't: the derived-detail role is already played by artifacts further down
-the chain — the PRD section, then `EP-###`/`US-###`. Keeping `FR-###` as well would mean every signal
+the chain — `EP-###`/`US-###`. Keeping `FR-###` as well would mean every signal
 is written twice at the same stage of the pipeline, and the human reviews two documents that must
 agree. What Wiegers is actually protecting is *addressability*: something specific for a story, a
 test, or a defect to cite. That is preserved by giving every flow step a permanent id

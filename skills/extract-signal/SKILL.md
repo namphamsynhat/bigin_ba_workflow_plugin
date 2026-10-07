@@ -53,7 +53,7 @@ RUN = $(BIN run new --stage extract --scope <n>-notes)
 **With the Workflow tool** (preferred — orchestration lives in the script, not in this context):
 
 ```text
-Workflow(scriptPath: "${CLAUDE_PLUGIN_ROOT}/workflows/extract.js",
+Workflow(scriptPath: "_runs/RUN/workflows/extract.js",   # staged by `run new`; never the plugin cache path
          args: {run: RUN, vault: ".", plugin_root: "${CLAUDE_PLUGIN_ROOT}", notes: [<INT ids>]})
 ```
 

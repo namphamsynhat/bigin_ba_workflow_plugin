@@ -4,7 +4,7 @@ How a question is worded, where its two copies live, and the consistency rule th
 question to the artifact status it blocks.
 
 **Read by** every stage that can raise or resolve a question — `/extract-signal`,
-`/bigin-transform-signal`, `/bigin-generate-design`, `/bigin-generate-prd`.
+`/bigin-transform-signal`, `/bigin-generate-design`, `/bigin-generate-stories`.
 
 ## Open Questions ↔ status consistency (verification, not just intent)
 

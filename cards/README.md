@@ -23,5 +23,4 @@ orchestrating skill passes any relevant override text inside the task input, nev
 | `splitter.md` | uc-splitter | `changesets` |
 | `design-screens.md` | bigin-generate-design screens worker | (writes the UX spec — design stage) |
 | `ux-brief.md` | ux-brief-assembler | Design Brief JSON (schema inline in the card) |
-| `prd-writer.md` | bigin-generate-prd writer | (writes the PRD — PRD stage) |
 | `ba-review.md`, `ba-triage.md` | bigin-ba (interactive) | loaded on demand |

@@ -130,6 +130,11 @@ def cmd_status(args, rest):
 def cmd_coverage(args, rest):
     from bigin import coverage
     v = vault_of(args)
+    if args.stage == "stories":
+        from bigin import stories
+        res = stories.coverage(v)
+        out(args, res, stories.report(res, args.list))
+        return 1 if res["missing"] else 0
     pattern = args.id_pattern or v.config("coverage_id_pattern")
     res = coverage.run(v, args.stage, pattern, args.universe, set(args.notes.split(",")) if args.notes else None)
     out(args, res, coverage.report(res, args.list))
@@ -357,15 +362,16 @@ def build_parser():
     s.set_defaults(fn=cmd_status)
 
     s = sub.add_parser("coverage", help="traceability coverage across extract/file/transform")
-    s.add_argument("--stage", choices=["extract", "file", "transform"])
+    s.add_argument("--stage", choices=["extract", "file", "transform", "stories"],
+                   help="stories: every UC S#/A#/E# of each epic's source UCs is sliced or tagged by a story")
     s.add_argument("--id-pattern", help=r"trace ids instead of note rows, e.g. 'XR-[A-Z]+-\d+'")
     s.add_argument("--universe", help="JSON/text file listing every id that must survive")
     s.add_argument("--notes", help="comma-separated INT ids to restrict to")
     s.add_argument("--list", action="store_true")
     s.set_defaults(fn=cmd_coverage)
 
-    s = sub.add_parser("mint", help="mint UC/BR/INT ids from a JSON spec (file-locked)")
-    s.add_argument("kind", choices=["uc", "br", "int", "route"])
+    s = sub.add_parser("mint", help="mint UC/BR/INT/EP/US ids from a JSON spec (file-locked)")
+    s.add_argument("kind", choices=["uc", "br", "int", "ep", "us", "route"])
     s.add_argument("--spec", required=True)
     s.add_argument("--dry", action="store_true")
     s.set_defaults(fn=cmd_mint)

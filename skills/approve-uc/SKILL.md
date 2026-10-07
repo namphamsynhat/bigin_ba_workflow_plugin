@@ -1,6 +1,6 @@
 ---
 name: approve-uc
-description: Approve a use case (UC) once its open questions are resolved and its content is right. Reprocesses the UC's own live content — the human may have edited it directly while reviewing — then flips its status to `approved` so it's feature material, ready for PRD. Entity promotion and feature-hub refresh are deferred to `/sync-entities`, run separately whenever convenient. Use once a UC is drafted (and, where enrichment runs, enriched) and the human is ready to sign off.
+description: Approve a use case (UC) once its open questions are resolved and its content is right. Reprocesses the UC's own live content — the human may have edited it directly while reviewing — then flips its status to `approved` so it's feature material, ready for epics and stories. Entity promotion and feature-hub refresh are deferred to `/sync-entities`, run separately whenever convenient. Use once a UC is drafted (and, where enrichment runs, enriched) and the human is ready to sign off.
 argument-hint: "<UC id, e.g. UC-012>"
 ---
 
@@ -8,8 +8,8 @@ argument-hint: "<UC id, e.g. UC-012>"
 
 Marks a use case approved on the human's explicit call — the point where a reviewed requirement
 becomes committed scope. `FR-###` is retired; this skill reads and writes `UC-###` directly under
-`01-Requirements/_ucs/`, generating no PRD of its own — the PRD is a separate stage,
-`/bigin-generate-prd`, which folds `approved` UCs into their feature's PRD whenever it next runs.
+`01-Requirements/_ucs/`, generating no epic or story of its own — that is a separate stage,
+`/bigin-generate-stories`, which slices `approved` UCs into their feature's epic and stories whenever it next runs.
 
 This is the approval gate of the extract → transform → load pipeline. A human reviewing a UC is free
 to edit the file directly rather than route every change back through `/bigin-transform-signal` — this
@@ -63,10 +63,11 @@ human reviews this UC's flow with the rest of its neighborhood in view, not in i
   back through `/bigin-transform-signal` (its Stage 3 `uc-router` Phase A already reads this same
   cross-UC context before drafting) — approve-uc stops and waits, it doesn't reach out and make the
   edit itself.
-* **No PRD is generated here.** `approved` means the UC is feature material (`feature-hub.md` § Feature material);
-  `/bigin-generate-prd` picks it up on its next run and folds it into
-  `02-PRD/PRD-<NNN> <Feature>.md`. Writing PRD content is out of scope for this skill — keep the two
-  separate so an approval never silently rewrites a document the sponsor has already read.
+* **No epic or story is generated here.** `approved` means the UC is feature material (`feature-hub.md` § Feature material);
+  `/bigin-generate-stories` picks it up on its next run and slices it into
+  `03-Epics-Stories/EP-<NNN> <Feature>/`. Writing story content is out of scope for this skill — keep the two
+  separate so an approval never silently rewrites a story a reviewer has already read. (The PRD stage,
+  `/bigin-generate-prd`, was retired in 1.13.0; existing `02-PRD/` files stay frozen.)
 
 ---
 
@@ -109,7 +110,7 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
 ## What to do
 
 * **Goal:** convert a reviewed use case into committed scope, ready to hand to whatever comes next
-  (design, and the PRD stage), while catching any drift the human's own edit introduced —
+  (design, and the epics/stories stage), while catching any drift the human's own edit introduced —
   without waiting on, or blocking, the separate entity/feature-hub bookkeeping pass.
 * **Action:**
   1. **Reprocess the UC.** Treat the file's current content as authoritative, not whatever a prior run
@@ -179,11 +180,10 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
      only ever moves draft ↔ needs-clarification), so nothing but this confirmed step can set `approved`.
      Then run `$BIGIN lint --full` once; a finding it reports is real. Hub tables are not refreshed here:
      `/sync-entities` runs `bigin hub refresh` for every hub the UC touches.
-  4. **Confirm and point to next.** Tell the user the UC is ready for PRD — `/bigin-generate-prd`
-     folds it into its feature's PRD on its next run (worth running once a sitting of approvals ends,
-     not after each one), and `/bigin-generate-design` can run off it now, since design waits on
-     neither approval nor `/sync-entities`. Epics/stories are still cut by hand
-     (§ Reconciliation notes). If this UC's
+  4. **Confirm and point to next.** Tell the user the UC is ready for epics and stories —
+     `/bigin-generate-stories` slices it into its feature's epic on its next run (worth running once a
+     sitting of approvals ends, not after each one), and `/bigin-generate-design` can run off it now,
+     since design waits on neither approval nor `/sync-entities`. If this UC's
      `entities: []` isn't empty, mention `/sync-entities` is still pending for it — that is what writes
      each referenced entity up as its **data dictionary** (every field the vault knows for that
      business object, enum values spelled out, `registers.md` § Entity Data Model) and catches up `ENTITIES.md` and

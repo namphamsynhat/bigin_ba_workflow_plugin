@@ -1,12 +1,12 @@
-# Design lane — directives that reach the design workflow without a PRD
+# Design lane — directives that reach the design workflow without a UC
 
 ```text
 in:   signals routed to Design
 out:  an `add_principle` change set (durable) and/or an `add_directive` change set (feature-scoped)
-never: a UC step · a BR · anything in PRD.md · Status: reflected
+never: a UC step · a BR · an epic or story · Status: reflected
 ```
 
-This lane exists because a presentation-only signal has nothing for a PRD to consume. Routed through
+This lane exists because a presentation-only signal has nothing for a use case or story to consume. Routed through
 the UC lane it would either sit in a flow as an untestable step, or wait behind an approval gate it
 doesn't need, while whoever runs `/bigin-generate-design` never sees it.
 
@@ -14,12 +14,12 @@ doesn't need, while whoever runs `/bigin-generate-design` never sees it.
 
 | Chain | When |
 |---|---|
-| Full | `INT → UC/BR → PRD → EP → US → UX` — new scope on a `proposed`/`committed`/`not-built` feature |
+| Full | `INT → UC/BR → UX (+ prototype) → approve → EP → US` — new scope on a `proposed`/`committed`/`not-built` feature |
 | Lightweight CR | `INT → UC/BR → US → UX` — a change against a `built` feature |
 | **Design** | `INT → design directive → UX` — presentation only, no behaviour change |
 
 A design directive is an **input to** the design workflow, not a requirement about it. It never becomes
-a UC step, never enters `PRD.md`, and never carries a `UC-###`/`EP-###`/`US-###`. Its traceability runs
+a UC step, never enters an epic or story, and never carries a `UC-###`/`EP-###`/`US-###`. Its traceability runs
 through the hub's Signal Log row.
 
 ## Why this lane is not gated
@@ -93,7 +93,7 @@ This screen, this flow, this component. Destination: the hub's `## Design Direct
 ## Where this lane goes next
 
 **The downstream consumer is live: `/bigin-generate-design`.** It reads **both** destinations —
-`{design_principles_file}` and each hub's `## Design Directives` — and needs no PRD and no `FR-###`,
+`{design_principles_file}` and each hub's `## Design Directives` — and needs no approval and no `FR-###`,
 so a directive filed here reaches screens on the next design run.
 
 ```text
@@ -111,7 +111,7 @@ drops a UC with no main flow).
 
 ## What this lane never does
 
-- Write a UC step, a BR, or anything into `PRD.md`.
+- Write a UC step, a BR, or anything into an epic or story.
 - Set a hub's `uiux:` field, or write into `## UX Spec`.
 - Set `Status: reflected` — that is the prototype's claim to make.
 - Delete or rewrite an existing directive or design-principle row. Both registers are append-only.

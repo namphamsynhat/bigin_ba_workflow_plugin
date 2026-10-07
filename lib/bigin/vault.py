@@ -586,7 +586,7 @@ class Doc:
         v = self.fm_get("id")
         if v:
             return v
-        m = re.match(r"^((?:UC|BR|INT|EN|UX|PRD)-\d+)", self.name)
+        m = re.match(r"^((?:UC|BR|INT|EN|UX|PRD|EP|US)-\d+)", self.name)
         return m.group(1) if m else None
 
     # -- verification
@@ -749,6 +749,7 @@ class Vault:
         self.ledger_dir = os.path.join(self.req, "_ledger")
         self.runs_dir = os.path.join(self.root, "_runs")
         self.features_file = os.path.join(self.req, "FEATURES.md")
+        self.stories_dir = os.path.join(self.root, "03-Epics-Stories")
         self._cache = {}
         self._project = None
         self.writes = []
@@ -801,6 +802,14 @@ class Vault:
     def hub_paths(self):
         return sorted(p for p in glob.glob(os.path.join(self.hub_dir, "*.md")) if not p.endswith(".signals.md"))
 
+    def epic_paths(self):
+        """EP-### files, one per epic folder (03-Epics-Stories/EP-<NNN> <Feature>/EP-<NNN> <Feature>.md)."""
+        return sorted(p for p in glob.glob(os.path.join(self.stories_dir, "*", "EP-*.md")))
+
+    def story_paths(self):
+        """US-### files beside their epic; never anything under a _snapshot/ capture."""
+        return sorted(p for p in glob.glob(os.path.join(self.stories_dir, "*", "US-*.md")))
+
     def note_paths(self):
         return sorted(glob.glob(os.path.join(self.inbox, "INT-*.md")))
 
@@ -817,6 +826,11 @@ class Vault:
         """Path of the artifact with this id, or None."""
         ident = ident.strip()
         kind = ident.split("-")[0]
+        if kind in ("EP", "US"):
+            for p in self.epic_paths() if kind == "EP" else self.story_paths():
+                if re.match(rf"^{re.escape(ident)}(?:\s|\.md$)", os.path.basename(p)):
+                    return p
+            return None
         d = {"UC": self.uc_dir, "BR": self.br_dir, "INT": self.inbox, "EN": self.entity_dir}.get(kind)
         if not d:
             return None
@@ -825,7 +839,7 @@ class Vault:
         return None
 
     def ids(self, kind):
-        paths = self.uc_paths() if kind == "UC" else self.br_paths()
+        paths = {"UC": self.uc_paths, "EP": self.epic_paths, "US": self.story_paths}.get(kind, self.br_paths)()
         out = set()
         for p in paths:
             m = re.match(rf"^({kind}-\d+)", os.path.basename(p))

@@ -962,9 +962,80 @@ def check_question_rows(vault, findings):
                 )
 
 
+# --- T8: epics and user stories (03-Epics-Stories/) ------------------------
+
+def check_story_file(vault, path, findings):
+    """Per-file: id agrees with the file name, frontmatter matches schema/{epic,story}.json, hard
+    rule S1 (business language only), and every mermaid block opens with a diagram type."""
+    from bigin import stories
+    kind = stories.kind_of(path)
+    if not kind:
+        return
+    r = rel(vault, path)
+    fm = frontmatter(path)
+    declared = (fm.get("id") or "").strip()
+    m = re.match(r"^((?:EP|US)-\d+)", os.path.basename(path))
+    if not declared:
+        findings.add("id missing", "%s has no `id:` in its frontmatter" % r)
+    elif m and declared != m.group(1):
+        findings.add("id disagrees with filename", "%s declares `id: %s`" % (r, declared))
+    for err in stories.schema_errors(fm, kind):
+        findings.add("%s frontmatter" % kind, "%s: %s" % (r, err))
+    text = read_text(path)
+    for line_no, term in stories.technical_terms(text)[:5]:
+        findings.add("technical wording (S1)",
+                     "%s:%d uses `%s` — a story is business language only; say what the user sees or "
+                     "what the business needs" % (r, line_no, term))
+    for line_no, msg in stories.mermaid_errors(text):
+        findings.add("mermaid block", "%s:%d %s" % (r, line_no, msg))
+
+
+def check_story_links(vault, findings):
+    """Cross-file: ids unique, story ↔ epic both ways, source UCs exist, pinned snapshots exist."""
+    from bigin import stories
+    base = os.path.join(vault, "03-Epics-Stories")
+    epics, seen = {}, {}
+    paths = sorted(glob.glob(os.path.join(base, "*", "EP-*.md"))) + sorted(glob.glob(os.path.join(base, "*", "US-*.md")))
+    for path in paths:
+        ident = (frontmatter(path).get("id") or "").strip()
+        if not ident:
+            continue
+        if ident in seen:
+            findings.add("duplicate id", "%s is claimed by both %s and %s"
+                         % (ident, rel(vault, seen[ident]), rel(vault, path)))
+        else:
+            seen[ident] = path
+        if stories.kind_of(path) == "epic":
+            epics[ident] = path
+    for path in paths:
+        fm = frontmatter(path)
+        r = rel(vault, path)
+        folder = os.path.dirname(path)
+        snap = (fm.get("snapshot") or "").strip().strip("'\"")
+        if snap and snap != "none" and not os.path.isfile(os.path.join(folder, "_snapshot", snap, "SNAPSHOT.md")):
+            findings.add("snapshot missing", "%s pins `snapshot: %s` but %s has no SNAPSHOT.md"
+                         % (r, snap, rel(vault, os.path.join(folder, "_snapshot", snap))))
+        if stories.kind_of(path) == "epic":
+            for uc in as_list(fm.get("source_ucs")):
+                if not glob.glob(os.path.join(vault, "01-Requirements", "_ucs", uc + " *.md")):
+                    findings.add("pointer to a missing artifact", "%s lists source UC %s, which has no file" % (r, uc))
+            for us in as_list(fm.get("stories")):
+                if us not in seen:
+                    findings.add("pointer to a missing artifact", "%s lists %s, which has no file" % (r, us))
+            continue
+        sid, epic = (fm.get("id") or "").strip(), (fm.get("epic") or "").strip()
+        if epic not in epics:
+            findings.add("story without its epic", "%s names epic `%s`, which has no file" % (r, epic or "—"))
+            continue
+        if os.path.dirname(epics[epic]) != folder:
+            findings.add("story without its epic", "%s belongs to %s but sits outside that epic's folder" % (r, epic))
+        if sid and sid not in as_list(frontmatter(epics[epic]).get("stories")):
+            findings.add("story without its epic", "%s is not listed in %s's `stories:`" % (r, epic))
+
+
 TIER1_GLOBAL = [check_ids]
 TIER2 = [check_secrets, check_staged_has_entry, check_question_rows, check_status_invariant, check_pointers, check_note_coverage,
-         check_step_references]
+         check_step_references, check_story_links]
 
 
 def tier1_for_file(vault, path, findings):
@@ -974,6 +1045,8 @@ def tier1_for_file(vault, path, findings):
         check_cites_resolve(vault, path, findings)
     if os.sep + "_ucs" + os.sep in path:
         check_step_ids(vault, path, findings)
+    if os.sep + "03-Epics-Stories" + os.sep in path:
+        check_story_file(vault, path, findings)
 
 
 def is_vault(root):
@@ -993,6 +1066,8 @@ def in_scope(vault, path):
     reqs = os.path.join(vault, "01-Requirements") + os.sep
     if norm.startswith(inbox):
         return os.path.basename(norm).startswith("INT-")
+    if norm.startswith(os.path.join(vault, "03-Epics-Stories") + os.sep):
+        return os.sep + "_snapshot" + os.sep not in norm and os.path.basename(norm)[:3] in ("EP-", "US-")
     if norm.startswith(reqs):
         return any(os.sep + d + os.sep in norm for d in ID_DIRS) or \
             os.sep + "_features" + os.sep in norm
@@ -1067,7 +1142,8 @@ def run_full(root):
     for check in TIER1_GLOBAL:
         check(vault, findings)
     for path in sorted(glob.glob(os.path.join(vault, "01-Requirements", "**", "*.md"), recursive=True)) \
-            + sorted(glob.glob(os.path.join(vault, "00-Inbox", "INT-*.md"))):
+            + sorted(glob.glob(os.path.join(vault, "00-Inbox", "INT-*.md"))) \
+            + sorted(glob.glob(os.path.join(vault, "03-Epics-Stories", "*", "*.md"))):
         if in_scope(vault, os.path.abspath(path)):
             tier1_for_file(vault, os.path.abspath(path), findings)
     for check in TIER2:
