@@ -257,21 +257,29 @@ def mint_int(vault, spec):
 
 def mint_ep(vault, spec):
     """Create one epic folder and its EP file. ``spec``: title (the feature name), feature,
-    source_ucs[], snapshot. Returns (id, path). One epic per feature: a second for the same slug is
-    refused."""
+    source_ucs[], snapshot, cr. Returns (id, path). One epic per feature, plus at most one change-request
+    epic (``cr: true`` → "<Feature> — changes", where small change tickets on a built feature land —
+    stories/1-scope.md); a second of either kind for the same slug is refused."""
     title = (spec.get("title") or "").strip()
     if not title or not spec.get("feature"):
         raise EngineError("mint ep: spec needs title and feature")
+    cr = bool(spec.get("cr"))
+    if cr and not title.endswith("— changes"):
+        title = f"{title} — changes"
     with id_lock(vault):
         for p in vault.epic_paths():
-            if (vault.load(p).fm_get("feature") or "").strip() == spec["feature"]:
-                raise EngineError(f"REFUSED: feature '{spec['feature']}' already has an epic ({os.path.basename(p)})")
+            d = vault.load(p)
+            if (d.fm_get("feature") or "").strip() == spec["feature"] and (str(d.fm_get("cr") or "").lower() == "true") == cr:
+                kind = "a change-request epic" if cr else "an epic"
+                raise EngineError(f"REFUSED: feature '{spec['feature']}' already has {kind} ({os.path.basename(p)})")
         eid = fmt("EP", highest(vault, "EP") + 1)
         values = {
             "id": eid, "type": "epic", "title": title, "status": "draft", "version": 1,
             "feature": spec["feature"], "source_ucs": list(spec.get("source_ucs") or []), "absorbed": [],
             "snapshot": spec.get("snapshot") or "none", "stories": [], "after": [], "updated": today(),
         }
+        if cr:
+            values["cr"] = True
         text = instantiate(vault, "epic.md", values, f"{eid} {title}",
                            lambda body: _replace_changelog(body, values["source_ucs"]))
         name = f"{eid} {safe_title(title)}"
@@ -282,7 +290,10 @@ def mint_ep(vault, spec):
 
 def mint_us(vault, spec):
     """Create one story beside its epic and list it on the epic's ``stories:``. ``spec``: title, epic,
-    priority, slice_of, rules[], screens[], entities[], after[], snapshot. Returns (id, path)."""
+    priority, slice_of, rules[], screens[], entities[], after[], snapshot, and ``delta_of`` (an approved
+    story whose UC drifted: the new story carries only the difference, the old one stays untouched but for
+    a ``delta: [US-###]`` pointer). ``sources`` / ``jira`` are derived from the slices, never passed.
+    Returns (id, path)."""
     title = (spec.get("title") or "").strip()
     if not title or not spec.get("epic"):
         raise EngineError("mint us: spec needs title and epic")
@@ -295,16 +306,26 @@ def mint_us(vault, spec):
         for p in vault.story_paths():
             if os.path.dirname(p) == folder and (vault.load(p).fm_get("title") or "").strip().lower() == title.lower():
                 raise EngineError(f"REFUSED: {spec['epic']} already has a story titled '{title}' ({os.path.basename(p)})")
+        base = None
+        if spec.get("delta_of"):
+            bp = vault.find(spec["delta_of"])
+            if not bp:
+                raise EngineError(f"mint us: delta_of {spec['delta_of']}: no such story")
+            base = vault.load(bp)
         sid = fmt("US", highest(vault, "US") + 1)
         slice_of = spec.get("slice_of") or ""
+        from .cascade import trace_of
+        ints, keys = trace_of(vault, slice_of)
         values = {
             "id": sid, "type": "user-story", "title": title, "epic": spec["epic"], "status": "draft",
             "version": 1, "priority": spec.get("priority", "P2"), "slice_of": slice_of,
             "rules": list(spec.get("rules") or []), "screens": list(spec.get("screens") or []),
             "entities": list(spec.get("entities") or []), "after": list(spec.get("after") or []),
             "snapshot": spec.get("snapshot") or ep.fm_get("snapshot") or "none", "absorbed": [],
-            "updated": today(),
+            "sources": ints, "jira": keys, "updated": today(),
         }
+        if base is not None:
+            values["delta_of"] = base.id
         src = slice_of if isinstance(slice_of, list) else [slice_of] if slice_of else []
         text = instantiate(vault, "user-story.md", values, f"{sid} {title}",
                            lambda body: _replace_changelog(body, src))
@@ -314,6 +335,13 @@ def mint_us(vault, spec):
         if sid not in stories:
             ep.fm_set("stories", stories + [sid])
             vault.write(ep)
+        if base is not None:
+            # the approved story stays exactly as handed off (stories/1-scope.md Part 5) — only a pointer
+            base.fm_set("delta", base.fm_list("delta") + [sid], after="absorbed")
+            from .edit import append_changelog
+            if base.section("Changelog"):
+                append_changelog(base, f"- {today()} — {sid} carries the change since this story was approved (delta)")
+            vault.write(base)
     return sid, path
 
 

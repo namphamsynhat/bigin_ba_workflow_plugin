@@ -27,8 +27,11 @@ With no argument, sweep; with a slug or UC id, scope to it. Determine the stage 
                                                          --unmapped-out _runs/<run>/tasks/unmapped.in.json
                                                          (0 LLM calls; only the unmapped remainder goes to
                                                          one signal-filer task)
+3b jira_provider set and the human asked for a sweep
+   ("process the inbox", "pull Jira")                 → /bigin-intake jira (fetch only; the engine appends
+                                                         just the new comments / description revisions)
 4  00-Inbox/ note at status: raw, or a newly ticked
-   note question (communication notes only)           → extract   (workflows/extract.js)
+   note question (communication and jira notes)       → extract   (workflows/extract.js)
 5  $BIGIN ledger list shows open sets whose question is
    answered, or hubs have new/held rows               → transform (workflows/transform.js)
 5a conflict/held rows in a code-grounded vault         → adjudicate (inside transform; alone:

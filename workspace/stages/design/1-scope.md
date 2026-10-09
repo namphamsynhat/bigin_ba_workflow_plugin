@@ -38,6 +38,8 @@ per candidate feature:
         uc not in absorbed                → NEW
         uc in absorbed at an older version → CHANGED
         uc in absorbed at the same version → CURRENT
+    # ux.stale: (bigin cascade) lists exactly the CHANGED ones — a cross-check, never a substitute for
+    # the comparison; re-stamping absorbed in 6-close clears it
 ```
 
 `CURRENT` is a result, not a silence. Report it (`<slug>: 3 UC current, nothing to redesign`) so a

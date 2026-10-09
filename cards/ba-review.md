@@ -18,7 +18,8 @@ Named a feature → batch the beats across its flow. Single UC, or answers that 
   never set `status` — `bin/bigin status` re-counts.
 - A question the human can't answer parks its UC, not the sitting.
 - Show a scenario only at zero open questions, from the file: § 1, § 2 table with S# ids, § 3 branches, § 4.
-  Lead with any `## Pending changes` block and any Changelog line "flagged for review" since last approval.
+  Lead with any `## Pending changes` block, any Changelog line "flagged for review" / "approved → draft" since
+  last approval, and the source INT's `## Impact` (rule ripple, sibling features, stale stories).
 - New information (a correction, a missing step) is `bigin-intake`, never a direct edit ‹intake.md § Feedback handling›.
 - Approval is per UC and always the human's: `approve-uc` once per named id.
 

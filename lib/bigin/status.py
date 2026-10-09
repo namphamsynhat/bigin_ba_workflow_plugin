@@ -3,7 +3,8 @@
 A UC counts only its § 5 **Still open** list (a decision-log row is answered history); a BR counts
 its ## Open Questions. Any unchecked ``- [ ] Q:`` → needs-clarification; none → draft. Only ever
 moves between draft and needs-clarification — approved / removed / enriched / consolidated are
-human-gated (core.md § Status vocabularies) and never touched.
+human-gated (core.md § Status vocabularies) and never touched here. (The one engine path out of
+approved is ``changeset.apply``: a content change un-stages an approved UC/BR to draft.)
 """
 from . import model
 

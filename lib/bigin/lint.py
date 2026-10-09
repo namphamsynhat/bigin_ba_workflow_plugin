@@ -990,6 +990,35 @@ def check_story_file(vault, path, findings):
         findings.add("mermaid block", "%s:%d %s" % (r, line_no, msg))
 
 
+def check_stale_flags(vault, findings):
+    """UX / EP / US `stale:` equals what `bigin cascade` derives from `absorbed` vs the live UC — a flag
+    that is missing hides a suspect link from the dev team; one left behind cries wolf."""
+    from bigin import cascade
+    from bigin.vault import Vault
+    v = Vault(vault)
+    if not (v.ux_paths() or v.epic_paths() or v.story_paths()):
+        return
+    ucs = cascade._uc_state(v)
+    for kind, p in cascade.artifacts(v):
+        d = v.load(p)
+        if not d.fm:
+            continue
+        want = cascade.derive(d, kind, ucs)
+        have = [str(x).strip() for x in d.fm_list("stale")]
+        if want != have:
+            findings.add("stale flag out of date",
+                         "%s has stale: [%s] but its absorbed vs the live use cases says [%s] — run `bin/bigin cascade`"
+                         % (rel(vault, p), ", ".join(have), ", ".join(want)))
+        if kind == "US":
+            ints, keys = cascade.trace_of(v, d.fm_list("slice_of") or d.fm_get("slice_of"))
+            for key, want_t in (("sources", ints), ("jira", keys)):
+                have_t = [str(x).strip() for x in d.fm_list(key)]
+                if have_t != want_t and (want_t or key in d.fm):
+                    findings.add("story trace out of date",
+                                 "%s has %s: [%s] but its sliced use cases trace to [%s] — run `bin/bigin cascade`"
+                                 % (rel(vault, p), key, ", ".join(have_t), ", ".join(want_t)))
+
+
 def check_story_links(vault, findings):
     """Cross-file: ids unique, story ↔ epic both ways, source UCs exist, pinned snapshots exist."""
     from bigin import stories
@@ -1035,12 +1064,43 @@ def check_story_links(vault, findings):
 
 TIER1_GLOBAL = [check_ids]
 TIER2 = [check_secrets, check_staged_has_entry, check_question_rows, check_status_invariant, check_pointers, check_note_coverage,
-         check_step_references, check_story_links]
+         check_step_references, check_story_links, check_stale_flags]
+
+
+JIRA_BLOCK = re.compile(r"^### SRC-(\d+) · (ticket|comment|description|fields) · (\S+) — (.*)$", re.M)
+JIRA_SIDE = re.compile(r"\((onshore|offshore|unknown)\) \d{4}-\d{2}-\d{2}")
+
+
+def check_jira_note(vault, path, findings):
+    """A `source: jira` note's blocks are the engine's (`bigin intake jira`): every comment block has its
+    `jira:KEY#c<id>@…` high-water entry in source_ids (else the next sweep re-appends it), and every block
+    ref names its author's side."""
+    fm = frontmatter(path)
+    if (fm.get("source") or "").strip() != "jira":
+        return
+    text = read_text(path)
+    raw = "\n".join(section(text, r"^##\s+Raw"))
+    ids = set(re.findall(r"jira:[A-Z][A-Z0-9_]*-\d+(?:#[^\s,\]\"']+)?", text.split("\n---", 1)[0]))
+    for m in JIRA_BLOCK.finditer(raw):
+        n, kind, ref, rest = m.groups()
+        if kind == "comment":
+            cid = ref.split("#c", 1)[-1]
+            key = ref.split("#", 1)[0]
+            if not any(i.startswith("jira:%s#c%s@" % (key, cid)) for i in ids):
+                findings.add("jira block not in source_ids",
+                             "%s SRC-%s (comment %s) has no `jira:%s#c%s@…` in source_ids — the next sweep "
+                             "would append it again" % (rel(vault, path), n, ref, key, cid))
+        if not JIRA_SIDE.search(rest):
+            findings.add("jira block without a side",
+                         "%s SRC-%s (%s) does not name its author's side (onshore|offshore|unknown) — "
+                         "jira blocks are written by `bigin intake jira`, never by hand" % (rel(vault, path), n, kind))
 
 
 def tier1_for_file(vault, path, findings):
     check_table_shape(vault, path, findings)
     check_statuses(vault, path, findings)
+    if os.path.basename(path).startswith("INT-"):
+        check_jira_note(vault, path, findings)
     if os.sep + "_features" + os.sep in path:
         check_cites_resolve(vault, path, findings)
     if os.sep + "_ucs" + os.sep in path:

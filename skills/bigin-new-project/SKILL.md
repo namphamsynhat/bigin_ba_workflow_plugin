@@ -46,7 +46,7 @@ plugin context, so a path into the install directory is unreachable to them.
 | 5.1–5.3 | Import a proposal, capture the brief, research the domain | § 5.3 on `project_mode: new` only |
 | 5.4 | Materialize the project agent (`CLAUDE.md`) | every run |
 | 6 | Map the codebase | `ongoing` only — currently deferred |
-| 7.1–7.5 | Check the two configured providers | every run |
+| 7.1–7.5 | Check the configured providers (email, meeting, Jira) | every run |
 | 7.6 | Check the platform's default render engine | every run — one on `web`/`mobile`, both on `both`. Early warning for `/bigin-render-design-od`; blocks nothing |
 | 8 | Report | every run |
 
@@ -141,6 +141,10 @@ plugin context, so a path into the install directory is unreachable to them.
   | `email_provider` | `AskUserQuestion`: **outlook** (default) or **spark** |
   | `outlook_folder` | `email_provider: outlook` only. Default `["Inbox"]`; ask if client mail lands elsewhere |
   | `meeting_provider` | `AskUserQuestion`: **fathom** (default), **spark**, or **firefly** |
+  | `jira_provider` | `AskUserQuestion`: **none** (default) or **atlassian** — do tickets arrive through Jira (onshore creates, offshore is assigned)? |
+  | `jira_site`, `jira_projects` | `jira_provider: atlassian` only. Ask the site (`acme.atlassian.net`) and the project keys to sweep |
+  | `## Jira status mapping` | `jira_provider: atlassian` only. Ask, per project, which statuses mean the scope is agreed, which mean done, and which to ignore; every other status is `active`. One table row per (project, issue types, status) |
+  | `jira_onshore`, `jira_offshore` | `jira_provider: atlassian` only. Optional — Jira account ids / emails per side; blank falls back to `client_emails` / `team_emails` |
   | `project_mode` | `AskUserQuestion`: **new** (greenfield) or **ongoing** (an existing product this repo contains or accompanies) |
   | `platform` | `AskUserQuestion`: **web** (default — something people use in a browser, on a computer) · **mobile** (a phone app people install) · **both** (the same product in both places) |
   | `codebase_path` | `ongoing` only. Default the repo root (absolute); ask if the product lives elsewhere |
@@ -258,7 +262,7 @@ wants to show a client something. It stops nothing else: a design run needs no e
 
 ### 7.1 Probe
 
-* **Goal:** establish the live state of the two providers this project selected.
+* **Goal:** establish the live state of the providers this project selected (two, or three with `jira_provider`).
 * **Action:** Run `claude mcp list` **once** and reuse its output for both, then resolve each:
 
   | Provider | Kind | Reachable means | Tools `/bigin-intake` calls |
@@ -266,10 +270,11 @@ wants to show a client something. It stops nothing else: a design run needs no e
   | `outlook` | MCP (local stdio) | a server row whose name contains `outlook`, state `✔ Connected` | `list_emails`, `search_emails`, `get_email`, `list_attachments`, `download_attachment` |
   | `fathom` | MCP (remote HTTP) | a row matching `fathom`, state `✔ Connected` | `list_meetings`, `get_meeting_transcript`, `get_recording_by_url` |
   | `firefly` | MCP (remote) | a row matching `firefl`, state `✔ Connected` | its list-meetings and transcript equivalents |
+  | `atlassian` | claude.ai connector (remote) | a row matching `atlassian`, state `✔ Connected` | `getAccessibleAtlassianResources`, `searchJiraIssuesUsingJql`, `getJiraIssue`, `listJiraIssueComments`, `listJiraIssueChangelogs` — read tools only; names have moved between versions, so match by capability |
   | `spark` | CLI binary | `command -v spark` resolves | `spark emails`, `spark search`, `spark thread`, `spark meetings` |
 
 * **Rules:**
-  - **Check only the two providers this project selected.** Probing all five wastes turns and reports problems with tools nobody configured.
+  - **Check only the providers this project selected.** Probing all five wastes turns and reports problems with tools nobody configured.
   - **Match server rows by substring, case-insensitively — never by exact name.** The same provider is `outlook`, `claude.ai Microsoft 365`, or `plugin:foo:outlook` depending on how it was added, and an exact-name check reports a connected server as missing.
   - **A connected row still needs its tools confirmed.** A connected server with a different toolset is a different integration wearing the right name. Missing tools are a mismatch, not a connection failure — report them, don't reinstall.
 
@@ -299,6 +304,7 @@ applies to it directly.
   | `fathom` | `claude mcp add --transport http fathom https://api.fathom.ai/mcp` | § 7.4 — remote connectors need authorizing |
   | `outlook`, server binary already on `PATH` | `claude mcp add outlook -- <the path `command -v` resolved>` | re-check; a local stdio server usually lands `✔ Connected` |
   | `outlook`, binary absent · `spark` · `firefly` | **none — stop and report** | § 7.5 |
+  | `atlassian` | **none** — it is a claude.ai connector, never `claude mcp add`ed | § 7.4 — connect and authorize it in claude.ai connector settings |
 
 * **Rules:**
   - **The last row is the common case, and guessing is worse than reporting it.** A wrong `brew install`/`npm i -g` either fails noisily or installs something that isn't the provider. Name the exact missing binary or server, say no install command is pinned for it, and let the user supply one.
@@ -309,7 +315,7 @@ applies to it directly.
 ### 7.4 When a provider needs authorization
 
 * **Goal:** hand the user an exact next action. OAuth needs a browser and a human — this step cannot complete it and must not try.
-* **Action:** **A claude.ai connector** (Fathom, Microsoft 365, Gmail — a remote `https://…/mcp` row) → authorize it in claude.ai connector settings. **Any other MCP server** → run `/mcp` in an interactive Claude Code session, or `claude mcp` from the terminal.
+* **Action:** **A claude.ai connector** (Fathom, Atlassian, Microsoft 365, Gmail — a remote `https://…/mcp` row) → authorize it in claude.ai connector settings. **Any other MCP server** → run `/mcp` in an interactive Claude Code session, or `claude mcp` from the terminal.
 * **Rules:** Never offer to paste a credential on the user's behalf. Authorization happens in their browser, not in this conversation.
 
 ### 7.5 Record the outcome
@@ -322,6 +328,7 @@ applies to it directly.
   <!-- Keep the template's own comment here verbatim; § 7.6's engine lines join these two. -->
   - email_provider: outlook — ✔ connected (2026-08-13)
   - meeting_provider: fathom — ! needs authentication: authorize in claude.ai connector settings (2026-08-13)
+  - jira_provider: atlassian — ✔ connected (2026-08-13)
   ```
 
 * **Rules:** For these two providers it's a snapshot and it goes stale — a connector can be revoked the next day. `/bigin-intake` still runs its own pre-flight check; this never replaces it.

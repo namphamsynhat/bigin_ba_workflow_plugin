@@ -8,9 +8,11 @@ feature:
 features: []
 source_ucs: []
 absorbed: []
+stale: []               # written by `bigin cascade` only: UC-<NNN>@<version> this was built on an OLDER version of (runtime.md § Absorbed). Never edit by hand; re-running the stage clears it
 snapshot: none
 stories: []
 after: []
+cr: false                # true = the feature's change-request epic, "<Feature> — changes" (small Jira tickets on a built feature)
 owner: team
 updated:
 ---

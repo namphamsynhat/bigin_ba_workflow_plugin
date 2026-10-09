@@ -1,6 +1,6 @@
 # Card — signal-filer (model: sonnet — scope-matching judgement; a weaker model files by adjacency)
 
-**In:** `bigin worklist file <INT>` JSON — unfiled `rows` [{n, type, signal, why, source}], `features` (slug, name,
+**In:** `bigin worklist file <INT>` JSON — unfiled `rows` [{n, type, signal, why, source, scope?, supersedes?}], `features` (slug, name,
 status), `declared_features`, `hubs` (last row #, recent rows). Never read `## Raw`.
 **Out:** schema `filing` → `rows` (n → feature, status, notes) · `hub_rows` (themed rows) · `questions` ·
 `pain_points` · `entities` · `design_principles` · `answers` · `note_status`/`tags`. `bigin file apply` writes
@@ -20,7 +20,10 @@ hubs, registers, note columns and the note status LAST. You write only your `.ou
 8. Questions: every unresolved anchor, flagged row, conflict pair, derived row; missing rationale = ONE batched
    question + a `rationale: in question | non-blocking` note on every not-stated row
    ‹stages/extract/3-filing.md § Step 5 — Questions›, worded per ‹questions.md § Open Questions wording (all artifacts)›.
-9. A row that answers an earlier note's question → `answers` ‹stages/extract/3-filing.md § Step 5b — an answer that resolves a question raised elsewhere›.
+9. Jira rows: `scope` agreed → new · open → question · dropped → rejected `deferred — dropped in <KEY>`; a row
+   that `supersedes` a filed row goes on the same hub with Notes `supersedes <INT> #<n>`
+   ‹stages/extract/3-filing.md § Living Jira tickets›.
+10. A row that answers an earlier note's question → `answers` ‹stages/extract/3-filing.md § Step 5b — an answer that resolves a question raised elsewhere›.
 
 ## Example
 ```json

@@ -18,9 +18,13 @@ $BIN status          # every UC/BR: unchecked "- [ ] Q:" in a UC's § 5 Still op
 ```
 
 It only ever moves between `draft` and `needs-clarification`. `approved`, `removed`, `enriched`,
-`consolidated` are never touched — and never written by this skill (`in-review`/`superseded` are retired on
-a UC/BR). **An approved UC whose § 2 changed stays `approved`**: the engine's Changelog line `§ 2 changed —
-flagged for review` is what sends it back through `/approve-uc`. List every flagged UC in the report.
+`consolidated` are never written by this skill (`in-review`/`superseded` are retired on a UC/BR). **A
+content change to an approved UC/BR un-stages it**: `bigin apply` sets it back to `draft` on the same write
+(Changelog: `Status approved → draft (un-staged by this change; re-approve via /approve-uc)`), exactly as
+`intake.md` § Feedback handling says; a question raised or answered is not content and reverts nothing.
+The same write refreshes `stale:` on every UX spec, epic and story built on it (`bigin cascade`). List
+every un-staged UC/BR (`reverted`) and every newly stale downstream artifact in the report, plus the
+`## Impact` sections the Close step regenerated (one per intake note).
 
 ## Part 2 — Refresh the hubs, don't restate them
 
@@ -65,6 +69,8 @@ doesn't support. Coverage gaps are deliberately not a check — they are a judgm
 
 ```text
 Stage 1 (release): <N> released · <N> superseded · <N> need judgement · <N> waiting
+un-staged (approved → draft): UC-###, … · stale downstream: UX-### / EP-### / US-###, …
+impact: INT-### (<N> UC direct · <N> via rule · <N> features · <N> stale), …
                    <N> re-entered — <slug> #<n>: <the decision that unblocked it>   # 1-foldin § Re-entry
                    <N> legacy entries migrated (discussion-to-ledger), <N> unparsed left for a human
 Stage 2 (qualify): <N> qualified, <N> held (<reason>), <N> applied as duplicate/already-covered

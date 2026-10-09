@@ -35,7 +35,17 @@ after: []           # US-### that must be delivered first — only a real depend
 snapshot: none      # the epic's _snapshot/ folder the screens below were captured from — PINNED: a later
                     # capture never rewrites an approved story's images; it reports the story as drifted
 absorbed: []        # UC-###@version, UX-###@version — re-stamped whole each run
+stale: []           # bigin cascade: a sliced UC moved on since absorbed (or is no longer approved) — never typed
+sources: []         # INT-### the sliced UCs trace to — derived by the engine (mint + cascade), never typed
+jira: []            # those notes' Jira keys — the dev team puts them in branch names, commits and PR titles
+                    # so Jira links the work back to the ticket the onshore team raised
+delta_of:           # a delta story only: the approved US-### whose UC drifted; this one delivers just the change
+delta: []           # on an approved story: the delta stories minted after it — engine-written
 ```
+
+**Handoff to dev.** `jira:` is the spine back to the ticket: a reviewer opening the story sees the key, and a
+developer branching for it uses `<KEY>-<short-name>`. Never paste ticket text into the story — the trace is the
+key plus `sources:`, and the INT note's `## Impact` section says what else the ticket touched.
 
 ## Sections
 

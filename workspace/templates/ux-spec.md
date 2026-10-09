@@ -35,6 +35,7 @@ actors: []              # every role § 1's Actor & Scope table carries, each as
 sources: []             # UC-###/BR-###/EN-###/PP-### ids + DESIGN-PRINCIPLES row #s + hub directive #s
 absorbed: []            # UC-<NNN>@<version> — THE staleness record. Only UCs that really got
                         # screens this run. Re-stamped WHOLE every run (`design-core.md` § Staleness).
+stale: []               # written by `bigin cascade` only: UC-<NNN>@<version> this was built on an OLDER version of (runtime.md § Absorbed). Never edit by hand; re-running the stage clears it
 nav_map:                # the {nav_map_file} version these screens were specced against
 engine:                 # the METHOD layer that decided these screens: wds | figma | <plugin> |
                         # built-in. NOT a renderer — /bigin-generate-design renders nothing. What

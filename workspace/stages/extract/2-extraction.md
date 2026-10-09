@@ -172,8 +172,56 @@ uncertain attribution           → omit the name, never "Travis/Bridget"
 | **A question the source never resolves** | Its own `question` row, even when the surrounding discussion produced a `decision` on the topic. |
 | **An answer** | Cite the exact `UC-###`/`INT-###` question it resolves, and quote the source. A hedged reply is a `concern`, not an `answer`. |
 | **A commitment** ("I'll send the spreadsheet") | `Type: commitment`, `Signal: <who> — <what> (<by when>)`, `Notes: unblocks #<n>`. A promised document is often the authoritative version of a rule the transcript states loosely. |
-| **A thread, or a re-fetched source** | Newest position wins — extract it and note what it supersedes. Quoted history (`>`-prefixed) is context, not new signal; a restatement that sharpens or contradicts **is**. |
+| **A thread, or a re-fetched source** | Newest position wins — extract it and note what it supersedes (`"supersedes": [#]` on the new row; a Jira ticket: § A living Jira ticket). Quoted history (`>`-prefixed) is context, not new signal; a restatement that sharpens or contradicts **is**. |
 | **A design signal** (layout, tone, visual style, interaction feel) | A normal row describing the presentation. Whether it's durable enough for `{design_principles_file}` is 3-filing.md's call. |
+
+## A living Jira ticket
+
+A `source: jira` note is one ticket over its whole life (`intake.md` § A Jira note is a living note): the
+onshore team creates it, offshore is assigned, and over days both sides comment, edit the description, and
+change the scope. The worklist carries a `jira` block (`key`, `type`, `parent`, `status`, `phase`,
+`scope_marker`) and, from the second run on, `existing_rows` plus `new: true` on the blocks captured since
+the last extraction.
+
+```text
+read      ONLY the blocks marked new: true. existing_rows is the record of everything earlier —
+          never re-extract an old block (its rows already exist, with permanent #s)
+order     blocks are chronological; a later block is the newer position
+side      every ref names (onshore) or (offshore): who proposed and who accepted is evidence for scope —
+          keep it in the source cite ("ACME-123#c10240 Jane Roe (onshore) 2026-10-03")
+
+newer description / comment REPLACES an earlier row (a number moved, an ask narrowed, a step reworded)
+          → a NEW row for the new position, "supersedes": [<earlier #>]
+            the engine writes "supersedes #m" on it and "superseded by #n" on the earlier row
+          → never edit, delete or re-word the earlier row — it is what was asked on day 1
+newer block only REPEATS an earlier row → no row (it is in existing_rows already)
+a `description` block is the FULL new text: diff it against existing_rows, don't re-extract it whole
+
+scope — every to-be row (requirement / constraint) carries one:
+    agreed   the other side accepted it ("ok", "agreed", "+1", approving it in their reply), or it is in
+             the ticket's own scope statement (below), or the side that owns the ticket wrote it into
+             the description after the discussion
+    dropped  withdrawn by its proposer, or rejected by the other side and never revived
+             → still a row: what was dropped is evidence too, and it must never become a story
+    open     proposed by one side, never answered by the other → also a `question` row
+             ("Is <ask> in scope? Proposed by <name> (<side>) <date>, not answered")
+
+scope statement — a comment or description that starts with jira.scope_marker (e.g. "Final scope:")
+    newest substantive block → it is the agreed baseline: its items are `agreed`
+    cross-check BOTH ways, a `question` row for each mismatch:
+        in the statement, never discussed      → "Scope statement adds <x> — never discussed in the thread"
+        agreed in the thread, not in statement → "Scope statement omits <x>, agreed on <date> — dropped?"
+    an OLDER statement with substantive comments after it is just another position, not the baseline
+
+an answer in a comment to an earlier question (here or on another note) → an `answer` row quoting it;
+    filing ticks the question (3-filing.md § Step 5b) and transform releases what it held
+fields block (status / type / parent changes) → no row, except a type change (Story → Epic) or a new
+    parent: a `decision` row, so anchoring can re-look at it
+```
+
+`jira.phase: scope-agreed` means the teams say the scope is settled: the newest description and scope
+statement are the baseline, and anything still `open` deserves its question more, not less. The phase
+never decides a row on its own — the thread does.
 
 ## Fold-in runs
 

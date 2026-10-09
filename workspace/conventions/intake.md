@@ -7,7 +7,7 @@ feedback on an already-built thing is handled.
 
 ## Intake sources
 
-`/bigin-intake` accepts four source types, recorded in the `source:` frontmatter field. The first three are
+`/bigin-intake` accepts five source types, recorded in the `source:` frontmatter field. The first four are
 **communication mode**; `codebase` is **codebase mode** (`_bigin/system/project.md` `grounding: communication |
 codebase | both` says which the engagement uses — `both` for a codebase that may later receive client mail):
 
@@ -16,6 +16,7 @@ codebase | both` says which the engagement uses — `both` for a codebase that m
 | `email` | Message or thread from the project's `email_provider` (Outlook MCP, or Spark Desktop via the `spark` CLI) | Thread subject | Conversation id + message id(s) (Outlook) or thread id (Spark) |
 | `meeting` | Transcript from the project's `meeting_provider` (Fathom MCP, Spark CLI, or a connected Firefly MCP) — or drop-folder fallback | Meeting name + date | Provider's meeting id |
 | `direct` | User-typed description, fetched URL, or local file | URL · filename · "user input YYYY-MM-DD" | URL (link intakes only) |
+| `jira` | One Jira ticket (Epic / Story / Task / Bug) with every comment and its changelog, via the Atlassian MCP (`jira_provider`) — captured by `bigin intake jira` | `<KEY> — <summary>` | `jira:KEY`, `jira:KEY#c<id>@<ts>`, `jira:KEY#desc@<hash>`, `jira:KEY#chg<id>` — the per-ticket high-water mark |
 | `codebase` | Rule cards mined from the read-only `repos/` (e.g. `code-modernization:modernize-extract-rules`), imported by `bigin intake codebase` — one note per capability group | card file + group + import date | — |
 
 **Codebase notes skip LLM extraction.** The cards ARE the signals: `bigin intake codebase` writes one `decision`
@@ -23,6 +24,16 @@ row per card (card id verbatim, citation as Source), a `problem` row per suspect
 SME question, and files them deterministically. The note carries `grounding: codebase`, the provenance header and
 the asymmetry warning (a card speaks for the surface it cites, never for all of them). Only unmapped rows reach a
 `signal-filer`. Contract: `docs/CODEBASE-INTAKE.md`.
+
+**A Jira note is a living note.** The onshore team creates the ticket and assigns it to offshore; both edit the
+description and comment for days, and scope changes along the way. The ticket keeps ONE note for its whole
+life: every sweep appends only what `source_ids` does not hold yet — a new comment, an edited comment (a new
+block, the original stays), a new revision of the summary + description, a changelog field change — and sets
+the note back to `status: raw` so `/extract-signal` reads the new blocks. Blocks carry `<author> (onshore |
+offshore | unknown)`; an unknown author tags the note `needs-review`. `jira_type` is a hint for anchoring
+(Epic → likely a new feature; Story / Task / Bug → likely a change to an existing one), never a decision; a
+child ticket inherits its Epic note's resolved feature as `declared_features`. `jira_phase` comes from
+`project.md` `## Jira status mapping` and gates nothing. Jira is read-only: nothing is ever posted back.
 
 **INT ids are minted by the engine under a lock** (`bin/bigin intake communication --spec` / `bin/bigin mint int`),
 never by reading the highest existing number — two concurrent captures would mint the same id.
@@ -153,13 +164,11 @@ the feature shipping):
 - **Update in place, always.** Edit content, bump `version`, log the reason + source `INT-###` in
   `## Changelog`. If the UC was `approved` (or `enriched`/`consolidated`), the same edit also sets
   `status` back to `draft` — un-staging it as feature material (`feature-hub.md` § Feature material) until the
-  human re-approves. Interactively,
-  this runs as a discussion round in the UC's `## Discussion`: present the proposed change (quoted
-  signal + INT id + proposed edit), the human confirms, the answer folds in. Unattended, the
-  proposed change is written into the UC's `## Discussion` and its Signal Log row flips to
-  `staged` — never auto-applied without a human confirming — and the UC's `status` moves to
-  `needs-clarification` so the pending decision surfaces exactly like any other UC awaiting a
-  human look.
+  human re-approves. The engine does this on the write itself (`bigin apply`; the Changelog line says
+  `Status approved → draft`), so no run can leave an approved UC carrying content nobody re-reviewed.
+  A change that needs a decision first is gated in the ledger with its question on the UC (it shows as
+  `## Pending changes`, the Signal Log row is `staged`, the UC moves to `needs-clarification`) and is
+  applied — reverting the approval then — only once the question is answered.
 - **There is no forking to a new `amends:`-linked sibling UC for this case.** The same UC carries
   its whole history in its own `## Changelog` — whether it's still open, already approved, or the
   feature has since shipped. `amends:` frontmatter is reserved for the rare case where a feature's
@@ -177,9 +186,12 @@ the feature shipping):
   logged in `## Changelog` with why. `/bigin-transform-signal` never does this unattended; a
   signal that looks like "bring this back" is an Open Question for the human, the same as any
   judgement call an agent can't make on its own.
-- Either way — cascade: set the downstream PRD/epic/story/prototype that trace (via
-  `sources`/`links`) to the affected UC back to `draft` too (a changelog entry on each citing
-  the INT id and naming the upstream UC change that triggered it), so stale artifacts surface
-  until `/approve-uc`/`/bigin-generate-design` re-run.
+- Either way — cascade (suspect links, `bigin cascade`, run by every apply): every UX spec, epic and
+  story whose `absorbed:` records an older version of the changed UC (or, for an epic/story, a UC no
+  longer `approved`) gets `stale: [UC-###@<new version>]` and a Changelog line naming the version and the
+  INT that moved it. Their own status is **never** changed — an approved story handed to dev stays
+  approved and visibly stale — and the flag clears when `/bigin-generate-design` / `/bigin-generate-stories`
+  re-stamps `absorbed`. The intake note's `## Impact` section (regenerated by the transform run) lists the
+  same downstream artifacts with the steps each story slices that were hit.
 - Open questions with owner `client` stay listed in the (current) UC's `## Open Questions` for the
   human to raise with the client; answers return through `/bigin-intake` as feedback.

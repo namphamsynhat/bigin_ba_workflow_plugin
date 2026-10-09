@@ -155,6 +155,13 @@ Three cases, three outcomes. Only one touches an existing row; none delete anyth
     → flip the EARLIER row: Status: superseded, Notes: superseded by #<n>
     → the new row keeps its own # and proceeds to routing
     NEVER rewrite the earlier row's Signal text to match the new position — history is append-only.
+    a Jira row's Notes say it outright ("supersedes INT-### #<m>") → the earlier hub row is the one
+      citing INT-### #<m>; no judgement needed on which row wins — the ticket's newer text does
+    the earlier row is already `staged` (a change set waits in the ledger) →
+      $BIN ledger supersede <cs id> --reason "superseded by <slug> #<n>" , then flip the row;
+      the new row routes and stages its own change set
+    the earlier row is already `applied` → flip nothing; the new row routes as an UPDATE to the same
+      UC step / BR, and the UC's Changelog records the change
 
     if which row wins is a HUMAN call rather than a chronological one → that's a CONFLICT:
       leave both rows, flip the newer to Status: conflict citing the earlier #, raise a question.

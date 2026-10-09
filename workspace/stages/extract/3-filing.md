@@ -36,10 +36,29 @@ means "may decide".
 | `new` | the default and the vast majority. **Whether the feature already has a UC is irrelevant — don't check.** |
 | `question` | the signal *is* an open question, a `concern` needing a call, or a row the audit couldn't support |
 | `conflict` | contradicts an existing Signal Log row, or another row in this same note (§ Conflicts) |
-| `rejected` | its feature's `{requirements_file}` row is `status: out-of-scope`. `Notes: out-of-scope — skipped` |
+| `rejected` | its feature's `{requirements_file}` row is `status: out-of-scope`. `Notes: out-of-scope — skipped` · or a Jira row with `scope: dropped`: `Notes: deferred — dropped in <KEY> (<cite>)` (§ Living Jira tickets) |
 
 `held`, `staged`, `applied`, `superseded` describe a signal's relationship to a use case. This stage has
 no relationship to one, so it never writes them.
+
+### Living Jira tickets
+
+A `source: jira` note's rows arrive with `scope` and, sometimes, `supersedes` (`2-extraction.md` § A living
+Jira ticket). The worklist hands both over per row. Anchoring is unchanged; the status follows the scope:
+
+```text
+scope: agreed   → anchor and file as normal (Status: new)
+scope: open     → Status: question; its question row is already on the note → mirror it (§ Step 5)
+scope: dropped  → anchor it, Status: rejected, Notes: "deferred — dropped in <KEY> (<cite>)"
+                  → filed on the hub as a rejected row: the feature's record shows what was asked and
+                    dropped, and transform never drafts it into a UC or a story
+supersedes [{n, feature, status}] — the row replaces an earlier, already-filed row of this note
+                → file it on the same hub, and add to the hub row's Notes: "supersedes <INT> #<n>"
+                → leave the earlier hub row alone — transform's Gate 4c flips it to `superseded` and
+                  supersedes any change set already staged from it (2-qualification.md § Gate 4)
+jira type is a hint only: an Epic often needs a new feature (→ the usual "none found" question, never a
+new slug from your own reading); a Story/Task/Bug usually lands on its declared (inherited) feature
+```
 
 ## Step 1 — Anchor
 

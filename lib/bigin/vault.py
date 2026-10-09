@@ -750,6 +750,8 @@ class Vault:
         self.runs_dir = os.path.join(self.root, "_runs")
         self.features_file = os.path.join(self.req, "FEATURES.md")
         self.stories_dir = os.path.join(self.root, "03-Epics-Stories")
+        self.ux_dir = os.path.join(self.root, "04-UIUX")
+        self.impact_dir = os.path.join(self.req, "_impact")
         self._cache = {}
         self._project = None
         self.writes = []
@@ -809,6 +811,10 @@ class Vault:
     def story_paths(self):
         """US-### files beside their epic; never anything under a _snapshot/ capture."""
         return sorted(p for p in glob.glob(os.path.join(self.stories_dir, "*", "US-*.md")))
+
+    def ux_paths(self):
+        """UX-### specs (04-UIUX/UX-<NNN> <Feature>.md); never a rendered prototype under _prototypes/."""
+        return sorted(glob.glob(os.path.join(self.ux_dir, "UX-*.md")))
 
     def note_paths(self):
         return sorted(glob.glob(os.path.join(self.inbox, "INT-*.md")))

@@ -17,7 +17,9 @@ in `entities:`, the UX spec §§ 2-4, `SNAPSHOT.md`, and `_bigin/templates/{epic
 5. Screens are reported from the snapshot and the UX spec, image first, labels as the prototype shows them.
    A field or message nothing grounds → § 8 question ‹stages/stories/4-write.md § Per story›.
 6. One Gherkin `Scenario` per rule and per error path, numbered, tagged `[S#]` `[E#]` `[BR-###]`.
-7. Copy open questions with their original sentence. Never edit an approved story; report it as drifted.
+7. Copy open questions with their original sentence. Never edit an approved story: report it as drifted and
+   write the change as a delta story (`delta_of`) ‹stages/stories/1-scope.md § Part 5 — Drift on an existing epic›.
+   `sources` / `jira` are derived by the engine — never type them.
 8. Leave `absorbed:` empty and never touch a hub — the orchestrator closes.
 
 ## Example (UC-003 E1 "slot already taken", folded)

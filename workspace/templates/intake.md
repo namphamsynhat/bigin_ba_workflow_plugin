@@ -4,7 +4,7 @@ type: intake
 kind: requirement        # requirement | feedback | mixed | info (ops/admin — captured, never processed into signals). The ONLY judgement /intake makes.
 title:
 status: raw
-source: email            # email | meeting | direct — communication mode · codebase — rule cards imported by `bin/bigin intake codebase` (no LLM extraction)
+source: email            # email | meeting | direct — communication mode · jira — one living note per Jira ticket (`bigin intake jira`) · codebase — rule cards imported by `bin/bigin intake codebase` (no LLM extraction)
 grounding:               # codebase notes only: `codebase` — transform treats the cited code as the tie-breaker (project.md conflict_policy). Blank on communication notes.
 source_ref:              # email: thread subject; meeting: name + date; direct: URL, filename, or "user input YYYY-MM-DD"
 source_ids: []           # email: provider's conversation id + message ids (Outlook), or thread id (Spark); meeting: provider's meeting id (Fathom, Spark, or Firefly); direct: URL (for link intakes) — used for re-run dedup. Provider chosen by email_provider/meeting_provider in project.md.
@@ -24,13 +24,20 @@ feature:                 # filled by /extract-signal once known — the RESOLVED
                          # declared_features above: that's the user's up-front declaration, this is the
                          # outcome.
 links: []
+jira_key:                # jira notes only — written by `bigin intake jira`, never by hand:
+jira_type:               #   Epic | Story | Task | Bug | … (Epic → likely a new feature; the rest → likely a change)
+jira_parent:             #   the parent Epic's key; a child inherits the Epic note's feature as declared_features
+jira_status:             #   the ticket's status at the last sweep
+jira_phase:              #   active | scope-agreed | done — from project.md ## Jira status mapping
+jira_updated:            #   the ticket's updated time at the last sweep
+extracted_through:       # written by `bigin note write-signals`: the last SRC-n extracted — later blocks are new on the next run
 tags: []                 # add needs-review when sender/invitee isn't a known client contact, or when a signal couldn't be mapped to a feature and needs a human to pick one
 updated:
 ---
 
 ## Raw
 <!-- ALL captured source material, one "### SRC-<n> · <kind> · <ref>" block per source, verbatim. /extract-signal reads this section and nothing else: a source with no block here does not exist downstream. Mirror every block into raw_sources: above. -->
-<!-- kind: transcript | email | attachment | webpage | note | summary -->
+<!-- kind: transcript | email | attachment | webpage | note | summary · jira: ticket | comment | description | fields -->
 <!-- A `summary` block (a meeting tool's AI recap) is DERIVED text: navigation only, never quotable as a signal or a Why. Label it as such and capture the real transcript in its own block — a summary is not a substitute for one. -->
 <!-- A binary or oversized attachment gets a block holding its PATH instead of its text; the extractor opens the file. Everything else is inlined verbatim. -->
 <!-- Append newest content as a NEW block. Never edit, merge, or trim an existing one. -->

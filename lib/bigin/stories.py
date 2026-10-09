@@ -27,8 +27,8 @@ MERMAID_KINDS = ("flowchart", "graph", "stateDiagram", "stateDiagram-v2", "seque
 FENCE = re.compile(r"^\s*(```+|~~~+)\s*([\w-]*)")
 SNAPSHOT_RX = re.compile(r"^\d{4}-\d{2}-\d{2}-v\d+$")
 
-LIST_KEYS = {"epic": ("source_ucs", "absorbed", "stories", "after"),
-             "story": ("rules", "screens", "entities", "after", "absorbed")}
+LIST_KEYS = {"epic": ("source_ucs", "absorbed", "stale", "stories", "after", "features"),
+             "story": ("rules", "screens", "entities", "after", "absorbed", "stale", "sources", "jira", "delta")}
 
 _ID_TOKEN = re.compile(r"^(?:(UC-\d+)\s+)?([SAE]\d+)$")
 _RANGE = re.compile(r"^([SAE]\d+)\s*[–-]\s*([SAE]\d+)$")

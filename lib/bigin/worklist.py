@@ -154,12 +154,31 @@ def _answered(d):
 def extract(vault, nid, args=None):
     d = vault.load_id(nid)
     rows = model.note_rows(d)
-    return {"$schema_version": 1, "kind": "worklist", "stage": "extract", "int": nid, "path": vault.rel(d.path),
-            "note": _fm(d, ("kind", "source", "source_ref", "declared_features", "attachments")),
-            "src_blocks": _src_blocks(d), "mode": "append" if rows else "fresh",
-            "answered_questions": _answered(d),
-            "last_row": max([int(r.num) for r in rows] or [0]), "output": "signals",
-            "read": "read ONLY the listed line ranges of the note (and attachments named in a block); never the whole note"}
+    blocks = _src_blocks(d)
+    done = re.match(r"^SRC-(\d+)$", (d.fm_get("extracted_through") or "").strip())
+    if done and rows:
+        # a living note (Jira ticket, re-captured thread): only blocks after the last extraction are new
+        for b in blocks:
+            b["new"] = int(b["src"].split("-")[1]) > int(done.group(1))
+    w = {"$schema_version": 1, "kind": "worklist", "stage": "extract", "int": nid, "path": vault.rel(d.path),
+         "note": _fm(d, ("kind", "source", "source_ref", "declared_features", "attachments")),
+         "src_blocks": blocks, "mode": "append" if rows else "fresh",
+         "answered_questions": _answered(d),
+         "last_row": max([int(r.num) for r in rows] or [0]), "output": "signals",
+         "read": "read ONLY the listed line ranges of the note (and attachments named in a block); never the whole note"}
+    if (d.fm_get("source") or "") == "jira":
+        w["jira"] = {"key": d.fm_get("jira_key"), "type": d.fm_get("jira_type"), "parent": d.fm_get("jira_parent"),
+                     "status": d.fm_get("jira_status"), "phase": d.fm_get("jira_phase"),
+                     "scope_marker": vault.config("jira_scope_marker", "Final scope")}
+        if rows:
+            # supersession needs the rows a newer description or comment may replace (2-extraction.md
+            # § A living Jira ticket) — the table, not the old blocks, is what gets re-read
+            w["existing_rows"] = [{"n": int(r.num), "type": r.get("Type"), "signal": r.get("Signal"),
+                                   "source": r.source, "notes": r.get("Notes")} for r in rows]
+        if any(b.get("new") for b in blocks):
+            w["read"] = ("read ONLY the blocks marked new: true (line ranges); existing_rows is the record of "
+                         "everything earlier — never re-extract an old block")
+    return w
 
 
 def audit(vault, nid, args=None):
@@ -172,10 +191,26 @@ def audit(vault, nid, args=None):
     return w
 
 
+def _living(r, by_num):
+    """scope / supersession a living-ticket row carries in its Notes (notes._cells_of), for the filer."""
+    out = {}
+    notes = r.get("Notes") or ""
+    m = re.search(r"\[scope:(agreed|dropped|open)\]", notes)
+    if m:
+        out["scope"] = m.group(1)
+    sup = re.search(r"\bsupersedes ((?:#\d+(?:,\s*)?)+)", notes)
+    if sup:
+        out["supersedes"] = [{"n": int(x), "feature": by_num[int(x)].get("Feature"), "status": by_num[int(x)].get("Status")}
+                             for x in re.findall(r"#(\d+)", sup.group(1)) if int(x) in by_num]
+    return out
+
+
 def file_(vault, nid, args=None):
     d = vault.load_id(nid)
-    rows = [{"n": int(r.num), "type": r.get("Type"), "signal": r.get("Signal"), "why": r.get("Why"), "source": r.source,
-             "feature": r.get("Feature"), "status": r.get("Status")} for r in model.note_rows(d)
+    all_rows = model.note_rows(d)
+    by_num = {int(r.num): r for r in all_rows}
+    rows = [dict({"n": int(r.num), "type": r.get("Type"), "signal": r.get("Signal"), "why": r.get("Why"), "source": r.source,
+                  "feature": r.get("Feature"), "status": r.get("Status")}, **_living(r, by_num)) for r in all_rows
             if not r.get("Feature").strip() or not r.get("Status").strip()]
     feats = []
     if os.path.exists(vault.features_file):

@@ -6,7 +6,7 @@ record of where this plugin's skills still differ from this rulebook.
 **Read by** a skill running unattended, `/bigin-upgrade-project`, and `bigin-ba` / `/bigin-run`
 when they need migration status (§ Reconciliation notes is the single source for that).
 
-## Absorbed — the reprocess trigger (**Planned**)
+## Absorbed — the reprocess trigger
 
 `sources:` answers *"which upstream artifacts does this one trace to?"* — a permanent,
 never-pruned traceability record (hard rule 3). It cannot answer *"is this artifact still
@@ -40,6 +40,15 @@ cannot leave a false "current" claim behind. `/bigin-generate-design` stamps `UX
 design is stale" is detectable today (the PRD row was live until the PRD stage was retired in 1.13.0). `/bigin-generate-stories`
 stamps `UC-###@version` and `UX-###@version` on every `EP-###` and `US-###` it writes, so "these stories have
 drifted" is detectable too; an approved story that drifted is reported, never rewritten.
+
+**`stale:` — the suspect-link flag, derived (1.16.0).** `bigin cascade` (run by every `bigin apply`, so
+by every transform and every ledger release) compares each UX spec's, epic's and story's `absorbed:` with
+the live UC and writes `stale: [UC-###@<current version>]` for every cited UC that moved on — and, for an
+epic or story, for every cited UC that is no longer `approved`. It adds one Changelog line naming the
+version and the INT that moved it, never changes the artifact's status, and clears itself when the stage
+re-stamps `absorbed`. `bin/bigin lint --full` flags a `stale:` that disagrees with what cascade derives.
+Only "processed, then drifted" counts: a UC an artifact never absorbed is new work for its stage, not a
+stale link.
 
 ## Resumable unattended apply (checkpoint + idempotent writes)
 

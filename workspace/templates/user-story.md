@@ -13,6 +13,11 @@ entities: []
 after: []
 snapshot: none
 absorbed: []
+stale: []               # written by `bigin cascade` only: UC-<NNN>@<version> this was built on an OLDER version of (runtime.md § Absorbed). Never edit by hand; re-running the stage clears it
+sources: []              # INT-### this story traces to — derived from its slices by the engine, never typed
+jira: []                 # the Jira key(s) of those notes — use them in branch names, commits and PR titles
+delta_of:                # a DELTA story only: the approved US-### whose UC drifted; this one carries just the difference
+delta: []                # on an approved story: the delta stories minted after it (engine-written)
 owner: team
 updated:
 ---

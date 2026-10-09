@@ -46,7 +46,12 @@ def _note_table(doc):
 
 
 def _cells_of(r, n):
-    return [str(n), r["type"], r["signal"], r.get("why", ""), r["source"], "", "", r.get("notes", "")]
+    notes = [f"[scope:{r['scope']}]"] if r.get("scope") else []
+    if r.get("supersedes"):
+        notes.append("supersedes " + ", ".join(f"#{m}" for m in r["supersedes"]))
+    if r.get("notes"):
+        notes.append(r["notes"])
+    return [str(n), r["type"], r["signal"], r.get("why", ""), r["source"], "", "", "; ".join(notes)]
 
 
 def _append_rows(doc, new_rows):
@@ -56,6 +61,7 @@ def _append_rows(doc, new_rows):
     existing = {(norm_ws(r.get("Signal")), norm_ws(r.source)) for r in have}
     lines, added = [], []
     _append_rows.skipped = 0
+    _append_rows.assigned = []
     for r in new_rows:
         if (norm_ws(r["signal"]), norm_ws(r["source"])) in existing:
             _append_rows.skipped += 1  # re-run of the same output: reported, never silent
@@ -63,6 +69,7 @@ def _append_rows(doc, new_rows):
         last += 1
         lines.append(render_row(_cells_of(r, last)))
         added.append(last)
+        _append_rows.assigned.append((r, last))
     if lines:
         t = model.note_table(doc)
         pos = t.row_idxs[-1] + 1 if t.row_idxs else t.sep_idx + 1
@@ -84,6 +91,17 @@ def _edit_row(doc, n, patch):
     doc.set_row(r.idx, cells)
 
 
+def _mark_extracted(doc):
+    """Record the highest ``### SRC-n`` this extraction covered, so the next run on a living note (a Jira
+    ticket, a re-captured thread) is told which blocks are new (``worklist extract`` → ``new: true``)."""
+    s = doc.section("Raw")
+    if s is None:
+        return
+    nums = [int(m.group(1)) for m in (re.match(r"^###\s+SRC-(\d+)\b", doc.masked[i]) for i in range(s.start, s.end)) if m]
+    if nums:
+        doc.fm_set("extracted_through", f"SRC-{max(nums)}")
+
+
 def write_signals(vault, path, dry=False):
     data = _load(path, "signals")
     doc = vault.load_id(data["int"])
@@ -98,10 +116,24 @@ def write_signals(vault, path, dry=False):
             _edit_row(doc, r["n"], r)
             res["edited"].append(r["n"])
     else:
+        first_new = max([int(r.num) for r in model.note_rows(doc)] or [0]) + 1
+        for r in data["rows"]:
+            bad = [m for m in r.get("supersedes") or [] if m >= first_new]
+            if bad:
+                raise EngineError(f"{data['int']}: a row supersedes #{bad[0]}, which is not an earlier row — "
+                                  "supersession only points back at rows already in the table")
         res["added"] = _append_rows(doc, data["rows"])
         res["skipped_duplicates"] = _append_rows.skipped
+        res["superseded"] = []
+        for r, n in _append_rows.assigned:
+            for m in r.get("supersedes") or []:
+                _edit_row(doc, m, {"notes": f"superseded by #{n}"})
+                res["superseded"].append(m)
+        _mark_extracted(doc)
     if data.get("self_audit"):
         res["audit_owed"] = bool(data["self_audit"].get("audit_owed"))
+    if (doc.fm_get("source") or "") == "jira" and mode != "repair":
+        res["audit_owed"] = True  # a negotiated thread always gets the independent pass (2b-audit.md)
     touch_updated(doc)
     _flush(vault, doc, dry)
     return res

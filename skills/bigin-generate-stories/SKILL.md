@@ -86,6 +86,11 @@ scope = $ARGUMENTS slug or UC-###, else every {hub_dir} feature with approved UC
 5  close      8 checks, stamp absorbed:, refresh the hub, report                      [5-close.md]
 ```
 
+**Handoff trace.** Every story carries `sources: [INT-###]` and `jira: [KEY-123]`, derived by the engine from
+what it slices (`bigin mint us`, kept current by `bigin cascade`) — the dev team's link back to the Jira ticket.
+A story built on a UC that changed since shows `stale:`; an approved one is never rewritten — its change ships
+as a delta story (`delta_of`, 1-scope.md Part 5) slicing the steps the INT note's `## Impact` says were hit.
+
 Run all five, in order. **Load a stage file on reaching that stage**, not up front. Stages 1, 2, and 5 always run in
 the orchestrator: Stage 2 needs the Artifact / Figma / browser tools, and Stage 5 touches shared hubs.
 

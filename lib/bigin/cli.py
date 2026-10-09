@@ -246,10 +246,32 @@ def cmd_intake(args, rest):
         res = codebase.intake(v, args.cards, assignment=args.assignment, group_by=args.group_by,
                               title=args.title, dry=args.dry, unmapped_out=args.unmapped_out)
         out(args, res, codebase.render(res))
+    elif args.mode == "jira":
+        from bigin.intake import jira
+        if not args.issue:
+            raise EngineError("intake jira: --issue <raw.json> is required")
+        res = jira.capture(v, args.issue, dry=args.dry)
+        out(args, res, jira.render(res))
     else:
         from bigin.intake import communication
         res = communication.scaffold(v, args.spec, dry=args.dry)
         out(args, res, f"{res['id']} {res['path']}")
+    return 0
+
+
+def cmd_impact(args, rest):
+    from bigin import impact
+    v = vault_of(args)
+    res, text = impact.cli(v, args)
+    out(args, res, text)
+    return 0
+
+
+def cmd_cascade(args, rest):
+    from bigin import cascade
+    v = vault_of(args)
+    res = cascade.run(v, dry=args.dry)
+    out(args, res, cascade.render(res))
     return 0
 
 
@@ -423,8 +445,10 @@ def build_parser():
     s.add_argument("--dry", action="store_true")
     s.set_defaults(fn=cmd_file)
 
-    s = sub.add_parser("intake", help="scaffold an intake note (communication) or import rule cards (codebase)")
-    s.add_argument("mode", choices=["codebase", "communication"])
+    s = sub.add_parser("intake", help="scaffold an intake note (communication), capture a Jira ticket (jira), "
+                                      "or import rule cards (codebase)")
+    s.add_argument("mode", choices=["codebase", "communication", "jira"])
+    s.add_argument("--issue", help="jira: the raw MCP JSON for one ticket (issue + comments + changelog)")
     s.add_argument("--cards", help="rule cards: _rules-store.json shape, a JSON list, or CSV")
     s.add_argument("--assignment", help="JSON map card id → {slug, …}")
     s.add_argument("--group-by", default="capability", choices=["capability", "feature", "group", "none"])
@@ -433,6 +457,19 @@ def build_parser():
     s.add_argument("--unmapped-out", help="write the unmapped remainder as a filer task input")
     s.add_argument("--dry", action="store_true")
     s.set_defaults(fn=cmd_intake)
+
+    s = sub.add_parser("impact", help="what an intake note (or a set of UCs/BRs/features) touches across the vault")
+    s.add_argument("int_id", nargs="?", help="INT-###, or `touched` for every note a hub Signal Log cites")
+    s.add_argument("--write", action="store_true", help="regenerate the note's ## Impact section and _impact/<INT>.json")
+    s.add_argument("--ucs", help="ad hoc: UC-001,UC-002")
+    s.add_argument("--brs", help="ad hoc: BR-001")
+    s.add_argument("--features", help="ad hoc: slug,slug")
+    s.add_argument("--dry", action="store_true")
+    s.set_defaults(fn=cmd_impact)
+
+    s = sub.add_parser("cascade", help="refresh stale: on UX specs, epics and stories built on a UC that changed since")
+    s.add_argument("--dry", action="store_true")
+    s.set_defaults(fn=cmd_cascade)
 
     s = sub.add_parser("migrate", help="vault migrations between plugin versions")
     s.add_argument("step", choices=["discussion-to-ledger", "strip-guidance", "split-signal-log", "all", "snapshot", "plan"])

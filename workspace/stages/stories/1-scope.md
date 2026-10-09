@@ -25,7 +25,7 @@ Read each hub's **frontmatter** only (`uc:`, `uiux:`, `epics:`, `stories:`) plus
 | `FEATURES.md` Status | Chain | This stage |
 |---|---|---|
 | `proposed` · `committed` · `not-built` | **Full** — `INT → UC/BR → UX → approve → EP → US` | in scope |
-| `built` | **Lightweight CR** — `INT → UC/BR → US → UX` | in scope, **no epic file**: stories land in the feature's standing CR epic `EP-<NNN> <Feature> — changes` (created once, then reused) |
+| `built` | **Lightweight CR** — `INT → UC/BR → US → UX` | in scope: stories land in the feature's standing CR epic `EP-<NNN> <Feature> — changes` — minted once with `bigin mint ep` and `"cr": true` (one per feature, beside its normal epic), then reused |
 | `out-of-scope` | none | skip, always, and say so |
 
 A missing `FEATURES.md` row is a data problem: stop on that feature, name it, leave it to `/extract-signal`.
@@ -41,6 +41,8 @@ approved, primary_feature is another slug       → NOT OURS  sliced in the owne
 approved, not in the epic's absorbed:           → SLICE     new
 approved, in absorbed: at an older version      → SLICE     drifted — re-slice, see Part 5
 approved, in absorbed: at the same version      → CURRENT   report it, don't re-slice
+# a story's / epic's stale: (bigin cascade) names the drifted UCs — the same answer, already derived;
+# re-stamping absorbed in 5-close clears it
 ```
 
 A feature with zero SLICE and zero CURRENT UCs: report `nothing approved yet → /approve-uc` and move on.
@@ -55,9 +57,13 @@ A feature with zero SLICE and zero CURRENT UCs: report `nothing approved yet →
 
 ## Part 5 — Drift on an existing epic
 
-An approved story whose UC drifted is **never rewritten**. Report it `drifted: US-<NNN> (UC-<NNN>@1.2 → 1.4)` and
-write any *new* paths as new draft stories. A `draft` story is updated in place (same id, version bump). The human
-decides whether an approved story is reopened — that is a status change, and status is human-only (S5).
+An approved story whose UC drifted is **never rewritten** — it may already be built. Report it `drifted: US-<NNN>
+(UC-<NNN>@1.2 → 1.4)` and write the **difference** as a new draft **delta story**: `bigin mint us` with
+`"delta_of": "US-<NNN>"`, slicing only the changed or new steps (the INT note's `## Impact` names them per story:
+"steps hit"). The engine leaves the approved story's content alone and adds `delta: [US-###]` to it, so a
+developer opening it sees there is a follow-up. New paths with no earlier story are ordinary new stories. A
+`draft` story is updated in place (same id, version bump). The human decides whether an approved story is
+reopened instead — that is a status change, and status is human-only (S5).
 
 ## Part 6 — The design and prototype read
 

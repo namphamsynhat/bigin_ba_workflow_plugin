@@ -47,7 +47,9 @@ human reviews this UC's flow with the rest of its neighborhood in view, not in i
 * **Never fold flow drift into the summary silently:** `## 2`/`## 3` are the two sections
   `/bigin-transform-signal` writes without a human wait (`bigin apply`, 4-sync.md § Part 2) — a UC can reach
   this skill with its flow changed since a human last looked, marked only by a `## Changelog` line
-  ending "§ 2 changed — flagged for review" (v1.10.0+, `bigin apply`), or the older "flagged for ... review" /
+  ending "§ 2 changed — flagged for review" (v1.10.0+, `bigin apply`), a "Status approved → draft
+  (un-staged by this change …)" line (v1.16.0+: a content change to an approved UC un-stages it on the
+  write, so a re-approval always arrives here as `draft`), or the older "flagged for ... review" /
   "reverts from approved, main flow changed". Surface every one of
   those lines since this UC's last approval on its own, before anything else in the summary — that flag
   exists so the human gets a chance to catch a wrong flow, and a summary that buries it defeats the
@@ -137,8 +139,8 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
      * Find this UC's last human touchpoint: scan `## Changelog` bottom-to-top for the most recent line
        that documents an approval (or, with none yet, treat the `1.0` creation line as the start).
        Collect every line strictly after it — nothing a human has confirmed since — and pull out the
-       ones ending "flagged for review" (`bigin apply`, v1.10.0+) or "flagged for ... review" / naming a
-       "main flow changed" revert (older runs). Those are exactly the lines written whenever a `## 2`
+       ones ending "flagged for review" (`bigin apply`, v1.10.0+), carrying "Status approved → draft"
+       (v1.16.0+), or "flagged for ... review" / naming a "main flow changed" revert (older runs). Those are exactly the lines written whenever a `## 2`
        change lands without a human wait (4-sync.md § Part 2); this is the flow drift step 2 leads with.
      * Check `## 4`'s rule mirror against each cited `BR-###`'s current statement and enforcement
        point by running `$BIGIN mirror br UC-###`. `## 4` is a read-only mirror (`use-case.md` § Use Case) —
@@ -158,11 +160,17 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
        each additional feature's hub `uc:` list too. For every related id found this way (excluding
        this UC itself), open just enough to note `title` + `status` — not a full reprocess of someone
        else's file. Skip anything already `consolidated` or `removed`; they're not live review context.
+     * **Re-approval: what the change reached.** When the UC was un-staged by a change, run
+       `$BIGIN impact --ucs UC-###` (read-only) and read the `## Impact` section of each `INT-###` the
+       flagged Changelog lines cite. Carry into the summary: the other UCs that changed through a shared
+       rule, the sibling features, and every UX spec / epic / story now `stale:` on this UC — with the
+       story steps hit — so the human approves knowing which handed-off stories will need regenerating.
   2. **Show a short summary.** Lead with the flow drift collected in step 1: quote each flagged
      Changelog line since the last approval, in the order it happened, naming the `INT-###`/source
      behind it — this is what changed in `## 2`/`## 3` that no human has confirmed yet, shown before
      anything else so the human is reviewing the flow itself, not a paraphrase of it. Follow with the
-     goal, main-flow step count, and any drift this run corrected in `## 4`. Then list the related UCs
+     goal, main-flow step count, and any drift this run corrected in `## 4`. On a re-approval, the impact
+     lines from step 1 come next (rule ripple, sibling features, stale UX/epics/stories). Then list the related UCs
      from step 1 (grouped as same-feature / shared-BR / cross-feature, each with title + status) so the
      human can judge this UC's flow against its neighborhood, not in isolation — then ask whether the
      flow still reads right and the user intends to approve.

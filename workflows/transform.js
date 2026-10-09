@@ -7,7 +7,7 @@ export const meta = {
     { title: 'Draft', detail: 'mint new UCs, uc-router Phase B → change sets' },
     { title: 'Apply', detail: 'bigin ingest + apply (one write per artifact)' },
     { title: 'Adjudicate', detail: 'code-adjudicator per conflict/held row (code-grounded vaults only)' },
-    { title: 'Close', detail: 'hub refresh, coverage, lint' },
+    { title: 'Close', detail: 'hub refresh, coverage, impact on each intake note, lint' },
   ],
 }
 
@@ -118,7 +118,7 @@ const results = await pipeline(
     const d = a.data || {}
     const n = k => (Array.isArray(d[k]) ? d[k].length : 0)
     return { ...s, applied: n('applied'), already: n('already'), gated: n('gated'), drift: n('drift'),
-             invalid: n('invalid') + n('rejected'), review: d.review || [] }
+             invalid: n('invalid') + n('rejected'), review: d.review || [], reverted: d.reverted || [], stale: d.stale || [] }
   },
   // 4 — adjudicate (code-grounded only): one referee per conflict/held row, verdicts applied by the engine
   async (s) => {
@@ -141,13 +141,18 @@ const results = await pipeline(
   },
 )
 
+// impact is an OUTPUT of this run, not a stage: every intake note the hubs cite gets its ## Impact section
+// regenerated (what it changed, through which rule, which features, which UX/epics/stories are now stale)
+const impact = await engine('impact', 'Close', [`${BIN} --json impact touched --write`])
 const lint = await engine('lint --full', 'Close', [`${BIN} lint --full || true`])
 const out = results.filter(Boolean)
 return {
   run: RUN,
   features: out.map(r => ({ feature: r.slug, error: r.error || null, stage: r.error ? r.stage : 'done',
     applied: r.applied || 0, gated: r.gated || 0, drift: r.drift || 0, invalid: r.invalid || 0,
-    review: r.review || [], coverage: r.coverage || null, adjudicated: r.adjudicated || null })),
+    review: r.review || [], reverted: r.reverted || [], stale: r.stale || [],
+    coverage: r.coverage || null, adjudicated: r.adjudicated || null })),
+  impact: impact && impact.ok && Array.isArray(impact.data) ? impact.data.filter(i => i.written).map(i => ({ int: i.int, ...i.summary })) : [],
   lint: lint && lint.data ? (lint.data.text || '').split('\n')[0] : 'not run',
   next: `bigin run summary ${RUN}`,
 }

@@ -40,7 +40,9 @@ $BIN apply _runs/$RUN/tasks/<slug>.changesets.out.json --run $RUN
 
 Per artifact, one write: sets applied in a fixed order (steps → flows → § 1/§ 6 → rule → § 4 mirrors →
 questions), version bump, one Changelog line citing the trace and every applied change-set id, `§ 2
-changed — flagged for review` when a step changed (the reason `/approve-uc` re-reviews it), status left to
+changed — flagged for review` when a step changed (the reason `/approve-uc` re-reviews it); a content
+change to an `approved` UC/BR also sets it back to `draft` on that same write (un-staged until re-approved),
+and every UX spec, epic and story built on it gets `stale:` (`bigin cascade`). Other statuses are left to
 Stage 5. Gated sets go to the ledger with their question on the artifact. Afterwards the engine flips each
 traced Signal Log row — `applied` when all its sets landed, `staged` while one is gated or drifted —
 syncs links, refreshes the touched hubs, re-counts touched statuses, and re-renders `## Pending changes`.

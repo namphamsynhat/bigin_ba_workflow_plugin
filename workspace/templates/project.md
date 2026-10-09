@@ -10,6 +10,13 @@ outlook_folder:
 intake_lookback_days: 14
 email_provider: outlook   # outlook | spark — which tool /intake pulls client email from
 meeting_provider: fathom  # fathom | spark | firefly — which tool /intake pulls meeting transcripts from
+jira_provider:            # atlassian | blank — Jira tickets as intake (Atlassian MCP, read-only)
+jira_site:                # e.g. acme.atlassian.net
+jira_projects: []         # Jira project keys to sweep, e.g. [ACME]
+jira_jql:                 # optional override of the sweep query
+jira_scope_marker: "Final scope"  # a comment/description heading that states the agreed scope
+jira_onshore: []          # Jira account ids / emails / display names on the onshore side (else client_emails)
+jira_offshore: []         # ... on the offshore side (else team_emails)
 project_mode: new        # new | ongoing
 platform: web             # web | mobile | both — drives design screen composition, nav shape, and prototype prompts
 codebase_path:            # absolute path to the product repo — required when project_mode: ongoing
@@ -40,6 +47,12 @@ updated: <YYYY-MM-DD>
 > - `meeting_provider` — which tool `/intake` reads meeting transcripts from: `fathom` (Fathom MCP,
 >   default), `spark` (Spark Desktop's `meetings`/`meeting` commands), or `firefly` (a Firefly MCP,
 >   if one is connected to this session — none ships with this vault by default).
+> - `jira_provider` — `atlassian` turns on Jira intake (`/bigin-intake` § Stage 2D): one living note per
+>   ticket, each sweep appending only new comments, description revisions and field changes. Blank = off.
+>   `jira_site`, `jira_projects` and `jira_jql` scope the sweep; `jira_onshore` / `jira_offshore` tag each
+>   author's side (falling back to `client_emails` / `team_emails`; a bare domain like `acme.com` matches
+>   every address on it); `jira_scope_marker` is the heading the teams use to state the agreed scope.
+>   Each Jira project's statuses map to a phase in `## Jira status mapping` below.
 > - `project_mode` — `new` (greenfield) or `ongoing` (existing product).
 > - `platform` — what's being built: `web` (a browser app), `mobile` (a phone app), or `both`. Read by
 >   `/bigin-generate-design`: it decides the regions vocabulary a screen spec uses, the shape of the
@@ -92,6 +105,15 @@ to verbatim rather than summarized. Skipped when a proposal exists (§ 5.1) or p
 <!-- project_mode: new only — written by /bigin-new-project § 5.3. One dated line per research run,
 pointing at the full report in _bigin/system/domain-research.md rather than duplicating it here. -->
 
+## Jira status mapping
+<!-- jira_provider set only. One row per (project, issue types, status). Issue types: comma list or *.
+Phase: active (keep capturing) · scope-agreed (the newest description + scope comment are the agreed
+baseline) · done (capture once more, then stop) · ignore (never capture). An unmapped status counts
+as active and /bigin-intake warns about it. Phases inform extraction; they gate nothing. -->
+
+| Project | Issue types | Jira status | Phase |
+|---|---|---|---|
+
 ## Provider readiness
 <!-- Written by /bigin-new-project § 7 — one line per configured provider, dated. A snapshot for
 orientation, never a gate: /bigin-intake re-checks at sweep time, and a connector can be revoked the
@@ -108,6 +130,7 @@ means re-editing this template or a project's config. Fill `<engine>` with whate
 names for this project's platform. -->
 - email_provider: `outlook | spark` — one of: `✔ connected` · `! needs authentication: <what to do>` · `✘ failed to connect: <error>` · `not installed: <what to install>` (`YYYY-MM-DD`)
 - meeting_provider: `fathom | spark | firefly` — same states as above (`YYYY-MM-DD`)
+- jira_provider: `atlassian` — same states as above; authorised in the claude.ai connector settings (`YYYY-MM-DD`)
 - design_engine (`web | mobile`): `<engine>` — one of: `✔ installed` · `not installed: <install command>` · `skipped — waived in project settings` (`YYYY-MM-DD`)
 
 ## Notes

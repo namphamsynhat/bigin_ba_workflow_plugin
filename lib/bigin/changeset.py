@@ -6,7 +6,10 @@
   and resolve ``new:<key>`` references;
 * per artifact, apply its sets in a fixed order (structure → § 1/§ 6 → rule → § 4 mirrors →
   questions) and write the file ONCE: version bump, one Changelog line carrying the trace and
-  every change-set id (so re-applying is a no-op), review flag when § 2 changed, status untouched;
+  every change-set id (so re-applying is a no-op), review flag when § 2 changed;
+* a CONTENT change to an approved (or enriched / consolidated) UC/BR un-stages it: status → draft,
+  said on the same Changelog line, so it goes back through /approve-uc (intake.md § Feedback
+  handling). A question added or answered is not content and never reverts anything;
 * an anchor whose ``sha`` no longer matches is DRIFT: nothing is overwritten, ONE question naming
   both wordings is raised instead (1-foldin.md § the human may have edited the section first);
   text already matching the proposal counts as applied (a hand-applied change);
@@ -35,6 +38,8 @@ ORDER = {
     "add_question": 6, "answer_question": 7,
 }
 S2_OPS = {"new_step_after", "replace_step", "drop_step"}
+NON_CONTENT_OPS = {"add_question", "answer_question", "link"}
+SIGNED_OFF = ("approved", "enriched", "consolidated")
 LIST_FIELDS = {"pre-conditions", "post-conditions (success)", "post-conditions (failure)"}
 
 
@@ -774,7 +779,7 @@ def apply(vault, changesets, run=None, dry=False, release_ids=None):
     prev_batch = os.environ.get("BIGIN_BATCH")
     os.environ["BIGIN_BATCH"] = "1"
     res = {"run": run, "applied": [], "already": [], "gated": [], "drift": [], "invalid": [], "rejected": [],
-           "created": {}, "written": [], "hubs_refreshed": [], "rows": {}, "review": []}
+           "created": {}, "written": [], "hubs_refreshed": [], "rows": {}, "review": [], "reverted": []}
     try:
         schema = jsonschema_lite.load("changeset")
         valid = []
@@ -895,6 +900,11 @@ def apply(vault, changesets, run=None, dry=False, release_ids=None):
                 if s2:
                     line += " § 2 changed — flagged for review."
                     res["review"].append(tid)
+                was = (doc.fm_get("status") or "").strip()
+                if was in SIGNED_OFF and any(c["op"] not in NON_CONTENT_OPS for c in did):
+                    doc.fm_set("status", "draft")
+                    line += f" Status {was} → draft (un-staged by this change; re-approve via /approve-uc)."
+                    res["reverted"].append(tid)
                 append_changelog(doc, line)
                 touched_ids.add(tid)
                 for f in [doc.fm_get("primary_feature") or doc.fm_get("feature")] + doc.fm_list("features"):
@@ -931,6 +941,8 @@ def apply(vault, changesets, run=None, dry=False, release_ids=None):
                         res["hubs_refreshed"].append(slug)
             status.recount(vault, touched_ids | set(res["created"].values()))
             ledger.render_blocks(vault)
+            from . import cascade
+            res["stale"] = [f"{c['id']} ({', '.join(c['stale'])})" for c in cascade.run(vault) if c["stale"]]
         if run and not dry:
             for bucket in ("applied", "already", "gated", "drift", "invalid"):
                 for e in res[bucket]:
@@ -1096,4 +1108,8 @@ def render_result(res):
         lines.append("rows: " + "; ".join(f"{h} {' '.join(v)}" for h, v in res["rows"].items()))
     if res["review"]:
         lines.append("flagged for review (§ 2 changed): " + ", ".join(sorted(set(res["review"]))))
+    if res.get("reverted"):
+        lines.append("un-staged (approved → draft, re-approve): " + ", ".join(sorted(set(res["reverted"]))))
+    if res.get("stale"):
+        lines.append("downstream now stale: " + ", ".join(sorted(res["stale"])))
     return "\n".join(lines)

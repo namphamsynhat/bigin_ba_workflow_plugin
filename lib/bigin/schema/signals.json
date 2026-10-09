@@ -41,7 +41,7 @@
           "n": {
             "type": "integer",
             "minimum": 1,
-            "description": "row # — required for repair, ignored for fresh/append (the engine numbers)"
+            "description": "row # \u2014 required for repair, ignored for fresh/append (the engine numbers)"
           },
           "type": {
             "enum": [
@@ -70,6 +70,22 @@
           },
           "notes": {
             "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "agreed",
+              "dropped",
+              "open"
+            ],
+            "description": "living Jira tickets (2-extraction.md \u00a7 A living Jira ticket): agreed by both sides / dropped in the discussion / proposed and never answered. Rendered as a [scope:x] Notes prefix."
+          },
+          "supersedes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "earlier row #s on this note this row replaces (a newer description or comment). The engine writes 'supersedes #m' here and 'superseded by #n' on each earlier row; the earlier rows stay."
           }
         }
       }

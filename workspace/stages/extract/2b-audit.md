@@ -119,6 +119,7 @@ fail. Spend it there and nowhere else.
 ```text
 DISPATCH signal-auditor when ANY holds:
     any source block's kind is `transcript`      # however short — see below
+    the note is `source: jira`                  # a negotiated thread; the engine sets audit_owed itself
     ## Raw is ~300 lines or more
     more than one source block, and any of them is an attachment or a thread
     2a reported a block it could not read, or `not stated` over 30% of requirement/feedback rows
