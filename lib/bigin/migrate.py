@@ -20,7 +20,7 @@ from .util import EngineError, dump_json, now_stamp, sort_ids, today
 from .vault import PLUGIN_ROOT, Doc, strip_comments
 
 LEGACY_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "legacy_templates")
-STEPS = [("1.9.0", []), ("1.10.0", ["discussion-to-ledger"]), ("1.12.0", ["strip-guidance", "split-signal-log"]), ("1.12.1", []), ("1.12.2", []), ("1.12.3", []), ("1.12.4", []), ("1.13.0", [])]
+STEPS = [("1.9.0", []), ("1.10.0", ["discussion-to-ledger"]), ("1.12.0", ["strip-guidance", "split-signal-log"]), ("1.12.1", []), ("1.12.2", []), ("1.12.3", []), ("1.12.4", []), ("1.13.0", []), ("1.13.1", [])]
 
 
 def _v(s):
