@@ -48,7 +48,7 @@ human reviews this UC's flow with the rest of its neighborhood in view, not in i
   `/bigin-transform-signal` writes without a human wait (`bigin apply`, 4-sync.md § Part 2) — a UC can reach
   this skill with its flow changed since a human last looked, marked only by a `## Changelog` line
   ending "§ 2 changed — flagged for review" (v1.10.0+, `bigin apply`), a "Status approved → draft
-  (un-staged by this change …)" line (v1.16.0+: a content change to an approved UC un-stages it on the
+  (un-staged by this change …)" line (v1.13.0+: a content change to an approved UC un-stages it on the
   write, so a re-approval always arrives here as `draft`), or the older "flagged for ... review" /
   "reverts from approved, main flow changed". Surface every one of
   those lines since this UC's last approval on its own, before anything else in the summary — that flag
@@ -140,7 +140,7 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
        that documents an approval (or, with none yet, treat the `1.0` creation line as the start).
        Collect every line strictly after it — nothing a human has confirmed since — and pull out the
        ones ending "flagged for review" (`bigin apply`, v1.10.0+), carrying "Status approved → draft"
-       (v1.16.0+), or "flagged for ... review" / naming a "main flow changed" revert (older runs). Those are exactly the lines written whenever a `## 2`
+       (v1.13.0+), or "flagged for ... review" / naming a "main flow changed" revert (older runs). Those are exactly the lines written whenever a `## 2`
        change lands without a human wait (4-sync.md § Part 2); this is the flow drift step 2 leads with.
      * Check `## 4`'s rule mirror against each cited `BR-###`'s current statement and enforcement
        point by running `bigin mirror br UC-###`. `## 4` is a read-only mirror (`use-case.md` § Use Case) —

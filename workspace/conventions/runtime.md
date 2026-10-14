@@ -41,7 +41,7 @@ design is stale" is detectable today (the PRD row was live until the PRD stage w
 stamps `UC-###@version` and `UX-###@version` on every `EP-###` and `US-###` it writes, so "these stories have
 drifted" is detectable too; an approved story that drifted is reported, never rewritten.
 
-**`stale:` — the suspect-link flag, derived (1.16.0).** `bigin cascade` (run by every `bigin apply`, so
+**`stale:` — the suspect-link flag, derived (1.13.0).** `bigin cascade` (run by every `bigin apply`, so
 by every transform and every ledger release) compares each UX spec's, epic's and story's `absorbed:` with
 the live UC and writes `stale: [UC-###@<current version>]` for every cited UC that moved on — and, for an
 epic or story, for every cited UC that is no longer `approved`. It adds one Changelog line naming the
