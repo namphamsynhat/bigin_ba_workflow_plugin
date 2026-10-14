@@ -1,7 +1,7 @@
 export const meta = {
   name: 'bigin-adjudicate',
   description: 'Bigin adjudication: one code-adjudicator referee per conflict/held Signal Log row of a feature (second judge for P0/security rows), verdicts applied by bigin apply',
-  whenToUse: 'Code-grounded vaults (project.md grounding: codebase|both). args: {run, vault, plugin_root, feature, p0_panel}',
+  whenToUse: 'Code-grounded vaults (project.md grounding: codebase|both). args: {run, vault, plugin_root, feature, p0_panel, bin?}',
   phases: [
     { title: 'Worklist', detail: 'conflict + held rows with their related rows' },
     { title: 'Referee', detail: 'one code-adjudicator per row; P0/security rows get a second judge' },
@@ -10,7 +10,9 @@ export const meta = {
 }
 
 const A = args || {}
-const BIN = `${A.plugin_root}/bin/bigin`
+// One path for every shell: sh/Git Bash run the bin/bigin sh shim (it picks python3/python);
+// cmd.exe resolves the extensionless name to bin/bigin.cmd via PATHEXT. `args.bin` overrides.
+const BIN = A.bin || `"${A.plugin_root}/bin/bigin"`
 const TASKS = `_runs/${A.run}/tasks`
 const VAULT = A.vault || '.'
 if (!A.run || !A.plugin_root || !A.feature) throw new Error('args need {run, plugin_root, feature}')

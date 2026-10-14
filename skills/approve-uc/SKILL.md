@@ -42,7 +42,7 @@ human reviews this UC's flow with the rest of its neighborhood in view, not in i
   ledger (`01-Requirements/_ledger/<slug>.jsonl`), rendered read-only into the UC's `## Pending changes`
   block. Any `open` or `needs-judgement` ledger entry targeting this UC blocks approval — the approved text
   would not be the text that lands once the question is answered. Check with
-  `"${CLAUDE_PLUGIN_ROOT}/bin/bigin" --json ledger list` (filter `artifact == UC-###`); the block on the
+  `bigin --json ledger list` (filter `artifact == UC-###`); the block on the
   file is the human-readable mirror of the same thing.
 * **Never fold flow drift into the summary silently:** `## 2`/`## 3` are the two sections
   `/bigin-transform-signal` writes without a human wait (`bigin apply`, 4-sync.md § Part 2) — a UC can reach
@@ -88,16 +88,16 @@ by feature) and ask which one.
 
 ## Engine commands this skill uses
 
-`$BIGIN` = `"${CLAUDE_PLUGIN_ROOT}/bin/bigin"`, run from the vault root. Each is deterministic and
+`bigin` is a shell function — `bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }` (`python3` if no `python` on PATH), run from the vault root. Each is deterministic and
 idempotent; none of them approves anything.
 
 | Step | Command | What it tells / does |
 | :--- | :--- | :--- |
-| pending changes | `$BIGIN --json ledger list` | open / needs-judgement change sets per artifact — any for this UC blocks approval |
-| compact read | `$BIGIN --json context UC-### --sections 1,2,3,5` | steps/flows with ids, open questions, § 4 rows — instead of re-reading the whole file |
-| § 4 mirror | `$BIGIN mirror br UC-###` | refreshes § 4 statements from each BR's current rule, reports bad enforcement points; never invents a rule, never swaps one rule for another |
-| status | `$BIGIN status UC-###` | re-derives draft ↔ needs-clarification from the live open-question count |
-| boundary | `$BIGIN lint --full` | the blocking invariant gate, once, after the approval write |
+| pending changes | `bigin --json ledger list` | open / needs-judgement change sets per artifact — any for this UC blocks approval |
+| compact read | `bigin --json context UC-### --sections 1,2,3,5` | steps/flows with ids, open questions, § 4 rows — instead of re-reading the whole file |
+| § 4 mirror | `bigin mirror br UC-###` | refreshes § 4 statements from each BR's current rule, reports bad enforcement points; never invents a rule, never swaps one rule for another |
+| status | `bigin status UC-###` | re-derives draft ↔ needs-clarification from the live open-question count |
+| boundary | `bigin lint --full` | the blocking invariant gate, once, after the approval write |
 
 ## Input
 
@@ -126,7 +126,7 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
          point at "process UC-###" (the `bigin-ba` agent's process-the-UC pass, or `/bigin-run`) rather
          than reporting them back as questions the human still owes an answer to. Never fold the answer
          in from here, and never tick the box to clear the count.
-     * **Check the ledger.** Run `$BIGIN --json ledger list` and keep the entries whose `artifact` is
+     * **Check the ledger.** Run `bigin --json ledger list` and keep the entries whose `artifact` is
        this UC. Any `open` entry → stop: quote each one's question and pending text (the same lines the
        UC's `## Pending changes` block shows) and say approval waits until they are answered and released.
        A `needs-judgement` entry (its answer reads as a refusal) → stop too: it needs a verdict
@@ -140,7 +140,7 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
        "main flow changed" revert (older runs). Those are exactly the lines written whenever a `## 2`
        change lands without a human wait (4-sync.md § Part 2); this is the flow drift step 2 leads with.
      * Check `## 4`'s rule mirror against each cited `BR-###`'s current statement and enforcement
-       point by running `$BIGIN mirror br UC-###`. `## 4` is a read-only mirror (`use-case.md` § Use Case) —
+       point by running `bigin mirror br UC-###`. `## 4` is a read-only mirror (`use-case.md` § Use Case) —
        the engine refreshes a drifted statement from the BR file and reports (never fixes) an enforcement
        point naming a missing or dropped step, a BR with no settled statement, or a row that reads as a
        different rule than its id. Surface every reported finding in the summary; never invent a rule
@@ -177,7 +177,7 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
      add one `## Changelog` line noting the approval and anything this run corrected. This is the one
      hand edit the skill makes — the engine deliberately has no command that approves (`bigin status`
      only ever moves draft ↔ needs-clarification), so nothing but this confirmed step can set `approved`.
-     Then run `$BIGIN lint --full` once; a finding it reports is real. Hub tables are not refreshed here:
+     Then run `bigin lint --full` once; a finding it reports is real. Hub tables are not refreshed here:
      `/sync-entities` runs `bigin hub refresh` for every hub the UC touches.
   4. **Confirm and point to next.** Tell the user the UC is ready for PRD — `/bigin-generate-prd`
      folds it into its feature's PRD on its next run (worth running once a sitting of approvals ends,

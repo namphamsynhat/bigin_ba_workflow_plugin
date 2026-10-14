@@ -17,7 +17,7 @@ plugin context, so a path into the install directory is unreachable to them.
 
 > **Artifact Standard:** Outputs:
 >> **The materialized workspace** — `_bigin/conventions/`, `_bigin/stages/`, `_bigin/templates/` (skeletons + `*.guide.md`), `_bigin/cards/` (the per-role instruction cards agents read): plugin-owned, overwritten every run, reachable to every subagent.
->> **Not copied: the engine.** `bin/bigin` + `lib/bigin/` stay inside the plugin; skills call `"${CLAUDE_PLUGIN_ROOT}/bin/bigin" …`. For agents that cannot resolve `CLAUDE_PLUGIN_ROOT` (every subagent, including the interactive `bigin-ba`), `bigin launcher` writes `_bigin/bin/bigin` — a two-line shim holding the absolute path of the installed plugin — and refreshes `_bigin/cards/`. Regenerated every run, because the plugin path changes with each version.
+>> **Not copied: the engine.** `bin/bigin` (+ `bin/bigin.cmd`) + `lib/bigin/` stay inside the plugin; skills call `python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" …` (fallback `python3` — portable on Windows cmd). For agents that cannot resolve `CLAUDE_PLUGIN_ROOT` (every subagent, including the interactive `bigin-ba`), `bigin launcher` writes `_bigin/bin/bigin` and `_bigin/bin/bigin.cmd` — shims holding the absolute path of the installed plugin — and refreshes `_bigin/cards/`. Regenerated every run, because the plugin path changes with each version.
 >> **The engagement config** — `_bigin/system/project.md`: client, contacts, providers, greenfield vs. ongoing, web vs. mobile vs. both, plus the project brief, domain-research pointer, and provider/design-engine readiness snapshot.
 >> **The project agent** — repo-root `CLAUDE.md`: a delimited, plugin-owned section orienting any Claude Code session to the engagement, the workspace map, and the skill sequence, regenerated every run.
 
@@ -80,7 +80,7 @@ plugin context, so a path into the install directory is unreachable to them.
   then run the engine's own materializer for the rest — never hand-write the shim or copy the cards:
 
   ```
-  "${CLAUDE_PLUGIN_ROOT}/bin/bigin" launcher     →  _bigin/bin/bigin  (shim → the installed plugin, chmod +x)
+  python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" launcher  →  _bigin/bin/bigin + bigin.cmd  (shims → installed plugin)
                                                    _bigin/cards/     (per-role cards, ≤ 3 KB each)
   ```
 

@@ -71,7 +71,7 @@ def test_write_backs_up_and_restores(tmp=None):
 # ---------------------------------------------------------------------------- ids.py
 
 def test_mint_is_parallel_safe():
-    """12 concurrent `bigin mint br` processes must get 12 distinct ids (fcntl lock)."""
+    """12 concurrent `bigin mint br` processes must get 12 distinct ids (exclusive lock)."""
     import subprocess
     import sys
     from helpers import ROOT
@@ -84,6 +84,237 @@ def test_mint_is_parallel_safe():
     got = [p.communicate()[0].split()[0] for p in procs]
     assert len(set(got)) == 12, got
     assert sorted(got)[0] == "BR-007" and sorted(got)[-1] == "BR-018", got
+
+
+def test_exclusive_file_lock_serializes_on_windows():
+    """Contended msvcrt lock must wait and acquire — never PermissionError from reading the locked byte.
+
+    Proves exclusion: both processes append to one ordered log under the lock; waiter's 'done'
+    line must appear after holder's 'released' (mtime alone can tie on coarse filesystems).
+    """
+    import subprocess
+    import sys
+    import tempfile
+    import time
+    from helpers import ROOT
+    from bigin.util import msvcrt
+
+    if msvcrt is None:
+        return
+    d = tempfile.mkdtemp(prefix="bigin-lock-")
+    lock = os.path.join(d, "t.lock")
+    ready = os.path.join(d, "ready")
+    log = os.path.join(d, "order.log")
+    lib = os.path.join(ROOT, "lib")
+    holder = subprocess.Popen([sys.executable, "-c",
+        "import sys,time; sys.path.insert(0, sys.argv[1]); from bigin.util import exclusive_file_lock\n"
+        "lock, ready, log = sys.argv[2], sys.argv[3], sys.argv[4]\n"
+        "with exclusive_file_lock(lock):\n"
+        "    open(ready,'w').close()\n"
+        "    time.sleep(0.8)\n"
+        "    open(log,'a',encoding='utf-8').write('released\\n')\n",
+        lib, lock, ready, log], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    for _ in range(200):
+        if os.path.exists(ready):
+            break
+        time.sleep(0.05)
+    else:
+        holder.kill()
+        raise AssertionError("holder never took the lock: " + (holder.communicate()[0] or ""))
+    assert not os.path.exists(log), "holder finished before waiter started"
+    waiter = subprocess.Popen([sys.executable, "-c",
+        "import sys; sys.path.insert(0, sys.argv[1]); from bigin.util import exclusive_file_lock\n"
+        "lock, log = sys.argv[2], sys.argv[3]\n"
+        "with exclusive_file_lock(lock):\n"
+        "    open(log,'a',encoding='utf-8').write('done\\n')\n",
+        lib, lock, log], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    wout, _ = waiter.communicate(timeout=30)
+    hout, _ = holder.communicate(timeout=30)
+    assert waiter.returncode == 0, "waiter failed: " + (wout or "")
+    assert holder.returncode == 0, "holder failed: " + (hout or "")
+    with open(log, encoding="utf-8") as f:
+        lines = [ln.strip() for ln in f if ln.strip()]
+    assert lines == ["released", "done"], f"lock did not serialize: {lines}"
+
+
+def test_exclusive_file_lock_non_retryable_oserror():
+    """Windows: non-contention msvcrt errors must not spin in the retry loop."""
+    import errno
+    import tempfile
+    import unittest.mock
+    from bigin.util import exclusive_file_lock, msvcrt
+
+    if msvcrt is None:
+        return
+    lock = os.path.join(tempfile.mkdtemp(prefix="bigin-lock-"), "t.lock")
+    with unittest.mock.patch.object(msvcrt, "locking", side_effect=OSError(errno.EINVAL, "invalid")):
+        try:
+            with exclusive_file_lock(lock):
+                pass
+            raise AssertionError("expected OSError")
+        except OSError as e:
+            assert e.errno == errno.EINVAL
+
+
+def test_windows_bigin_cmd_propagates_nonzero_exit():
+    """bin/bigin.cmd and launcher-generated .cmd must forward the child's exit code (not swallow to 0)."""
+    import subprocess
+    import sys
+    from helpers import ROOT
+
+    if sys.platform != "win32":
+        return
+    plugin_cmd = os.path.join(ROOT, "bin", "bigin.cmd")
+    # argparse usage error → exit 2; a broken `( exit /b %ERRORLEVEL% )` block would report 0
+    r = subprocess.run([plugin_cmd, "mint", "uc"], capture_output=True)
+    assert r.returncode == 2, f"plugin bigin.cmd: want 2, got {r.returncode}; out={r.stdout!r} err={r.stderr!r}"
+
+    root, _ = fresh("comm-vault")
+    code, out = run(root, "launcher")
+    assert code == 0, out
+    gen_cmd = os.path.join(root, "_bigin", "bin", "bigin.cmd")
+    assert os.path.isfile(gen_cmd), gen_cmd
+    r2 = subprocess.run([gen_cmd, "mint", "uc"], capture_output=True)
+    assert r2.returncode == 2, (
+        f"launcher bigin.cmd: want 2, got {r2.returncode}; out={r2.stdout!r} err={r2.stderr!r}"
+    )
+
+
+def test_windows_bigin_cmd_forwards_spaced_vault_and_special_spec():
+    """Quoted arg rebuild must reach Python intact (vault path with spaces; spec path with spaces)."""
+    import shutil
+    import subprocess
+    import sys
+    import tempfile
+    from helpers import FIX, ROOT, write_json
+
+    if sys.platform != "win32":
+        return
+    base = tempfile.mkdtemp(prefix="bigin spaced vault ")
+    root = os.path.join(base, "comm-vault")
+    shutil.copytree(os.path.join(FIX, "comm-vault"), root)
+    spec = write_json(root, "br spaced.json", {
+        "title": "Spaced spec", "feature": "payments", "statement": "If x, then y."})
+    cmd = os.path.join(ROOT, "bin", "bigin.cmd")
+    r = subprocess.run(
+        [cmd, "--vault", root, "mint", "br", "--spec", spec],
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 0, f"mint failed: {r.returncode} out={r.stdout!r} err={r.stderr!r}"
+    assert "BR-" in (r.stdout or "")
+
+    root2, _ = fresh("comm-vault")
+    run(root2, "launcher")
+    gen = os.path.join(root2, "_bigin", "bin", "bigin.cmd")
+    r2 = subprocess.run(
+        [gen, "--vault", root, "lint", "--full"],
+        capture_output=True,
+        text=True,
+    )
+    assert r2.returncode == 0, f"generated cmd: {r2.returncode} err={r2.stderr!r}"
+    assert "usage:" not in (r2.stderr or "").lower()[:200]
+
+
+def test_windows_bigin_cmd_forwards_exclamation_in_spec_path():
+    """Delayed-expansion arg rebuild must not strip ! from paths forwarded to Python."""
+    import shutil
+    import subprocess
+    import sys
+    import tempfile
+    from helpers import FIX, ROOT, write_json
+
+    if sys.platform != "win32":
+        return
+    base = tempfile.mkdtemp(prefix="bigin spaced vault ")
+    root = os.path.join(base, "comm-vault")
+    shutil.copytree(os.path.join(FIX, "comm-vault"), root)
+    spec = write_json(root, "test!bang.json", {
+        "title": "Bang spec", "feature": "payments", "statement": "If x, then y."})
+    assert os.path.isfile(spec), spec
+    plugin_cmd = os.path.join(ROOT, "bin", "bigin.cmd")
+    r = subprocess.run(
+        [plugin_cmd, "--vault", root, "mint", "br", "--spec", spec],
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 0, f"plugin cmd: {r.returncode} out={r.stdout!r} err={r.stderr!r}"
+    assert "BR-" in (r.stdout or "")
+
+    root2, _ = fresh("comm-vault")
+    run(root2, "launcher")
+    gen_cmd = os.path.join(root2, "_bigin", "bin", "bigin.cmd")
+    r2 = subprocess.run(
+        [gen_cmd, "--vault", root, "mint", "br", "--spec", spec],
+        capture_output=True,
+        text=True,
+    )
+    assert r2.returncode == 0, f"launcher cmd: {r2.returncode} out={r2.stdout!r} err={r2.stderr!r}"
+    assert "BR-" in (r2.stdout or "")
+
+
+def test_bigin_cmd_script_escapes_percent_in_cli_path():
+    from bigin.cli import _bigin_cmd_script
+
+    body = _bigin_cmd_script(r"C:\plugins\rel%100\lib\bigin\cli.py")
+    assert "rel%%100" in body
+    assert 'set "CLI=C:/plugins/rel%%100/lib/bigin/cli.py"' in body
+
+
+def test_bigin_cmd_script_refuses_template_without_cli_line():
+    """A template the shim cannot repoint must refuse, not emit a shim aimed at %~dp0.."""
+    import tempfile
+    import unittest.mock
+    from bigin import vault as vault_mod
+    from bigin.cli import _bigin_cmd_script
+
+    with tempfile.TemporaryDirectory() as plugin:
+        os.makedirs(os.path.join(plugin, "bin"))
+        with open(os.path.join(plugin, "bin", "bigin.cmd"), "w", encoding="utf-8") as f:
+            f.write("@echo off\r\npy -3 %*\r\n")
+        with unittest.mock.patch.object(vault_mod, "PLUGIN_ROOT", plugin):
+            for missing in (False, True):
+                if missing:
+                    os.remove(os.path.join(plugin, "bin", "bigin.cmd"))
+                try:
+                    _bigin_cmd_script(r"C:\p\lib\bigin\cli.py")
+                    raise AssertionError("expected EngineError")
+                except EngineError as e:
+                    assert "launcher:" in str(e)
+
+
+def test_launcher_sh_shim_runs_engine():
+    """The generated sh shim (and the plugin's bin/bigin) must reach the engine wherever sh exists."""
+    import shutil
+    import subprocess
+    from helpers import ROOT
+    from bigin import __version__
+
+    sh = shutil.which("sh")
+    if not sh:
+        return
+    root, _ = fresh("comm-vault")
+    code, out = run(root, "launcher")
+    assert code == 0, out
+    for shim in (os.path.join(root, "_bigin", "bin", "bigin"), os.path.join(ROOT, "bin", "bigin")):
+        r = subprocess.run([sh, shim, "--version"], capture_output=True, text=True, timeout=60)
+        assert r.returncode == 0 and __version__ in r.stdout, f"{shim}: {r.returncode} {r.stderr!r}"
+
+
+def test_docs_engine_snippets_are_runnable_shell():
+    """`X='python "…/cli.py"'` then `$X …` passes the quotes through literally; docs must use the function."""
+    from helpers import ROOT
+
+    bad = re.compile(r"""\b(?:B|BIN|BIGIN)=['"]python """)
+    hits = []
+    for p in glob.glob(os.path.join(ROOT, "**", "*.md"), recursive=True):
+        if os.sep + "." in os.path.relpath(p, ROOT):
+            continue
+        with open(p, encoding="utf-8") as f:
+            for n, line in enumerate(f, 1):
+                if bad.search(line):
+                    hits.append(f"{os.path.relpath(p, ROOT)}:{n}")
+    assert not hits, "string-assigned engine command (use the bigin() function): " + ", ".join(hits)
 
 
 def test_mint_uc_refuses_duplicate_title_and_points_hubs():
@@ -142,9 +373,12 @@ def test_gates_are_add_only_and_tick_from_source():
     n_before = len(re.findall(r"^- \[[ x]\] ", read(root, hp), re.M))
     # answer the BR-003 question at its source
     bp = os.path.join(root, find(root, "01-Requirements/_brs", "BR-003"))
-    s = open(bp).read().replace("- [ ] Q: Is there a deadline", "- [x] Q: Is there a deadline").replace(
+    with open(bp, encoding="utf-8") as f:
+        s = f.read()
+    s = s.replace("- [ ] Q: Is there a deadline", "- [x] Q: Is there a deadline").replace(
         "(ref: INT-002 #3)\n  A:", "(ref: INT-002 #3)\n  A: 14 days")
-    open(bp, "w").write(s)
+    with open(bp, "w", encoding="utf-8", newline="\n") as f:
+        f.write(s)
     run(root, "hub", "refresh", "grant-intake")
     t = read(root, hp)
     assert len(re.findall(r"^- \[[ x]\] ", t, re.M)) >= n_before, "a gate line disappeared"
@@ -182,12 +416,16 @@ def test_mirror_links_status_idempotent():
 def test_mirror_refreshes_changed_rule_but_never_swaps_rules():
     root, v = fresh("comm-vault")
     bp = os.path.join(root, find(root, "01-Requirements/_brs", "BR-002"))
-    s = open(bp).read().replace("must both be present.", "must both be present, and the amount must be positive.")
-    open(bp, "w").write(s)
+    with open(bp, encoding="utf-8") as f:
+        s = f.read().replace("must both be present.", "must both be present, and the amount must be positive.")
+    with open(bp, "w", encoding="utf-8", newline="\n") as f:
+        f.write(s)
     up = os.path.join(root, find(root, "01-Requirements/_ucs", "UC-001"))
-    u = open(up).read().replace("| BR-001 | If the amount requested exceeds $5,000, then a second reviewer must approve the application. |",
-                                "| BR-001 | Bank transfers settle within three working days of release. |")
-    open(up, "w").write(u)
+    with open(up, encoding="utf-8") as f:
+        u = f.read().replace("| BR-001 | If the amount requested exceeds $5,000, then a second reviewer must approve the application. |",
+                             "| BR-001 | Bank transfers settle within three working days of release. |")
+    with open(up, "w", encoding="utf-8", newline="\n") as f:
+        f.write(u)
     code, out = run(root, "mirror", "br", "UC-001")
     t = read(root, find(root, "01-Requirements/_ucs", "UC-001"))
     assert "and the amount must be positive." in t, "changed rule not mirrored"
@@ -234,7 +472,8 @@ def test_quiet_hook_is_silent_in_batch_mode():
     from bigin import lint
     root, _ = fresh("comm-vault")
     p = os.path.join(root, find(root, "01-Requirements/_ucs", "UC-002"))
-    open(p, "a").write("\n| **S1** | dup | dup |\n")
+    with open(p, "a", encoding="utf-8", newline="\n") as f:
+        f.write("\n| **S1** | dup | dup |\n")
     payload = json.dumps({"tool_input": {"file_path": p}, "cwd": root})
     old_in, old_out = sys.stdin, sys.stdout
     try:
@@ -254,9 +493,41 @@ def test_quiet_hook_is_silent_in_batch_mode():
         os.environ.pop("CLAUDE_PROJECT_DIR", None)
 
 
+def test_blocking_hook_blocks_via_json_with_exit_0():
+    """BIGIN_LINT_BLOCKING must not exit non-zero: that would fire hooks.json's `|| python3` re-run."""
+    import io
+    import json
+    import sys
+    from bigin import lint
+    root, _ = fresh("comm-vault")
+    p = os.path.join(root, find(root, "01-Requirements/_ucs", "UC-002"))
+    with open(p, encoding="utf-8", newline="") as f:
+        text = f.read()
+    broken = re.sub(r"(?m)^status: .*$", "status: bogus", text, count=1)
+    assert broken != text
+    with open(p, "w", encoding="utf-8", newline="") as f:
+        f.write(broken)
+    payload = json.dumps({"tool_input": {"file_path": p}, "cwd": root})
+    old_in, old_out, old_err = sys.stdin, sys.stdout, sys.stderr
+    try:
+        os.environ["BIGIN_LINT_BLOCKING"] = "1"
+        os.environ["CLAUDE_PROJECT_DIR"] = root
+        sys.stdin, sys.stdout, sys.stderr = io.StringIO(payload), io.StringIO(), io.StringIO()
+        assert lint.main(["x", "--hook"]) == 0
+        got, err = sys.stdout.getvalue(), sys.stderr.getvalue()
+    finally:
+        sys.stdin, sys.stdout, sys.stderr = old_in, old_out, old_err
+        os.environ.pop("BIGIN_LINT_BLOCKING", None)
+        os.environ.pop("CLAUDE_PROJECT_DIR", None)
+    out = json.loads(got)
+    assert out["decision"] == "block" and "bigin-lint:" in out["reason"], got
+    assert err == ""
+
+
 def test_lint_flags_sensitive_values():
     root, _ = fresh("comm-vault")
     p = os.path.join(root, find(root, "01-Requirements/_brs", "BR-006"))
-    open(p, "a").write("\nContact finance-ops@acme-grants.example.com or db01.internal for details.\n")
+    with open(p, "a", encoding="utf-8", newline="\n") as f:
+        f.write("\nContact finance-ops@acme-grants.example.com or db01.internal for details.\n")
     code, out = run(root, "lint", "--full")
     assert code == 1 and "sensitive value reproduced" in out and "e-mail" in out and "internal host" in out

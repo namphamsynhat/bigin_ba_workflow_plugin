@@ -1,0 +1,4 @@
+# cmd.exe mis-scans goto labels in LF-only batch files; keep .cmd CRLF whatever core.autocrlf says.
+*.cmd text eol=crlf
+# The sh launcher must stay LF or `#!/bin/sh\r` breaks on POSIX.
+bin/bigin text eol=lf

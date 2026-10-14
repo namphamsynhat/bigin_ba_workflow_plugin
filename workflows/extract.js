@@ -1,7 +1,7 @@
 export const meta = {
   name: 'bigin-extract',
   description: 'Bigin extract (communication mode): per note signal-extractor → signal-auditor when owed → bigin note write-signals; then serial signal-filer per note → bigin file apply → lint --full',
-  whenToUse: 'Called by /extract-signal or /bigin-run. args: {run, vault, plugin_root, notes: [INT-###]}. Codebase-mode notes are imported by `bigin intake codebase` and never come here.',
+  whenToUse: 'Called by /extract-signal or /bigin-run. args: {run, vault, plugin_root, notes: [INT-###], bin?}. Codebase-mode notes are imported by `bigin intake codebase` and never come here.',
   phases: [
     { title: 'Extract', detail: 'signal-extractor per note (line-range reads)' },
     { title: 'Audit', detail: 'signal-auditor only where the audit is owed' },
@@ -11,7 +11,9 @@ export const meta = {
 }
 
 const A = args || {}
-const BIN = `${A.plugin_root}/bin/bigin`
+// One path for every shell: sh/Git Bash run the bin/bigin sh shim (it picks python3/python);
+// cmd.exe resolves the extensionless name to bin/bigin.cmd via PATHEXT. `args.bin` overrides.
+const BIN = A.bin || `"${A.plugin_root}/bin/bigin"`
 const TASKS = `_runs/${A.run}/tasks`
 const VAULT = A.vault || '.'
 if (!A.run || !A.plugin_root || !Array.isArray(A.notes)) throw new Error('args need {run, plugin_root, notes: [INT-###]}')
@@ -33,7 +35,7 @@ function judge(agentType, card, input, output, label, phase, extra) {
 }
 
 const doneR = await engine('run: done tasks', 'Extract', [`${BIN} run done ${A.run}`])
-const done = new Set(((doneR && doneR.data && doneR.data.text) || '').split('\n'))
+const done = new Set(((doneR && doneR.data && doneR.data.text) || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean))
 
 const extracted = await pipeline(
   A.notes.filter(n => !done.has(`extracted:${n}`)),

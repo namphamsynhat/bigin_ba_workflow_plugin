@@ -8,8 +8,8 @@ Two modes, one set of checks:
            belongs to a Bigin vault, and run the TIER 1 checks scoped to it.
            Tier 1 is the invariant set: things that are never legitimately false,
            not even halfway through a stage. Clean -> silent exit 0.
-           Findings -> exit 2 with the findings on stderr, which the harness feeds
-           back to the agent that just made the write.
+           Findings -> advisory text on stdout, exit 0 (BIGIN_LINT_BLOCKING=1: a
+           PostToolUse {"decision": "block"} JSON instead, still exit 0).
 
   --full   Run tier 1 AND tier 2 over the whole vault and print a report.
            Tier 2 holds the checks that ARE legitimately false mid-stage (a hub row
@@ -51,8 +51,9 @@ Design rules this file holds itself to:
 
 Escape hatches, all environment variables:
   BIGIN_LINT_OFF=1        disable entirely (exit 0, always)
-  BIGIN_LINT_BLOCKING=1   restore the pre-1.8.8 behaviour: --hook findings go to stderr
-                          with exit 2, so the model is interrupted on every write
+  BIGIN_LINT_BLOCKING=1   restore the pre-1.8.8 behaviour: non-quiet --hook findings block
+                          the model on every write, via PostToolUse JSON {"decision": "block"}
+                          on stdout with exit 0 (1.12.4; was stderr + exit 2)
   BIGIN_LINT_DEBUG=1      print internal errors instead of swallowing them
   BIGIN_BATCH=1           the engine is mid-apply: --hook is silent
 
@@ -1051,8 +1052,10 @@ def run_hook(quiet=False):
         % (findings.total(), findings.render())
     )
     if os.environ.get("BIGIN_LINT_BLOCKING") == "1":
-        sys.stderr.write(body)
-        return 2
+        # Block through PostToolUse JSON, not exit 2: a non-zero exit would fire the hook's
+        # `python … || python3 …` fallback, which re-runs with stdin already consumed.
+        sys.stdout.write(json.dumps({"decision": "block", "reason": body}) + "\n")
+        return 0
     sys.stdout.write(body)
     return 0
 

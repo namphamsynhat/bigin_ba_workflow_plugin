@@ -25,7 +25,8 @@ def _headings(path):
 
 def test_workflow_scripts_parse_and_declare_meta():
     for f in glob.glob(os.path.join(ROOT, "workflows", "*.js")):
-        src = open(f).read()
+        with open(f, encoding="utf-8") as fh:
+            src = fh.read()
         assert src.startswith("export const meta = {"), f
         meta = src.split("}\n", 1)[0]
         assert "name:" in meta and "description:" in meta, f
@@ -34,7 +35,8 @@ def test_workflow_scripts_parse_and_declare_meta():
         js = ("const AF=Object.getPrototypeOf(async function(){}).constructor;"
               "new AF('args','agent','parallel','pipeline','phase','log','workflow','budget',require('fs').readFileSync(0,'utf8'));")
         try:
-            r = subprocess.run(["node", "-e", js], input=code, capture_output=True, text=True, timeout=30)
+            r = subprocess.run(["node", "-e", js], input=code, capture_output=True, text=True,
+                               encoding="utf-8", timeout=30)
         except FileNotFoundError:
             return  # no node on this machine: syntax check skipped
         assert r.returncode == 0, f"{f}: {r.stderr[:400]}"
@@ -59,7 +61,8 @@ def test_agents_tiered_and_small():
              "signal-extractor": {"sonnet"}, "signal-filer": {"sonnet"}, "signal-auditor": {"sonnet"}}
     for name, allowed in tiers.items():
         p = os.path.join(ROOT, "agents", f"{name}.md")
-        text = open(p).read()
+        with open(p, encoding="utf-8") as fh:
+            text = fh.read()
         m = re.search(r"^model:\s*(\S+)", text, re.M)
         assert m and m.group(1) in allowed, f"{name}: model {m and m.group(1)} not in {allowed}"
         assert len(text.encode()) <= 4096, f"{name}.md is {len(text.encode())} bytes (> 4 KB)"
@@ -72,7 +75,8 @@ def test_cards_small_and_citations_resolve():
     cards = [p for p in glob.glob(os.path.join(ROOT, "cards", "*.md")) if not p.endswith("README.md")]
     assert len(cards) >= 8, cards
     for p in cards:
-        text = open(p).read()
+        with open(p, encoding="utf-8") as fh:
+            text = fh.read()
         assert len(text.encode()) <= 3072, f"{os.path.basename(p)} is {len(text.encode())} bytes (> 3 KB)"
         for f, head in CITE.findall(text):
             path = os.path.join(CONV, f) if os.path.exists(os.path.join(CONV, f)) else os.path.join(WS, f)
@@ -88,11 +92,13 @@ def test_card_citations_resolve():
 
 def test_bigin_ba_routing_is_small():
     p = os.path.join(ROOT, "agents", "bigin-ba.md")
-    assert len(open(p).read().encode()) <= 6144, "bigin-ba.md routing file must be ≤ 6 KB"
+    with open(p, encoding="utf-8") as fh:
+        assert len(fh.read().encode()) <= 6144, "bigin-ba.md routing file must be ≤ 6 KB"
 
 
 def test_lean_templates_and_new_uc():
-    assert len(open(os.path.join(WS, "templates", "use-case.md")).read()) < 3000
+    with open(os.path.join(WS, "templates", "use-case.md"), encoding="utf-8") as fh:
+        assert len(fh.read()) < 3000
     assert os.path.exists(os.path.join(WS, "templates", "use-case.guide.md"))
     root, v = fresh("comm-vault")
     run(root, "mint", "uc", "--spec", write_json(root, "s.json", {"title": "Withdraw an application", "primary_feature": "grant-intake"}))
@@ -102,13 +108,13 @@ def test_lean_templates_and_new_uc():
 
 def test_strip_guidance_shrinks_and_keeps_content():
     root, v = fresh("comm-vault")
-    before = {p: open(p).read() for p in v.uc_paths() + v.br_paths() + v.hub_paths()}
+    before = {p: open(p, encoding="utf-8").read() for p in v.uc_paths() + v.br_paths() + v.hub_paths()}
     code, out = run(root, "migrate", "strip-guidance")
     res = json.loads(out)
     assert res["bytes_after"] < res["bytes_before"] * 0.7, res
     v2 = Vault(root)
     for p, old in before.items():
-        new = open(p).read()
+        new = open(p, encoding="utf-8").read()
         assert [s.title for s in v2.load(p).sections] == [s.title for s in Vault(root).load(p).sections]
         strip = lambda t: re.sub(r"\s+", " ", re.sub(r"<!--.*?-->", "", t, flags=re.S)).strip()
         assert strip(new) == strip(old), f"{os.path.basename(p)}: visible content changed"
@@ -161,7 +167,8 @@ def test_codebase_intake_unmapped_goes_to_filer():
     p = write_json(root, "misc.json", cards)
     code, out = run(root, "intake", "codebase", "--cards", p, "--unmapped-out", os.path.join(root, "unmapped.json"))
     assert "unmapped rows left for the filer: 1" in out, out
-    task = json.load(open(os.path.join(root, "unmapped.json")))
+    with open(os.path.join(root, "unmapped.json"), encoding="utf-8") as fh:
+        task = json.load(fh)
     assert task["rows"][0]["id"] == "XR-MISC-900"
     lint_clean(root)
 
@@ -169,8 +176,10 @@ def test_codebase_intake_unmapped_goes_to_filer():
 def test_metrics_and_budgets():
     root, v = fresh("comm-vault")
     pj = os.path.join(root, "_bigin/system/project.md")
-    s = open(pj).read().replace("workspace_version:", "budgets: {transform_per_feature_tokens: 1000}\nworkspace_version:")
-    open(pj, "w").write(s)
+    with open(pj, encoding="utf-8") as f:
+        s = f.read().replace("workspace_version:", "budgets: {transform_per_feature_tokens: 1000}\nworkspace_version:")
+    with open(pj, "w", encoding="utf-8", newline="\n") as f:
+        f.write(s)
     run(root, "metrics", "add", "--run", "r1", "--stage", "transform", "--task", "route payments", "--agent", "uc-router",
         "--feature", "payments", "--usage", "<usage>total_tokens: 1500\ntool_uses: 4\nduration_ms: 900</usage>")
     code, out = run(root, "metrics", "report", "--run", "r1")

@@ -9,23 +9,23 @@ out:  every artifact written ONCE by the engine · Signal Log rows flipped · li
 never: a hand edit to a UC, BR, or hub's derived tables · an id minted by an agent
 ```
 
-`BIN="${CLAUDE_PLUGIN_ROOT}/bin/bigin"`. Every write in this stage is an engine command.
+`bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }` (`python3` if no `python` on PATH). Every write in this stage is an engine command.
 
 ## Part 1 — Shared registers, serially
 
 A new durable design principle is an `add_principle` change set (target `{"kind":"DESIGN","id":"principles"}`)
-applied by `$BIN apply` like any other — the engine appends the `DESIGN-PRINCIPLES.md` row (creating the
+applied by `bigin apply` like any other — the engine appends the `DESIGN-PRINCIPLES.md` row (creating the
 register if absent) and flips the traced Signal Log row. Refining or contradicting an existing principle
 stays an orchestrator call (`3-lane-design.md` § Destination 1). Entities are never minted or promoted here
-(`/sync-entities`); a new UC id is minted only by `$BIN mint route` (Stage 3) or a `create_uc` set.
+(`/sync-entities`); a new UC id is minted only by `bigin mint route` (Stage 3) or a `create_uc` set.
 
 ## Part 1b — Every participating hub
 
 ```text
-$BIN hub refresh <slug> [<slug> …]   # uc: pointers, ## Use Cases (owns | participates, no step counts),
+bigin hub refresh <slug> [<slug> …]   # uc: pointers, ## Use Cases (owns | participates, no step counts),
                                      # ## Requirement Readiness (one row per artifact), the add-only
                                      # ## Open Questions / Gates mirror, one Changelog line
-$BIN links sync                      # brs:/uc:/features:/sources: and the FEATURES.md UC column
+bigin links sync                      # brs:/uc:/features:/sources: and the FEATURES.md UC column
 ```
 
 `bigin apply` already refreshes every hub it touched and syncs links; run these again after Part 1 and
@@ -35,7 +35,7 @@ refresh — the engine refuses the write if either changed.
 ## Part 2 — Apply the change sets
 
 ```text
-$BIN apply _runs/$RUN/tasks/<slug>.changesets.out.json --run $RUN
+bigin apply _runs/$RUN/tasks/<slug>.changesets.out.json --run $RUN
 ```
 
 Per artifact, one write: sets applied in a fixed order (steps → flows → § 1/§ 6 → rule → § 4 mirrors →
@@ -55,12 +55,12 @@ statement) is re-dispatched to the router with the engine's reason, or its row p
 
 ## Part 2b — Coverage, not claims
 
-For each feature, diff what was **dispatched** against what **landed** (`$BIN run summary $RUN`):
+For each feature, diff what was **dispatched** against what **landed** (`bigin run summary $RUN`):
 
 ```text
 1  every qualified row is applied, staged (gated/drift), conflict, question, or listed as `unrouted`
    with a reason — a row still `new` after apply is UNACCOUNTED: re-route it (`worklist route --rows <n>`)
-   or park it: $BIN hub flip <slug> <n>=held@<why>
+   or park it: bigin hub flip <slug> <n>=held@<why>
 2  a themed row whose Type is `<a> + <b>` shows a destination per clause in its Destination cell
 ```
 
@@ -72,9 +72,9 @@ way — "3 dispatched, 3 accounted for" is what makes a future silent drop visib
 **Adjudicate** when `project.md` `grounding:` is `codebase` or `both` and the feature has `conflict`/`held`
 rows: `workflows/adjudicate.js` (or the fallback in `references/agent-dispatch.md` step 8) — one
 `code-adjudicator` per row, a second independent judge for P0/security rows, verdicts applied by
-`$BIN apply`. `conflict_policy: code-first` lets code settle a factual disagreement; `ask` settles the facts
+`bigin apply`. `conflict_policy: code-first` lets code settle a factual disagreement; `ask` settles the facts
 and gates the decision. Intent questions are never settled by code. Flip a superseded loser with
-`$BIN hub flip <slug> <n>=superseded@superseded by the decision on #<m>`.
+`bigin hub flip <slug> <n>=superseded@superseded by the decision on #<m>`.
 
 **Conflict-check** each touched feature, scoped to that feature — never the vault:
 
@@ -88,7 +88,7 @@ and gates the decision. Intent questions are never settled by code. Flip a super
 A wording difference, a narrower restatement, or two rules about different conditions are not
 contradictions. **Never auto-resolve one.** On finding one: a `flag_conflict` set on the hub (target `{"kind":"HUB","id":"<slug>"}`,
 `trace.hub_rows` = the triggering row, `text` = one question naming both sides and where each came from) —
-`$BIN apply` raises the question and flips the row to `conflict`. Stop there — Stage 5 sets the status.
+`bigin apply` raises the question and flips the row to `conflict`. Stop there — Stage 5 sets the status.
 
 ## Part 4 — Coverage-check each touched feature
 
@@ -100,7 +100,7 @@ run it when: a UC on this feature was created this run or its § 2 changed
              · the hub has no `## Coverage Gaps` section yet (backfill once)
              · $ARGUMENTS named this slug (an EMPTY Stage 2 worklist does not skip it)
 skip it when: the feature has no UC at all
-writes:      `## Coverage Gaps` rows on that feature's hub (then `$BIN hub refresh <slug>` mirrors the
+writes:      `## Coverage Gaps` rows on that feature's hub (then `bigin hub refresh <slug>` mirrors the
              open/answered ones into ## Open Questions / Gates)
 never:       a UC, a step, a Signal Log row, a question on any UC, or another feature's hub
 ```

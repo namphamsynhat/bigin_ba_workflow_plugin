@@ -3,11 +3,11 @@
 Run through `/bigin-upgrade-project` (§ 3b), which calls the engine. By hand, from the repo root:
 
 ```bash
-B="$CLAUDE_PLUGIN_ROOT/bin/bigin"            # or the plugin checkout's bin/bigin
-$B migrate plan --from 1.8.12 --to 1.12.0    # which steps are due
-$B migrate all  --from 1.8.12 --to 1.12.0 --dry
-$B migrate all  --from 1.8.12 --to 1.12.0    # snapshot → steps → links sync → hub refresh → status → stamp
-$B lint --full                               # must be clean
+bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }   # python3 if no python on PATH
+bigin migrate plan --from 1.8.12 --to 1.12.0    # which steps are due
+bigin migrate all  --from 1.8.12 --to 1.12.0 --dry
+bigin migrate all  --from 1.8.12 --to 1.12.0    # snapshot → steps → links sync → hub refresh → status → stamp
+bigin lint --full                               # must be clean
 ```
 
 `--from` defaults to `workspace_version` in `_bigin/system/project.md`; `--to` defaults to the engine version.
@@ -23,6 +23,7 @@ $B lint --full                               # must be clean
 | **1.12.1** — audit & hardening | none | No format change. `bigin audit --baseline <tgz>` checks baseline integrity; engine guards prevent question loss and Changelog loss; `ux-brief-assembler` card/JSON contract; e2e workflow fixture tests; codebase intake docs. |
 | **1.12.2** — coverage, lint & audit hardening | none | No format change. `bigin coverage` classifies open-gated staged hub rows as parked; `bigin lint` tier 2 checks question-status rows carry a matching question; `bigin audit` check C12 verifies partial answers are folded or marked not settleable. |
 | **1.12.3** — review fixes | none | No format change. Quoted frontmatter values decode YAML escapes (a `coverage_id_pattern: "XR-[A-Z]+-\\d{3}"` in `project.md` now matches); `bigin coverage` tolerates a ledger entry with `gate: null`; `ux-brief-assembler` card/skill wording aligned with its `.out.json` write. |
+| **1.12.4** — Windows portability | none | No vault format change. Lint hook invokes `python lib/bigin/cli.py` (fallback `python3`) instead of the extensionless `bin/bigin` sh script. Adds `bin/bigin.cmd` and launcher-generated `_bigin/bin/bigin.cmd`; `exclusive_file_lock` (msvcrt/fcntl) for parallel mint/write; UTF-8 stdio in `cli.py`; workflow `run done` parsing tolerates CRLF; skills/docs define the engine as a shell function `bigin() { python …/cli.py "$@"; }` (a string-assigned `$BIN` does not survive word splitting); `bin/bigin` and the generated `_bigin/bin/bigin` probe `python3` then `python` for 3.9+; `.gitattributes` pins `*.cmd` to CRLF. Workflows call one path, `"<plugin_root>/bin/bigin"` (cmd.exe resolves it to `bigin.cmd` via PATHEXT; `args.bin` overrides). `BIGIN_LINT_BLOCKING=1` now blocks through PostToolUse JSON `{"decision": "block"}` with exit 0 instead of stderr + exit 2, so the hook's `|| python3` fallback never re-runs. Four skill frontmatters (`bigin-generate-design`, `bigin-transform-signal`, `bigin-upgrade-project`, `sync-entities`) move to `description: >-` for YAML; `bigin-upgrade-project`'s and `bigin-generate-design`'s descriptions are also shortened — re-check their triggers. |
 
 ## The steps
 

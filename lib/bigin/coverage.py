@@ -70,7 +70,11 @@ def _hub_index(vault, ids):
 def _universe(vault, pattern, universe_file, notes):
     rx = re.compile(pattern)
     if universe_file:
-        data = load_json(universe_file) if universe_file.endswith(".json") else open(universe_file).read()
+        if universe_file.endswith(".json"):
+            data = load_json(universe_file)
+        else:
+            with open(universe_file, encoding="utf-8") as f:
+                data = f.read()
         if isinstance(data, dict) and "rules" in data:
             vals = [r.get("_xr") or r.get("id") or k for k, r in data["rules"].items()]
         elif isinstance(data, dict):

@@ -1,6 +1,7 @@
 ---
 name: bigin-upgrade-project
-description: Compare a materialized project's current rulebook/templates against the plugin version now installed (halting rather than downgrading if the workspace turns out to be newer than the installed plugin), run whatever documented migration procedures apply to what changed, refresh the materialized workspace and the repo-root `CLAUDE.md`'s plugin-owned section, and stamp the project onto the new version. Use after upgrading the plugin, whenever `_bigin/system/project.md`'s `workspace_version` is behind `${CLAUDE_PLUGIN_ROOT}`'s version — instead of guessing whether re-running `/bigin-new-project` alone moved old content forward. Also the way a `CLAUDE.md` instruction change (a new non-negotiable, a routing-rule fix) reaches an already-materialized project without a full `/bigin-new-project` re-run. Built to need no changes itself the next time an artifact type retires, a template gains a section, or a template's frontmatter gains a key: it discovers what to do from "## Adopting an existing <thing>" sections in the stage guides and from template diffs — section headers and frontmatter keys alike — rather than hardcoding any one migration.
+description: >-
+  Compare a materialized project's rulebook/templates against the installed plugin version (halt rather than downgrade if the workspace is newer), run documented migrations for what changed, refresh the materialized workspace and the repo-root CLAUDE.md plugin-owned section, and stamp the new version. Use after upgrading the plugin, whenever `_bigin/system/project.md`'s `workspace_version` is behind `${CLAUDE_PLUGIN_ROOT}`'s version — instead of guessing whether re-running `/bigin-new-project` alone moved old content forward. Also the way a CLAUDE.md instruction change reaches an already-materialized project without a full `/bigin-new-project` re-run. Discovers migrations from "## Adopting an existing <thing>" sections in stage guides and from template diffs (section headers and frontmatter keys), rather than hardcoding any one migration.
 argument-hint: "[check]"
 disable-model-invocation: true
 ---
@@ -204,16 +205,16 @@ Requires `_bigin/system/project.md` to exist. Missing → say `/bigin-new-projec
 ## 3b. Engine format migrations (`bin/bigin migrate`, v1.9.0+)
 
 * **Goal:** move the vault's storage format forward with the engine that owns it, safely.
-* **Action:** `B="${CLAUDE_PLUGIN_ROOT}/bin/bigin"` — run from the repo root:
+* **Action:** `bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }` (`python3` if no `python` on PATH) — run from the repo root:
 
   ```text
-  1  $B migrate plan --from <workspace_version> --to <plugin version>   # lists the engine steps due
-  2  $B migrate all  --from <workspace_version> --to <plugin version> --dry
+  1  bigin migrate plan --from <workspace_version> --to <plugin version>   # lists the engine steps due
+  2  bigin migrate all  --from <workspace_version> --to <plugin version> --dry
      → show the human the per-step summary (entries converted, bytes saved, hubs split, anything unparsed)
-  3  $B migrate all  --from <workspace_version> --to <plugin version>
+  3  bigin migrate all  --from <workspace_version> --to <plugin version>
      → snapshots FIRST: _runs/migrate-<to>-<stamp>.tgz (01-Requirements + 00-Inbox — vaults are often untracked)
      → runs each step, then links sync, hub refresh --all, status recount, and stamps workspace_version
-  4  $B lint --full                                                       # must be clean; a finding blocks § 6
+  4  bigin lint --full                                                       # must be clean; a finding blocks § 6
   ```
 
   Steps by version (`docs/MIGRATION.md` has what each changes on disk):
@@ -308,7 +309,7 @@ nothing**: see the last rule below.
 * **Action:** Same mechanical copy `/bigin-new-project` § 2 already performs —
   `${CLAUDE_PLUGIN_ROOT}/workspace/{conventions,stages,templates}/` → `_bigin/{conventions,stages,templates}/`,
   whole directories, then verify the file count matches the source. Then run
-  `"${CLAUDE_PLUGIN_ROOT}/bin/bigin" launcher`, which regenerates `_bigin/bin/bigin` (the shim pointing at the
+  `python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" launcher`, which regenerates `_bigin/bin/bigin` + `bigin.cmd` (shims pointing at the
   **newly installed** plugin path — the old one points at the previous version's cache) and refreshes
   `_bigin/cards/` (new in 1.12.0). The engine itself is never copied.
 * **Rules:**

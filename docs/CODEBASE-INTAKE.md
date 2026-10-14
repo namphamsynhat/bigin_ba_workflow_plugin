@@ -6,7 +6,7 @@ Cards are already signals: an agent re-extracting them from prose would only los
 by the engine, deterministically.
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/bigin" intake codebase --cards analysis/_rules-store.json \
+python "$CLAUDE_PLUGIN_ROOT/lib/bigin/cli.py" intake codebase --cards analysis/_rules-store.json \
     [--assignment analysis/ba/rule-assignment.json] [--group-by capability|feature|group|none] \
     [--title "…"] [--unmapped-out _runs/<id>/tasks/unmapped.file.in.json] [--dry]
 ```

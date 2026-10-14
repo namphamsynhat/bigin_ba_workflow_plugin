@@ -903,23 +903,10 @@ class Vault:
 
     def write_lock(self):
         """Exclusive lock held only around check-then-replace of one file."""
-        import contextlib
+        from .util import exclusive_file_lock
 
-        @contextlib.contextmanager
-        def _lock():
-            try:
-                import fcntl
-            except ImportError:  # pragma: no cover
-                yield
-                return
-            os.makedirs(self.req, exist_ok=True)
-            with open(os.path.join(self.req, ".write.lock"), "a+") as f:
-                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-                try:
-                    yield
-                finally:
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-        return _lock()
+        os.makedirs(self.req, exist_ok=True)
+        return exclusive_file_lock(os.path.join(self.req, ".write.lock"))
 
     def create(self, path, text):
         if os.path.exists(path):

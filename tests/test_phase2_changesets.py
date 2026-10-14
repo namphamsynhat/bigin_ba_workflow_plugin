@@ -111,9 +111,11 @@ def test_gate_goes_to_ledger_then_releases():
     code, out = run(root, "ledger", "release")
     assert "1 still waiting" in out, out
     p = os.path.join(root, find(root, "01-Requirements/_ucs", "UC-003"))
-    s = open(p).read()
+    with open(p, encoding="utf-8") as f:
+        s = f.read()
     s = re.sub(r"- \[ \] Q: May a grant be paid in instalments\?(.*)\n  A:", r"- [x] Q: May a grant be paid in instalments?\1\n  A: Yes, in up to three instalments.", s)
-    open(p, "w").write(s)
+    with open(p, "w", encoding="utf-8", newline="\n") as f:
+        f.write(s)
     code, out = run(root, "ledger", "release")
     assert "1 released" in out, out
     t = uc_text(root, "UC-003")
@@ -129,9 +131,12 @@ def test_refusal_answer_needs_judgement():
     apply(root, [cs(1, target={"kind": "BR", "id": "BR-006"}, op="append_rule_clause", text="Confirmation expires after a year.",
                     gate={"question": "Does a bank-details confirmation expire?", "blocks": True})])
     p = os.path.join(root, find(root, "01-Requirements/_brs", "BR-006"))
-    s = open(p).read().replace("- [ ] Q: Does a bank-details confirmation expire?", "- [x] Q: Does a bank-details confirmation expire?")
+    with open(p, encoding="utf-8") as f:
+        s = f.read()
+    s = s.replace("- [ ] Q: Does a bank-details confirmation expire?", "- [x] Q: Does a bank-details confirmation expire?")
     s = re.sub(r"(Does a bank-details confirmation expire\?[^\n]*\n\s*A:)", r"\1 No, never.", s)
-    open(p, "w").write(s)
+    with open(p, "w", encoding="utf-8", newline="\n") as f:
+        f.write(s)
     code, out = run(root, "ledger", "release")
     assert "1 need judgement" in out, out
     assert "expires after a year" not in read(root, find(root, "01-Requirements/_brs", "BR-006")).split("## ")[0]
@@ -213,7 +218,8 @@ def test_migrate_discussion_to_ledger():
 def test_no_agent_edits_requirement_files():
     """Phase 2 acceptance: only the interactive bigin-ba agent keeps Edit on UC/BR/hub files."""
     for p in os.listdir(os.path.join(ROOT, "agents")):
-        text = open(os.path.join(ROOT, "agents", p)).read()
+        with open(os.path.join(ROOT, "agents", p), encoding="utf-8") as fh:
+            text = fh.read()
         fm = text.split("---")[1]
         tools = re.search(r"^tools:\s*(.*)$", fm, re.M)
         if p in ("bigin-ba.md", "render-feature-od-worker.md", "hub-bookkeeper.md"):
@@ -235,8 +241,10 @@ def test_golden_one_run_transform():
         assert "(staged 2026" not in got.split("## Discussion")[-1].split("## Changelog")[0] or name == "BR-005.md"
         gp = os.path.join(golden, name)
         if os.environ.get("UPDATE_GOLDEN") == "1" or not os.path.exists(gp):
-            open(gp, "w").write(got)
-        assert got == open(gp).read(), f"{name} differs from tests/golden/{name}"
+            with open(gp, "w", encoding="utf-8", newline="\n") as f:
+                f.write(got)
+        with open(gp, encoding="utf-8") as f:
+            assert got == f.read(), f"{name} differs from tests/golden/{name}"
     lint_clean(root)
 
 
