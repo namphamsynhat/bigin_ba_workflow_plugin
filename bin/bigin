@@ -1,3 +1,9 @@
 #!/bin/sh
 # Thin launcher for the Bigin engine (lib/bigin). Stdlib Python 3.9+ only.
-exec python3 "$(dirname "$0")/../lib/bigin/cli.py" "$@"
+# Probe rather than `command -v`: on Windows the Microsoft Store python3 alias is on PATH but cannot run.
+CLI="$(dirname "$0")/../lib/bigin/cli.py"
+for py in python3 python; do
+  if "$py" -c 'import sys; sys.exit(sys.version_info < (3, 9))' >/dev/null 2>&1; then exec "$py" "$CLI" "$@"; fi
+done
+echo "bigin: need Python 3.9+ on PATH (python3 or python)" >&2
+exit 127

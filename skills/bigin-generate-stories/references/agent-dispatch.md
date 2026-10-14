@@ -12,7 +12,7 @@ one per FEATURE SLUG                                         # an epic is one ow
 ## Before dispatching — the orchestrator does these four things
 
 ```text
-1  MINT          $BIGIN mint ep --spec <json> for a new epic. Story ids are minted AFTER the worker returns its slice
+1  MINT          bigin mint ep --spec <json> for a new epic. Story ids are minted AFTER the worker returns its slice
                  plan — or pre-mint a block of ids and pass them; the worker uses them in order and
                  reports the unused ones. Never let a worker mint.
 2  CLASSIFY      per feature: SLICE (ids@version), CURRENT, PENDING, NOT OURS, drifted approved stories.
@@ -57,5 +57,5 @@ REPLY with ONE block:
 ## Wave verification (orchestrator, after each wave)
 
 Every reported file exists · nothing outside the folder changed · no approved story's content changed ·
-`$BIGIN lint --full` clean on the folder. A failure goes back to the same worker once, then the feature is parked
+`bigin lint --full` clean on the folder. A failure goes back to the same worker once, then the feature is parked
 and reported.

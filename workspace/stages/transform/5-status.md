@@ -7,13 +7,13 @@ out:  every status set from a LIVE RE-COUNT · hubs refreshed · checks run · t
 never: a status decided in Stages 1-4 — they write content and leave status alone
 ```
 
-`BIN="${CLAUDE_PLUGIN_ROOT}/bin/bigin"`. A status decided mid-stage and left stale by a later edit is this
+`bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }` (`python3` if no `python` on PATH). A status decided mid-stage and left stale by a later edit is this
 vault's most common drift — so a program re-counts it, last.
 
 ## Part 1 — Set every status from a live re-count
 
 ```text
-$BIN status          # every UC/BR: unchecked "- [ ] Q:" in a UC's § 5 Still open (never the Decision log)
+bigin status          # every UC/BR: unchecked "- [ ] Q:" in a UC's § 5 Still open (never the Decision log)
                      # or a BR's ## Open Questions → needs-clarification; none → draft
 ```
 
@@ -29,7 +29,7 @@ every un-staged UC/BR (`reverted`) and every newly stale downstream artifact in 
 ## Part 2 — Refresh the hubs, don't restate them
 
 ```text
-$BIN hub refresh <every touched slug, and every slug a touched cross-feature UC names>
+bigin hub refresh <every touched slug, and every slug a touched cross-feature UC names>
 ```
 
 Readiness (one row per artifact: Ready = status ≠ needs-clarification ∧ 0 open questions ∧ nothing
@@ -41,10 +41,10 @@ it) and **never change the hub's `status:`** — it mirrors the `{requirements_f
 ## Part 3 — Verify before reporting
 
 ```text
-$BIN lint --full                      # exit 1 → its findings ARE mismatches: blocking, repair, re-run
-$BIN coverage --stage transform       # every traced unit reaches a UC/BR, or is parked on a question
+bigin lint --full                      # exit 1 → its findings ARE mismatches: blocking, repair, re-run
+bigin coverage --stage transform       # every traced unit reaches a UC/BR, or is parked on a question
                                       # (codebase vaults: --id-pattern from project.md coverage_id_pattern)
-$BIN run summary $RUN                 # dispatched vs landed
+bigin run summary $RUN                 # dispatched vs landed
 ```
 
 The binary unavailable, `python3` missing, or the command denied → **say so** and do the checks by hand.

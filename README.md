@@ -324,8 +324,8 @@ Every UC's own frontmatter `status` (`draft` ⇄ `needs-clarification` → `appr
 A chunk of the pipeline's verification is pure counting — no two use cases share an ID, a signal table's
 rows have the right number of columns, a hub citation points at a note row that exists, a status is one
 of its documented values. `hooks/bigin-lint.py` does that counting (since v1.9 it lives in `lib/bigin/lint.py`,
-run as `bin/bigin lint …`; the hook file is a back-compat shim, and the PostToolUse hook runs
-`bin/bigin lint --hook --quiet`: advisory, at most 5 lines about the file just written, silent while the engine
+run as `python lib/bigin/cli.py lint …` (fallback `python3`; `bin/bigin` / `bin/bigin.cmd` on POSIX/Windows); the hook file is a back-compat shim, and the PostToolUse hook runs
+`python …/lib/bigin/cli.py lint --hook --quiet`: advisory, at most 5 lines about the file just written, silent while the engine
 applies change sets). It runs in two places:
 
 | Mode | When | What it checks | On a finding |
@@ -387,22 +387,22 @@ for human discussion only.
 through the Workflow tool (per-feature pipelines, schema-validated outputs, resume from `_runs/<id>/`); without it
 the skills run the same steps with `Agent` calls, reading only `bin/bigin run summary <id>` between steps.
 
-**CLI cheat-sheet** (`B="${CLAUDE_PLUGIN_ROOT}/bin/bigin"`; agents without that variable use `_bigin/bin/bigin`):
+**CLI cheat-sheet** (`bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }`, `python3` if no `python` on PATH; or `bin/bigin` / `bin/bigin.cmd`; agents without `CLAUDE_PLUGIN_ROOT` use `_bigin/bin/bigin` / `bigin.cmd`):
 
 ```
-$B hub refresh --all              derived hub tables (idempotent; Signal Log never touched)
-$B hub flip <slug> 4=applied:UC-003 S3     $B hub sweep       Signal Log rows
-$B mirror br --all                $B links sync      $B status        § 4 mirrors, links, statuses
-$B coverage --stage transform     $B lint --full                     traceability, invariants
-$B worklist route <slug> --out f.json      $B context UC-012 --sections 1,2
-$B ingest out.json --run <id>     $B apply changesets.json --run <id>   (--dry to preview)
-$B ledger list | render | release [--verdicts v.json] | supersede <cs-id>
-$B note write-signals signals.json         $B file apply filing.json
-$B intake codebase --cards rules.json [--assignment map.json]
-$B mint uc|br|int --spec spec.json         $B mint route --spec route.out.json
-$B run new|summary|done|record    $B metrics add|report
-$B migrate plan|all|snapshot|discussion-to-ledger|strip-guidance|split-signal-log
-$B launcher                       write _bigin/bin/bigin + refresh _bigin/cards/
+bigin hub refresh --all              derived hub tables (idempotent; Signal Log never touched)
+bigin hub flip <slug> 4=applied:UC-003 S3     bigin hub sweep       Signal Log rows
+bigin mirror br --all                bigin links sync      bigin status        § 4 mirrors, links, statuses
+bigin coverage --stage transform     bigin lint --full                     traceability, invariants
+bigin worklist route <slug> --out f.json      bigin context UC-012 --sections 1,2
+bigin ingest out.json --run <id>     bigin apply changesets.json --run <id>   (--dry to preview)
+bigin ledger list | render | release [--verdicts v.json] | supersede <cs-id>
+bigin note write-signals signals.json         bigin file apply filing.json
+bigin intake codebase --cards rules.json [--assignment map.json]
+bigin mint uc|br|int --spec spec.json         bigin mint route --spec route.out.json
+bigin run new|summary|done|record    bigin metrics add|report
+bigin migrate plan|all|snapshot|discussion-to-ledger|strip-guidance|split-signal-log
+bigin launcher                       write _bigin/bin/bigin + bigin.cmd + refresh _bigin/cards/
 ```
 
 Tests: `python3 tests/run.py`.

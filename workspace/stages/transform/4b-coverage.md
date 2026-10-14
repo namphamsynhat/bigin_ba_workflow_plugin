@@ -110,7 +110,7 @@ re-status every EXISTING row before appending a new one:
     a human answered it on the hub → `answered` — leave it for /bigin-intake to capture as a signal
     still silent                  → leave it `open`. Do NOT re-raise it as a second row
 append one `## Changelog` line: coverage pass, N new gap(s), N closed
-then `bin/bigin hub refresh <slug>` — it mirrors every `open`/`answered` row into `## Open Questions / Gates`,
+then `python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" hub refresh <slug>` (fallback `python3`) — it mirrors every `open`/`answered` row into `## Open Questions / Gates`,
 same sentence (add-only), so never copy them by hand
 ```
 

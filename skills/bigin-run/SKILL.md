@@ -7,13 +7,13 @@ argument-hint: "[feature slug or UC id — omit to pick up whatever is next]"
 # Bigin Run — the pipeline router
 
 Route; don't reimplement. A stage's semantics live in its `SKILL.md`; bookkeeping lives in the engine
-(`${CLAUDE_PLUGIN_ROOT}/bin/bigin`, below `$BIGIN`); fan-out lives in `${CLAUDE_PLUGIN_ROOT}/workflows/`. This
+(below `bigin` — the shell function `bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }`, `python3` if no `python` on PATH); fan-out lives in `${CLAUDE_PLUGIN_ROOT}/workflows/`. This
 file only decides **what runs next and how it is dispatched**. Stage status (live/halted) has one source:
 `runtime.md` § Reconciliation notes.
 
 **Compact at every stage boundary:** write the stage report, compact, load only the next stage's files.
-**You never read an agent transcript or prose report** — between steps you read `$BIGIN run summary <run>`
-(≤ 20 lines), `$BIGIN ledger list`, `$BIGIN coverage`. Agents reply with one line; the vault is the state.
+**You never read an agent transcript or prose report** — between steps you read `bigin run summary <run>`
+(≤ 20 lines), `bigin ledger list`, `bigin coverage`. Agents reply with one line; the vault is the state.
 
 ## Deciding what runs next
 
@@ -23,7 +23,7 @@ With no argument, sweep; with a slug or UC id, scope to it. Determine the stage 
 1  no _bigin/system/project.md                         → /bigin-new-project, stop
 2  a precondition reports workspace_version behind     → /bigin-upgrade-project (bigin migrate plan/all)
                                           ahead        → STOP, relay verbatim
-3  rule cards to import (grounding: codebase|both)     → $BIGIN intake codebase --cards … [--assignment …]
+3  rule cards to import (grounding: codebase|both)     → bigin intake codebase --cards … [--assignment …]
                                                          --unmapped-out _runs/<run>/tasks/unmapped.in.json
                                                          (0 LLM calls; only the unmapped remainder goes to
                                                          one signal-filer task)
@@ -32,7 +32,7 @@ With no argument, sweep; with a slug or UC id, scope to it. Determine the stage 
                                                          just the new comments / description revisions)
 4  00-Inbox/ note at status: raw, or a newly ticked
    note question (communication and jira notes)       → extract   (workflows/extract.js)
-5  $BIGIN ledger list shows open sets whose question is
+5  bigin ledger list shows open sets whose question is
    answered, or hubs have new/held rows               → transform (workflows/transform.js)
 5a conflict/held rows in a code-grounded vault         → adjudicate (inside transform; alone:
                                                          workflows/adjudicate.js)
@@ -51,7 +51,7 @@ Steps 3–6 are momentum: run them back to back. Step 7 is the only decision poi
 ## Dispatching a fan-out stage
 
 ```text
-1  RUN=$($BIGIN run new --stage <extract|transform> --scope <slug|inbox>)
+1  RUN=$(bigin run new --stage <extract|transform> --scope <slug|inbox>)
 2  Workflow tool available and opted in →
      Workflow(scriptPath: <repo root>/_runs/RUN/workflows/<stage>.js,   ← staged by `run new`; the
               Workflow tool rejects a scriptPath in the plugin cache (outside the working directory)
@@ -61,16 +61,16 @@ Steps 3–6 are momentum: run them back to back. Step 7 is the only decision poi
      a kill or rate-limit → re-run with resumeFromRunId and the SAME run id: finished tasks are skipped
      (results.jsonl), and every vault write is engine-only and atomic, so there is no half-written file.
    Otherwise (fallback loop, restructure plan § B.5) — same steps, one Agent call each:
-     $BIGIN worklist <stage> <scope> --out _runs/RUN/tasks/<task>.in.json
+     bigin worklist <stage> <scope> --out _runs/RUN/tasks/<task>.in.json
      Agent(<named worker>, prompt = card path + .in.json path + .out.json path)   ← replies ONE line
-     $BIGIN ingest <out> --run RUN     → errors go back to the SAME agent once (SendMessage), then park
-     $BIGIN apply <out> --run RUN      (transform) · note write-signals / audit-apply · file apply (extract)
-     transform: route (uc-router Phase A) → $BIGIN mint route --spec <route.out.json> → resume the same
-     uc-router for Phase B → apply → adjudicate (code-grounded) → $BIGIN hub refresh <slug>
+     bigin ingest <out> --run RUN     → errors go back to the SAME agent once (SendMessage), then park
+     bigin apply <out> --run RUN      (transform) · note write-signals / audit-apply · file apply (extract)
+     transform: route (uc-router Phase A) → bigin mint route --spec <route.out.json> → resume the same
+     uc-router for Phase B → apply → adjudicate (code-grounded) → bigin hub refresh <slug>
      extract: extractor per note → auditor only when audit_owed → filer per note, SERIALLY → lint --full
-3  after every task notification: $BIGIN metrics add --run RUN --stage … --task … --agent … --usage "<usage…>"
-4  $BIGIN run summary RUN   → the stage report; $BIGIN metrics report --run RUN flags budget overruns
-5  $BIGIN lint --full        → the blocking gate at the stage boundary
+3  after every task notification: bigin metrics add --run RUN --stage … --task … --agent … --usage "<usage…>"
+4  bigin run summary RUN   → the stage report; bigin metrics report --run RUN flags budget overruns
+5  bigin lint --full        → the blocking gate at the stage boundary
 ```
 
 Inline thresholds (one feature with ≤ 3 qualified rows; 1–2 features for design/stories) are the stages' own —

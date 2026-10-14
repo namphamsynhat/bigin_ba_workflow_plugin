@@ -19,7 +19,7 @@ human what they are approving, flip `status` only on their explicit confirmation
   written → re-run `/bigin-generate-stories` first).
 * **Writes only the story and epic files** — `status`, `version` bump, `updated`, a `## Changelog` line. Never a UC,
   hub, snapshot, or another epic. The hub's `## Epics & Stories` status column is refreshed by the next
-  `/bigin-generate-stories` run (or `$BIGIN hub refresh <slug>`).
+  `/bigin-generate-stories` run (or `bigin hub refresh <slug>`).
 
 ## Procedure
 

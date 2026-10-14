@@ -82,5 +82,5 @@ per feature: chain · SLICE (ids@version) · CURRENT · PENDING · NOT OURS · d
              UX-###@version or "no design" · prototype source + kind · EP-### existing or "new"
 ```
 
-Mint ids only here, in the orchestrator: `$BIGIN mint ep --spec <json>` (`{title, feature, source_ucs, snapshot}`) for a new epic. Story ids are minted in Stage 3, once the
+Mint ids only here, in the orchestrator: `bigin mint ep --spec <json>` (`{title, feature, source_ucs, snapshot}`) for a new epic. Story ids are minted in Stage 3, once the
 slices are known. A feature that already has an epic keeps it — never mint a second one for the same slug.

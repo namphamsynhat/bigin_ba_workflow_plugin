@@ -438,7 +438,7 @@ product whose rules are read out of its code: rule cards (for example from
 `code-modernization:modernize-extract-rules`) are imported with
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/bin/bigin" intake codebase --cards analysis/_rules-store.json
+python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" intake codebase --cards analysis/_rules-store.json
 ```
 
 which writes the intake notes and files every card onto its feature hub without an AI pass;

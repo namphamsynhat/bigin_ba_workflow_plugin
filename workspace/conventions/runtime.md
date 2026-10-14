@@ -84,8 +84,10 @@ scattered inline caveats — resolve and delete each line as the corresponding s
   `${CLAUDE_PLUGIN_ROOT}` is used only in the orchestrator, never in a subagent: `/bigin-new-project` and
   `/bigin-upgrade-project` resolve the copy source; every skill's precondition reads `plugin.json`'s
   `version` (`version-check.md` § Workspace version check); and every engine call runs
-  `"${CLAUDE_PLUGIN_ROOT}/bin/bigin" …` (v1.9.0+; `hooks/bigin-lint.py` remains as a shim for
-  `bin/bigin lint`). Agents get absolute card and task-file paths instead — never the variable.
+  `python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" …` (fallback `python3`; v1.9.0+ — portable on
+  Windows cmd and POSIX; or `"${CLAUDE_PLUGIN_ROOT}/bin/bigin"` / `bin/bigin.cmd`;
+  `hooks/bigin-lint.py` remains as a shim for `bin/bigin lint`). Agents get absolute card and
+  task-file paths instead — never the variable.
   An unavailable checker is always **reported**, never read as a pass.
 - ~~**The design stage was on the old layout.**~~ **Resolved.** `/prototype-design` is superseded by
   **`/bigin-generate-design`**, which reads `01-Requirements/_ucs/` directly, accepts a feature

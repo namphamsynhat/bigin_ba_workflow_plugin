@@ -27,13 +27,13 @@ prompt — two copies of one rule drift apart, and the card is the one home.
 ## After each agent
 
 ```text
-BIN ingest <out> --kind <schema> --run <run>
+bigin ingest <out> --kind <schema> --run <run>
     INVALID → SendMessage the listed errors to the SAME agent once ("rewrite <out> so it validates");
               still invalid → record the task failed, park the note, move on
-BIN note write-signals <signals.out.json>      # prints {added, audit_owed}
-BIN note audit-apply <audit.out.json>
-BIN file apply <filing.out.json>               # prints {hub_rows, pp, en, hubs_created, status}
-BIN metrics add --run <run> --stage extract --task <INT> --agent <name> --usage "<usage block>"
+bigin note write-signals <signals.out.json>      # prints {added, audit_owed}
+bigin note audit-apply <audit.out.json>
+bigin file apply <filing.out.json>               # prints {hub_rows, pp, en, hubs_created, status}
+bigin metrics add --run <run> --stage extract --task <INT> --agent <name> --usage "<usage block>"
 ```
 
 ## The audit-owed test

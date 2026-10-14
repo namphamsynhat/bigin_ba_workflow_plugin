@@ -11,7 +11,8 @@ Per `INT-###` note in `00-Inbox`: extract → audit (when owed) → file. Extrac
 load. Never drafts or edits a UC or BR. **LLM for judgement, the engine for every write:** agents read a compact
 worklist and return one JSON file; `bin/bigin` validates and writes it.
 
-`BIN` below = `"${CLAUDE_PLUGIN_ROOT}/bin/bigin"` (run from the vault root).
+`bigin` below is the shell function `bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }` (`python3` if no
+`python` on PATH; or `"${CLAUDE_PLUGIN_ROOT}/bin/bigin"` / `bin/bigin.cmd`) — run from the vault root.
 
 ## Two tables, on purpose
 
@@ -47,7 +48,7 @@ worklist builds the plan from the blocks either way.
 ## Stage 2 — Run
 
 ```text
-RUN = $(BIN run new --stage extract --scope <n>-notes)
+RUN = $(bigin run new --stage extract --scope <n>-notes)
 ```
 
 **With the Workflow tool** (preferred — orchestration lives in the script, not in this context):
@@ -67,24 +68,24 @@ extractor reports `audit_owed`: `worklist audit` → `signal-auditor` → `note 
 
 ```text
 for note in queue:                                   # extractors may run 4 at a time; filers never overlap
-  BIN worklist extract <INT> --out _runs/RUN/tasks/<INT>.extract.in.json
+  bigin worklist extract <INT> --out _runs/RUN/tasks/<INT>.extract.in.json
   Agent(signal-extractor): "card <plugin>/cards/extractor.md · in <…>.extract.in.json · out <…>.signals.out.json"
-  BIN ingest <out> --kind signals --run RUN         # invalid → SendMessage the errors to the same agent, once
-  BIN note write-signals <out>                       # prints audit_owed
-  owed → BIN worklist audit <INT> --out … ; Agent(signal-auditor) ; BIN ingest … --kind audit ; BIN note audit-apply <out>
-  BIN worklist file <INT> --out … ; Agent(signal-filer) ; BIN ingest … --kind filing ; BIN file apply <out>
-  BIN run record RUN --task filed:<INT> --status ok
-  BIN metrics add --run RUN --stage extract --task <INT> --agent <name> --usage "<usage block>"   # per agent
-BIN lint --full ; BIN coverage --stage file
+  bigin ingest <out> --kind signals --run RUN         # invalid → SendMessage the errors to the same agent, once
+  bigin note write-signals <out>                       # prints audit_owed
+  owed → bigin worklist audit <INT> --out … ; Agent(signal-auditor) ; bigin ingest … --kind audit ; bigin note audit-apply <out>
+  bigin worklist file <INT> --out … ; Agent(signal-filer) ; bigin ingest … --kind filing ; bigin file apply <out>
+  bigin run record RUN --task filed:<INT> --status ok
+  bigin metrics add --run RUN --stage extract --task <INT> --agent <name> --usage "<usage block>"   # per agent
+bigin lint --full ; bigin coverage --stage file
 ```
 
-Between steps read only the one-line agent reply and `BIN run summary RUN` (≤ 20 lines) — never an agent
+Between steps read only the one-line agent reply and `bigin run summary RUN` (≤ 20 lines) — never an agent
 transcript, never `## Raw`. **Never audit inline** in this context: either the extractor's self-audit stands or a
 fresh `signal-auditor` is dispatched. The audit-owed triggers live in `2b-audit.md` § When the independent pass is
 owed; report which depth ran on each note (`audit: self` vs `audit: independent (<trigger>)`).
 
-**Gate.** `BIN lint --full` closes the run and is blocking. A filing gap (note rows anchored to a slug that no hub
-row cites) → dispatch `signal-filer` in hub-repair mode scoped to exactly those rows, `BIN file apply`, re-run
+**Gate.** `bigin lint --full` closes the run and is blocking. A filing gap (note rows anchored to a slug that no hub
+row cites) → dispatch `signal-filer` in hub-repair mode scoped to exactly those rows, `bigin file apply`, re-run
 `--full`. Lint unavailable → say so; never read an unavailable checker as a pass.
 
 **Declared slug with no FEATURES.md row.** `file apply` refuses it; add the `proposed` row yourself (the
@@ -109,7 +110,7 @@ append its `## Domain Research` entry — the one write this skill still makes i
 ## Stage 3 — Report
 
 ```text
-run:       <RUN> — BIN run summary RUN
+run:       <RUN> — bigin run summary RUN
 sources:   INT-###: N/N blocks read · unread: <what + why | none>
 mix:       INT-###: as-is N · pain N · to-be N · derived N · why stated N of M (X% not stated)
 audit:     INT-###: <self | independent (<trigger>)> — gaps N, narrowed N, inversions N, conflicts N
@@ -117,7 +118,7 @@ filed:     <slug>: N signals in M themed rows (#a-#b) · new hubs: <slugs + rese
 registers: PP minted <ids> · PP matched <ids> · entities N · design N
 parked:    INT-### awaiting an answer (N open) · awaiting a feature mapping
 gate:      bigin lint --full: clean | repaired (<what>) | UNAVAILABLE (<why>) · coverage --stage file: missing N
-tokens:    BIN metrics report --run RUN
+tokens:    bigin metrics report --run RUN
 ```
 
 ## Additional resources

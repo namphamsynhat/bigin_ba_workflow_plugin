@@ -3,11 +3,11 @@
 Run through `/bigin-upgrade-project` (§ 3b), which calls the engine. By hand, from the repo root:
 
 ```bash
-B="$CLAUDE_PLUGIN_ROOT/bin/bigin"            # or the plugin checkout's bin/bigin
-$B migrate plan --from 1.8.12 --to 1.12.0    # which steps are due
-$B migrate all  --from 1.8.12 --to 1.12.0 --dry
-$B migrate all  --from 1.8.12 --to 1.12.0    # snapshot → steps → links sync → hub refresh → status → stamp
-$B lint --full                               # must be clean
+bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }   # python3 if no python on PATH
+bigin migrate plan --from 1.8.12 --to 1.12.0    # which steps are due
+bigin migrate all  --from 1.8.12 --to 1.12.0 --dry
+bigin migrate all  --from 1.8.12 --to 1.12.0    # snapshot → steps → links sync → hub refresh → status → stamp
+bigin lint --full                               # must be clean
 ```
 
 `--from` defaults to `workspace_version` in `_bigin/system/project.md`; `--to` defaults to the engine version.
@@ -28,6 +28,7 @@ $B lint --full                               # must be clean
 | **1.16.0** — impact & suspect links | none | **Behaviour change:** a content change to an `approved` (or `enriched`/`consolidated`) UC/BR now sets it back to `draft` on the same `bigin apply` write (Changelog: `Status approved → draft …`), as `intake.md` § Feedback handling always documented; a question added/answered reverts nothing. Before 1.16.0 the engine left it `approved` and only flagged `§ 2 changed`. New `bigin cascade` derives `stale: [UC-###@ver]` on UX specs, epics and stories built on a UC that moved on (status never changed; cleared by re-stamping `absorbed`), run by every apply. New `bigin impact <INT-###|touched> [--write]` / `--ucs` walks the trace graph (direct · via shared rule · shared entity · sibling features · downstream UX/epics/stories with steps hit); the transform workflow's Close step regenerates each intake note's engine-owned `## Impact` section and `01-Requirements/_impact/INT-###.json`. Lint flags an out-of-date `stale:`. Run `bin/bigin cascade` once after upgrading to flag artifacts that already drifted. |
 | **1.17.0** — story handoff trace | none | Stories carry `sources: [INT-###]` and `jira: [KEY]`, derived from their slices by `bigin mint us` and kept current by `bigin cascade` (run `bin/bigin cascade` once after upgrading to backfill existing stories; lint reports `story trace out of date` until then). `bigin mint us` accepts `delta_of: US-###` — a drifted approved story stays untouched, gains `delta: [US-###]`, and the new draft story carries only the change. `bigin mint ep` accepts `cr: true` — one `<Feature> — changes` epic per feature beside its normal epic (resolves the stories/1-scope.md CR-epic conflict). Templates: `user-story.md` (`sources`, `jira`, `delta_of`, `delta`), `epic.md` (`cr`). |
 | **1.12.3** — review fixes | none | No format change. Quoted frontmatter values decode YAML escapes (a `coverage_id_pattern: "XR-[A-Z]+-\\d{3}"` in `project.md` now matches); `bigin coverage` tolerates a ledger entry with `gate: null`; `ux-brief-assembler` card/skill wording aligned with its `.out.json` write. |
+| **1.12.4** — Windows portability | none | No vault format change. Lint hook invokes `python lib/bigin/cli.py` (fallback `python3`) instead of the extensionless `bin/bigin` sh script. Adds `bin/bigin.cmd` and launcher-generated `_bigin/bin/bigin.cmd`; `exclusive_file_lock` (msvcrt/fcntl) for parallel mint/write; UTF-8 stdio in `cli.py`; workflow `run done` parsing tolerates CRLF; skills/docs define the engine as a shell function `bigin() { python …/cli.py "$@"; }` (a string-assigned `$BIN` does not survive word splitting); `bin/bigin` and the generated `_bigin/bin/bigin` probe `python3` then `python` for 3.9+; `.gitattributes` pins `*.cmd` to CRLF. Workflows call one path, `"<plugin_root>/bin/bigin"` (cmd.exe resolves it to `bigin.cmd` via PATHEXT; `args.bin` overrides). `BIGIN_LINT_BLOCKING=1` now blocks through PostToolUse JSON `{"decision": "block"}` with exit 0 instead of stderr + exit 2, so the hook's `|| python3` fallback never re-runs. Four skill frontmatters (`bigin-generate-design`, `bigin-transform-signal`, `bigin-upgrade-project`, `sync-entities`) move to `description: >-` for YAML; `bigin-upgrade-project`'s and `bigin-generate-design`'s descriptions are also shortened — re-check their triggers. |
 
 ## The steps
 

@@ -11,8 +11,8 @@ never: setting status: approved · editing a UC, BR, entity, UX spec, or snapsho
 
 | # | Check | How |
 |---|---|---|
-| 1 | Coverage complete | `$BIGIN coverage --stage stories --list` reports no uncovered `S#`/`A#`/`E#` |
-| 2 | Business language | `$BIGIN lint --full` raises no banned-term finding on these files |
+| 1 | Coverage complete | `bigin coverage --stage stories --list` reports no uncovered `S#`/`A#`/`E#` |
+| 2 | Business language | `bigin lint --full` raises no banned-term finding on these files |
 | 3 | Diagrams parse | lint's Mermaid header check passes; every fence is closed |
 | 4 | Every story is in its epic | each `US-###` `epic:` names this epic, and the epic's `stories:` lists it |
 | 5 | Every AC is tagged | each `Scenario:` line in § 6 carries at least one `[S#]`, `[A#]`, `[E#]`, or `[BR-###]` |

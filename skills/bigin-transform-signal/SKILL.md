@@ -1,6 +1,7 @@
 ---
 name: bigin-transform-signal
-description: This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's pending UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), and Design Directives through the bigin engine — agents emit JSON change sets, `bin/bigin apply` writes every artifact once, gated changes wait in the ledger on a written question — then checks each touched feature's use-case set as a set, recording what nobody has described as a `## Coverage Gaps` row on the hub. Resumable, never blocking on a live human. It never promotes an Entity (EN) doc — /sync-entities is the only skill that promotes one.
+description: >-
+  This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's pending UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), and Design Directives through the bigin engine — agents emit JSON change sets, the engine's apply writes every artifact once, gated changes wait in the ledger on a written question — then checks each touched feature's use-case set as a set, recording what nobody has described as a `## Coverage Gaps` row on the hub. Resumable, never blocking on a live human. It never promotes an Entity (EN) doc — /sync-entities is the only skill that promotes one.
 argument-hint: "[feature slug, or omit for all pending, or resume <run-id>]"
 ---
 
@@ -9,7 +10,7 @@ argument-hint: "[feature slug, or omit for all pending, or resume <run-id>]"
 Turn `new`/`held` signals on a Feature Hub's `## Signal Log` into **Use Cases** (UC), **Business Rules**
 (BR), and **Design Directives**. **LLM for judgement, the engine for bookkeeping, JSON between them, one
 write per artifact:** `uc-router` decides which UC a signal belongs to and writes the final text as change
-sets (`lib/bigin/schema/changeset.json`); `"${CLAUDE_PLUGIN_ROOT}/bin/bigin" apply` validates and lands
+sets (`lib/bigin/schema/changeset.json`); `bigin apply` validates and lands
 them, flips the Signal Log rows, syncs links, refreshes hubs, and re-counts status. No agent edits a
 UC, BR, or hub file.
 
@@ -42,13 +43,14 @@ text reworded by a human since the worklist was built → DRIFT: not applied, on
 ## Setup
 
 ```text
-BIN="${CLAUDE_PLUGIN_ROOT}/bin/bigin"          # the orchestrator runs it; subagents never do
+bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }   # python3 if no python on PATH
+                                                       # the orchestrator runs it; subagents never do
 version-check.md § Workspace version check      # behind → recommend /bigin-upgrade-project; ahead → stop
 project.md engine: legacy                      # → this vault is mid-migration: follow the v1.8.x copy of
                                                #   this skill (plugin ≤ 1.8.12) for ONE minor version, then upgrade
 legacy staged entries present? (grep {uc_dir}/{br_dir} for `^- \*\*INT-\d+\*\* \(staged`)
-                               → $BIN migrate discussion-to-ledger   (snapshots first) — then continue
-RUN=$($BIN run new --stage transform --scope <slug|all>)   # or the run id after `resume`
+                               → bigin migrate discussion-to-ledger   (snapshots first) — then continue
+RUN=$(bigin run new --stage transform --scope <slug|all>)   # or the run id after `resume`
 ```
 
 Missing `_bigin/conventions/`, `_bigin/stages/`, or `_bigin/templates/` → stop: `/bigin-new-project` first.
@@ -58,12 +60,12 @@ Missing `_bigin/conventions/`, `_bigin/stages/`, or `_bigin/templates/` → stop
 ```text
 scope = $ARGUMENTS slug, else every hub with new/held/conflict/question rows or open ledger entries
 
-1  release   $BIN ledger release · re-entry · orphan answers                  [1-foldin.md]
-2  qualify   gate each new/held row; outcomes via $BIN hub flip               [2-qualification.md]
-3  route     uc-router Phase A → $BIN mint route → Phase B → change sets      [3-routing.md, 3-lane-*.md]
-4  apply     $BIN ingest + apply · adjudicate (code-grounded) · conflict + coverage check
+1  release   bigin ledger release · re-entry · orphan answers                  [1-foldin.md]
+2  qualify   gate each new/held row; outcomes via bigin hub flip               [2-qualification.md]
+3  route     uc-router Phase A → bigin mint route → Phase B → change sets      [3-routing.md, 3-lane-*.md]
+4  apply     bigin ingest + apply · adjudicate (code-grounded) · conflict + coverage check
                                                                               [4-sync.md, 4b-coverage.md]
-5  status    $BIN status · hub refresh · coverage · lint --full · report      [5-status.md]
+5  status    bigin status · hub refresh · coverage · lint --full · report      [5-status.md]
 ```
 
 Stage 1 first harvests answers written since the last run. Load a stage file when you reach it.
@@ -81,23 +83,23 @@ Workflow(scriptPath: "<vault root>/_runs/$RUN/workflows/transform.js",   # stage
 ```
 
 Stages 1–2 run before it (they are cheap and mostly engine commands); Stage 5 after it. Between steps
-read only `$BIN run summary $RUN` (≤ 20 lines) and the workflow's returned JSON — never agent transcripts.
+read only `bigin run summary $RUN` (≤ 20 lines) and the workflow's returned JSON — never agent transcripts.
 
 **Fallback — no Workflow tool.** Run the same loop with `Agent` calls, per feature (features in parallel,
 ≤ 4; within a feature sequential) — `references/agent-dispatch.md`:
 
 ```text
-$BIN worklist route <slug> --out _runs/$RUN/tasks/<slug>.route.in.json
-Agent(uc-router, Phase A) → <slug>.route.out.json ; $BIN ingest … --kind route --run $RUN
-$BIN mint route --spec _runs/$RUN/tasks/<slug>.route.out.json        # serial, locked
-SendMessage(same uc-router, Phase B) → <slug>.changesets.out.json ; $BIN ingest … --kind changesets
-$BIN apply _runs/$RUN/tasks/<slug>.changesets.out.json --run $RUN
+bigin worklist route <slug> --out _runs/$RUN/tasks/<slug>.route.in.json
+Agent(uc-router, Phase A) → <slug>.route.out.json ; bigin ingest … --kind route --run $RUN
+bigin mint route --spec _runs/$RUN/tasks/<slug>.route.out.json        # serial, locked
+SendMessage(same uc-router, Phase B) → <slug>.changesets.out.json ; bigin ingest … --kind changesets
+bigin apply _runs/$RUN/tasks/<slug>.changesets.out.json --run $RUN
 grounding codebase|both and conflict/held rows → adjudicate (4-sync.md § Part 3)
-$BIN hub refresh <slug>
+bigin hub refresh <slug>
 ```
 
 A schema error from `ingest` goes back to the SAME agent once (SendMessage); a second failure parks the
-feature in the report. After every task notification: `$BIN metrics add --run $RUN --stage transform
+feature in the report. After every task notification: `bigin metrics add --run $RUN --stage transform
 --task <task> --agent <name> --feature <slug> --usage "<the usage block>"`.
 
 ## Lanes

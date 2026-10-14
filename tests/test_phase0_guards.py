@@ -74,6 +74,28 @@ def test_vault_write_refuses_when_open_questions_gates_question_lost():
         assert "question in ## Open Questions / Gates disappeared" in str(e)
 
 
+def test_hooks_json_engine_command_runs():
+    """The PostToolUse lint command, exactly as hooks.json spells it, runs and exits 0 outside a vault."""
+    import json
+    import subprocess
+    import tempfile
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root, "hooks", "hooks.json"), encoding="utf-8") as f:
+        hooks = json.load(f)
+    cmds = [h["command"] for entry in hooks["hooks"]["PostToolUse"] for h in entry["hooks"]
+            if "lint --hook" in h.get("command", "")]
+    assert len(cmds) == 1, cmds
+    cmd = cmds[0].replace("${CLAUDE_PLUGIN_ROOT}", root.replace("\\", "/"))
+    assert "${" not in cmd, cmd
+    with tempfile.TemporaryDirectory() as cwd:
+        payload = {"tool_name": "Write", "cwd": cwd,
+                   "tool_input": {"file_path": os.path.join(cwd, "note.md")}}
+        r = subprocess.run(cmd, shell=True, cwd=cwd, input=json.dumps(payload),
+                           capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, f"hook exit {r.returncode}: {r.stderr or r.stdout}"
+
+
 def test_lint_full_prints_version_and_plugin_path():
     root, v = fresh("code-vault")
     code, out = run(root, "lint", "--full")

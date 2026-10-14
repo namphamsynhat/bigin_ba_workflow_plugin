@@ -3,36 +3,22 @@
 Ported from Agoyu ``mint_uc.py``: next id = highest id already in use (read from every file's
 ``id:`` and file name, not just file names) + 1; a UC with the same title is refused; the new id
 is pointed at from its hubs and FEATURES.md. Parallel-safe: every mint holds an exclusive
-``fcntl`` lock on ``01-Requirements/.ids.lock`` from "read the highest id" to "file written".
+lock on ``01-Requirements/.ids.lock`` from "read the highest id" to "file written"
+(fcntl on POSIX, msvcrt on Windows).
 """
-import contextlib
 import glob
 import os
 import re
 
-from .util import EngineError, load_json, today
+from .util import EngineError, exclusive_file_lock, load_json, today
 from .vault import Doc, strip_comments
-
-try:
-    import fcntl
-except ImportError:  # pragma: no cover - non-POSIX
-    fcntl = None
 
 WIDTH = 3
 
 
-@contextlib.contextmanager
 def id_lock(vault):
     os.makedirs(vault.req, exist_ok=True)
-    path = os.path.join(vault.req, ".ids.lock")
-    with open(path, "a+") as f:
-        if fcntl:
-            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            if fcntl:
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+    return exclusive_file_lock(os.path.join(vault.req, ".ids.lock"))
 
 
 def _scan_numbers(paths, kind):

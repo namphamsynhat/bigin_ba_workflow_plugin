@@ -24,7 +24,7 @@ the one that just got answered), and Stage 3 must draft it **from the decision r
 not from the original signal text (`3-lane-uc.md` § Conflict).
 
 Each gate has exactly one outcome per case — write that outcome, never improvise a new one. **Every
-outcome is written by the engine:** `"${CLAUDE_PLUGIN_ROOT}/bin/bigin" hub flip <slug> <n>=<status>[:<dest>][@<note>]`
+outcome is written by the engine:** `python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" hub flip <slug> <n>=<status>[:<dest>][@<note>]` (fallback `python3`)
 — never by editing the Signal Log. A failed row is **parked, not deleted**; the next run re-checks it,
 which is why `held` rows are always re-collected. Hand the qualified rows (and only those) to Stage 3 as
 `bigin worklist route <slug> --rows <n,n,…>`.
@@ -158,7 +158,7 @@ Three cases, three outcomes. Only one touches an existing row; none delete anyth
     a Jira row's Notes say it outright ("supersedes INT-### #<m>") → the earlier hub row is the one
       citing INT-### #<m>; no judgement needed on which row wins — the ticket's newer text does
     the earlier row is already `staged` (a change set waits in the ledger) →
-      $BIN ledger supersede <cs id> --reason "superseded by <slug> #<n>" , then flip the row;
+      bigin ledger supersede <cs id> --reason "superseded by <slug> #<n>" , then flip the row;
       the new row routes and stages its own change set
     the earlier row is already `applied` → flip nothing; the new row routes as an UPDATE to the same
       UC step / BR, and the UC's Changelog records the change

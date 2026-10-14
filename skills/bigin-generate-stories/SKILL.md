@@ -72,7 +72,7 @@ S6  Screens are CAPTURED, not designed. § 5 reports what the snapshot and the U
 Missing `_bigin/stages/stories/` or `_bigin/templates/epic.md` → stop: `/bigin-upgrade-project` (or
 `/bigin-new-project`) must run first. Then `version-check.md` § Workspace version check: behind → warn; ahead → stop.
 
-`$BIGIN` is `"${CLAUDE_PLUGIN_ROOT}/bin/bigin"`.
+`bigin` below is a shell function — `bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }` (`python3` if no `python` on PATH); run from the vault root.
 
 ## Execution order
 

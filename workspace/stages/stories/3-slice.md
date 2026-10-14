@@ -58,5 +58,5 @@ its independent test). Fail → re-slice now, not in Stage 5.
 
 ## Part 5 — Mint
 
-Once the plan is final: `$BIGIN mint us --spec <json>` (`{title, epic, priority, slice_of, rules, screens, entities, after, snapshot}`) once per **new** story, in story-map order, in the orchestrator — it creates the file from the template and appends the id to the epic's `stories:`. A draft
+Once the plan is final: `bigin mint us --spec <json>` (`{title, epic, priority, slice_of, rules, screens, entities, after, snapshot}`) once per **new** story, in story-map order, in the orchestrator — it creates the file from the template and appends the id to the epic's `stories:`. A draft
 story whose slice is unchanged keeps its id. Workers never mint.

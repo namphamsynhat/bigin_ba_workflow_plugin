@@ -9,13 +9,13 @@ never: status — Stage 5 re-counts it
 ```
 
 Stage 1 before Stage 2 is what makes a rerun useful: it harvests answers a human wrote since the last
-run before anything new is drafted. `BIN="${CLAUDE_PLUGIN_ROOT}/bin/bigin"`.
+run before anything new is drafted. `bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }` (`python3` if no `python` on PATH).
 
 ## Legacy vaults first
 
 ```text
 any UC/BR ## Discussion still holding `- **INT-###** (staged …)` entries (v1.8.x)?
-    → $BIN migrate discussion-to-ledger       # snapshots the vault, converts each entry to change sets:
+    → bigin migrate discussion-to-ledger       # snapshots the vault, converts each entry to change sets:
                                               # mechanical ones (§ 2/§ 3/§ 4 mirror) apply now, prose ones
                                               # tied to an open question on the same hub row go to the
                                               # ledger gated on it, the rest apply now
@@ -26,7 +26,7 @@ any UC/BR ## Discussion still holding `- **INT-###** (staged …)` entries (v1.8
 ## Release the ledger
 
 ```text
-$BIN ledger release
+bigin ledger release
     per open change set: its gate question ticked with a filled A: (or already in the decision log)
       → applied through the same engine path as any change set; the settled question moves to the
         UC's Decision log; the ledger entry becomes `released`; the hub row flips to `applied`
@@ -34,12 +34,12 @@ $BIN ledger release
     still unanswered → waits
 ```
 
-**Needs-judgement.** `$BIN worklist release all --out _runs/$RUN/tasks/release.in.json` lists each one with
+**Needs-judgement.** `bigin worklist release all --out _runs/$RUN/tasks/release.in.json` lists each one with
 its question, answer, and change set. The orchestrator (or one `uc-router` dispatch for many) decides per
 item — `apply` (the answer does support it), `supersede` (the answer contradicts it), or `revise` (a
 corrected change set) — writes `{"kind":"verdicts","verdicts":[…]}` and runs
-`$BIN ledger release --verdicts <file>`. A superseded set leaves its hub row `staged`; flip it with
-`$BIN hub flip <slug> <n>=superseded@<the decision>` or re-enter it (§ Re-entry) when the answer is new
+`bigin ledger release --verdicts <file>`. A superseded set leaves its hub row `staged`; flip it with
+`bigin hub flip <slug> <n>=superseded@<the decision>` or re-enter it (§ Re-entry) when the answer is new
 content.
 
 ## The human may have edited the section first
@@ -66,8 +66,8 @@ nor `new`/`held`, so without this step an answered requirement is stranded forev
 scan in-scope hubs for Status conflict | question; find the question each raised (Notes/Destination
 point at it: a UC § 5, a BR's Open Questions, the hub's Gates, or the source INT note)
 A: blank  → leave it
-A: filled → $BIN hub flip <slug> <n>=new@"re-entered <date>: <question> answered on <artifact> — <A: ≤10 words>"
-            losing side of a conflict → $BIN hub flip <slug> <m>=superseded@"superseded by the decision on #<n>"
+A: filled → bigin hub flip <slug> <n>=new@"re-entered <date>: <question> answered on <artifact> — <A: ≤10 words>"
+            losing side of a conflict → bigin hub flip <slug> <m>=superseded@"superseded by the decision on #<n>"
             a third option neither row proposed → both old rows superseded; the re-entered row carries it
             settle the question (§ Orphan answers, first case)
 ```
@@ -85,7 +85,7 @@ for above, and read what each decides:
 ```text
 confirms what the artifact says / needs no new content
     → an `answer_question` change set (anchor = the question text, text = the decision) through
-      $BIN apply: the line moves to the UC's Decision log (a BR: ticked with its A:), version bump,
+      bigin apply: the line moves to the UC's Decision log (a BR: ticked with its A:), version bump,
       Changelog line
 adds content the artifact lacks (a step, branch, rule, trigger)
     → NOT drafted here — there is no signal to trace it to. Leave it open; report it as needing
@@ -99,9 +99,9 @@ A ticked box over the second or third kind is a mis-tick: report it, never untic
 ## Reconcile mirrors — every run
 
 ```text
-$BIN links sync            # brs:/uc:/features:/sources: and the FEATURES.md UC column
-$BIN hub sweep             # staged → applied where nothing pending (Discussion or ledger) cites the row
-$BIN hub refresh <slugs>   # every in-scope hub AND every hub a touched cross-feature UC names
+bigin links sync            # brs:/uc:/features:/sources: and the FEATURES.md UC column
+bigin hub sweep             # staged → applied where nothing pending (Discussion or ledger) cites the row
+bigin hub refresh <slugs>   # every in-scope hub AND every hub a touched cross-feature UC names
 ```
 
 All three are idempotent. One mirror stays manual: when an artifact's question is resolved and the same

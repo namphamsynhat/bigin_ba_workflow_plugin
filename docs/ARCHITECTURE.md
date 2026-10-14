@@ -9,23 +9,26 @@ discipline, never-renumber, add-only questions, `/approve-uc` as the only human 
 guaranteed. It moved from "every agent re-reads and re-enforces the rule" to "one engine enforces it".
 
 ```
-bin/bigin               thin launcher → python3 lib/bigin/cli.py
+bin/bigin / bin/bigin.cmd   thin launchers → lib/bigin/cli.py (python3/python; Windows .cmd)
 lib/bigin/              the engine — Python 3.9+, standard library only
 workflows/*.js          Workflow-tool orchestration (fan-out, retries, resume)
 agents/*.md             small agents (≤ 4 KB), JSON out, no Edit on vault files
 cards/*.md              per-role instruction cards (≤ 3 KB) — what agents read
 skills/*/SKILL.md       entry points; call bin/bigin and dispatch agents
 workspace/              conventions (human reference), stages, templates (+ *.guide.md)
-hooks/hooks.json        PostToolUse → bin/bigin lint --hook --quiet
+hooks/hooks.json        PostToolUse → python lib/bigin/cli.py lint --hook --quiet (python3 fallback)
 tests/                  fixtures (comm-vault, code-vault) + stdlib test runner
 ```
 
 ## 1. The engine (`lib/bigin/`)
 
-The engine is **not** materialized into a project. Skills call `"${CLAUDE_PLUGIN_ROOT}/bin/bigin" …`.
+The engine is **not** materialized into a project. Skills call
+`python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" …` (fallback `python3` — portable on Windows cmd; or
+`"${CLAUDE_PLUGIN_ROOT}/bin/bigin"` / `bin/bigin.cmd`).
 Agents that cannot resolve `CLAUDE_PLUGIN_ROOT` (every subagent, including the interactive `bigin-ba`) use
-`_bigin/bin/bigin` — a shim `bigin launcher` generates with the installed plugin's absolute path — and read
-their card at `_bigin/cards/<card>`. `/bigin-new-project` and `/bigin-upgrade-project` run `bigin launcher`.
+`_bigin/bin/bigin` / `_bigin/bin/bigin.cmd` — shims `bigin launcher` generates with the installed plugin's
+absolute path — and read their card at `_bigin/cards/<card>`. `/bigin-new-project` and
+`/bigin-upgrade-project` run `bigin launcher`.
 Global options: `--vault <root>` (default: discovered upward from cwd, or `$BIGIN_VAULT`) and `--json`.
 Exit codes: `0` ok · `1` findings/missing (lint, coverage) · `2` refused (bad input, drift, stale file) ·
 `64` usage.
@@ -34,7 +37,7 @@ Exit codes: `0` ok · `1` findings/missing (lint, coverage) · `2` refused (bad 
 |---|---|---|
 | `vault.py` | — | Section-aware Markdown I/O. Headings count only at column 0 **outside** `<!-- -->` and fenced code. Frontmatter keeps key order, inline vs block list style and quoting. Every edit is a splice, so an untouched file round-trips byte-identically. `Vault.write` = verify (no lost heading, no untouched section or frontmatter key changed) → refuse if the file changed on disk since it was read → back up to `_runs/_backups/<date>/` → atomic replace → re-read verify → restore on mismatch. |
 | `model.py` | — | Read-side model: UC steps/flows/§ 4/§ 5, BR statement, hub Signal Log (hub or `<slug>.signals.md`), note signal table. |
-| `ids.py` | `mint uc\|br\|int\|route --spec` | Next id = highest in use (file names **and** `id:`) + 1, under an `fcntl` lock on `01-Requirements/.ids.lock`. Instantiates templates (structure, never guidance). `mint route` mints every `new` UC a uc-router Phase A proposed and writes `<route>.minted.json`. |
+| `ids.py` | `mint uc\|br\|int\|route --spec` | Next id = highest in use (file names **and** `id:`) + 1, under `exclusive_file_lock` on `01-Requirements/.ids.lock` (fcntl on POSIX, msvcrt on Windows). Instantiates templates (structure, never guidance). `mint route` mints every `new` UC a uc-router Phase A proposed and writes `<route>.minted.json`. |
 | `hub.py` | `hub refresh\|flip\|sweep\|citers\|fix-tables` | Replaces the retired `hub-bookkeeper` agent. `refresh`: `uc:` pointers, ## Use Cases, ## Requirement Readiness (one row per artifact; Ready ⟺ status ≠ needs-clarification ∧ 0 open questions ∧ nothing pending in the ledger or ## Discussion ∧ § 2 drafted), ADD-ONLY ## Open Questions / Gates mirror (ticks a mirror only when its source is ticked with an `A:`; coverage gaps mirrored), one Changelog line. Signal Log and Coverage Gaps are never edited — the write is refused if they change. Idempotent. |
 | `mirror.py` | `mirror br`, `links sync` | § 4 statements ← the BR's current rule (never over a placeholder, never over a row that reads as a *different* rule — reported instead); enforcement points validated against live step/flow ids; `brs:` = § 4. `links sync`: BR `uc:` ⊇ mirroring UCs, UC `features:` ⊇ BR features, `sources:` ⊇ INT ids cited outside comments, FEATURES.md UC column. |
 | `status.py` | `status` | UC/BR status from a live open-question count; moves only between `draft` and `needs-clarification`. |
@@ -50,7 +53,7 @@ Exit codes: `0` ok · `1` findings/missing (lint, coverage) · `2` refused (bad 
 | `intake/` | `intake codebase\|communication` | Codebase rule-card import (no LLM) and locked note scaffolding (§ 6). |
 | `migrate.py` | `migrate snapshot\|plan\|all\|discussion-to-ledger\|strip-guidance\|split-signal-log` | Vault format migrations (`docs/MIGRATION.md`). |
 | `audit.py` | `audit [--baseline <tgz\|dir>] [--strict] [--id-pattern]` | Read-only invariant audit (C1–C12) against a pre-run snapshot: questions add-only, step ids kept, Signal Log rows kept, no automated approvals. |
-| `cli.py` | `launcher` | writes `_bigin/bin/bigin` and refreshes `_bigin/cards/`. |
+| `cli.py` | `launcher` | writes `_bigin/bin/bigin` + `_bigin/bin/bigin.cmd` and refreshes `_bigin/cards/`. |
 | `edit.py`, `util.py` | — | Shared write helpers (Changelog, version bump, question matching), ids, JSON. |
 
 While `apply` runs it sets `BIGIN_BATCH=1`, which makes the PostToolUse hook silent — a transient
@@ -169,7 +172,7 @@ Model tiering (agent frontmatter): `uc-router`, `code-adjudicator`, `uc-splitter
 | `_runs/_backups/<date>/` | engine | a copy of every file before the engine rewrote it |
 | `_runs/migrate-*.tgz` | engine | pre-migration snapshots of `01-Requirements/` + `00-Inbox/` |
 | `_bigin/cards/` | plugin (materialized) | role cards |
-| `_bigin/bin/bigin` | generated by `bigin launcher` | engine shim for agents without `CLAUDE_PLUGIN_ROOT` |
+| `_bigin/bin/bigin` (+ `bigin.cmd`) | generated by `bigin launcher` | engine shims for agents without `CLAUDE_PLUGIN_ROOT` |
 
 Instantiated UCs/BRs/hubs carry one comment, `<!-- guide: _bigin/templates/<name>.guide.md -->`, instead of the
 template's guidance blocks. The human-facing shape of UC/BR files (§ 1–§ 6, Changelog, Decision log) is unchanged.

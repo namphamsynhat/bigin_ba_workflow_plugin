@@ -1,7 +1,7 @@
 export const meta = {
   name: 'bigin-transform',
   description: 'Bigin transform: per feature route (uc-router A) → mint → draft change sets (uc-router B) → bigin apply → adjudicate (code-grounded) → hub refresh + coverage',
-  whenToUse: 'Called by /bigin-transform-signal or /bigin-run for one or more feature slugs. args: {run, vault, plugin_root, features: [slug], rows?: {slug: [row#]}, grounding, max_agents}',
+  whenToUse: 'Called by /bigin-transform-signal or /bigin-run for one or more feature slugs. args: {run, vault, plugin_root, features: [slug], rows?: {slug: [row#]}, grounding, max_agents, bin?}',
   phases: [
     { title: 'Route', detail: 'worklist + uc-router Phase A per feature' },
     { title: 'Draft', detail: 'mint new UCs, uc-router Phase B → change sets' },
@@ -22,7 +22,9 @@ export const meta = {
 const A = args || {}
 const RUN = A.run
 const VAULT = A.vault || '.'
-const BIN = `${A.plugin_root}/bin/bigin`
+// One path for every shell: sh/Git Bash run the bin/bigin sh shim (it picks python3/python);
+// cmd.exe resolves the extensionless name to bin/bigin.cmd via PATHEXT. `args.bin` overrides.
+const BIN = A.bin || `"${A.plugin_root}/bin/bigin"`
 const TASKS = `_runs/${RUN}/tasks`
 const CODE = ['codebase', 'both'].includes(A.grounding || 'communication')
 const MAX = A.max_agents || 6
@@ -74,8 +76,9 @@ async function ingestOrRetry(file, kind, agentType, card, input, label, phase) {
 }
 
 // resume: features whose close step already recorded ok in results.jsonl are skipped
+// Windows print() emits \r\n — strip so `close:slug` matches (POSIX stays \n-only).
 const doneR = await engine('run: done tasks', 'Route', [`${BIN} run done ${RUN}`])
-const done = new Set(((doneR && doneR.data && doneR.data.text) || '').split('\n'))
+const done = new Set(((doneR && doneR.data && doneR.data.text) || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean))
 const todo = A.features.filter(f => !done.has(`close:${f}`))
 if (todo.length < A.features.length) log(`resume: skipping ${A.features.length - todo.length} finished feature(s)`)
 
@@ -153,6 +156,6 @@ return {
     review: r.review || [], reverted: r.reverted || [], stale: r.stale || [],
     coverage: r.coverage || null, adjudicated: r.adjudicated || null })),
   impact: impact && impact.ok && Array.isArray(impact.data) ? impact.data.filter(i => i.written).map(i => ({ int: i.int, ...i.summary })) : [],
-  lint: lint && lint.data ? (lint.data.text || '').split('\n')[0] : 'not run',
+  lint: lint && lint.data ? (lint.data.text || '').split(/\r?\n/)[0] : 'not run',
   next: `bigin run summary ${RUN}`,
 }
