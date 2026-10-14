@@ -1,5 +1,5 @@
 {
-  "description": "Runs bigin-lint's per-file invariant checks after a write into a Bigin requirements vault (v1.9.0+: `python lib/bigin/cli.py lint --hook --quiet`, fallback `python3`). QUIET and ADVISORY: only findings about the file just written, at most 5 lines, always exit 0 \u2014 and nothing at all while BIGIN_BATCH=1, which the engine sets while it applies change sets, so transient mid-apply states never reach an agent's context. The blocking gate is `lint --full`, run once at each stage boundary. Inert in any repo without _bigin/system/project.md.",
+  "description": "Runs bigin-lint's per-file invariant checks after a write into a Bigin requirements vault (v1.9.0+: `python lib/bigin/cli.py lint --hook --quiet`, fallback `python3`). QUIET and ADVISORY: only findings about the file just written, at most 5 lines, always exit 0 \u2014 and nothing at all while BIGIN_BATCH=1, which the engine sets while it applies change sets, so transient mid-apply states never reach an agent's context. The blocking gate is `lint --full`, run once at each stage boundary. Inert in any repo without _bigin/system/project.md: a shell test on $CLAUDE_PROJECT_DIR runs first, so outside a vault no Python process starts at all (a user-scope install costs nothing in other projects). Under cmd.exe the `[` test is not a command, fails, and the hook falls through to the Python launch \u2014 the same behaviour as before, with the in-process vault check still guarding.",
   "hooks": {
     "PostToolUse": [
       {
@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py\" lint --hook --quiet || python3 \"${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py\" lint --hook --quiet",
+            "command": "[ ! -f \"${CLAUDE_PROJECT_DIR:-.}/_bigin/system/project.md\" ] || python \"${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py\" lint --hook --quiet || python3 \"${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py\" lint --hook --quiet",
             "timeout": 15
           }
         ]

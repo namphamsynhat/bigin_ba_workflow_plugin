@@ -87,13 +87,73 @@ def test_hooks_json_engine_command_runs():
             if "lint --hook" in h.get("command", "")]
     assert len(cmds) == 1, cmds
     cmd = cmds[0].replace("${CLAUDE_PLUGIN_ROOT}", root.replace("\\", "/"))
-    assert "${" not in cmd, cmd
+    assert "${CLAUDE_PLUGIN_ROOT}" not in cmd, cmd
     with tempfile.TemporaryDirectory() as cwd:
         payload = {"tool_name": "Write", "cwd": cwd,
                    "tool_input": {"file_path": os.path.join(cwd, "note.md")}}
         r = subprocess.run(cmd, shell=True, cwd=cwd, input=json.dumps(payload),
                            capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, f"hook exit {r.returncode}: {r.stderr or r.stdout}"
+
+
+def _hook_cmd():
+    import json
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root, "hooks", "hooks.json"), encoding="utf-8") as f:
+        hooks = json.load(f)
+    cmd = [h["command"] for entry in hooks["hooks"]["PostToolUse"] for h in entry["hooks"]
+           if "lint --hook" in h.get("command", "")][0]
+    return cmd.replace("${CLAUDE_PLUGIN_ROOT}", root.replace("\\", "/"))
+
+
+def _run_hook(cmd, project_dir, file_path, path_env=None):
+    import json
+    import subprocess
+    env = dict(os.environ, CLAUDE_PROJECT_DIR=project_dir)
+    env.pop("BIGIN_BATCH", None)
+    env.pop("BIGIN_LINT_OFF", None)
+    if path_env is not None:
+        env["PATH"] = path_env
+    payload = {"tool_name": "Edit", "cwd": project_dir, "tool_input": {"file_path": file_path}}
+    return subprocess.run(cmd, shell=True, cwd=project_dir, env=env, input=json.dumps(payload),
+                          capture_output=True, text=True, timeout=60)
+
+
+def test_hook_starts_no_python_outside_a_vault():
+    """User-scope installs: in a non-vault project the shell guard short-circuits before Python."""
+    import tempfile
+    if os.name == "nt":
+        return  # the `[` guard is POSIX/Git Bash only; cmd.exe falls through to Python by design
+    with tempfile.TemporaryDirectory() as tmp:
+        stubs = os.path.join(tmp, "bin")
+        os.mkdir(stubs)
+        marker = os.path.join(tmp, "python-ran")
+        for name in ("python", "python3"):
+            stub = os.path.join(stubs, name)
+            with open(stub, "w") as f:
+                f.write("#!/bin/sh\ntouch '%s'\n" % marker)
+            os.chmod(stub, 0o755)
+        proj = os.path.join(tmp, "proj")
+        os.mkdir(proj)
+        r = _run_hook(_hook_cmd(), proj, os.path.join(proj, "x.md"),
+                      path_env=stubs + os.pathsep + "/usr/bin:/bin")
+        assert r.returncode == 0, r.stderr
+        assert not os.path.exists(marker), "hook launched Python outside a vault"
+
+
+def test_hook_still_lints_inside_a_vault():
+    if os.name == "nt":
+        return
+    root, _ = fresh("comm-vault")
+    p = [os.path.join(dp, f) for dp, _, fs in os.walk(os.path.join(root, "01-Requirements", "_ucs"))
+         for f in fs if f.startswith("UC-") and f.endswith(".md")][0]
+    with open(p, encoding="utf-8", newline="") as f:
+        text = f.read()
+    with open(p, "w", encoding="utf-8", newline="") as f:
+        f.write(re.sub(r"(?m)^status: .*$", "status: bogus", text, count=1))
+    r = _run_hook(_hook_cmd(), root, p)
+    assert r.returncode == 0, r.stderr
+    assert "bigin-lint (advisory)" in r.stdout, r.stdout + r.stderr
 
 
 def test_lint_full_prints_version_and_plugin_path():
