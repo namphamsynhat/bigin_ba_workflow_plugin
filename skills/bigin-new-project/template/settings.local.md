@@ -15,7 +15,7 @@ research method). Leave a section empty to fall back to those defaults.
 
 <!-- How every domain-research pass runs — /bigin-new-project § 5.3 (once, project-wide) and
 /extract-signal § Step 2a (once per feature, automatic) both read this. Leave blank to default to
-`skill: bmad-domain-research` once /bigin-new-project § 2.5 installs it, or the plugin's built-in
+`skill: bmad-deep-recon` once /bigin-new-project § 2.5 installs it, or the plugin's built-in
 WebSearch method (_bigin/conventions/domain-research-method.md) if that install was skipped/failed.
 To delegate instead:
   skill: <installed-skill-name>       — dispatched headlessly via the Skill tool
@@ -23,7 +23,7 @@ To delegate instead:
   built-in                            — force the WebSearch method, skip any installed skill
 
 domain_research_skill_install: false  — uncomment to stop /bigin-new-project § 2.5 from ever running
-                                         the npx install for bmad-domain-research
+                                         the npx install for bmad-deep-recon
 -->
 
 ## Why phrasing

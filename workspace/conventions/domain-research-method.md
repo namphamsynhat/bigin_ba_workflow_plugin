@@ -24,8 +24,8 @@ else (template: `skills/bigin-new-project/template/settings.local.md`).
 | `agent: <subagent-type>` | Dispatch one `Agent` call with that `subagent_type` (prompt shape in § Delegating to an agent below). Treat its final report as the research and skip to the caller's "Writing the findings" step. |
 | `built-in`, or the section is absent/blank | Run § Built-in method below. |
 
-**Default resolution, absent an explicit setting:** `skill: bmad-domain-research` if that skill is
-installed in this project (`bmad-code-org/bmad-method`'s domain-research skill —
+**Default resolution, absent an explicit setting:** `skill: bmad-deep-recon` if that skill is
+installed in this project (`bmad-code-org/bmad-method`'s deep-recon skill (domain research is part of it) —
 `skills/bigin-new-project/SKILL.md` § 2.5 installs it at project init unless opted out), else
 § Built-in method. A skill dispatch that fails outright, times out, or returns nothing usable falls
 back to § Built-in method for this run rather than blocking the caller — same "providers never

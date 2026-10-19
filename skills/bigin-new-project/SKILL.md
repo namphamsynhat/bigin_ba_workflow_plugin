@@ -110,13 +110,13 @@ plugin context, so a path into the install directory is unreachable to them.
   one (`/extract-signal` § Step 2a) — should default to a real domain-research skill instead of the
   plugin's built-in WebSearch fallback, without a human having to install anything by hand.
 * **Action:**
-  1. Check whether `bmad-domain-research` is already available — in this session's skill list, or on
+  1. Check whether `bmad-deep-recon` is already available — in this session's skill list, or on
      disk at `.claude/skills/`.
   2. If absent, and `.claude/bigin-ba-workflow-plugin.local.md` § Domain research method does not
      record `domain_research_skill_install: false`, run once:
-     `npx -y skills add bmad-code-org/bmad-method --skill bmad-domain-research --agent claude-code`
+     `npx -y skills add bmad-code-org/bmad-method --skill bmad-deep-recon --agent claude-code`
   3. On success: if § Domain research method in that settings file is still blank, write
-     `skill: bmad-domain-research` into it. **Never overwrite an explicit override already there** —
+     `skill: bmad-deep-recon` into it. **Never overwrite an explicit override already there** —
      a project that already named a different skill or agent, or `built-in`, keeps its own choice.
   4. On failure (offline, `npx` unavailable, install error): leave the method unset and move on —
      `_bigin/conventions/domain-research-method.md` falls back to the built-in method automatically.
@@ -370,7 +370,7 @@ applies to it directly.
 2. **Config** — paths created or updated, the captured `grounding` (and `repos`/`conflict_policy` when code-grounded), the captured `project_mode` and `platform` (both, and as two separate facts — new-vs-ongoing and browser-vs-phone), and whether `_bigin/` is tracked or ignored.
 3. **Unknowns** — fields still `<unknown>`, editable in `_bigin/system/project.md`. Call out an empty `client_emails` specifically, with its consequence for the sweep.
 4. **Settings** — `.claude/bigin-ba-workflow-plugin.local.md` scaffolded, or already existed and left alone.
-5. **Domain-research skill** — `bmad-domain-research` already present, freshly installed, install skipped (opt-out or an existing method override), or install failed and why. Say plainly which method future domain-research passes (this project's and every feature's) will actually use.
+5. **Domain-research skill** — `bmad-deep-recon` already present, freshly installed, install skipped (opt-out or an existing method override), or install failed and why. Say plainly which method future domain-research passes (this project's and every feature's) will actually use.
 6. **Features** — `proposed` rows imported from a proposal, if any, so wrong slugs get corrected now.
 7. **Codebase map** — for `ongoing`, that mapping is deferred and the section is intentionally empty.
 8. **Project brief & domain research** — for `new`: where the brief came from, which method ran the research, and the dated `## Domain Research` summary with a pointer to the full report. New grounding, not a housekeeping line — don't bury it under Features.
