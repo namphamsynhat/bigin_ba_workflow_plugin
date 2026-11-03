@@ -35,7 +35,7 @@ offshore | unknown)`; an unknown author tags the note `needs-review`. `jira_type
 child ticket inherits its Epic note's resolved feature as `declared_features`. `jira_phase` comes from
 `project.md` `## Jira status mapping` and gates nothing. Jira is read-only: nothing is ever posted back.
 
-**INT ids are minted by the engine under a lock** (`bin/bigin intake communication --spec` / `bin/bigin mint int`),
+**INT ids are minted by the engine under a lock** (`scripts/bigin intake communication --spec` / `scripts/bigin mint int`),
 never by reading the highest existing number — two concurrent captures would mint the same id.
 
 **Provider config**: `email_provider` and `meeting_provider` in `_bigin/system/project.md`

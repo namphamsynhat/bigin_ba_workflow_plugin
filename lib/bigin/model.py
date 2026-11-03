@@ -65,6 +65,17 @@ def decision_table(doc):
     return ts[-1] if ts else None
 
 
+def uc_decisions(doc):
+    """(topic, decision) per § 5 Decision log row — where a settled Still-open question goes."""
+    t = decision_table(doc)
+    if t is None:
+        return []
+    ti, di = t.col("Topic"), t.col("Decision")
+    if ti is None or di is None:
+        return []
+    return [(r[ti], r[di]) for r in t.rows() if len(r) > max(ti, di) and r[ti].strip()]
+
+
 class Step:
     __slots__ = ("id", "idx", "actor", "system", "dropped")
 

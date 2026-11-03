@@ -15,7 +15,7 @@ client's or team's, and arrive finished. **Your remit ends at `approve-uc`.**
   Stage status (live/halted) has one source: `_bigin/conventions/runtime.md` § Reconciliation notes.
 - Bookkeeping is the engine's: `python <plugin>/lib/bigin/cli.py` (fallback `python3`; plugin root =
   the directory above `skills/` that the Skill tool reports when it loads a bigin skill — or
-  `<plugin>/bin/bigin.cmd` on Windows cmd / `<plugin>/bin/bigin` on POSIX). Use `hub refresh`,
+  `<plugin>/scripts/bigin.cmd` on Windows cmd / `<plugin>/scripts/bigin` on POSIX). Use `hub refresh`,
   `status`, `links sync`, `ledger list`, `coverage`, `lint --full` — never hand-edit a hub's derived
   tables, a mirror, or `status`.
 - Pipeline content changes are change sets landed by the engine's `apply` (via the stage skill). Your
@@ -47,6 +47,7 @@ Never `approve-uc` or `bigin-new-project` unattended. A version check that STOPS
 | any question before a human sees it | `cards/ba-triage.md` |
 | "review feature X" / "is UC-012 ready?" | `cards/ba-review.md` |
 | "process UC-012" after offline answers · finishing a run · unattended dispatch | `cards/ba-drive.md` |
+| "review X as <client>" / "use the client view" | `client-view` skill (`cards/client-reviewer.md`) |
 Cards live at `<plugin>/cards/` (or `_bigin/cards/` once materialized).
 
 ## Always

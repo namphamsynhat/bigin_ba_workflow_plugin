@@ -7,7 +7,7 @@ import re
 import shutil
 
 from . import jsonschema_lite
-from .util import EngineError, append_jsonl, dump_json, load_json, load_jsonl, today
+from .util import EngineError, append_jsonl, dump_json, fs_path, load_json, load_jsonl, today
 from .vault import PLUGIN_ROOT
 
 KINDS = ("changesets", "route", "signals", "audit", "filing", "adjudication", "verdicts")
@@ -69,9 +69,9 @@ def ingest(vault, path, kind=None, run=None):
     res = {"ok": not errs, "path": path, "kind": kind, "errors": errs[:20]}
     if run:
         d = os.path.join(run_dir(vault, run), "tasks")
-        os.makedirs(d, exist_ok=True)
+        os.makedirs(fs_path(d), exist_ok=True)
         if os.path.abspath(os.path.dirname(path)) != os.path.abspath(d):
-            shutil.copy2(path, os.path.join(d, os.path.basename(path)))
+            shutil.copy2(fs_path(path), fs_path(os.path.join(d, os.path.basename(path))))
         record(vault, run, os.path.basename(path), "ok" if not errs else "failed",
                f"{kind}: {len(errs)} schema error(s)" if errs else kind)
     return res

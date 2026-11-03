@@ -142,6 +142,21 @@ def _gates(doc, ix, slug, part):
             changes.append(f"ticked mirror of {aid}")
             s = doc.section("Open Questions / Gates")
             existing = questions_in(doc, s.start, s.end)
+    # a UC question settled by apply leaves § 5 Still open for the Decision log: tick its hub copy
+    # with the recorded decision (only when no live source copy still holds it open)
+    live = [q for _aid, q in _mirror_sources(ix, slug, part) if not q.checked]
+    decided = [(uid, t, d) for uid, _role in part for t, d in model.uc_decisions(ix.ucs[uid])]
+    for e in sorted((e for e in existing if not e.checked), key=lambda e: -e.start):  # bottom-up: indices hold
+        if any(same_question(e.text, q.text) for q in live):
+            continue
+        refs = set(re.findall(r"\b(?:UC|BR)-\d+\b", " ".join(re.findall(r"\(ref:([^)]*)\)", e.text))))
+        hit = next(((uid, d) for uid, t, d in decided
+                    if (not refs or uid in refs) and same_question(e.text, t)), None)
+        if hit is None:
+            continue
+        doc.splice(e.start, e.end, question_block(e.text, answer=hit[1], indent=" " * e.indent, checked=True))
+        changes.append(f"ticked mirror of {hit[0]} (decision log)")
+    s = doc.section("Open Questions / Gates")
     # coverage gaps: open/answered rows mirror in the same sentence
     gap_t = _table_or_none(doc, "Coverage Gaps")
     if gap_t is not None:

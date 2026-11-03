@@ -157,14 +157,14 @@ def test_exclusive_file_lock_non_retryable_oserror():
 
 
 def test_windows_bigin_cmd_propagates_nonzero_exit():
-    """bin/bigin.cmd and launcher-generated .cmd must forward the child's exit code (not swallow to 0)."""
+    """scripts/bigin.cmd and launcher-generated .cmd must forward the child's exit code (not swallow to 0)."""
     import subprocess
     import sys
     from helpers import ROOT
 
     if sys.platform != "win32":
         return
-    plugin_cmd = os.path.join(ROOT, "bin", "bigin.cmd")
+    plugin_cmd = os.path.join(ROOT, "scripts", "bigin.cmd")
     # argparse usage error → exit 2; a broken `( exit /b %ERRORLEVEL% )` block would report 0
     r = subprocess.run([plugin_cmd, "mint", "uc"], capture_output=True)
     assert r.returncode == 2, f"plugin bigin.cmd: want 2, got {r.returncode}; out={r.stdout!r} err={r.stderr!r}"
@@ -195,7 +195,7 @@ def test_windows_bigin_cmd_forwards_spaced_vault_and_special_spec():
     shutil.copytree(os.path.join(FIX, "comm-vault"), root)
     spec = write_json(root, "br spaced.json", {
         "title": "Spaced spec", "feature": "payments", "statement": "If x, then y."})
-    cmd = os.path.join(ROOT, "bin", "bigin.cmd")
+    cmd = os.path.join(ROOT, "scripts", "bigin.cmd")
     r = subprocess.run(
         [cmd, "--vault", root, "mint", "br", "--spec", spec],
         capture_output=True,
@@ -232,7 +232,7 @@ def test_windows_bigin_cmd_forwards_exclamation_in_spec_path():
     spec = write_json(root, "test!bang.json", {
         "title": "Bang spec", "feature": "payments", "statement": "If x, then y."})
     assert os.path.isfile(spec), spec
-    plugin_cmd = os.path.join(ROOT, "bin", "bigin.cmd")
+    plugin_cmd = os.path.join(ROOT, "scripts", "bigin.cmd")
     r = subprocess.run(
         [plugin_cmd, "--vault", root, "mint", "br", "--spec", spec],
         capture_output=True,
@@ -269,13 +269,13 @@ def test_bigin_cmd_script_refuses_template_without_cli_line():
     from bigin.cli import _bigin_cmd_script
 
     with tempfile.TemporaryDirectory() as plugin:
-        os.makedirs(os.path.join(plugin, "bin"))
-        with open(os.path.join(plugin, "bin", "bigin.cmd"), "w", encoding="utf-8") as f:
+        os.makedirs(os.path.join(plugin, "scripts"))
+        with open(os.path.join(plugin, "scripts", "bigin.cmd"), "w", encoding="utf-8") as f:
             f.write("@echo off\r\npy -3 %*\r\n")
         with unittest.mock.patch.object(vault_mod, "PLUGIN_ROOT", plugin):
             for missing in (False, True):
                 if missing:
-                    os.remove(os.path.join(plugin, "bin", "bigin.cmd"))
+                    os.remove(os.path.join(plugin, "scripts", "bigin.cmd"))
                 try:
                     _bigin_cmd_script(r"C:\p\lib\bigin\cli.py")
                     raise AssertionError("expected EngineError")
@@ -284,7 +284,7 @@ def test_bigin_cmd_script_refuses_template_without_cli_line():
 
 
 def test_launcher_sh_shim_runs_engine():
-    """The generated sh shim (and the plugin's bin/bigin) must reach the engine wherever sh exists."""
+    """The generated sh shim (and the plugin's scripts/bigin) must reach the engine wherever sh exists."""
     import shutil
     import subprocess
     from helpers import ROOT
@@ -296,7 +296,7 @@ def test_launcher_sh_shim_runs_engine():
     root, _ = fresh("comm-vault")
     code, out = run(root, "launcher")
     assert code == 0, out
-    for shim in (os.path.join(root, "_bigin", "bin", "bigin"), os.path.join(ROOT, "bin", "bigin")):
+    for shim in (os.path.join(root, "_bigin", "bin", "bigin"), os.path.join(ROOT, "scripts", "bigin")):
         r = subprocess.run([sh, shim, "--version"], capture_output=True, text=True, timeout=60)
         assert r.returncode == 0 and __version__ in r.stdout, f"{shim}: {r.returncode} {r.stderr!r}"
 

@@ -32,7 +32,7 @@ approvable.
 | `## 4. Business Rules & Compliance Constraints` | A **read-only mirror** of `BR-###` files: id, short statement, and the enforcement point (which `S#` the rule bites at) |
 | `## 5. Open Questions & Decision Log` | The canonical `- [ ] Q:` list for what is still open, plus a decision-log table of settled items with speaker context |
 | `## 6. Special Requirements & Related Information` | Optional. Workflow-scoped non-functional constraints, priority, frequency, performance target |
-| `## Pending changes` | Read-only, engine-rendered (`bin/bigin ledger render`): change sets gated on a question in `01-Requirements/_ledger/`. Present only while something waits |
+| `## Pending changes` | Read-only, engine-rendered (`scripts/bigin ledger render`): change sets gated on a question in `01-Requirements/_ledger/`. Present only while something waits |
 | `## Discussion` · `## Changelog` | Human discussion (never read as pending content since v1.10.0) · history: one line per engine apply, citing its trace and change-set ids |
 
 **Goal level.** `level:` is `user-goal` (the default — real work, one sitting, 3–9 main-flow steps,
@@ -66,7 +66,7 @@ no single one of them can own it. The one fact the mirror adds is the enforcemen
 
 **Updated many times, never re-forked.** New signals keep arriving for the life of a feature; each one
 edits the UC in place (version bump + `## Changelog`, hard rule 7 — approval doesn't freeze it), as a
-change set `bin/bigin apply` lands — at once, or after its gate question is answered (`ledger release`). A use case filled only as far as pass 2 is
+change set `scripts/bigin apply` lands — at once, or after its gate question is answered (`ledger release`). A use case filled only as far as pass 2 is
 not defective: Cockburn's own template guidance is to fill it in several passes, and Use-Case 2.0 starts
 a narrative as a bulleted outline before it becomes a table.
 

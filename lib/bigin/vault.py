@@ -18,7 +18,7 @@ import os
 import re
 import shutil
 
-from .util import EngineError, now_stamp, today
+from .util import EngineError, fs_path, now_stamp, today
 
 PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -859,7 +859,7 @@ class Vault:
         d = self._cache.get(path)
         if d is not None:
             return d
-        with open(path, "r", encoding="utf-8") as f:
+        with open(fs_path(path), "r", encoding="utf-8") as f:
             d = Doc(f.read(), path)
         self._cache[path] = d
         return d
@@ -892,8 +892,8 @@ class Vault:
         path = doc.path
         bak = None
         with self.write_lock():
-            if os.path.exists(path):
-                with open(path, "r", encoding="utf-8") as f:
+            if os.path.exists(fs_path(path)):
+                with open(fs_path(path), "r", encoding="utf-8") as f:
                     on_disk = f.read()
                 if new_file:
                     raise EngineError(f"{self.rel(path)} already exists")
@@ -903,18 +903,18 @@ class Vault:
                     raise EngineError(f"{self.rel(path)} changed on disk since it was read — re-run the command")
                 bdir = self.backup_dir()
                 bak = os.path.join(bdir, self.rel(path) + "@" + now_stamp())
-                os.makedirs(os.path.dirname(bak), exist_ok=True)
-                shutil.copy2(path, bak)
-            os.makedirs(os.path.dirname(path), exist_ok=True)
+                os.makedirs(fs_path(os.path.dirname(bak)), exist_ok=True)
+                shutil.copy2(fs_path(path), fs_path(bak))
+            os.makedirs(fs_path(os.path.dirname(path)), exist_ok=True)
             tmp = f"{path}.{os.getpid()}.bigin-tmp"
-            with open(tmp, "w", encoding="utf-8") as f:
+            with open(fs_path(tmp), "w", encoding="utf-8") as f:
                 f.write(text)
-            os.replace(tmp, path)
-            with open(path, "r", encoding="utf-8") as f:
+            os.replace(fs_path(tmp), fs_path(path))
+            with open(fs_path(path), "r", encoding="utf-8") as f:
                 back = f.read()
             if back != text:
                 if bak:
-                    shutil.copy2(bak, path)
+                    shutil.copy2(fs_path(bak), fs_path(path))
                 raise EngineError(f"{self.rel(path)}: post-write verification failed — restored from backup")
         self.writes.append(path)
         fresh = Doc(text, path)
@@ -929,6 +929,6 @@ class Vault:
         return exclusive_file_lock(os.path.join(self.req, ".write.lock"))
 
     def create(self, path, text):
-        if os.path.exists(path):
+        if os.path.exists(fs_path(path)):
             raise EngineError(f"{self.rel(path)} already exists")
         return self.write(Doc(text, path), new_file=True)

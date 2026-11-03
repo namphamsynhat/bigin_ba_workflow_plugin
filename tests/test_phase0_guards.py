@@ -199,3 +199,22 @@ def test_lint_tier2_question_row_without_question_fires_and_passes_with_question
     code, out = run(root, "lint", "--full")
     assert code == 0, out
 
+
+
+def test_fs_path_extends_long_windows_paths():
+    import ntpath
+    import types
+    from bigin import util
+    real = util.os
+    util.os = types.SimpleNamespace(name="nt", path=ntpath)
+    try:
+        short = "C:\\vault\\01-Requirements\\_ucs\\UC-001 Submit.md"
+        assert util.fs_path(short) == short
+        deep = "C:\\" + "\\".join(["a-rather-long-client-folder-name"] * 8) + "\\UC-001 Submit a grant application.md"
+        assert util.fs_path(deep) == "\\\\?\\" + deep
+        assert util.fs_path(util.fs_path(deep)) == "\\\\?\\" + deep  # idempotent
+        unc = "\\\\server\\share\\" + "x" * 250 + ".md"
+        assert util.fs_path(unc) == "\\\\?\\UNC\\server\\share\\" + "x" * 250 + ".md"
+    finally:
+        util.os = real
+    assert util.fs_path("/tmp/" + "x" * 300) == "/tmp/" + "x" * 300  # POSIX: untouched

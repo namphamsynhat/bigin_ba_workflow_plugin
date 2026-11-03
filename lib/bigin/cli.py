@@ -325,9 +325,9 @@ def cmd_metrics(args, rest):
 
 
 def _bigin_cmd_script(cli_path):
-    """Windows .cmd shim body: copy plugin bin/bigin.cmd with an absolute CLI path (% escaped)."""
+    """Windows .cmd shim body: copy plugin scripts/bigin.cmd with an absolute CLI path (% escaped)."""
     from bigin.vault import PLUGIN_ROOT
-    template = os.path.join(PLUGIN_ROOT, "bin", "bigin.cmd")
+    template = os.path.join(PLUGIN_ROOT, "scripts", "bigin.cmd")
     try:
         with open(template, encoding="utf-8") as f:
             src = f.read()
@@ -353,7 +353,7 @@ def cmd_launcher(args, rest):
     that cannot resolve ${CLAUDE_PLUGIN_ROOT} still reach the engine. Re-run on every upgrade.
 
     POSIX / Git Bash use the sh shim; Windows cmd.exe cannot run it, so bigin.cmd is always
-    written too (same layout as the plugin's bin/). Skills that need a portable one-liner use
+    written too (same layout as the plugin's scripts/). Skills that need a portable one-liner use
     ``python …/lib/bigin/cli.py`` (fallback python3) — same as hooks/hooks.json.
     """
     import shutil

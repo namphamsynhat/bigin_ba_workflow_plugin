@@ -3,7 +3,7 @@
 ## Drive to done (up to approve-uc, never past it)
 Before reporting, run every stage your change made runnable whose Decision point is *no* (intake, extract
 where allowed, transform). A parked UC never stalls the feature's transform pass; a drifted mirror is a fix
-(`bin/bigin mirror br`, `links sync`, `hub refresh`), not a finding. Only four things are handed back:
+(`scripts/bigin mirror br`, `links sync`, `hub refresh`), not a finding. Only four things are handed back:
 a stage over threshold (name the `/bigin-run` command) · an out-of-scope load stage (name it, don't run it) ·
 a human-reserved write (`approve-uc`, `PP-###` addressed, a `restructure-uc` boundary) · a genuine blocker.
 
@@ -14,7 +14,7 @@ Never replay the asking beat ‹questions.md § Answering a question (the human 
    (defers, restates, answers another question) → a follow-up carrying why; two answers colliding →
    re-raise; ticked over a non-answer → name it and ask, never untick. Only two edits allowed: moving an
    answer given elsewhere onto its `A:` line verbatim, and your own labelled answers.
-2. Fold in once for the feature: `bigin-transform-signal` (`bin/bigin ledger release` applies gated change
+2. Fold in once for the feature: `bigin-transform-signal` (`scripts/bigin ledger release` applies gated change
    sets whose question is answered). Over threshold → hand back.
 3. Re-count from the files. Relay a drift question with both wordings — only the BA can pick.
 4. Come back once: zero open questions → scenario + approval ask, nothing else; otherwise only gated survivors,

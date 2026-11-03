@@ -319,3 +319,42 @@ def test_conflict_principle_and_orphan_answer():
     assert re.search(r"^\| 4 \|.*\| conflict \|", read(root, "01-Requirements/_features/payments.md"), re.M)
     assert "Plain language on every screen" in read(root, "01-Requirements/DESIGN-PRINCIPLES.md")
     assert "$20,000" in uc_text(root, "UC-001").split("**Decision log**")[1]
+
+
+def _hub_q(root, slug, start):
+    lines = read(root, f"01-Requirements/_features/{slug}.md").split("\n## Open Questions / Gates")[1].splitlines()
+    i = next(i for i, l in enumerate(lines) if start in l)
+    return lines[i] + "\n" + lines[i + 1]
+
+
+def test_uc_answer_settled_to_decision_log_ticks_hub_mirror():
+    root, _ = fresh("comm-vault")
+    code, out = apply(root, [cs(1, target={"kind": "UC", "id": "UC-001"}, op="answer_question",
+                                anchor={"ref": "Is there a maximum amount"}, text="Capped at $20,000")])
+    assert "1 applied" in out, out
+    assert "Is there a maximum amount" not in uc_text(root, "UC-001").split("**Decision log**")[0].split("**Still open**")[1]
+    q = _hub_q(root, "grant-intake", "Is there a maximum amount")
+    assert q.startswith("- [x] Q:") and "Capped at $20,000" in q, q
+    assert run(root, "hub", "refresh", "--all")[0] == 0 and _hub_q(root, "grant-intake", "Is there a maximum amount") == q
+    lint_clean(root)
+
+
+def test_file_apply_answers_a_uc_question():
+    for target in ("UC-001", "grant-intake"):  # the UC itself, or the hub line that mirrors it (ref: UC-001)
+        root, _ = fresh("comm-vault")
+        fil = write_json(root, "fil.json", {"kind": "filing", "int": "INT-003", "rows": [], "answers": [
+            {"int": target, "question": "Is there a maximum amount a parent may request?", "answer": "Capped at $20,000"}]})
+        code, out = run(root, "file", "apply", fil)
+        assert code == 0 and '"answers": 1' in out, out
+        still = uc_text(root, "UC-001").split("**Still open**")[1].split("**Decision log**")[0]
+        assert "- [x] Q: Is there a maximum amount" in still and "A: Capped at $20,000 (answered by INT-003)" in still, still
+        q = _hub_q(root, "grant-intake", "Is there a maximum amount")
+        assert q.startswith("- [x] Q:") and "Capped at $20,000" in q, (target, q)
+
+
+def test_file_apply_reports_an_unmatched_answer():
+    root, _ = fresh("comm-vault")
+    fil = write_json(root, "fil.json", {"kind": "filing", "int": "INT-003", "rows": [], "answers": [
+        {"int": "UC-001", "question": "Something nobody asked about the colour of the form", "answer": "Blue"}]})
+    code, out = run(root, "file", "apply", fil)
+    assert code == 0 and '"answers_unmatched": ["UC-001"]' in out, out

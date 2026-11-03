@@ -38,7 +38,7 @@ text reworded by a human since the worklist was built → DRIFT: not applied, on
 ```
 
 `## Discussion` is for human discussion only. Legacy staged entries (v1.8 vaults) are converted once by
-`bin/bigin migrate discussion-to-ledger`.
+`scripts/bigin migrate discussion-to-ledger`.
 
 ## Setup
 

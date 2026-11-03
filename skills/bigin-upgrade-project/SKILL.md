@@ -52,7 +52,7 @@ with, and nothing does that automatically today. This skill is that something.
   hard rule: never invent a validation, field, or structure the source didn't state).
 * **Engine format migrations are the one documented exception to "discover, never hardcode".**
   From v1.9.0 the vault's *storage format* (the ledger, lean artifacts, split Signal Logs) is owned by
-  the engine, and its migrations ship as code: `bin/bigin migrate` (§ 3b). This skill never re-implements
+  the engine, and its migrations ship as code: `scripts/bigin migrate` (§ 3b). This skill never re-implements
   one — it only runs the engine's plan. Content migrations (a retired prefix, a new template section)
   still follow §§ 2–4.
 * **Stage, never approve.** Every migration this skill runs ends in `draft`-status content and
@@ -202,7 +202,7 @@ Requires `_bigin/system/project.md` to exist. Missing → say `/bigin-new-projec
     accounted for in § 7's report as run, or as explicitly not-run-and-why. Naming the owning file and
     stopping there is the failure mode the Core Rules call out by name.
 
-## 3b. Engine format migrations (`bin/bigin migrate`, v1.9.0+)
+## 3b. Engine format migrations (`scripts/bigin migrate`, v1.9.0+)
 
 * **Goal:** move the vault's storage format forward with the engine that owns it, safely.
 * **Action:** `bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }` (`python3` if no `python` on PATH) — run from the repo root:

@@ -27,6 +27,23 @@ _MSVCRT_LOCK_RETRY_WINERR = frozenset({32, 33})  # ERROR_SHARING_VIOLATION, ERRO
 _MSVCRT_LOCK_WAIT_SEC = 120
 
 
+_LONG_PATH = 240  # Windows MAX_PATH is 260 with the NUL; directories stop at 248
+
+
+def fs_path(path):
+    """The path to hand to open/replace/copy/makedirs. On Windows a path near MAX_PATH gets the
+    extended-length ``\\\\?\\`` prefix so a deep vault (long folder + long UC title + backup/tmp
+    suffixes) never fails mid-apply. Unchanged on POSIX and for short paths."""
+    if os.name != "nt" or not path or str(path).startswith("\\\\?\\"):
+        return path
+    p = os.path.abspath(path)
+    if len(p) < _LONG_PATH:
+        return path
+    if p.startswith("\\\\"):  # UNC share: \\server\share → \\?\UNC\server\share
+        return "\\\\?\\UNC\\" + p[2:]
+    return "\\\\?\\" + p
+
+
 def _msvcrt_lock_retryable(exc):
     if not isinstance(exc, OSError):
         return False
@@ -43,8 +60,8 @@ def exclusive_file_lock(path):
     before ``LK_LOCK`` can wait. Ensure a lockable byte via size, then lock with retry
     (``LK_LOCK`` only waits ~10s per call).
     """
-    os.makedirs(os.path.dirname(os.path.abspath(path)) or ".", exist_ok=True)
-    with open(path, "a+b") as f:
+    os.makedirs(fs_path(os.path.dirname(os.path.abspath(path))) or ".", exist_ok=True)
+    with open(fs_path(path), "a+b") as f:
         if fcntl:
             fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         elif msvcrt:
@@ -110,7 +127,7 @@ def norm_ws(text):
 
 
 def load_json(path):
-    with open(path, "r", encoding="utf-8") as f:
+    with open(fs_path(path), "r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -118,19 +135,19 @@ def dump_json(obj, path=None):
     text = json.dumps(obj, indent=2, ensure_ascii=False) + "\n"
     if path:
         d = os.path.dirname(os.path.abspath(path))
-        os.makedirs(d, exist_ok=True)
+        os.makedirs(fs_path(d), exist_ok=True)
         tmp = path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
+        with open(fs_path(tmp), "w", encoding="utf-8") as f:
             f.write(text)
-        os.replace(tmp, path)
+        os.replace(fs_path(tmp), fs_path(path))
     return text
 
 
 def load_jsonl(path):
     out = []
-    if not os.path.exists(path):
+    if not os.path.exists(fs_path(path)):
         return out
-    with open(path, "r", encoding="utf-8") as f:
+    with open(fs_path(path), "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -139,8 +156,8 @@ def load_jsonl(path):
 
 
 def append_jsonl(path, obj):
-    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    with open(path, "a", encoding="utf-8") as f:
+    os.makedirs(fs_path(os.path.dirname(os.path.abspath(path))), exist_ok=True)
+    with open(fs_path(path), "a", encoding="utf-8") as f:
         f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
 

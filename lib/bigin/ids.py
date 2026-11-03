@@ -10,7 +10,7 @@ import glob
 import os
 import re
 
-from .util import EngineError, exclusive_file_lock, load_json, today
+from .util import EngineError, exclusive_file_lock, fs_path, load_json, today
 from .vault import Doc, strip_comments
 
 WIDTH = 3
@@ -28,7 +28,7 @@ def _scan_numbers(paths, kind):
         if m:
             nums.append(int(m.group(1)))
         try:
-            with open(p, "r", encoding="utf-8") as f:
+            with open(fs_path(p), "r", encoding="utf-8") as f:
                 head = f.read(4096)
         except OSError:
             continue
@@ -50,7 +50,7 @@ def highest(vault, kind):
         nums = _scan_numbers(glob.glob(os.path.join(vault.inbox, "INT-*.md")), "INT")
     elif kind in ("PP", "EN"):
         reg = os.path.join(vault.req, "PAIN-POINTS.md" if kind == "PP" else "ENTITIES.md")
-        text = open(reg, encoding="utf-8").read() if os.path.exists(reg) else ""
+        text = open(fs_path(reg), encoding="utf-8").read() if os.path.exists(fs_path(reg)) else ""
         nums = [int(x) for x in re.findall(rf"\b{kind}-(\d+)\b", text)]
         if kind == "EN":
             nums += _scan_numbers(glob.glob(os.path.join(vault.entity_dir, "*.md")), "EN")
@@ -353,7 +353,7 @@ def mint_route(vault, route_path):
             uid = next(vault.load(p).id for p in vault.uc_paths()
                        if (vault.load(p).fm_get("title") or "").strip().lower() == n["title"].strip().lower())
         minted[n["key"]] = uid
-        with open(out_path, "w", encoding="utf-8") as f:
+        with open(fs_path(out_path), "w", encoding="utf-8") as f:
             json.dump(minted, f, indent=2)
     return [(k, v) for k, v in minted.items()]
 

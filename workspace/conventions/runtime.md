@@ -46,7 +46,7 @@ by every transform and every ledger release) compares each UX spec's, epic's and
 the live UC and writes `stale: [UC-###@<current version>]` for every cited UC that moved on — and, for an
 epic or story, for every cited UC that is no longer `approved`. It adds one Changelog line naming the
 version and the INT that moved it, never changes the artifact's status, and clears itself when the stage
-re-stamps `absorbed`. `bin/bigin lint --full` flags a `stale:` that disagrees with what cascade derives.
+re-stamps `absorbed`. `scripts/bigin lint --full` flags a `stale:` that disagrees with what cascade derives.
 Only "processed, then drifted" counts: a UC an artifact never absorbed is new work for its stage, not a
 stale link.
 
@@ -54,7 +54,7 @@ stale link.
 
 An unattended apply is a multi-file write — the UC or BR, its hubs, `FEATURES.md`, sometimes the source
 INT note — with no database transaction, and a run can be killed between any two writes. Since v1.10.0
-the engine (`bin/bigin apply`, `bin/bigin ledger release`) is the one place that guarantee lives:
+the engine (`scripts/bigin apply`, `scripts/bigin ledger release`) is the one place that guarantee lives:
 
 1. **Idempotent by change-set id.** Every applied set's id is recorded in the artifact's `## Changelog`
    (`cs: …`); re-applying it is a no-op reported as `already`. A created UC/BR records `created by <id>`.
@@ -66,7 +66,7 @@ the engine (`bin/bigin apply`, `bin/bigin ledger release`) is the one place that
    `status` are recomputed from the artifacts' current state; running them again is a no-op.
 4. **Run state is machine-readable.** `_runs/<run-id>/` holds `plan.json`, the agents' task files,
    `results.jsonl`, and `metrics.jsonl`; re-running a workflow with the same run id skips finished tasks
-   (`bin/bigin run done`). A kill leaves a clean resume point because every write is atomic and engine-only.
+   (`scripts/bigin run done`). A kill leaves a clean resume point because every write is atomic and engine-only.
 
 The artifacts plus the ledger (`01-Requirements/_ledger/*.jsonl`, gated change sets) are the ground truth.
 Re-running the same skill from a fresh session re-derives where it left off.
@@ -85,8 +85,8 @@ scattered inline caveats — resolve and delete each line as the corresponding s
   `/bigin-upgrade-project` resolve the copy source; every skill's precondition reads `plugin.json`'s
   `version` (`version-check.md` § Workspace version check); and every engine call runs
   `python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" …` (fallback `python3`; v1.9.0+ — portable on
-  Windows cmd and POSIX; or `"${CLAUDE_PLUGIN_ROOT}/bin/bigin"` / `bin/bigin.cmd`;
-  `hooks/bigin-lint.py` remains as a shim for `bin/bigin lint`). Agents get absolute card and
+  Windows cmd and POSIX; or `"${CLAUDE_PLUGIN_ROOT}/scripts/bigin"` / `scripts/bigin.cmd`;
+  `hooks/bigin-lint.py` remains as a shim for `scripts/bigin lint`). Agents get absolute card and
   task-file paths instead — never the variable.
   An unavailable checker is always **reported**, never read as a pass.
 - ~~**The design stage was on the old layout.**~~ **Resolved.** `/prototype-design` is superseded by

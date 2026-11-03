@@ -17,7 +17,7 @@ plugin context, so a path into the install directory is unreachable to them.
 
 > **Artifact Standard:** Outputs:
 >> **The materialized workspace** — `_bigin/conventions/`, `_bigin/stages/`, `_bigin/templates/` (skeletons + `*.guide.md`), `_bigin/cards/` (the per-role instruction cards agents read): plugin-owned, overwritten every run, reachable to every subagent.
->> **Not copied: the engine.** `bin/bigin` (+ `bin/bigin.cmd`) + `lib/bigin/` stay inside the plugin; skills call `python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" …` (fallback `python3` — portable on Windows cmd). For agents that cannot resolve `CLAUDE_PLUGIN_ROOT` (every subagent, including the interactive `bigin-ba`), `bigin launcher` writes `_bigin/bin/bigin` and `_bigin/bin/bigin.cmd` — shims holding the absolute path of the installed plugin — and refreshes `_bigin/cards/`. Regenerated every run, because the plugin path changes with each version.
+>> **Not copied: the engine.** `scripts/bigin` (+ `scripts/bigin.cmd`) + `lib/bigin/` stay inside the plugin; skills call `python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" …` (fallback `python3` — portable on Windows cmd). For agents that cannot resolve `CLAUDE_PLUGIN_ROOT` (every subagent, including the interactive `bigin-ba`), `bigin launcher` writes `_bigin/bin/bigin` and `_bigin/bin/bigin.cmd` — shims holding the absolute path of the installed plugin — and refreshes `_bigin/cards/`. Regenerated every run, because the plugin path changes with each version.
 >> **The engagement config** — `_bigin/system/project.md`: client, contacts, providers, greenfield vs. ongoing, web vs. mobile vs. both, plus the project brief, domain-research pointer, and provider/design-engine readiness snapshot.
 >> **The project agent** — repo-root `CLAUDE.md`: a delimited, plugin-owned section orienting any Claude Code session to the engagement, the workspace map, and the skill sequence, regenerated every run.
 
@@ -93,7 +93,7 @@ plugin context, so a path into the install directory is unreachable to them.
   |---|---|
   | `_bigin/conventions/` | every skill and subagent, but only its own named section or file — never the whole tree |
   | `_bigin/stages/` | the orchestrator or per-feature subagent for whichever stage is currently running — never the whole directory |
-  | `_bigin/templates/*.md` | the engine (`bin/bigin mint …`) and whichever skill creates that artifact type — a skeleton carries one `<!-- guide: … -->` pointer; the matching `*.guide.md` holds all the writing guidance, for people |
+  | `_bigin/templates/*.md` | the engine (`scripts/bigin mint …`) and whichever skill creates that artifact type — a skeleton carries one `<!-- guide: … -->` pointer; the matching `*.guide.md` holds all the writing guidance, for people |
   | `_bigin/cards/*.md` | each dispatched agent — its own card only (`cards/README.md`); never a whole convention file |
   | `_bigin/bin/bigin` | any agent that cannot resolve `CLAUDE_PLUGIN_ROOT` — the same engine CLI, via the shim |
 
@@ -150,11 +150,11 @@ plugin context, so a path into the install directory is unreachable to them.
   | `codebase_path` | `ongoing` only. Default the repo root (absolute); ask if the product lives elsewhere |
   | `intake_lookback_days` | Default `14`; don't ask unless the user raises it |
   | `repo` | **Detect, don't ask** — `git remote -v`. Blank if not a git repo |
-  | `grounding` | `AskUserQuestion`: **communication** (default — requirements arrive as email, meetings, notes) · **codebase** (requirements are read out of existing code: rule cards via `bin/bigin intake codebase`) · **both**. `codebase`/`both` enables the adjudication stage (`workflows/adjudicate.js`) |
+  | `grounding` | `AskUserQuestion`: **communication** (default — requirements arrive as email, meetings, notes) · **codebase** (requirements are read out of existing code: rule cards via `scripts/bigin intake codebase`) · **both**. `codebase`/`both` enables the adjudication stage (`workflows/adjudicate.js`) |
   | `repos` | `grounding: codebase\|both` only. Read-only code roots with their role, e.g. `[repos/backend, repos/fe-web]`. Nothing ever writes under them |
   | `conflict_policy` | `grounding: codebase\|both` only. `AskUserQuestion`: **code-first** (code settles a factual disagreement between two readings) or **ask** (default — a human decides) |
-  | `coverage_id_pattern` | Only when rule cards carry ids, e.g. `XR-[A-Z]+-\d{3}`; `bin/bigin coverage` then traces ids instead of note rows. Don't ask otherwise |
-  | `budgets` | Optional, don't ask: `{transform_per_feature_tokens: 600000, extract_per_note_tokens: 150000}` — `bin/bigin metrics report` flags overruns |
+  | `coverage_id_pattern` | Only when rule cards carry ids, e.g. `XR-[A-Z]+-\d{3}`; `scripts/bigin coverage` then traces ids instead of note rows. Don't ask otherwise |
+  | `budgets` | Optional, don't ask: `{transform_per_feature_tokens: 600000, extract_per_note_tokens: 150000}` — `scripts/bigin metrics report` flags overruns |
   | `signal_log` | Default **split** for a new vault (hub Signal Logs live in `<slug>.signals.md`); `inline` keeps them in the hub. Don't ask |
   | `engine` | Always `engine`. `legacy` is only the one-minor-version escape hatch `/bigin-upgrade-project` documents |
 

@@ -225,7 +225,7 @@
     },
     "answers": {
       "type": "array",
-      "description": "Step 5b: a row of this note answers a question on another note",
+      "description": "Step 5b: a row of this note answers a question raised elsewhere — `int` names the INT/UC/BR id or the hub slug that holds it (a UC question is ticked in § 5 Still open)",
       "items": {
         "type": "object",
         "required": [

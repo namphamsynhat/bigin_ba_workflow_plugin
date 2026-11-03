@@ -11,9 +11,9 @@ export const meta = {
 }
 
 const A = args || {}
-// One path for every shell: sh/Git Bash run the bin/bigin sh shim (it picks python3/python);
-// cmd.exe resolves the extensionless name to bin/bigin.cmd via PATHEXT. `args.bin` overrides.
-const BIN = A.bin || `"${A.plugin_root}/bin/bigin"`
+// One path for every shell: sh/Git Bash run the scripts/bigin sh shim (it picks python3/python);
+// cmd.exe resolves the extensionless name to scripts/bigin.cmd via PATHEXT. `args.bin` overrides.
+const BIN = A.bin || `"${A.plugin_root}/scripts/bigin"`
 const TASKS = `_runs/${A.run}/tasks`
 const VAULT = A.vault || '.'
 if (!A.run || !A.plugin_root || !Array.isArray(A.notes)) throw new Error('args need {run, plugin_root, notes: [INT-###]}')

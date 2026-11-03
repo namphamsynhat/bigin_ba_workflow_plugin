@@ -1,6 +1,6 @@
 ---
 name: extract-signal
-description: This skill should be used when the ask is to extract signals, process the intake queue, drain 00-Inbox, or map intake to features. Drains the raw intake queue in 00-Inbox — extracts each communication-mode INT-### note's signals into a flat raw record on the note, audits that record against the source where the audit is owed, then anchors every signal to a FEATURES.md slug and files it onto that feature's Signal Log grouped by functional theme. Agents return JSON; the engine (`bin/bigin`) does every write. A signal that can't be anchored raises a written question instead of a guess. Codebase-mode notes are imported by `/bigin-intake` (`bigin intake codebase`) and never come here. Never drafts or edits a UC.
+description: This skill should be used when the ask is to extract signals, process the intake queue, drain 00-Inbox, or map intake to features. Drains the raw intake queue in 00-Inbox — extracts each communication-mode INT-### note's signals into a flat raw record on the note, audits that record against the source where the audit is owed, then anchors every signal to a FEATURES.md slug and files it onto that feature's Signal Log grouped by functional theme. Agents return JSON; the engine (`scripts/bigin`) does every write. A signal that can't be anchored raises a written question instead of a guess. Codebase-mode notes are imported by `/bigin-intake` (`bigin intake codebase`) and never come here. Never drafts or edits a UC.
 argument-hint: "[resume <run-id>]"
 disallowed-tools: AskUserQuestion
 ---
@@ -9,10 +9,10 @@ disallowed-tools: AskUserQuestion
 
 Per `INT-###` note in `00-Inbox`: extract → audit (when owed) → file. Extract stage of extract → transform →
 load. Never drafts or edits a UC or BR. **LLM for judgement, the engine for every write:** agents read a compact
-worklist and return one JSON file; `bin/bigin` validates and writes it.
+worklist and return one JSON file; `scripts/bigin` validates and writes it.
 
 `bigin` below is the shell function `bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }` (`python3` if no
-`python` on PATH; or `"${CLAUDE_PLUGIN_ROOT}/bin/bigin"` / `bin/bigin.cmd`) — run from the vault root.
+`python` on PATH; or `"${CLAUDE_PLUGIN_ROOT}/scripts/bigin"` / `scripts/bigin.cmd`) — run from the vault root.
 
 ## Two tables, on purpose
 

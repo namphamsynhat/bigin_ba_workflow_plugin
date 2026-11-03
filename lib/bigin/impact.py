@@ -24,7 +24,7 @@ import re
 from . import model
 from .cascade import derive as derive_stale
 from .stories import expand_slice, parse_slices
-from .util import EngineError, sort_ids, today
+from .util import EngineError, fs_path, sort_ids, today
 
 MARK = "<!-- engine-owned: `bigin impact` regenerates this section after every transform run — edit nothing here -->"
 REF = re.compile(r"\b(UC-\d+)((?:\s+[SAE]\d+(?:\s*[-–]\s*[SAE]?\d+)?)*)|\b(BR-\d+)")
@@ -303,8 +303,8 @@ def write(vault, nid, dry=False):
         vault.forget(d.path)
         return res, True
     vault.write(d)
-    os.makedirs(vault.impact_dir, exist_ok=True)
-    with open(os.path.join(vault.impact_dir, f"{nid}.json"), "w", encoding="utf-8") as f:
+    os.makedirs(fs_path(vault.impact_dir), exist_ok=True)
+    with open(fs_path(os.path.join(vault.impact_dir, f"{nid}.json")), "w", encoding="utf-8") as f:
         json.dump(res, f, indent=2, ensure_ascii=False)
         f.write("\n")
     return res, True

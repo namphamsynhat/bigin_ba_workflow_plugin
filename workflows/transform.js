@@ -14,7 +14,7 @@ export const meta = {
 // ---------------------------------------------------------------------------------------------
 // Orchestration lives HERE, not in the coordinator's context (restructure plan Phase 3).
 // Workflow scripts have no shell, so every engine step runs through a cheap "engine runner" agent
-// that executes exactly the given bin/bigin commands and returns their result as JSON.
+// that executes exactly the given scripts/bigin commands and returns their result as JSON.
 // Judgement agents (uc-router, code-adjudicator) read their card + a compact .in.json and write
 // one .out.json; the engine validates it. Nothing here reads a transcript or a prose report.
 // ---------------------------------------------------------------------------------------------
@@ -22,9 +22,9 @@ export const meta = {
 const A = args || {}
 const RUN = A.run
 const VAULT = A.vault || '.'
-// One path for every shell: sh/Git Bash run the bin/bigin sh shim (it picks python3/python);
-// cmd.exe resolves the extensionless name to bin/bigin.cmd via PATHEXT. `args.bin` overrides.
-const BIN = A.bin || `"${A.plugin_root}/bin/bigin"`
+// One path for every shell: sh/Git Bash run the scripts/bigin sh shim (it picks python3/python);
+// cmd.exe resolves the extensionless name to scripts/bigin.cmd via PATHEXT. `args.bin` overrides.
+const BIN = A.bin || `"${A.plugin_root}/scripts/bigin"`
 const TASKS = `_runs/${RUN}/tasks`
 const CODE = ['codebase', 'both'].includes(A.grounding || 'communication')
 const MAX = A.max_agents || 6

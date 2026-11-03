@@ -143,7 +143,7 @@ their own time, types on the `A:` lines, and comes back later. Everything downst
 and nothing else, so:
 
 - **The answer goes on the question's own `A:` line, verbatim.** An answer given in chat, in a comment,
-  or in prose above the question is invisible to every skill: `bin/bigin ledger release`
+  or in prose above the question is invisible to every skill: `scripts/bigin ledger release`
   (`transform/1-foldin.md`) reads the `A:` line (and the tick) to decide whether a waiting change applies.
   Whoever relays such an answer moves it onto the `A:` line first; that is the one edit allowed.
 - **Tick the box only if the answer genuinely settles the question.** "Ask the client", "TBD after the

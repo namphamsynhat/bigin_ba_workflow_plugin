@@ -393,21 +393,31 @@ def file_apply(vault, path, dry=False):
             except Outcome:
                 pass
         res["questions"] += 1
-    # 5 — Step 5b answers on other notes
+    # 5 — Step 5b answers to a question raised elsewhere: another note, a UC § 5 Still open, a BR, or a
+    # hub's ## Open Questions / Gates (followed to the UC/BR its (ref:) names, so the source is ticked too)
+    answered = set()
     for a in data.get("answers") or []:
-        other = vault.load_id(a["int"])
-        s = other.section("Open Questions")
-        if s is None:
-            continue
-        for q in questions_in(other, s.start, s.end):
-            if not q.checked and same_question(q.text, a["question"]):
-                other.splice(q.start, q.end, question_block(q.text, answer=f"{a['answer']} (answered by {nid})",
-                                                           indent=" " * q.indent, checked=True))
-                res["answers"] += 1
-                break
-        _flush(vault, other, dry)
+        ids = _answer_elsewhere(vault, a, nid, hubs, dry)
+        if ids:
+            res["answers"] += 1
+            answered |= ids
+        else:
+            res.setdefault("answers_unmatched", []).append(a["int"])
     for slug, hd in hubs.items():
         _flush(vault, hd, dry)
+    if answered and not dry:
+        # the ticked source decides the artifact's status and the hub mirror — the same bookkeeping apply does
+        from . import hub as hubmod
+        from . import status
+        status.recount(vault, answered)
+        ix = hubmod.Index(vault)
+        feats = set()
+        for i in answered:
+            d = ix.ucs.get(i) or ix.brs.get(i)
+            feats |= {f for f in [d.fm_get("primary_feature") or d.fm_get("feature")] + d.fm_list("features") if f}
+        for f in sorted(feats):
+            if os.path.exists(vault.hub_path(f)):
+                hubmod.refresh(vault, f, ix)
     # 6 — the note's status, LAST
     s = note.section("Open Questions")
     open_q = [q for q in questions_in(note, s.start, s.end) if not q.checked] if s else []
@@ -419,6 +429,59 @@ def file_apply(vault, path, dry=False):
     _flush(vault, note, dry)
     res["status"] = st
     return res
+
+
+def _question_zone(doc):
+    """(start, end) of the questions a Step 5b answer may tick, by artifact kind."""
+    if model.kind_of(doc.id) == "UC":
+        return model.uc_still_open_range(doc)  # ## 5. Open Questions & Decision Log → **Still open**
+    s = doc.section("Open Questions / Gates") or doc.section("Open Questions")
+    return (s.start, s.end) if s else None
+
+
+def _tick(doc, question, answer):
+    """Tick the first open question matching ``question`` with ``answer``. Returns its text, or None."""
+    zone = _question_zone(doc)
+    for q in questions_in(doc, *zone) if zone else []:
+        if not q.checked and same_question(q.text, question):
+            doc.splice(q.start, q.end, question_block(q.text, answer=answer, indent=" " * q.indent, checked=True))
+            return q.text
+    return None
+
+
+def _answer_elsewhere(vault, a, nid, hubs, dry):
+    """Land one Step 5b answer. ``a["int"]`` names an INT/UC/BR id or a hub slug. Returns the UC/BR ids
+    ticked (empty set when only a note or hub was), or None when no open question matched."""
+    target = a["int"].strip()
+    answer = f"{a['answer']} (answered by {nid})"
+    if model.kind_of(target) in ("INT", "UC", "BR") and vault.find(target):
+        doc = vault.load_id(target)
+    elif os.path.exists(vault.hub_path(target)):
+        doc = hubs.get(target) or vault.load(vault.hub_path(target))
+        hubs[target] = doc
+    else:
+        return None
+    text = _tick(doc, a["question"], answer)
+    if text is None:
+        return None
+    srcs = [doc]
+    if doc is hubs.get(target):
+        # a hub copy mirrors a UC/BR question: answer it where it was raised
+        for ref in re.findall(r"\b(?:UC|BR)-\d+\b", " ".join(re.findall(r"\(ref:([^)]*)\)", text))):
+            if vault.find(ref):
+                src = vault.load_id(ref)
+                if _tick(src, a["question"], answer) or _tick(src, text, answer):
+                    srcs.append(src)
+    ids = set()
+    for d in srcs:
+        if model.kind_of(d.id) in ("UC", "BR"):
+            append_changelog(d, f"- {today()} — bigin file apply: {nid} answers an open question (A: recorded; "
+                                f"fold-in by /bigin-transform-signal)")
+            touch_updated(d)
+            ids.add(d.id)
+        if d is not hubs.get(target):
+            _flush(vault, d, dry)
+    return ids
 
 
 def _add_feature_row(vault, nf, nid, dry):

@@ -23,7 +23,7 @@ hubs, registers, note columns and the note status LAST. You write only your `.ou
 9. Jira rows: `scope` agreed → new · open → question · dropped → rejected `deferred — dropped in <KEY>`; a row
    that `supersedes` a filed row goes on the same hub with Notes `supersedes <INT> #<n>`
    ‹stages/extract/3-filing.md § Living Jira tickets›.
-10. A row that answers an earlier note's question → `answers` ‹stages/extract/3-filing.md § Step 5b — an answer that resolves a question raised elsewhere›.
+10. A row answering a question raised elsewhere → `answers` (`int` = INT/UC/BR id or hub slug) ‹stages/extract/3-filing.md § Step 5b — an answer that resolves a question raised elsewhere›.
 
 ## Example
 ```json

@@ -16,7 +16,7 @@ import re
 
 from . import model
 from .edit import same_question
-from .util import EngineError, dump_json, load_json, today
+from .util import EngineError, dump_json, fs_path, load_json, today
 from .vault import Doc, questions_in
 
 NEGATIVE = re.compile(r"^\s*(no\b|not\b|reject|decline|out of scope|won'?t|do not|don'?t|never|superseded|n/a\b)", re.I)
@@ -30,9 +30,9 @@ def _path(vault, slug):
 
 def _read(path):
     out = []
-    if os.path.exists(path):
+    if os.path.exists(fs_path(path)):
         import json
-        with open(path, encoding="utf-8") as f:
+        with open(fs_path(path), encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     out.append(json.loads(line))
@@ -41,12 +41,12 @@ def _read(path):
 
 def _write(path, items):
     import json
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    os.makedirs(fs_path(os.path.dirname(path)), exist_ok=True)
     tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
+    with open(fs_path(tmp), "w", encoding="utf-8") as f:
         for e in items:
             f.write(json.dumps(e, ensure_ascii=False) + "\n")
-    os.replace(tmp, path)
+    os.replace(fs_path(tmp), fs_path(path))
 
 
 def entries(vault, state=None):

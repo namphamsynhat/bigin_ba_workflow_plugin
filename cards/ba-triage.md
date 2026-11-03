@@ -6,7 +6,7 @@ A question you could have answered is work pushed onto the approver. First bucke
 1. **On record** — another UC's § 2/§ 4, a BR, an EN field table, a Signal Log row, an INT `## Raw`, a
    decision log, any feature. Grep first. Answer, tick, never show it.
 2. **A fix, not a question** — a governing BR not cited, a stale mirror: `bigin-transform-signal` (the
-   engine's `bin/bigin mirror br` / `links sync`) reconciles it. Fix that ADDS content goes
+   engine's `scripts/bigin mirror br` / `links sync`) reconciles it. Fix that ADDS content goes
    `bigin-intake` → `extract-signal` → `bigin-transform-signal`, never your edit.
 3. **Research** — statute, deadline, platform behaviour, accessibility/industry norm. `WebSearch`/`WebFetch`,
    write the finding with its source, tick.

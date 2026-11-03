@@ -9,12 +9,12 @@ discipline, never-renumber, add-only questions, `/approve-uc` as the only human 
 guaranteed. It moved from "every agent re-reads and re-enforces the rule" to "one engine enforces it".
 
 ```
-bin/bigin / bin/bigin.cmd   thin launchers → lib/bigin/cli.py (python3/python; Windows .cmd)
+scripts/bigin / scripts/bigin.cmd   thin launchers → lib/bigin/cli.py (python3/python; Windows .cmd)
 lib/bigin/              the engine — Python 3.9+, standard library only
 workflows/*.js          Workflow-tool orchestration (fan-out, retries, resume)
 agents/*.md             small agents (≤ 4 KB), JSON out, no Edit on vault files
 cards/*.md              per-role instruction cards (≤ 3 KB) — what agents read
-skills/*/SKILL.md       entry points; call bin/bigin and dispatch agents
+skills/*/SKILL.md       entry points; call scripts/bigin and dispatch agents
 workspace/              conventions (human reference), stages, templates (+ *.guide.md)
 hooks/hooks.json        PostToolUse → python lib/bigin/cli.py lint --hook --quiet (python3 fallback)
 tests/                  fixtures (comm-vault, code-vault) + stdlib test runner
@@ -24,7 +24,7 @@ tests/                  fixtures (comm-vault, code-vault) + stdlib test runner
 
 The engine is **not** materialized into a project. Skills call
 `python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" …` (fallback `python3` — portable on Windows cmd; or
-`"${CLAUDE_PLUGIN_ROOT}/bin/bigin"` / `bin/bigin.cmd`).
+`"${CLAUDE_PLUGIN_ROOT}/scripts/bigin"` / `scripts/bigin.cmd`).
 Agents that cannot resolve `CLAUDE_PLUGIN_ROOT` (every subagent, including the interactive `bigin-ba`) use
 `_bigin/bin/bigin` / `_bigin/bin/bigin.cmd` — shims `bigin launcher` generates with the installed plugin's
 absolute path — and read their card at `_bigin/cards/<card>`. `/bigin-new-project` and
@@ -125,7 +125,7 @@ Works with or without the Workflow tool:
 ## 5. Workflows (`workflows/*.js`)
 
 Workflow scripts have no shell, so every engine step runs through a cheap *engine-runner* agent (`haiku`, low
-effort) that executes exactly the given `bin/bigin` commands and returns their JSON. Judgement agents are dispatched
+effort) that executes exactly the given `scripts/bigin` commands and returns their JSON. Judgement agents are dispatched
 by `agentType` with their card.
 
 | Script | Per unit | Steps |

@@ -323,7 +323,7 @@ an approval ask if you've cleared everything.
 **Pending changes.** A use case may show a `## Pending changes` block: drafted edits that are
 waiting on one of its open questions (each line names the change, where it lands, and the
 question). It is read-only — don't edit it. Answer the question on its `A:` line; the next
-run (or `bin/bigin ledger release`) applies the change and moves the settled question into the
+run (or `scripts/bigin ledger release`) applies the change and moves the settled question into the
 Decision log. A use case can't be approved while a pending change is open. If your answer is
 a "no", the change is not applied blindly — it's set aside for a decision instead.
 
@@ -383,6 +383,20 @@ Slices every approved use case for a feature into one epic and one user story pe
 UX spec and a frozen snapshot of the prototype. Fully headless; run it any time after an approval.
 (`/bigin-generate-prd` was retired in 1.13.0; existing `02-PRD/` files stay as they are.)
 
+### Reviewing as the client
+
+```
+/client-view build anna            # or: refresh anna — reads only notes added since the last build
+/client-view review UC-014 as anna # also a feature slug, BR-###, UX-###, or a prototype folder
+```
+
+`build` reads everything that client contact said in the vault (their emails, Jira comments, transcript
+turns that are clearly theirs, answers attributed to them) and writes `05-Client-View/anna.md`: what
+they want, how they decide, what they've pushed back on, the words they use. Every point cites its
+source. `review` answers in their voice, with a verdict, issues ranked by how much they'd care, the why
+traced to their own words, and a suggested fix. The review is saved under `05-Client-View/_reviews/`.
+It never edits the reviewed file. Capture the points you agree with as feedback through `/bigin-intake`.
+
 ## 7. Command reference
 
 | Command | Use it to | Needs your input? |
@@ -402,6 +416,7 @@ UX spec and a frozen snapshot of the prototype. Fully headless; run it any time 
 | `/bigin-render-design-od [feature... \| --all]` | Render an interactive prototype | **Yes — never run unasked** |
 | `/bigin-generate-stories [feature\|UC-###]` | Slice approved UCs + prototype into epics & stories | No |
 | `/approve-story <US-###…\|EP-###>` | Approve reviewed stories (and the epic once all are) | Yes — human gate |
+| `/client-view build\|refresh <person>` · `review <target> as <person>` | Build a key client contact's point of view, then review UCs/BRs/UX specs/prototypes as them | No — advice only, never edits |
 | `/bigin-run [feature\|UC-id]` | Figure out what's next and run it | Stops only at real decisions |
 
 Everything above is also reachable by dispatching the `bigin-ba` agent for unattended,
@@ -425,6 +440,8 @@ _runs/                     the engine's run records, backups and pre-migration s
 04-UIUX/UX-### <Feature>.md    UX spec per feature: screens, flows, navigation
 04-UIUX/_prototypes/<run>/     a rendered prototype, once you've asked for one
 03-Epics-Stories/EP-### <Feature>/   one epic + one story file per use-case slice, plus _snapshot/
+05-Client-View/<person>.md     a key client contact's cited point of view (/client-view)
+05-Client-View/_reviews/       dated reviews written as that person
 02-PRD/PRD-### <Feature>.md    retired (1.13.0) — older PRDs, kept frozen
 ```
 
@@ -449,11 +466,11 @@ readings are then checked against the code before anyone is asked. **both** does
 ### The engine, in one paragraph
 
 Bookkeeping — numbering, hub tables, statuses, links, applying drafted changes — is done by a
-command-line engine inside the plugin (`bin/bigin`), not by AI agents. You rarely need to run
-it yourself; the skills do. Useful by hand: `bin/bigin lint --full` (is the vault consistent?),
-`bin/bigin audit --baseline <snapshot.tgz>` (did any question, step numbering, or changelog regress?),
-`bin/bigin coverage --stage transform` (did every signal reach a use case or rule?),
-`bin/bigin ledger list` (what's waiting on an answer?). Every file it rewrites is backed up
+command-line engine inside the plugin (`scripts/bigin`), not by AI agents. You rarely need to run
+it yourself; the skills do. Useful by hand: `scripts/bigin lint --full` (is the vault consistent?),
+`scripts/bigin audit --baseline <snapshot.tgz>` (did any question, step numbering, or changelog regress?),
+`scripts/bigin coverage --stage transform` (did every signal reach a use case or rule?),
+`scripts/bigin ledger list` (what's waiting on an answer?). Every file it rewrites is backed up
 under `_runs/_backups/`. After a plugin upgrade, `/bigin-upgrade-project` migrates the vault
 with a snapshot first ([docs/MIGRATION.md](docs/MIGRATION.md)).
 
@@ -473,7 +490,7 @@ OAuth-gated one ("needs authentication"), authorize it in claude.ai connector se
 `od mcp install claude`, or see the app's own Settings → MCP server instructions. Nothing else
 in the pipeline needs it.
 
-**A write gets rejected with a lint finding** — `hooks/bigin-lint.py` (since v1.9 `bin/bigin lint`) checks structural
+**A write gets rejected with a lint finding** — `hooks/bigin-lint.py` (since v1.9 `scripts/bigin lint`) checks structural
 invariants (duplicate IDs, malformed tables, bad statuses) on every write into `00-Inbox/` or
 `01-Requirements/`. The finding is fed back to whichever stage made the write — that's the
 hook doing its job, not a bug. If it's noisy, ask whoever manages the plugin about

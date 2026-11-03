@@ -14,8 +14,8 @@ Named a feature → batch the beats across its flow. Single UC, or answers that 
 - A gap you spot is written as a `- [ ] Q:` on the UC, then gated (`cards/ba-triage.md`).
 - At a feature review, show the hub's open/answered `## Coverage Gaps` rows in the same numbered list.
 - Answers go verbatim onto the question's `A:` line (tick only if it truly closes), then ONE
-  `bigin-transform-signal` run folds them in (`bin/bigin ledger release` + apply). Never edit § 1–§ 6,
-  never set `status` — `bin/bigin status` re-counts.
+  `bigin-transform-signal` run folds them in (`scripts/bigin ledger release` + apply). Never edit § 1–§ 6,
+  never set `status` — `scripts/bigin status` re-counts.
 - A question the human can't answer parks its UC, not the sitting.
 - Show a scenario only at zero open questions, from the file: § 1, § 2 table with S# ids, § 3 branches, § 4.
   Lead with any `## Pending changes` block, any Changelog line "flagged for review" / "approved → draft" since

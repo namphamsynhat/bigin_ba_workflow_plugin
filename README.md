@@ -263,13 +263,13 @@ the same category to the same edit without either one restating it.
 agent, resumed rather than redispatched between its Phase A UC-identification and Phase B
 lane-drafting, so the hub/UC content Phase A reads is never read twice) and, until v1.10, `uc-applier.md`
 (Stage 4 Part 2, applying an already-staged main-flow step/flow into `## 2`/`## 3` — **deleted in v1.10**:
-§ 2/§ 3 edits are now change sets `bin/bigin apply` lands in the same run) each read their
+§ 2/§ 3 edits are now change sets `scripts/bigin apply` lands in the same run) each read their
 stage's rulebook (`3-routing.md`, `3-lane-uc.md`, `3-lane-br.md`, `3-lane-design.md`, `4-sync.md`)
 from `_bigin/stages/transform/` at runtime rather than hard-coding it, for the same override reason.
 Before these existed, `references/agent-dispatch.md` dispatched Stage 3b and Part 2 as a bare
 `general-purpose` agent with the entire rulebook re-typed into the prompt on every call — expensive
 and inconsistent across runs, and the reason these two files exist now. `agents/hub-bookkeeper.md` (`haiku`) was the same
-idea applied to the mechanical hub-table refresh — **retired in v1.9**, replaced by `bin/bigin hub refresh` (the
+idea applied to the mechanical hub-table refresh — **retired in v1.9**, replaced by `scripts/bigin hub refresh` (the
 paragraph below is kept as history): two steps may now delegate to it, **one hub per
 dispatch, sequentially** — `1-foldin.md` § Reconcile mirrors (its hub items only) and `4-sync.md`
 § Part 1b's per-participating-hub pointer. Delegating keeps a pure re-derivation out of the
@@ -282,7 +282,7 @@ an already-decided split plan (never deciding the boundary itself), it moves exi
 content to its new home, marks the source's originals `removed because`, and repoints every affected
 `BR-###`. It never touches a feature hub or `FEATURES.md` itself; it reports what changed so the skill
 can dispatch `hub-bookkeeper` per touched hub, same pattern as everywhere else in the pipeline. (Since v1.10 it
-writes its split plan as change sets and the skill runs `bin/bigin apply` + `bin/bigin hub refresh`.)
+writes its split plan as change sets and the skill runs `scripts/bigin apply` + `scripts/bigin hub refresh`.)
 
 `/bigin-generate-design`'s Stage 3 dispatches `agents/ux-brief-assembler.md` per feature that clears
 a size threshold (3+ in-scope UCs, or 4+ distinct cited entities) — a read-only pass that combines a
@@ -324,7 +324,7 @@ Every UC's own frontmatter `status` (`draft` ⇄ `needs-clarification` → `appr
 A chunk of the pipeline's verification is pure counting — no two use cases share an ID, a signal table's
 rows have the right number of columns, a hub citation points at a note row that exists, a status is one
 of its documented values. `hooks/bigin-lint.py` does that counting (since v1.9 it lives in `lib/bigin/lint.py`,
-run as `python lib/bigin/cli.py lint …` (fallback `python3`; `bin/bigin` / `bin/bigin.cmd` on POSIX/Windows); the hook file is a back-compat shim, and the PostToolUse hook runs
+run as `python lib/bigin/cli.py lint …` (fallback `python3`; `scripts/bigin` / `scripts/bigin.cmd` on POSIX/Windows); the hook file is a back-compat shim, and the PostToolUse hook runs
 `python …/lib/bigin/cli.py lint --hook --quiet`: advisory, at most 5 lines about the file just written, silent while the engine
 applies change sets). It runs in two places:
 
@@ -367,27 +367,27 @@ false-alarm rate on a real vault, which only a real vault can tell you. If it tu
 
 **LLM for judgement, scripts for bookkeeping, JSON between them, one write per artifact.** Every deterministic
 step — minting ids, hub tables, § 4 rule mirrors, `brs:`/`uc:`/`features:`/`sources:` links, statuses, coverage,
-lint, applying drafted changes — is a `bin/bigin` sub-command (`lib/bigin/`, stdlib Python). Agents read one ≤ 3 KB
+lint, applying drafted changes — is a `scripts/bigin` sub-command (`lib/bigin/`, stdlib Python). Agents read one ≤ 3 KB
 card (`cards/`) plus a compact JSON worklist, and write one JSON output the engine validates and applies. Full
 design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Upgrading a vault: [docs/MIGRATION.md](docs/MIGRATION.md).
 
 **Two intake modes, one pipeline.** *Communication* (`grounding: communication`): email, meetings and notes are
 captured verbatim and extracted by `signal-extractor` / `signal-auditor` / `signal-filer`. *Codebase*
-(`grounding: codebase`): rule cards mined from code are imported by `bin/bigin intake codebase` with no LLM call
+(`grounding: codebase`): rule cards mined from code are imported by `scripts/bigin intake codebase` with no LLM call
 ([docs/CODEBASE-INTAKE.md](docs/CODEBASE-INTAKE.md)), and conflicts are refereed against the code by
 `code-adjudicator`. `both` enables both. Transform, approval, design and stories are identical.
 
 **The ledger — what reviewers see.** A drafted change that waits on a question no longer sits as staged text in
 `## Discussion`. It is a change set in `01-Requirements/_ledger/<feature>.jsonl`, shown read-only on the use case as
 `## Pending changes` (the op, where it lands, the final text, and the question it waits on). Answer the question on
-its `A:` line and `bin/bigin ledger release` applies it; `/approve-uc` refuses while one is open. `## Discussion` is
+its `A:` line and `scripts/bigin ledger release` applies it; `/approve-uc` refuses while one is open. `## Discussion` is
 for human discussion only.
 
 **Orchestration.** `workflows/transform.js`, `workflows/extract.js` and `workflows/adjudicate.js` run the fan-out
 through the Workflow tool (per-feature pipelines, schema-validated outputs, resume from `_runs/<id>/`); without it
-the skills run the same steps with `Agent` calls, reading only `bin/bigin run summary <id>` between steps.
+the skills run the same steps with `Agent` calls, reading only `scripts/bigin run summary <id>` between steps.
 
-**CLI cheat-sheet** (`bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }`, `python3` if no `python` on PATH; or `bin/bigin` / `bin/bigin.cmd`; agents without `CLAUDE_PLUGIN_ROOT` use `_bigin/bin/bigin` / `bigin.cmd`):
+**CLI cheat-sheet** (`bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }`, `python3` if no `python` on PATH; or `scripts/bigin` / `scripts/bigin.cmd`; agents without `CLAUDE_PLUGIN_ROOT` use `_bigin/bin/bigin` / `bigin.cmd`):
 
 ```
 bigin hub refresh --all              derived hub tables (idempotent; Signal Log never touched)
@@ -439,6 +439,17 @@ wrong. The routing table itself is the one thing deliberately duplicated between
 resolve `${CLAUDE_PLUGIN_ROOT}`, so it cannot read the skill's copy. Change one, change both — and the
 durable fix is materializing routing into `_bigin/` alongside the stage guides. The same brief exists for
 non-Claude-Code runtimes at `.agents/AGENTS.md`, kept deliberately thin for the same reason.
+
+## Reviewing as the client
+
+`/client-view build <person>` reads what one key client contact said in the vault and writes a cited
+profile to `05-Client-View/<person>.md`: what they want, their decision principles (each with evidence and
+a confidence level), their pushback, their vocabulary, and the gaps. `refresh` reads only notes added
+since the last build. `/client-view review <UC-###|BR-###|feature|UX-###|prototype> as <person>` answers
+in that person's voice. It gives a verdict and ranks issues by how much they'd care, each with a cite and
+a suggested fix. The review is saved under `05-Client-View/_reviews/`. It is advice only: it never edits
+the target, and the points you agree with go back in through `/bigin-intake`. It is outside the pipeline,
+so no stage reads it, and lint doesn't scan it. The reviewer's rules are in `cards/client-reviewer.md`.
 
 ## Answering open questions offline
 

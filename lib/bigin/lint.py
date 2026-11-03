@@ -57,7 +57,7 @@ Escape hatches, all environment variables:
   BIGIN_LINT_DEBUG=1      print internal errors instead of swallowing them
   BIGIN_BATCH=1           the engine is mid-apply: --hook is silent
 
-Home: lib/bigin/lint.py since v1.9.0 (`bin/bigin lint …`). hooks/bigin-lint.py is a
+Home: lib/bigin/lint.py since v1.9.0 (`scripts/bigin lint …`). hooks/bigin-lint.py is a
 back-compat shim that imports this module.
 """
 
@@ -1008,7 +1008,7 @@ def check_stale_flags(vault, findings):
         have = [str(x).strip() for x in d.fm_list("stale")]
         if want != have:
             findings.add("stale flag out of date",
-                         "%s has stale: [%s] but its absorbed vs the live use cases says [%s] — run `bin/bigin cascade`"
+                         "%s has stale: [%s] but its absorbed vs the live use cases says [%s] — run `scripts/bigin cascade`"
                          % (rel(vault, p), ", ".join(have), ", ".join(want)))
         if kind == "US":
             ints, keys = cascade.trace_of(v, d.fm_list("slice_of") or d.fm_get("slice_of"))
@@ -1016,7 +1016,7 @@ def check_stale_flags(vault, findings):
                 have_t = [str(x).strip() for x in d.fm_list(key)]
                 if have_t != want_t and (want_t or key in d.fm):
                     findings.add("story trace out of date",
-                                 "%s has %s: [%s] but its sliced use cases trace to [%s] — run `bin/bigin cascade`"
+                                 "%s has %s: [%s] but its sliced use cases trace to [%s] — run `scripts/bigin cascade`"
                                  % (rel(vault, p), key, ", ".join(have_t), ", ".join(want_t)))
 
 
@@ -1169,7 +1169,7 @@ def run_hook(quiet=False):
             return 0
         lines = ["bigin-lint (advisory): %s" % m for m in mine[:5]]
         if len(mine) > 5:
-            lines.append("bigin-lint: … %d more — `bin/bigin lint --full` at the stage boundary" % (len(mine) - 5))
+            lines.append("bigin-lint: … %d more — `scripts/bigin lint --full` at the stage boundary" % (len(mine) - 5))
         sys.stdout.write("\n".join(lines) + "\n")
         return 0
     for check in TIER1_GLOBAL:
