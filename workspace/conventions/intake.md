@@ -33,7 +33,30 @@ the note back to `status: raw` so `/extract-signal` reads the new blocks. Blocks
 offshore | unknown)`; an unknown author tags the note `needs-review`. `jira_type` is a hint for anchoring
 (Epic → likely a new feature; Story / Task / Bug → likely a change to an existing one), never a decision; a
 child ticket inherits its Epic note's resolved feature as `declared_features`. `jira_phase` comes from
-`project.md` `## Jira status mapping` and gates nothing. Jira is read-only: nothing is ever posted back.
+`project.md` `## Jira status mapping`. It gates one thing: when the project maps a status to `dev`, a UC
+built from the ticket cannot be approved until the ticket reaches that status. Drafting is not held: the
+loop is extract → UC draft + design → the dev team reviews the flow and the PM a quick design → questions
+asked in Jira → the answers come back as new comment blocks → the UC and design are updated. The team
+moving the ticket to dev is what says it is clear, and only then is the UC approved. Jira is read-only: nothing is ever posted back, and
+the dev team copies the questions into Jira themselves.
+
+**Before / After.** A UC is shaped by many tickets, so the UC file only shows where it ended up. Every
+`bigin apply` also records, on each intake note in a change set's trace, what THAT note changed: the engine-owned
+`## Before / After` section (per UC / BR: versions, a Before | After table of this note's own changes) and
+`00-Inbox/_snapshots/INT-###/` (`UC-###.before.md` = the UC before this note first changed it, written once;
+`UC-###.after.md` = the UC after this note's latest change; `changes.json` = the log the section is built from).
+The table never carries another note's edits; the after snapshot is the whole UC at that moment and can.
+Never edit either by hand. This is how the dev team reads a ticket's change without diffing the UC.
+
+**The sprint watch list.** At sprint start the team hands over the sprint's ticket keys and `bigin intake
+jira-sprint` records them as `jira_sprint` / `jira_watch` in `project.md`. While a watch list is set, the sweep
+fetches only those tickets and their children (an Epic's Stories, including new ones). Every ticket note not
+on the new list is closed (`jira_watch: false`, `jira_sprint_closed:`): its content stays, nothing more is
+appended, and no sweep fetches it. Listing it again in a later sprint re-opens it. Closing is vault-side only.
+`bigin intake jira-sprint --report` classifies the sprint from what extraction resolved: `new-feature` (the
+feature's every FEATURES.md source is a ticket of this sprint, or no feature fits and a new-scope question is
+open), `update` (a feature that existed before the sprint), `bug`, `needs-anchor`, `pending` (not extracted;
+the Jira type is shown as a hint only).
 
 **INT ids are minted by the engine under a lock** (`scripts/bigin intake communication --spec` / `scripts/bigin mint int`),
 never by reading the highest existing number — two concurrent captures would mint the same id.

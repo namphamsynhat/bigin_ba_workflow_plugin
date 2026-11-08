@@ -84,7 +84,8 @@ config = read {conventions_file} + {system_config}:
     email_provider   → outlook | spark          (default outlook)
     meeting_provider → fathom | spark | firefly (default fathom)
     jira_provider    → atlassian | blank (off)   + jira_site, jira_projects, jira_jql,
-                       ## Jira status mapping (per project), jira_onshore / jira_offshore
+                       ## Jira status mapping (per project), jira_onshore / jira_offshore,
+                       jira_sprint / jira_watch (the sprint watch list — written by `bigin intake jira-sprint`)
 
 GATES
     {template_intake} missing → HALT BOTH MODES
@@ -108,6 +109,7 @@ MODE = first token of $ARGUMENTS:
                                     #   participants, channel, date from content; ask if absent
     "direct"                  → A   # freeform BA note, no parsing
     "jira" [KEY …]            → 2D  # those tickets (+ an Epic's children); no keys → the Jira sweep only
+    "sprint" <name> KEY …     → 2D  # sprint start: new watch list, old tickets closed (§ Stage 2D step S)
     neither + content given   → A   # ask which applies
     neither + no content      → B   # routine provider sweep (includes 2D when jira_provider is set)
 ```
@@ -262,9 +264,31 @@ The engine does the delta, the ADF rendering and the onshore/offshore tagging; t
    Tool names have moved between connector versions: match by capability, and name the missing one if a
    capability is absent — never fall back to WebFetch on a Jira URL.
 
+S. SPRINT START (only for "sprint <name> KEY …", or "new sprint" with a ticket list / a Jira sprint name)
+       the team gives the keys; a Jira sprint name only → JQL  sprint = "<name>"  for the keys
+       BIN intake jira-sprint --sprint "<name>" --keys KEY …
+           → project.md jira_sprint / jira_watch = the new list; every ticket note not on it (and not a child
+             of a listed ticket) → jira_watch: false — closed, never swept again. Jira itself is not touched.
+           → prints kept / reopened / closed, and to_fetch: the listed keys with no note yet
+       then run steps 2–3 for EVERY key — to_fetch mints the new notes, the rest pick up any change since
+       relay the closed list and every `!` warning (a ticket closed while still waiting on dev) to the human
+
+R. SPRINT REPORT  BIN intake jira-sprint --report   — run after sprint start AND after each extract
+       every watched ticket → new-feature | update | bug | needs-anchor | pending
+         new-feature   anchored to a feature born this sprint (every FEATURES.md source is a sprint ticket),
+                       or extraction found none and drafted a new-scope question — a human confirms the slug
+         update        anchored to a feature that existed before the sprint
+         bug           a Bug ticket, with the feature it hit
+         needs-anchor  several features fit — the note's open question asks which
+         pending       not extracted yet; the hint (Epic → likely new feature) is a hint, never a decision
+       relay it grouped; the new-feature rows are the ones the team must confirm before they become hubs
+
 1. KEYS
        explicit "jira KEY …"  → those keys
-       sweep                  → jira_jql if set, else
+       sweep, jira_watch set  → the watch list only:
+                                (key in (<jira_watch>) OR parent in (<jira_watch>)) AND updated >= "<timeframe>"
+                                — `parent in` picks up Stories added to a watched Epic mid-sprint
+       sweep, no jira_watch   → jira_jql if set, else
                                 project in (<jira_projects>) AND updated >= "<timeframe>" ORDER BY updated ASC
    an Epic in the list → also its children: JQL  parent = <EPIC-KEY>   (Epic Link is gone from the API)
    fetch the Epic BEFORE its children, so a child inherits the Epic's resolved feature
@@ -279,14 +303,22 @@ The engine does the delta, the ADF rendering and the onshore/offshore tagging; t
        known ticket → only new comments / description revisions / field changes appended as new
                       ### SRC-n blocks; the note goes back to status: raw so /extract-signal re-reads it
        ignored / closed / unchanged → reported, nothing written
+       a watched Epic's new child → watched too; a closed (off-sprint) ticket fetched by explicit key →
+                      captured with a warning, stays closed
    the engine prints the phase from ## Jira status mapping, unknown authors (tagged needs-review), and a
    warning for any status the mapping does not cover — surface those, never edit the mapping yourself
 ```
 
-Phases (`## Jira status mapping` in `{system_config}`, one table, rows per project) are informational:
-`active` and `scope-agreed` capture normally (`scope-agreed` tells extraction the newest description and
-scope comment are the agreed baseline), `ignore` never captures, `done` captures one last time and then
-the note stays closed while the ticket stays done.
+Phases (`## Jira status mapping` in `{system_config}`, one table, rows per project): `active` and
+`scope-agreed` capture normally (`scope-agreed` tells extraction the newest description and scope comment
+are the agreed baseline), `ignore` never captures, `done` captures one last time and then the note stays
+closed while the ticket stays done. `dev` is the status the team moves a ticket to once it is clear
+(e.g. "Ready for Dev"). It gates approval only: use cases and designs are drafted from the ticket as soon
+as its rows are filed, so the dev team reviews the flow, the PM reviews a quick design, and both feed
+questions back through Jira. Once a project maps any status to `dev`, a UC built from that project's
+tickets cannot be approved until they reach it (`bigin intake jira-gate --uc UC-###`, which /approve-uc
+runs). The sweep that sees the status change prints `READY FOR DEV → approve UC-###, …`. Relay it to the
+human. The team decides when a ticket is clear; never infer it from the thread.
 
 Block kinds this stage writes: `ticket` (first capture: fields + summary + description), `comment`
 (one per comment; an edited comment is a NEW block marked `(edited <ts>)`), `description` (the full new

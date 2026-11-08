@@ -143,7 +143,7 @@ plugin context, so a path into the install directory is unreachable to them.
   | `meeting_provider` | `AskUserQuestion`: **fathom** (default), **spark**, or **firefly** |
   | `jira_provider` | `AskUserQuestion`: **none** (default) or **atlassian** — do tickets arrive through Jira (onshore creates, offshore is assigned)? |
   | `jira_site`, `jira_projects` | `jira_provider: atlassian` only. Ask the site (`acme.atlassian.net`) and the project keys to sweep |
-  | `## Jira status mapping` | `jira_provider: atlassian` only. Ask, per project, which statuses mean the scope is agreed, which mean done, and which to ignore; every other status is `active`. One table row per (project, issue types, status) |
+  | `## Jira status mapping` | `jira_provider: atlassian` only. Ask, per project, which statuses mean the scope is agreed, which mean **the ticket is clear and moved to development** (`dev`: a use case built from the ticket cannot be approved until the ticket reaches one), which mean done, and which to ignore; every other status is `active`. Ask for the project's Jira workflow statuses by name (or read them from a sample of tickets with `searchJiraIssuesUsingJql`), never guess them. One table row per (project, issue types, status) |
   | `jira_onshore`, `jira_offshore` | `jira_provider: atlassian` only. Optional — Jira account ids / emails per side; blank falls back to `client_emails` / `team_emails` |
   | `project_mode` | `AskUserQuestion`: **new** (greenfield) or **ongoing** (an existing product this repo contains or accompanies) |
   | `platform` | `AskUserQuestion`: **web** (default — something people use in a browser, on a computer) · **mobile** (a phone app people install) · **both** (the same product in both places) |

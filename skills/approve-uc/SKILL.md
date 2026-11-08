@@ -129,6 +129,10 @@ each other slug in `features:`, and each `BR-###` in `brs:`. It never reads or w
          point at "process UC-###" (the `bigin-ba` agent's process-the-UC pass, or `/bigin-run`) rather
          than reporting them back as questions the human still owes an answer to. Never fold the answer
          in from here, and never tick the box to clear the count.
+     * **Check the Jira status.** Run `bigin --json intake jira-gate --uc UC-###`. `ok: false` → stop: name
+       each waiting ticket and its current status, and say the UC can be approved once the dev team moves
+       those tickets to their Ready for Dev status (the `dev` row of `## Jira status mapping`). The team decides
+       when a ticket is clear — never approve around it. A vault with no `dev` row always returns `ok: true`.
      * **Check the ledger.** Run `bigin --json ledger list` and keep the entries whose `artifact` is
        this UC. Any `open` entry → stop: quote each one's question and pending text (the same lines the
        UC's `## Pending changes` block shows) and say approval waits until they are answered and released.
