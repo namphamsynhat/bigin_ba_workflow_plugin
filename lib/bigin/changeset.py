@@ -795,12 +795,17 @@ def apply(vault, changesets, run=None, dry=False, release_ids=None):
             valid.append(json.loads(json.dumps(cs)))
         keymap = {}
         row_outcomes_pre = {}
+        from . import snapshot
+        snaps = snapshot.Recorder()  # per intake note: the UC/BR before and after its own changes
         # 1 — creates, serially under the id lock
         for cs in [c for c in valid if c["op"] in ("create_uc", "create_br")]:
             try:
                 uid = _create(vault, cs, dry, keymap)
                 res["created"][cs["key"]] = uid
                 res["applied"].append(_entry(cs, uid))
+                if not dry:
+                    snaps.created(cs.get("trace"), uid, cs)
+                    snaps.done(uid, vault.load(vault.find(uid)))
             except Outcome as o:
                 if o.kind == "already":
                     res["created"][cs["key"]] = keymap.get(cs["key"])
@@ -837,6 +842,8 @@ def apply(vault, changesets, run=None, dry=False, release_ids=None):
             did, dests, s2 = [], [], False
             gated_ids, drift_ids = [], []
             done_ids = applied_ids(doc)
+            track = kind in ("UC", "BR")
+            before_text, before_ver = (doc.text, str(doc.fm_get("version") or "")) if track else (None, None)
             for cs in sets:
                 tr = cs.get("trace") or {}
                 if cs["id"] in done_ids:
@@ -856,7 +863,10 @@ def apply(vault, changesets, run=None, dry=False, release_ids=None):
                     _note_row(row_outcomes, tr, "gated", _dest(tid, "pending"))
                     continue
                 try:
+                    pre = snapshot.body(doc) if track else None
                     where = _dispatch(vault, doc, cs)
+                    if track:
+                        snaps.change(tr, tid, cs, pre, snapshot.body(doc), before_text, before_ver)
                     did.append(cs)
                     dests.append(where)
                     s2 = s2 or cs["op"] in S2_OPS or bool((cs.get("flags") or {}).get("review"))
@@ -921,6 +931,10 @@ def apply(vault, changesets, run=None, dry=False, release_ids=None):
             else:
                 vault.write(doc)
                 res["written"].append(vault.rel(doc.path))
+                if track:
+                    snaps.done(tid, doc)
+        if not dry:
+            res["before_after"] = snaps.write(vault)
         # 2 — hub Signal Log rows
         res["rows"] = _flip_rows(vault, row_outcomes, dry, release_ids)
         touched_hubs |= {h for h, _ in row_outcomes}

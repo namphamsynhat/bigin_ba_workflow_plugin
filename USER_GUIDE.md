@@ -296,6 +296,41 @@ untouched and verbatim — nothing is summarized at this stage.
 This drains the intake queue: extracts signals, drafts/updates use cases and business rules,
 and reports back with exactly what changed and what — if anything — needs your input.
 
+### A sprint of Jira tickets
+
+1. **Sprint start.** Run `/bigin-intake sprint "Sprint 13" ACME-100 ACME-101 …` with the sprint's tickets.
+   Group a new feature's tickets under an Epic and list the Epic: its Stories are watched too, including
+   ones the PM adds mid-sprint. From then on every sweep fetches only the watched tickets. Tickets from the
+   previous sprint that are not on the new list are closed: their notes keep everything captured so far,
+   but no sweep fetches them again. A ticket carried over is simply listed again. Nothing changes in Jira.
+   Each ticket becomes one intake note for its whole life.
+   **What is in the sprint?** `/bigin-run` prints the sprint report after each extract (or run
+   `scripts/bigin intake jira-sprint --report`): every ticket as `new-feature`, `update` (a change to a feature
+   that already existed), `bug`, `needs-anchor` (two features fit — answer the question) or `pending` (not
+   extracted yet). A new feature is never created silently: when no feature fits, the ticket shows as
+   `new-feature` with a drafted name for you to confirm on the note's open question.
+2. **Extract, draft, design.** `/bigin-run` extracts each ticket, raises its open questions, files the rows
+   on the feature hubs, drafts the use cases and generates the UX spec straight away. You don't wait for
+   Ready for Dev to see the flow.
+3. **Review and ask in Jira.** The dev team reviews the use-case flow and its open questions. For the PM,
+   render a quick design with `/bigin-render-design-od` and share the link or screenshots on the ticket.
+   The team posts its questions on the ticket. The plugin never writes to Jira.
+4. **Watch for answers.** Each sweep appends only new comments, description edits and status changes.
+   Extraction ticks the questions they answer and raises new ones if the scope is still unclear; the use
+   case is updated and the design is flagged `stale` until it is regenerated. Run the sweep yourself, or on a
+   timer: `/loop 2h /bigin-run pull Jira and process the inbox`. The sprint report shows each ticket's use
+   cases and whether their design is current.
+5. **Ticket clear → approve.** Map your "ready for development" status to the `dev` phase in
+   `## Jira status mapping`. Until a ticket reaches it, a use case built from it cannot be approved
+   (`/approve-uc` stops and names the ticket). When the team moves the ticket, the next sweep prints
+   `READY FOR DEV → approve UC-###`. Approve, then generate stories. Each story carries `jira: [KEY]` back
+   to the ticket.
+
+   **What did this ticket change?** Open the ticket's intake note (`00-Inbox/INT-###.md`) and read
+   `## Before / After`. For every use case and business rule the ticket touched it shows the version before
+   and after, links to the full use case before and after (`00-Inbox/_snapshots/INT-###/`), and a
+   Before | After table of only this ticket's changes, even when other tickets changed the same use case.
+
 ### Reviewing and approving a use case
 
 When `/bigin-transform-signal` (or `/bigin-run`) drafts a use case, it may leave open

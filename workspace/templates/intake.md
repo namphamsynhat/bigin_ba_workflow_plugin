@@ -28,8 +28,11 @@ jira_key:                # jira notes only — written by `bigin intake jira`, n
 jira_type:               #   Epic | Story | Task | Bug | … (Epic → likely a new feature; the rest → likely a change)
 jira_parent:             #   the parent Epic's key; a child inherits the Epic note's feature as declared_features
 jira_status:             #   the ticket's status at the last sweep
-jira_phase:              #   active | scope-agreed | done — from project.md ## Jira status mapping
+jira_phase:              #   active | scope-agreed | dev | done — from project.md ## Jira status mapping
 jira_updated:            #   the ticket's updated time at the last sweep
+jira_watch:              #   true while the ticket is on the current sprint's watch list (project.md jira_watch); false = closed, no sweep fetches it
+jira_sprint:             #   the sprint the ticket is watched for
+jira_sprint_closed:      #   the sprint after which it stopped being watched
 extracted_through:       # written by `bigin note write-signals`: the last SRC-n extracted — later blocks are new on the next run
 tags: []                 # add needs-review when sender/invitee isn't a known client contact, or when a signal couldn't be mapped to a feature and needs a human to pick one
 updated:

@@ -13,7 +13,9 @@ meeting_provider: fathom  # fathom | spark | firefly — which tool /intake pull
 jira_provider:            # atlassian | blank — Jira tickets as intake (Atlassian MCP, read-only)
 jira_site:                # e.g. acme.atlassian.net
 jira_projects: []         # Jira project keys to sweep, e.g. [ACME]
-jira_jql:                 # optional override of the sweep query
+jira_jql:                 # optional override of the sweep query (unused while jira_watch is set)
+jira_sprint:              # the current sprint — written by `bigin intake jira-sprint`
+jira_watch: []            # the current sprint's ticket keys: the sweep fetches only these + their children
 jira_scope_marker: "Final scope"  # a comment/description heading that states the agreed scope
 jira_onshore: []          # Jira account ids / emails / display names on the onshore side (else client_emails)
 jira_offshore: []         # ... on the offshore side (else team_emails)
@@ -53,6 +55,8 @@ updated: <YYYY-MM-DD>
 >   author's side (falling back to `client_emails` / `team_emails`; a bare domain like `acme.com` matches
 >   every address on it); `jira_scope_marker` is the heading the teams use to state the agreed scope.
 >   Each Jira project's statuses map to a phase in `## Jira status mapping` below.
+>   `jira_sprint` / `jira_watch` are the sprint watch list (`/bigin-intake sprint <name> KEY …`): while set,
+>   the sweep fetches only those tickets and their children; tickets off the list are closed in the vault.
 > - `project_mode` — `new` (greenfield) or `ongoing` (existing product).
 > - `platform` — what's being built: `web` (a browser app), `mobile` (a phone app), or `both`. Read by
 >   `/bigin-generate-design`: it decides the regions vocabulary a screen spec uses, the shape of the
@@ -108,8 +112,11 @@ pointing at the full report in _bigin/system/domain-research.md rather than dupl
 ## Jira status mapping
 <!-- jira_provider set only. One row per (project, issue types, status). Issue types: comma list or *.
 Phase: active (keep capturing) · scope-agreed (the newest description + scope comment are the agreed
-baseline) · done (capture once more, then stop) · ignore (never capture). An unmapped status counts
-as active and /bigin-intake warns about it. Phases inform extraction; they gate nothing. -->
+baseline) · dev (the ticket is clear and handed to development — its use cases may now be approved) ·
+done (capture once more, then stop) · ignore (never capture). An unmapped status counts as active and
+/bigin-intake warns about it. Use cases and designs are drafted from every ticket as soon as it is filed.
+Map at least one status to dev and a UC built from that project's tickets cannot be approved until they
+reach it; with no dev row, approval is never held by Jira. -->
 
 | Project | Issue types | Jira status | Phase |
 |---|---|---|---|

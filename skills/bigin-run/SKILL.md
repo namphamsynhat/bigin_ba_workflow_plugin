@@ -30,16 +30,29 @@ With no argument, sweep; with a slug or UC id, scope to it. Determine the stage 
 3b jira_provider set and the human asked for a sweep
    ("process the inbox", "pull Jira")                 → /bigin-intake jira (fetch only; the engine appends
                                                          just the new comments / description revisions)
+3c the human starts a sprint ("new sprint", a ticket
+   list or a Jira sprint name)                        → /bigin-intake sprint <name> KEY … (new watch list;
+                                                         the old sprint's tickets stop being swept)
+                                                         + after every extract while a sprint is set:
+                                                         `bigin intake jira-sprint --report` → relay the
+                                                         new-feature / update / bug split
 4  00-Inbox/ note at status: raw, or a newly ticked
    note question (communication and jira notes)       → extract   (workflows/extract.js)
 5  bigin ledger list shows open sets whose question is
    answered, or hubs have new/held rows               → transform (workflows/transform.js)
+                                                         Jira tickets draft here as soon as they are filed —
+                                                         well before Ready for Dev — so the dev team can
+                                                         review the flow and ask the PM in Jira
 5a conflict/held rows in a code-grounded vault         → adjudicate (inside transform; alone:
                                                          workflows/adjudicate.js)
 5b "process UC-###" — answers typed in the file        → bigin-ba's process-the-UC pass (cards/ba-drive.md)
 6  a UC has a drafted § 2 and no current design        → /bigin-generate-design
-6b THE HUMAN asks for a prototype (never you)          → /bigin-render-design-od
-7  a UC is clear and the human is ready to sign off    → the review flow (cards/ba-review.md) — never headless
+6b THE HUMAN asks for a prototype (never you)          → /bigin-render-design-od — for a Jira ticket this is
+                                                         the quick design the dev team shares with the PM
+7  a UC is clear and the human is ready to sign off    → the review flow (cards/ba-review.md) — never headless;
+                                                         a UC built from a Jira ticket also needs the ticket
+                                                         at Ready for Dev (`bigin intake jira-gate --uc`);
+                                                         relay every `READY FOR DEV → approve UC-###` a sweep prints
 8  approved UCs with synced: false                     → /sync-entities, when convenient
 9  approved UCs with no current epic/stories           → /bigin-generate-stories
 10 draft stories the human has reviewed               → /approve-story — human-only, like step 7

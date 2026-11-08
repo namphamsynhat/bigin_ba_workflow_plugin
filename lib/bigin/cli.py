@@ -9,6 +9,7 @@ Exit codes: 0 ok · 1 findings/missing (lint, coverage) · 2 refused (bad input,
 import argparse
 import json
 import os
+import re
 import sys
 
 if __package__ in (None, ""):
@@ -264,6 +265,19 @@ def cmd_intake(args, rest):
             raise EngineError("intake jira: --issue <raw.json> is required")
         res = jira.capture(v, args.issue, dry=args.dry)
         out(args, res, jira.render(res))
+    elif args.mode in ("jira-sprint", "jira-gate"):
+        from bigin.intake import jira
+        if args.uc:
+            res = jira.approval_gate(v, args.uc)
+            out(args, res, jira.render_gate(res))
+            return 0 if res["ok"] else 1
+        if args.report:
+            res = jira.sprint_report(v)
+            out(args, res, jira.render_report(res))
+            return 0
+        keys = [k for part in (args.keys or []) for k in re.split(r"[\s,]+", part) if k]
+        res = jira.sprint_start(v, args.sprint, keys, dry=args.dry)
+        out(args, res, jira.render_sprint(res))
     else:
         from bigin.intake import communication
         res = communication.scaffold(v, args.spec, dry=args.dry)
@@ -501,10 +515,16 @@ def build_parser():
     s.add_argument("--dry", action="store_true")
     s.set_defaults(fn=cmd_file)
 
-    s = sub.add_parser("intake", help="scaffold an intake note (communication), capture a Jira ticket (jira), "
+    s = sub.add_parser("intake", help="scaffold an intake note (communication), capture a Jira ticket (jira), start a sprint watch list (jira-sprint), "
                                       "or import rule cards (codebase)")
-    s.add_argument("mode", choices=["codebase", "communication", "jira"])
+    s.add_argument("mode", choices=["codebase", "communication", "jira", "jira-sprint", "jira-gate"])
     s.add_argument("--issue", help="jira: the raw MCP JSON for one ticket (issue + comments + changelog)")
+    s.add_argument("--sprint", help="jira-sprint: the new sprint's name")
+    s.add_argument("--keys", nargs="+", help="jira-sprint: the sprint's ticket keys (space or comma separated); "
+                                             "every other ticket note stops being watched")
+    s.add_argument("--uc", help="jira-gate: may this UC be approved? exit 1 while a source ticket is not at the dev status")
+    s.add_argument("--report", action="store_true", help="jira-sprint: classify the current sprint's tickets — "
+                                                          "new feature / update / bug / needs-anchor / pending")
     s.add_argument("--cards", help="rule cards: _rules-store.json shape, a JSON list, or CSV")
     s.add_argument("--assignment", help="JSON map card id → {slug, …}")
     s.add_argument("--group-by", default="capability", choices=["capability", "feature", "group", "none"])
