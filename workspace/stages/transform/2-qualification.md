@@ -10,6 +10,9 @@ never:  ## Raw, a transcript, or an attachment
           a rule _bigin/stages/extract/2-extraction.md already owns
 
 for row in worklist:                       # every Status: new or held
+    # a `retract` row (its source note was withdrawn after it was applied) is NOT qualified: there is
+    # nothing to verify, only content to take back out. Pass it straight to Stage 3 with the qualified
+    # rows; uc-router removes it (_bigin/stages/extract/4-analysis.md § Retracting applied content)
     gate 1 blocked-on-answer  → fail: park, stop
     gate 2 source-materialized → fail: park, stop
     gate 3 fidelity            → fail: park, stop  (or repair and continue)

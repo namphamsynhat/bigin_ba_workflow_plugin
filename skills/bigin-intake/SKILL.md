@@ -320,6 +320,18 @@ tickets cannot be approved until they reach it (`bigin intake jira-gate --uc UC-
 runs). The sweep that sees the status change prints `READY FOR DEV → approve UC-###, …`. Relay it to the
 human. The team decides when a ticket is clear; never infer it from the thread.
 
+`withdrawn` is for a ticket the client removed (Cancelled, Won't Do, Rejected …). The sweep that sees it
+withdraws the note (`analysis.withdraw`, `_bigin/stages/extract/4-analysis.md` § Withdrawal): every hub row it
+filed is closed, and content already applied to a UC becomes a `retract` row that the next
+`/bigin-transform-signal` takes back out, with the reason on the UC's Changelog. Map those statuses to
+`withdrawn`, not `ignore`. `ignore` only stops capture, so anything already extracted would stay in the spec.
+A ticket that was **deleted** can no longer be fetched: when a watched key returns not-found, ask nothing,
+run `bigin note withdraw <INT> --reason "Jira <KEY> deleted" --by "Jira sweep <date>"` and report it.
+Withdrawal is per ticket or per feature, never per meeting or email. When the client drops a whole feature
+(for example it costs too much or no longer fits the market), the human runs, or tells you to run,
+`bigin feature withdraw <slug> --reason "<their words>" --by "<who, where, date>"`. A single point dropped in a
+meeting is an ordinary signal, captured and extracted like any other. Never withdraw on your own reading of a thread.
+
 Block kinds this stage writes: `ticket` (first capture: fields + summary + description), `comment`
 (one per comment; an edited comment is a NEW block marked `(edited <ts>)`), `description` (the full new
 summary + description each time either changes), `fields` (changelog: status, type, parent, labels, …).

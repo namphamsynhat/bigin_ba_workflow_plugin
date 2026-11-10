@@ -84,7 +84,7 @@ def seeds(vault, nid):
             u, b = _dests(r.destination)
             rows.append({"hub": slug, "row": r.num, "signal": r.get("Signal"), "status": r.status,
                          "destination": r.destination, "notes": r.get("Notes")})
-            if r.status in ("applied", "staged", "new", "held", "conflict"):
+            if r.status in ("applied", "staged", "new", "held", "conflict", "retract"):
                 for k, refs in u.items():
                     ucs.setdefault(k, {"refs": set(), "pending": False})
                     ucs[k]["refs"] |= refs
@@ -318,7 +318,8 @@ def notes_touched(vault, since=None):
     for slug in vault.slugs():
         sd = model.signal_doc(vault, slug)
         for r in model.signal_rows(sd) if sd else []:
-            if r.status in ("applied", "staged", "superseded", "held", "conflict", "rejected", "question"):
+            if r.status in ("applied", "staged", "superseded", "held", "conflict", "rejected", "question",
+                            "retract", "withdrawn"):
                 out |= {n for n, _ in model.expand_int_cites(r.source)}
     return sorted(n for n in out if vault.find(n))
 

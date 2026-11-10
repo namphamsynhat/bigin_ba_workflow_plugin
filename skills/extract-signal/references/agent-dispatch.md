@@ -1,6 +1,6 @@
 # Subagent dispatch — extract stage (fallback loop, and what workflows/extract.js does)
 
-Three named agents, each returning ONE JSON file the engine validates and writes. None of them has `Edit`;
+Four named agents, each returning ONE JSON file the engine validates and writes. None of them has `Edit`;
 `Write` is limited by its card to its own `.out.json`.
 
 | # | Agent | Model | When | Card → output schema |
@@ -8,6 +8,7 @@ Three named agents, each returning ONE JSON file the engine validates and writes
 | 2a | `signal-extractor` | `sonnet` | every communication-mode note | `cards/extractor.md` → `signals` |
 | 2b | `signal-auditor` | `sonnet`, one per note, never per batch | only when the audit is owed | `cards/auditor.md` → `audit` |
 | 2c | `signal-filer` | `sonnet` | every note, **serially** | `cards/filer.md` → `filing` |
+| 2d | `intake-analyst` | `sonnet` | every filed note, in parallel (applies serial) | `cards/analyst.md` → `analysis` |
 
 Codebase-mode notes have no 2a/2b: `bigin intake codebase` writes their rows and files them deterministically;
 only its `--unmapped-out` remainder becomes one 2c classification task.
@@ -33,6 +34,7 @@ bigin ingest <out> --kind <schema> --run <run>
 bigin note write-signals <signals.out.json>      # prints {added, audit_owed}
 bigin note audit-apply <audit.out.json>
 bigin file apply <filing.out.json>               # prints {hub_rows, pp, en, hubs_created, status}
+bigin note analysis-apply <analysis.out.json>    # prints {affected, conflicts, blocking, questions_added, rows_flagged, status}
 bigin metrics add --run <run> --stage extract --task <INT> --agent <name> --usage "<usage block>"
 ```
 

@@ -114,13 +114,16 @@ signal-by-signal and requirement-by-requirement, never as one blanket checkbox.
     v1.8 vaults: a `## Discussion` entry) · `applied` (landed in UC/BR content) · `question` (the signal
     *is* an open question, not a requirement — tracked until answered) · `conflict` (contradicts
     an earlier row — needs human resolution before either can be applied) · `superseded` (an older
-    row a resolved conflict/newer decision overrode) · `rejected` (explicitly out of scope). This
+    row a resolved conflict/newer decision overrode) · `rejected` (explicitly out of scope) ·
+    `retract` (its source note was withdrawn after the row was applied — transform must take its
+    content back out) · `withdrawn` (its source note was withdrawn and nothing of it remains in a
+    UC/BR; `extract/4-analysis.md` § Withdrawal — a removed request leaves the spec). This
     plugin's `extract-signal` skill only ever writes `new`/`question`/`conflict`/`rejected` when
     filing a fresh signal (§ its own `3-filing.md`) — `held`/`staged`/`applied`/
     `superseded` describe a signal's relationship to a UC, which is `/bigin-transform-signal`'s
     job to set, not extraction's.
-  - **"Processed" = `applied` \| `superseded` \| `rejected`. "Not yet processed" = everything
-    else** (`new`/`held`/`staged`/`question`/`conflict`) — this is the queue a human or agent works
+  - **"Processed" = `applied` \| `superseded` \| `rejected` \| `withdrawn`. "Not yet processed" =
+    everything else** (`new`/`held`/`staged`/`question`/`conflict`/`retract`) — this is the queue a human or agent works
     from, not a percentage-done bar.
   - **Conflict handling**: when a new signal contradicts a `held`/`staged`/`applied` row, add the
     new signal as its own row with `Status: conflict`, citing the row number(s) it conflicts with

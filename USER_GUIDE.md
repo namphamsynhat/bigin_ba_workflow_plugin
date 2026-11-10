@@ -326,6 +326,31 @@ and reports back with exactly what changed and what — if anything — needs yo
    `READY FOR DEV → approve UC-###`. Approve, then generate stories. Each story carries `jira: [KEY]` back
    to the ticket.
 
+   **What will this ticket change, before anything is drafted?** Right after filing, the note gets an
+   `## Analysis` section, written as a business analyst would: what the ticket asks and the flow as
+   understood, the features, use cases and rules it changes (plus the UX specs and stories already built on
+   them), the conflicts with the current requirements, and what is unclear or missing for implementation.
+   Each conflict and question is added to `## Open Questions`, so you can take them straight to the client.
+   A conflict with an approved use case holds that row at `conflict`, and nothing is drafted over the current
+   spec until someone decides.
+
+   **The client dropped a whole feature** (it costs too much, or no longer fits the market). Run
+   `scripts/bigin feature withdraw <slug> --reason "<their words>" --by "<who, where, date>"`. The feature
+   becomes `out-of-scope` in `FEATURES.md`. The use cases and rules only that feature uses become `removed`,
+   with the reason on their Changelog. A use case or rule another live feature still uses stays, and only
+   this feature's part of it is taken out by the next `/bigin-run`. Every design, epic and story built on a
+   removed use case is flagged `stale`, and new intake for the feature is rejected at filing. To bring it
+   back, set the feature to `committed` again and the removed use cases back to `draft`.
+
+   **The client removed the ticket.** Map your cancelled statuses (Cancelled, Won't Do …) to the
+   `withdrawn` phase. The next sweep withdraws the note. For a deleted ticket, run
+   `scripts/bigin note withdraw INT-### --reason "<their words>" --by "<who, where, date>"`. Nothing is
+   deleted: the note keeps its history and a `## Withdrawal` record. Its rows that were not drafted yet are
+   closed (`withdrawn`), and staged changes are cancelled. Content already in a use case is marked `retract`,
+   and the next `/bigin-run` takes it back out. The use case's Changelog then reads "retracts withdrawn
+   INT-### (<date>: <reason>)", and an approved use case goes back for re-approval. The source of truth never
+   keeps a requirement nobody asked for, and anyone can see why it left.
+
    **What did this ticket change?** Open the ticket's intake note (`00-Inbox/INT-###.md`) and read
    `## Before / After`. For every use case and business rule the ticket touched it shows the version before
    and after, links to the full use case before and after (`00-Inbox/_snapshots/INT-###/`), and a

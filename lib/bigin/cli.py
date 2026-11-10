@@ -238,9 +238,27 @@ def cmd_note(args, rest):
         res = notes.write_signals(v, args.path, dry=args.dry)
     elif args.action == "audit-apply":
         res = notes.apply_audit(v, args.path, dry=args.dry)
+    elif args.action == "analysis-apply":
+        from bigin import analysis
+        res = analysis.apply(v, args.path, dry=args.dry)
+        out(args, res, analysis.render(res))
+        return 0
+    elif args.action == "withdraw":
+        from bigin import analysis
+        res = analysis.withdraw(v, args.path, args.reason, by=args.by, dry=args.dry)
+        out(args, res, analysis.render_withdraw(res))
+        return 0
     else:
         raise EngineError(f"unknown note action {args.action}")
     out(args, res, notes.render(res))
+    return 0
+
+
+def cmd_feature(args, rest):
+    from bigin import analysis
+    v = vault_of(args)
+    res = analysis.withdraw_feature(v, args.slug, args.reason, by=args.by, dry=args.dry)
+    out(args, res, analysis.render_withdraw_feature(res))
     return 0
 
 
@@ -474,7 +492,7 @@ def build_parser():
     s.set_defaults(fn=cmd_context)
 
     s = sub.add_parser("worklist", help="build a compact JSON task input for an agent")
-    s.add_argument("stage", choices=["route", "adjudicate", "extract", "audit", "file", "release", "split"])
+    s.add_argument("stage", choices=["route", "adjudicate", "extract", "audit", "file", "analyze", "release", "split"])
     s.add_argument("scope", help="feature slug, INT id, or UC id")
     s.add_argument("--out")
     s.add_argument("--rows", help="restrict to these Signal Log rows (comma-separated)")
@@ -503,11 +521,21 @@ def build_parser():
     s.add_argument("--dry", action="store_true")
     s.set_defaults(fn=cmd_ledger)
 
-    s = sub.add_parser("note", help="write an intake note's ## Extracted signals from agent JSON")
-    s.add_argument("action", choices=["write-signals", "audit-apply"])
-    s.add_argument("path")
+    s = sub.add_parser("note", help="write an intake note's ## Extracted signals / ## Analysis from agent JSON; withdraw a removed request")
+    s.add_argument("action", choices=["write-signals", "audit-apply", "analysis-apply", "withdraw"])
+    s.add_argument("path", help="the agent's .out.json — or, for withdraw, the INT id")
+    s.add_argument("--reason", help="withdraw: why the request was removed (required — it is what the team reads later)")
+    s.add_argument("--by", help="withdraw: who removed it and where, e.g. 'client, PROJ-12 cancelled 2026-11-10'")
     s.add_argument("--dry", action="store_true")
     s.set_defaults(fn=cmd_note)
+
+    s = sub.add_parser("feature", help="withdraw a whole feature the client dropped (out-of-scope, its UCs/BRs removed, rows closed)")
+    s.add_argument("action", choices=["withdraw"])
+    s.add_argument("slug")
+    s.add_argument("--reason", help="why the client dropped it (required — it is what the team reads later)")
+    s.add_argument("--by", help="who decided and where, e.g. 'client steering meeting 2026-11-10'")
+    s.add_argument("--dry", action="store_true")
+    s.set_defaults(fn=cmd_feature)
 
     s = sub.add_parser("file", help="apply a signal-filer's filing.json (hub rows, registers, note columns)")
     s.add_argument("what", choices=["apply"])

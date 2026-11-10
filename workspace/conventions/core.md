@@ -206,7 +206,8 @@ signals, not a thing that itself needs an `enriched`/`consolidated` pipeline pas
 them, carrying `merged_into: EN-###` and a one-line pointer body. Never deletion — the id stays
 resolvable for anything that already cites it (`registers.md` § Entity Data Model, A fragment already on disk).
 
-**INT** (intake notes): `raw | needs-clarification | in-review | consumed` — see § Intake capture
+**INT** (intake notes): `raw | needs-clarification | in-review | consumed | withdrawn` (the client removed
+the request — `bigin note withdraw`, `extract/4-analysis.md`) — see § Intake capture
 & the question loop and `/bigin-intake`'s own queue logic. Unrelated to the UC/BR list above;
 don't conflate the two just because both use `needs-clarification`.
 

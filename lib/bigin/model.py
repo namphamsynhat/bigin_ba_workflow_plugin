@@ -12,9 +12,12 @@ INT_CITE = re.compile(r"(INT-\d+)((?:\s*,?\s*#\d+[a-z]?(?:\s*[-–…]\s*#?\d+)?
 HUB_ROW_CITE = re.compile(r"([a-z0-9][a-z0-9-]*)\s+hub\s+rows?\s*((?:#?\d+[a-z]?(?:\s*[-–]\s*#?\d+)?[\s,]*(?:and\s+)?)+)")
 STAGED_ENTRY = re.compile(r"^- \*\*INT-\d+", re.M)
 
-PROCESSED = {"applied", "superseded", "rejected"}
+PROCESSED = {"applied", "superseded", "rejected", "withdrawn"}
 PARKED = {"question", "conflict", "held"}
-SIGNAL_STATUSES = {"new", "held", "staged", "applied", "question", "conflict", "superseded", "rejected"}
+# withdrawn — its source note was withdrawn (a removed ticket) and nothing of it is left in a UC/BR;
+# retract — its source was withdrawn AFTER it was applied: transform must take it back out (uc-router)
+SIGNAL_STATUSES = {"new", "held", "staged", "applied", "question", "conflict", "superseded", "rejected",
+                   "retract", "withdrawn"}
 DROP_MARK = re.compile(r"^\s*(Dropped|Removed)\b", re.I)
 
 

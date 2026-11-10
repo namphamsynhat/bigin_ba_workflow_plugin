@@ -36,10 +36,19 @@ With no argument, sweep; with a slug or UC id, scope to it. Determine the stage 
                                                          + after every extract while a sprint is set:
                                                          `bigin intake jira-sprint --report` → relay the
                                                          new-feature / update / bug split
+3d the human says the client removed a ticket
+   (cancelled, a deleted key)                         → bigin note withdraw <INT> --reason "<their words>"
+                                                         --by "<who, where, date>"
+3e the human says the client dropped a whole feature
+   (cost, market fit)                                 → bigin feature withdraw <slug> --reason … --by …
+                                                         — relay what it removed, kept and flagged stale;
+                                                         then transform (5) retracts the rest
 4  00-Inbox/ note at status: raw, or a newly ticked
-   note question (communication and jira notes)       → extract   (workflows/extract.js)
+   note question (communication and jira notes)       → extract   (workflows/extract.js) — ends with the
+                                                         Analyze phase: relay each note's ## Analysis
+                                                         conflicts and questions to the human
 5  bigin ledger list shows open sets whose question is
-   answered, or hubs have new/held rows               → transform (workflows/transform.js)
+   answered, or hubs have new/held/retract rows       → transform (workflows/transform.js)
                                                          Jira tickets draft here as soon as they are filed —
                                                          well before Ready for Dev — so the dev team can
                                                          review the flow and ask the PM in Jira
@@ -77,10 +86,11 @@ Steps 3–6 are momentum: run them back to back. Step 7 is the only decision poi
      bigin worklist <stage> <scope> --out _runs/RUN/tasks/<task>.in.json
      Agent(<named worker>, prompt = card path + .in.json path + .out.json path)   ← replies ONE line
      bigin ingest <out> --run RUN     → errors go back to the SAME agent once (SendMessage), then park
-     bigin apply <out> --run RUN      (transform) · note write-signals / audit-apply · file apply (extract)
+     bigin apply <out> --run RUN      (transform) · note write-signals / audit-apply · file apply · note analysis-apply (extract)
      transform: route (uc-router Phase A) → bigin mint route --spec <route.out.json> → resume the same
      uc-router for Phase B → apply → adjudicate (code-grounded) → bigin hub refresh <slug>
-     extract: extractor per note → auditor only when audit_owed → filer per note, SERIALLY → lint --full
+     extract: extractor per note → auditor only when audit_owed → filer per note, SERIALLY → intake-analyst
+              per filed note (applies serially) → lint --full
 3  after every task notification: bigin metrics add --run RUN --stage … --task … --agent … --usage "<usage…>"
 4  bigin run summary RUN   → the stage report; bigin metrics report --run RUN flags budget overruns
 5  bigin lint --full        → the blocking gate at the stage boundary

@@ -58,10 +58,11 @@ Missing `_bigin/conventions/`, `_bigin/stages/`, or `_bigin/templates/` → stop
 ## Execution order
 
 ```text
-scope = $ARGUMENTS slug, else every hub with new/held/conflict/question rows or open ledger entries
+scope = $ARGUMENTS slug, else every hub with new/held/conflict/question/retract rows or open ledger entries
 
 1  release   bigin ledger release · re-entry · orphan answers                  [1-foldin.md]
 2  qualify   gate each new/held row; outcomes via bigin hub flip               [2-qualification.md]
+             retract rows skip the gates: their source was withdrawn — route them   [extract/4-analysis.md]
 3  route     uc-router Phase A → bigin mint route → Phase B → change sets      [3-routing.md, 3-lane-*.md]
 4  apply     bigin ingest + apply · adjudicate (code-grounded) · conflict + coverage check
                                                                               [4-sync.md, 4b-coverage.md]

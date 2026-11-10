@@ -1,11 +1,12 @@
 export const meta = {
   name: 'bigin-extract',
-  description: 'Bigin extract (communication mode): per note signal-extractor → signal-auditor when owed → bigin note write-signals; then serial signal-filer per note → bigin file apply → lint --full',
+  description: 'Bigin extract (communication mode): per note signal-extractor → signal-auditor when owed → bigin note write-signals; then serial signal-filer per note → bigin file apply; then intake-analyst per note → bigin note analysis-apply → lint --full',
   whenToUse: 'Called by /extract-signal or /bigin-run. args: {run, vault, plugin_root, notes: [INT-###], bin?}. Codebase-mode notes are imported by `bigin intake codebase` and never come here.',
   phases: [
     { title: 'Extract', detail: 'signal-extractor per note (line-range reads)' },
     { title: 'Audit', detail: 'signal-auditor only where the audit is owed' },
     { title: 'File', detail: 'signal-filer per note, serially; bigin file apply' },
+    { title: 'Analyze', detail: 'intake-analyst per filed note (parallel reads, serial apply): affected UCs, conflicts, questions' },
     { title: 'Close', detail: 'lint --full, coverage' },
   ],
 }
@@ -83,11 +84,33 @@ for (const nid of toFile) {
   filed.push({ nid, ok: !!(a && a.ok), error: a && !a.ok ? a.error : null })
 }
 
+// analysis: read the filed note against the current spec — reads run in parallel, applies serially
+// (a blocking conflict flips hub rows, and two notes can share a hub)
+phase('Analyze')
+const toAnalyze = A.notes.filter(n => !done.has(`analysed:${n}`) &&
+  (done.has(`filed:${n}`) || filed.some(f => f.nid === n && f.ok)))
+const judged = await parallel(toAnalyze.map(nid => async () => {
+  const inN = `${TASKS}/${nid}.analyze.in.json`
+  const w = await engine(`worklist analyze ${nid}`, 'Analyze', [`${BIN} worklist analyze ${nid} --out ${inN}`])
+  if (!w || !w.ok) return { nid, error: w && w.error }
+  const outN = `${TASKS}/${nid}.analysis.out.json`
+  const r = await judge('bigin-ba-workflow-plugin:intake-analyst', 'analyst.md', inN, outN, `analyze ${nid}`, 'Analyze')
+  return r && r.status === 'OK' ? { nid, out: outN } : { nid, error: r && r.reason }
+}))
+const analysed = []
+for (const j of judged.filter(Boolean)) {
+  if (j.error) { analysed.push(j); continue }
+  const a = await engine(`analysis apply ${j.nid}`, 'Analyze', [`${BIN} --json ingest ${j.out} --kind analysis --run ${A.run}`,
+    `${BIN} --json note analysis-apply ${j.out}`, `${BIN} run record ${A.run} --task analysed:${j.nid} --status ok`])
+  analysed.push({ nid: j.nid, ok: !!(a && a.ok), result: a && a.data, error: a && !a.ok ? a.error : null })
+}
+
 const close = await engine('lint + coverage', 'Close', [`${BIN} lint --full || true`, `${BIN} --json coverage --stage file || true`])
 return {
   run: A.run,
   extracted: extracted.filter(Boolean).map(e => ({ note: e.nid, audited: !!e.audited, error: e.error || null })),
   filed,
+  analysed,
   coverage_missing: close && close.data && close.data.missing ? close.data.missing.length : null,
   next: `bigin run summary ${A.run}`,
 }

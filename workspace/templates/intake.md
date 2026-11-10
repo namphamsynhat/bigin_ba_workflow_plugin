@@ -3,7 +3,7 @@ id: INT-
 type: intake
 kind: requirement        # requirement | feedback | mixed | info (ops/admin — captured, never processed into signals). The ONLY judgement /intake makes.
 title:
-status: raw
+status: raw              # raw → needs-clarification | in-review (extract) · withdrawn (the client removed the request: `bigin note withdraw`)
 source: email            # email | meeting | direct — communication mode · jira — one living note per Jira ticket (`bigin intake jira`) · codebase — rule cards imported by `scripts/bigin intake codebase` (no LLM extraction)
 grounding:               # codebase notes only: `codebase` — transform treats the cited code as the tie-breaker (project.md conflict_policy). Blank on communication notes.
 source_ref:              # email: thread subject; meeting: name + date; direct: URL, filename, or "user input YYYY-MM-DD"
@@ -34,6 +34,9 @@ jira_watch:              #   true while the ticket is on the current sprint's wa
 jira_sprint:             #   the sprint the ticket is watched for
 jira_sprint_closed:      #   the sprint after which it stopped being watched
 extracted_through:       # written by `bigin note write-signals`: the last SRC-n extracted — later blocks are new on the next run
+analysed:                # written by `bigin note analysis-apply`: the date ## Analysis was last regenerated
+withdrawn:               # written by `bigin note withdraw`: the date the client removed the request
+withdrawn_reason:        #   and why, in the client's words — what the team reads when it asks "where did this go?"
 tags: []                 # add needs-review when sender/invitee isn't a known client contact, or when a signal couldn't be mapped to a feature and needs a human to pick one
 updated:
 ---
@@ -80,3 +83,9 @@ updated:
 <!-- ANSWER HERE: fill the A: line and tick the box — the next /extract-signal run folds it in and un-flags this note. ↦ UC-### = the question's canonical copy on the use case, written once /bigin-transform-signal has drafted or updated one for this signal (↦ — when no UC exists yet). -->
 <!-- - [ ] Q: ... (owner: client|team) ↦ UC-###
        A: -->
+
+## Analysis
+<!-- engine-owned: written by /extract-signal after filing (`bigin note analysis-apply`) — what the request asks, the
+requested flow, the features / use cases / rules it changes and what is built on them, the conflicts with current
+requirements, and what is unclear or missing for implementation. Regenerated on every extract run; edit nothing
+here — answer its questions in ## Open Questions. _bigin/stages/extract/4-analysis.md -->

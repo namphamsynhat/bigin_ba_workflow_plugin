@@ -25,7 +25,8 @@ what governs a stage is findable from the stage, and a run loads only the files 
         |
 /extract-signal           [Extract] drain the intake queue: extract signals into a flat raw record
                            on the note, anchor each to a feature, file them onto that feature's
-                           Signal Log grouped by functional theme
+                           Signal Log grouped by functional theme, then analyse the note against the
+                           current spec (## Analysis: affected features/UCs, conflicts, unclear points)
         |
 /bigin-transform-signal   [Transform] qualify each filed signal, route it to a lane, turn it into
                            drafted/updated Use Cases (a user goal with its flow, branches, rules
@@ -234,7 +235,8 @@ path convention that all three can actually read. It also makes the rules inspec
 `/extract-signal`'s dispatched subagents are named, versioned agent definitions —
 `agents/signal-extractor.md` (2a: extract, then audit and repair its own table),
 `signal-auditor.md` (2b: the independent blind re-read, dispatched only on the notes that earn it),
-and `signal-filer.md` (2c: anchor and file, and hub repair) — rather than a fresh hand-written prompt
+`signal-filer.md` (2c: anchor and file, and hub repair) and `intake-analyst.md` (2d: read the filed note
+against the current requirements — what it changes, contradicts, and leaves unclear) — rather than a fresh hand-written prompt
 per dispatch. Each resolves `{variable}`s from the project's own materialized
 `_bigin/conventions/paths.md` and reads its stage's rulebook from `_bigin/stages/extract/` at runtime,
 so a project-level override still applies; the agent file fixes only the identity, tool scope, model,

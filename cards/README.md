@@ -20,6 +20,7 @@ orchestrating skill passes any relevant override text inside the task input, nev
 | `extractor.md` | signal-extractor | `signals` |
 | `auditor.md` | signal-auditor | `audit` |
 | `filer.md` | signal-filer | `filing` |
+| `analyst.md` | intake-analyst | `analysis` |
 | `splitter.md` | uc-splitter | `changesets` |
 | `design-screens.md` | bigin-generate-design screens worker | (writes the UX spec — design stage) |
 | `ux-brief.md` | ux-brief-assembler | Design Brief JSON (schema inline in the card) |

@@ -903,6 +903,9 @@ def apply(vault, changesets, run=None, dry=False, release_ids=None):
                     line += f"; {len(drift_ids)} not applied — the text was reworded, question raised (drift: {', '.join(drift_ids)})"
                 if trace:
                     line += f" — from {trace}"
+                gone = _withdrawn_sources(vault, [c for c in did])
+                if gone:
+                    line += " — retracts withdrawn " + "; ".join(gone)
                 if did:
                     line += f". cs: {', '.join(c['id'] for c in did)}."
                 else:
@@ -999,6 +1002,20 @@ def _dest(tid, where):
     return f"{tid} {where}".strip()
 
 
+def _withdrawn_sources(vault, sets):
+    """'INT-014 (2026-11-10: client cancelled PROJ-12)' per withdrawn note a set traces — so the UC's
+    Changelog says why requirement text left the spec, not just that it did."""
+    out = []
+    for n in sort_ids({i for c in sets for i in ([(c.get("trace") or {}).get("int")] + list((c.get("trace") or {}).get("ints") or [])) if i}):
+        p = vault.find(n)
+        if not p:
+            continue
+        d = vault.load(p)
+        if (d.fm_get("status") or "") == "withdrawn":
+            out.append(f"{n} ({d.fm_get('withdrawn') or '?'}: {(d.fm_get('withdrawn_reason') or 'no reason recorded')[:120]})")
+    return out
+
+
 def _note_row(acc, tr, outcome, dest):
     hub = tr.get("hub")
     for r in tr.get("hub_rows") or []:
@@ -1044,7 +1061,14 @@ def _flip_rows(vault, acc, dry, release_ids=None):
             r = rows.get(row)
             if r is None:
                 continue
-            if r.status in ("superseded", "rejected"):
+            if r.status in ("superseded", "rejected", "withdrawn"):
+                continue
+            if r.status == "retract":
+                # a withdrawn source's content: landed = taken back out; anything else waits as retract
+                if st == "applied":
+                    hubmod.set_row(doc, r, "withdrawn", None, f"retracted from {dest}" if dest else "retracted")
+                    rows = {x.num: x for x in model.signal_rows(doc)}
+                    report.setdefault(hub, []).append(f"#{row}→withdrawn")
                 continue
             if st == "applied":
                 # a destination written while the change waited no longer describes it

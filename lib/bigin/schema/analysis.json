@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigin/analysis/1",
+  "title": "intake-analyst output: one filed intake note read against the current requirements",
+  "type": "object",
+  "required": [
+    "kind",
+    "int",
+    "summary",
+    "affected",
+    "conflicts",
+    "questions"
+  ],
+  "properties": {
+    "$schema_version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "analysis"
+    },
+    "int": {
+      "type": "string",
+      "pattern": "^INT-\\d+$"
+    },
+    "summary": {
+      "type": "string",
+      "description": "2-4 plain sentences: what the request asks for and why, in the business analyst's words"
+    },
+    "flow": {
+      "type": "array",
+      "description": "the requested to-be flow as understood, one actor action per item, '?' marking a step the source leaves unclear",
+      "items": {
+        "type": "string"
+      }
+    },
+    "affected": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "target",
+          "change",
+          "note_rows",
+          "why"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "target": {
+            "type": "string",
+            "pattern": "^(UC-\\d+|BR-\\d+|new)$",
+            "description": "the UC or BR this request changes; 'new' for a user goal no current UC covers"
+          },
+          "feature": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "description": "for target 'new': the proposed goal, verb first"
+          },
+          "refs": {
+            "type": "array",
+            "description": "the steps / flows the change lands on (S3, A1, E2) — empty when the UC as a whole",
+            "items": {
+              "type": "string",
+              "pattern": "^[SAE]\\d+$"
+            }
+          },
+          "change": {
+            "enum": [
+              "add",
+              "modify",
+              "remove",
+              "new-goal",
+              "rule",
+              "review"
+            ]
+          },
+          "note_rows": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "why": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "note_rows",
+          "with",
+          "existing",
+          "incoming",
+          "severity",
+          "question"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "note_rows": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 1
+          },
+          "with": {
+            "type": "string",
+            "pattern": "^((UC-\\d+(\\s+[SAE]\\d+)?)|BR-\\d+|INT-\\d+\\s+#\\d+|[a-z0-9][a-z0-9-]*\\s+#\\d+)$",
+            "description": "what it contradicts: 'UC-012 S4', 'BR-004', 'INT-009 #3', or '<hub-slug> #<row>' (a pending, not yet drafted requirement)"
+          },
+          "existing": {
+            "type": "string",
+            "description": "what the current requirement says, quoted or tightly paraphrased"
+          },
+          "incoming": {
+            "type": "string",
+            "description": "what this request says"
+          },
+          "severity": {
+            "enum": [
+              "blocking",
+              "minor"
+            ],
+            "description": "blocking: both cannot be true, someone must choose; minor: compatible but needs a wording or scope check"
+          },
+          "question": {
+            "type": "string",
+            "description": "ONE self-contained decision question naming both sides"
+          },
+          "owner": {
+            "enum": [
+              "client",
+              "team"
+            ]
+          }
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "text",
+          "kind"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "unclear",
+              "gap",
+              "impact"
+            ],
+            "description": "unclear: the request can be read two ways against the current spec · gap: a detail implementation needs that nobody stated · impact: the request silently changes something else the client should confirm"
+          },
+          "owner": {
+            "enum": [
+              "client",
+              "team"
+            ]
+          },
+          "about": {
+            "type": "string",
+            "description": "UC-### S#, BR-###, or a note row '#3'"
+          },
+          "note_rows": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    }
+  }
+}

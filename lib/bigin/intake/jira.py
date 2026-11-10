@@ -42,7 +42,10 @@ import re
 from ..ids import mint_int
 from ..util import EngineError, load_json, today
 
-PHASES = ("active", "scope-agreed", "dev", "done", "ignore")
+PHASES = ("active", "scope-agreed", "dev", "done", "ignore", "withdrawn")
+# withdrawn — the client removed the request (Cancelled, Won't Do, Rejected …): the sweep withdraws the
+# note (analysis.withdraw) so nothing it asked for stays in the spec. A deleted ticket cannot be fetched at
+# all: the skill runs `bigin note withdraw` for it instead.
 RELEASED = ("dev", "done")  # a ticket in these phases is clear: a UC built from it may be approved
 # changelog fields worth a block; summary/description revisions arrive as description blocks instead
 FIELDS = {"status", "issuetype", "parent", "labels", "priority", "fixversions", "resolution",
@@ -612,6 +615,9 @@ def render_sprint(res):
             lines.append(f"  {k}: {', '.join(res[k])}")
     if res["to_fetch"]:
         lines.append(f"  to_fetch (no note yet — fetch + capture now): {', '.join(res['to_fetch'])}")
+    if res.get("withdrawn"):
+        from ..analysis import render_withdraw
+        lines.append("  " + render_withdraw(res["withdrawn"]).replace("\n", "\n  "))
     lines += [f"  ! {w}" for w in res["warnings"]]
     return "\n".join(lines)
 
@@ -629,7 +635,7 @@ def capture(vault, raw_path, dry=False):
                                    f"## Jira status mapping — treated as active"]
     res = {"key": key, "type": t["type"], "status": t["status"], "phase": phase, "warnings": warnings,
            "new_blocks": 0, "unknown_authors": []}
-    if note is None and phase == "ignore":
+    if note is None and phase in ("ignore", "withdrawn"):
         return dict(res, action="ignored", id=None, path=None)
     have = note.fm_list("source_ids") if note is not None else []
     evs, sides = events(vault, t, have)
@@ -691,13 +697,23 @@ def capture(vault, raw_path, dry=False):
         note.fm_set("jira_sprint", wl[0])
     if res["unknown_authors"] and "needs-review" not in note.fm_list("tags"):
         note.fm_set("tags", note.fm_list("tags") + ["needs-review"])
-    if blocks and (note.fm_get("kind") or "") != "info":
+    gone = (note.fm_get("status") or "") == "withdrawn"
+    if blocks and (note.fm_get("kind") or "") != "info" and not gone and phase != "withdrawn":
         note.fm_set("status", "raw")
+    if gone and phase != "withdrawn":
+        warnings.append(f"{key}: the note is withdrawn but the ticket is '{t['status']}' again — not re-opened; "
+                        f"if the client reinstated it, capture it as a new request")
     note.fm_set("updated", today())
     _history(note, f"jira sweep {key} ({t['status']} → phase {phase}): {len(blocks)} new block(s)"
              + ("; note re-opened (status: raw)" if blocks else "")
              + ("; ticket reached dev — its use cases may now be approved" if res.get("released") else ""))
     vault.write(note)
+    if phase == "withdrawn" and not gone and not dry:
+        from ..analysis import withdraw
+        vault.forget(note.path)
+        res["withdrawn"] = withdraw(vault, nid, f"Jira {key} moved to '{t['status']}'",
+                                    by=f"Jira sweep {today()}")
+        return dict(res, action="withdrawn", id=nid, path=vault.rel(note.path))
     return dict(res, action="appended" if blocks else "updated", id=nid, path=vault.rel(note.path))
 
 

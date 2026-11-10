@@ -1,14 +1,14 @@
 ---
 name: extract-signal
-description: This skill should be used when the ask is to extract signals, process the intake queue, drain 00-Inbox, or map intake to features. Drains the raw intake queue in 00-Inbox — extracts each communication-mode INT-### note's signals into a flat raw record on the note, audits that record against the source where the audit is owed, then anchors every signal to a FEATURES.md slug and files it onto that feature's Signal Log grouped by functional theme. Agents return JSON; the engine (`scripts/bigin`) does every write. A signal that can't be anchored raises a written question instead of a guess. Codebase-mode notes are imported by `/bigin-intake` (`bigin intake codebase`) and never come here. Never drafts or edits a UC.
+description: This skill should be used when the ask is to extract signals, process the intake queue, drain 00-Inbox, map intake to features, analyse what a ticket impacts or contradicts, or withdraw a request the client removed. Drains the raw intake queue in 00-Inbox — extracts each communication-mode INT-### note's signals into a flat raw record on the note, audits that record against the source where the audit is owed, anchors every signal to a FEATURES.md slug and files it onto that feature's Signal Log grouped by functional theme, then analyses the filed note against the current requirements (affected features/UCs, conflicts, unclear points → the note's ## Analysis). Agents return JSON; the engine (`scripts/bigin`) does every write. A signal that can't be anchored raises a written question instead of a guess. Codebase-mode notes are imported by `/bigin-intake` (`bigin intake codebase`) and never come here. Never drafts or edits a UC.
 argument-hint: "[resume <run-id>]"
 disallowed-tools: AskUserQuestion
 ---
 
 # Extract Signal
 
-Per `INT-###` note in `00-Inbox`: extract → audit (when owed) → file. Extract stage of extract → transform →
-load. Never drafts or edits a UC or BR. **LLM for judgement, the engine for every write:** agents read a compact
+Per `INT-###` note in `00-Inbox`: extract → audit (when owed) → file → analyse. Extract stage of extract →
+transform → load. Never drafts or edits a UC or BR. **LLM for judgement, the engine for every write:** agents read a compact
 worklist and return one JSON file; `scripts/bigin` validates and writes it.
 
 `bigin` below is the shell function `bigin() { python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" "$@"; }` (`python3` if no
@@ -35,6 +35,7 @@ Row counts won't match, and shouldn't. Every later stage reads the raw record; n
 ```text
 for note in 00-Inbox/INT-*.md (skip _attachments/), frontmatter ONLY:
     kind == info or source == codebase     → skip
+    status == withdrawn                    → skip (the client removed it — § Withdrawal)
     status == raw                          → queue (fresh)
     status == needs-clarification          → queue (fold-in) if a "- [ ] Q:" was newly ticked, else park
     else                                   → skip (in-review = consumed)
@@ -61,7 +62,8 @@ Workflow(scriptPath: "_runs/RUN/workflows/extract.js",   # staged by `run new`; 
 Per note, in parallel: `worklist extract` → `signal-extractor` → `ingest` + `note write-signals`; when the
 extractor reports `audit_owed`: `worklist audit` → `signal-auditor` → `note audit-apply`. Then filing, **serially**
 (a later note's theme may extend a row an earlier note just filed): `worklist file` → `signal-filer` → `ingest` +
-`file apply`. Then `lint --full` and `coverage --stage file`. Resume = re-run with the same `run`
+`file apply`. Then analysis per filed note (agents in parallel, applies serially): `worklist analyze` →
+`intake-analyst` → `ingest` + `note analysis-apply`. Then `lint --full` and `coverage --stage file`. Resume = re-run with the same `run`
 (completed tasks are skipped via `run done`), or the Workflow tool's `resumeFromRunId`.
 
 **Without it (B.5 fallback)** — the same steps, one `Agent` call per judgement task:
@@ -75,6 +77,8 @@ for note in queue:                                   # extractors may run 4 at a
   owed → bigin worklist audit <INT> --out … ; Agent(signal-auditor) ; bigin ingest … --kind audit ; bigin note audit-apply <out>
   bigin worklist file <INT> --out … ; Agent(signal-filer) ; bigin ingest … --kind filing ; bigin file apply <out>
   bigin run record RUN --task filed:<INT> --status ok
+  bigin worklist analyze <INT> --out … ; Agent(intake-analyst) ; bigin ingest … --kind analysis ; bigin note analysis-apply <out>
+  bigin run record RUN --task analysed:<INT> --status ok
   bigin metrics add --run RUN --stage extract --task <INT> --agent <name> --usage "<usage block>"   # per agent
 bigin lint --full ; bigin coverage --stage file
 ```
@@ -91,6 +95,13 @@ row cites) → dispatch `signal-filer` in hub-repair mode scoped to exactly thos
 **Declared slug with no FEATURES.md row.** `file apply` refuses it; add the `proposed` row yourself (the
 declared-slug exception, and the only FEATURES.md write this skill makes), then re-run `file apply`.
 
+**Analysis.** After filing, `intake-analyst` reads the note against the current requirements of every feature it
+anchored to and returns what the request changes, what it contradicts and what is still unclear or missing for
+implementation. `note analysis-apply` rewrites the note's engine-owned `## Analysis`, adds each conflict and
+question to `## Open Questions` (add-only; a new one parks the note `needs-clarification`), and holds every
+**blocking** conflict's note row and hub row at `conflict` so transform drafts nothing over the current spec.
+It is not a gate: a failed analysis is reported and the run goes on. Rules: `_bigin/stages/extract/4-analysis.md`.
+
 **New hubs.** `file apply` reports `hubs_created`. For each, run `3-filing.md` § Step 2a (domain research) and
 append its `## Domain Research` entry — the one write this skill still makes itself.
 
@@ -106,6 +117,12 @@ append its `## Domain Research` entry — the one write this skill still makes i
 - **Questions are add-only; ticking needs a filled `A:`.** An answer folds back to the note that asked (`answers`).
 - **Never touch a UC or BR.** Hubs and the three registers only — and only through `file apply`.
 - **Resume = re-run.** The vault and `_runs/<id>/results.jsonl` are the only state.
+- **A removed request leaves the spec, with its reason — per ticket or per feature.** A cancelled ticket →
+  `bigin note withdraw <INT> --reason "<their words>" [--by "<who, where, date>"]` (a Jira status mapped to
+  `withdrawn` does it on the sweep). A dropped feature → `bigin feature withdraw <slug> --reason … --by …`. Never
+  withdraw a meeting or email note, never delete a note or a row, never hand-edit a UC to take content out:
+  applied rows become `retract` and the next transform run removes them through change sets
+  (`4-analysis.md` § Withdrawal — a removed request leaves the spec).
 
 ## Stage 3 — Report
 
@@ -115,6 +132,7 @@ sources:   INT-###: N/N blocks read · unread: <what + why | none>
 mix:       INT-###: as-is N · pain N · to-be N · derived N · why stated N of M (X% not stated)
 audit:     INT-###: <self | independent (<trigger>)> — gaps N, narrowed N, inversions N, conflicts N
 filed:     <slug>: N signals in M themed rows (#a-#b) · new hubs: <slugs + research entry>
+analysis:  INT-###: affects UC-### (S#), BR-###, new goal "<title>" · conflicts N (blocking N: held <slug> #n) · questions N
 registers: PP minted <ids> · PP matched <ids> · entities N · design N
 parked:    INT-### awaiting an answer (N open) · awaiting a feature mapping
 gate:      bigin lint --full: clean | repaired (<what>) | UNAVAILABLE (<why>) · coverage --stage file: missing N
@@ -124,5 +142,5 @@ tokens:    bigin metrics report --run RUN
 ## Additional resources
 
 - `references/agent-dispatch.md` — the prompt shape for each agent in the fallback loop, and the audit-owed test.
-- `cards/extractor.md`, `cards/auditor.md`, `cards/filer.md` — what each agent reads (≤ 3 KB each).
+- `cards/extractor.md`, `cards/auditor.md`, `cards/filer.md`, `cards/analyst.md` — what each agent reads (≤ 3 KB each).
 - `_bigin/stages/extract/` — the human reference the cards are derived from.

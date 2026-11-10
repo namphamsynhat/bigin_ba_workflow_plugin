@@ -91,9 +91,15 @@ def _rows(vault, slug, statuses, only=None):
 
 def route(vault, slug, args=None):
     only = set(args.rows.split(",")) if args is not None and getattr(args, "rows", None) else None
-    rows = _rows(vault, slug, {"new", "held"}, only)
+    rows = _rows(vault, slug, {"new", "held", "retract"}, only)
+    if only:  # Stage 2 hands over its qualified rows; a retract row is never qualified, so it always rides along
+        rows += [r for r in _rows(vault, slug, {"retract"}) if r["row"] not in only]
     hub = vault.load(vault.hub_path(slug))
     extra = set(args.uc.split(",")) if args is not None and getattr(args, "uc", None) else set()
+    for r in rows:
+        if r["status"] == "retract":
+            r["retract"] = _retract_info(vault, slug, r)
+            extra |= set(re.findall(r"\bUC-\d+\b", r["destination"] or ""))
     cands, index = [], []
     for p in vault.uc_paths():
         d = vault.load(p)
@@ -114,6 +120,29 @@ def route(vault, slug, args=None):
             "hub": {"name": hub.fm_get("name"), "status": hub.fm_get("status")},
             "rows": rows, "candidates": cands, "brs": brs, "uc_index": index,
             "output": {"phase_a": "route", "phase_b": "changesets"}}
+
+
+def _retract_info(vault, slug, row):
+    """What a ``retract`` row must take back out, and which live rows still want the same content (those
+    keep it: the router re-traces instead of dropping). A retract row's source note was withdrawn."""
+    ints = sorted(set(re.findall(r"\bINT-\d+\b", row["source"] or "")))
+    reason = ""
+    for n in ints:
+        if vault.find(n):
+            d = vault.load_id(n)
+            reason = f"{n} withdrawn {d.fm_get('withdrawn') or ''}: {d.fm_get('withdrawn_reason') or 'no reason recorded'}"
+    refs = set(re.findall(r"\b(?:UC-\d+(?:\s+[SAE]\d+)?|BR-\d+)", row["destination"] or ""))
+    still = []
+    for s2 in vault.slugs():
+        sd = model.signal_doc(vault, s2)
+        for r in model.signal_rows(sd) if sd else []:
+            if (s2, r.num) == (slug, row["row"]) or r.status not in ("applied", "staged", "new", "held"):
+                continue
+            mine = set(re.findall(r"\b(?:UC-\d+(?:\s+[SAE]\d+)?|BR-\d+)", r.destination or ""))
+            if mine & refs:
+                still.append({"hub": s2, "row": r.num, "signal": (r.get("Signal") or "")[:200], "status": r.status,
+                              "destination": r.destination})
+    return {"reason": reason, "remove_from": sorted(refs), "still_wanted_by": still[:10]}
 
 
 def adjudicate(vault, slug, args=None):
@@ -274,8 +303,9 @@ def split(vault, uid, args=None):
 
 
 def build(vault, stage, scope, args=None):
+    from .analysis import worklist as analyze
     fn = {"route": route, "adjudicate": adjudicate, "extract": extract, "audit": audit, "file": file_,
-          "release": release, "split": split}.get(stage)
+          "analyze": analyze, "release": release, "split": split}.get(stage)
     if not fn:
         raise EngineError(f"no worklist for stage '{stage}'")
     return fn(vault, scope, args)

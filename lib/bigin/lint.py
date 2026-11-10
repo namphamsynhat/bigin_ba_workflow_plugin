@@ -75,8 +75,9 @@ ARTIFACT_STATUSES = {
 }
 SIGNAL_STATUSES = {
     "new", "held", "staged", "applied", "question", "conflict", "superseded", "rejected",
+    "retract", "withdrawn",
 }
-NOTE_STATUSES = {"raw", "needs-clarification", "in-review"}
+NOTE_STATUSES = {"raw", "needs-clarification", "in-review", "withdrawn"}
 
 # Retired or never-existent values worth naming explicitly when we see them, because
 # each one is a documented past bug rather than a typo.
