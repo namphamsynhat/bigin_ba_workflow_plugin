@@ -17,10 +17,10 @@ import tarfile
 
 from . import model
 from .util import EngineError, dump_json, now_stamp, sort_ids, today
-from .vault import PLUGIN_ROOT, Doc, strip_comments
+from .vault import q_clean, PLUGIN_ROOT, Doc, strip_comments
 
 LEGACY_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "legacy_templates")
-STEPS = [("1.9.0", []), ("1.10.0", ["discussion-to-ledger"]), ("1.12.0", ["strip-guidance", "split-signal-log"]), ("1.12.1", []), ("1.12.2", []), ("1.12.3", []), ("1.12.4", []), ("1.13.0", []), ("1.13.1", []), ("1.13.2", []), ("1.13.4", []), ("1.13.5", [])]
+STEPS = [("1.9.0", []), ("1.10.0", ["discussion-to-ledger"]), ("1.12.0", ["strip-guidance", "split-signal-log"]), ("1.12.1", []), ("1.12.2", []), ("1.12.3", []), ("1.12.4", []), ("1.13.0", []), ("1.13.1", []), ("1.13.2", []), ("1.13.4", []), ("1.13.5", []), ("1.14.0", [])]
 
 
 def _v(s):
@@ -218,7 +218,7 @@ def discussion_to_ledger(vault, dry=False):
                     tr["xr"] = e["xr"]
                 cs = {"id": f"cs-mig-{d.id}-{k + 1}-{j + 1}", "trace": tr, **b}
                 if gate_q and b["op"] not in MECHANICAL:
-                    cs["gate"] = {"question": re.sub(r"\s*\((owner|ref):[^)]*\)", "", gate_q).strip(), "blocks": True}
+                    cs["gate"] = {"question": q_clean(gate_q), "blocks": True}
                 sets.append(cs)
             per_art.setdefault(d.id, []).append((e, [f"cs-mig-{d.id}-{k + 1}-{j + 1}" for j in range(len(bodies))]))
             plan.append({"artifact": d.id, "entry": k + 1, "changesets": len(bodies), "gated": bool(gate_q)})
