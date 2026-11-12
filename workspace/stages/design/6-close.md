@@ -7,124 +7,104 @@ out:  absorbed: stamped · statuses set from a live count · hubs refreshed · n
 never: a status decided in Stages 1-5 · an absorbed: entry for a UC with no screen
 ```
 
-## Part 1 — Stamp `absorbed:`, and only for real work
+Extend the navigation map first (`2-navigation.md` § Part B) — the close below stamps its version.
+
+## Part 1 — Before the engine closes: what only you can write
 
 ```text
-per UX spec:
-    designed = the UCs that got a screen row in ## 2 THIS RUN (check the file, not the report)
-    absorbed: = [UC-###@<version>, …]   for every UC in `designed`, re-stamped WHOLE
-    a UC in the hub's uc: but not in `designed` → stays OFF absorbed:
-                                                 → named in ## 6 as not yet designed
-    nav_map:       = {nav_map_file}'s version, as it stands now
-    engine:        = the METHOD layer Stage 1 detected (wds | figma | <plugin> | built-in).
-                     NOT a renderer — nothing in this skill renders. What actually rendered this
-                     spec, if anything ever does, is `/bigin-render-design-od`'s to write into ## 8
-    platform:      = the project config's platform, as Stage 1 announced it (web | mobile | both;
-                     absent in the config → web) — UNLESS a UC, a hub ## Design Directives row, or an
-                     active DESIGN-PRINCIPLES row EXPLICITLY stated a platform for THIS feature, in
-                     which case that value, and the citation goes on ## 1's Platform line. Never
-                     re-read the config to decide it, never infer it from a step's wording (check 12)
-    relationship_model: = modelled ONLY IF ## 7 exists AND carries rows. Read the section on disk;
-                          a worker that reported `modelled` and wrote an empty ## 7 gets `none`
-                          and its ## 7 deleted (checks 9-11)
-    sources:       = every UC/BR/EN/PP id, DESIGN-PRINCIPLES row #, and hub directive # used
-    features:      = the owning slug first, then every other slug these screens touch
+per UX spec this run touched:
+  ## 6 Open Questions   finished — every gap Stages 3-5 raised is an unchecked "- [ ] Q<n>:" line
+  sources:              every UC/BR/EN/PP id, DESIGN-PRINCIPLES row #, and hub directive # used
+  features:             the owning slug first, then every other slug these screens touch
+                        (the close writes a pointer on EVERY hub named here — a participant hub with
+                         no pointer reads as undesigned and comes back on the next work-list)
+  engine:               the METHOD layer Stage 1 detected (wds | figma | <plugin> | built-in) — NOT
+                        a renderer; what rendered a spec is /bigin-render-design-od's to write in ## 8
+  platform:             the dispatched value; an override only where ## 1's Platform line cites the
+                        directive or principle that EXPLICITLY stated it
+
+per hub ## Design Directives row a screen REALLY implements:
+  Status open → reflected · Notes: "reflected in UX-### <screen>"
+  a row no screen implements STAYS open. Never flip it to look complete: reflected means a screen
+  implements it, not that it was in the worklist.
 ```
 
-Re-stamp the **whole** list every run. A partial stamp is worse than none: the spec then claims to
-reflect a version of a UC it never read.
-
-A run that stopped halfway (context, a failed subagent) stamps only what landed and stays
-`needs-clarification`. A 60%-designed feature must never read as finished.
-
-## Part 2 — Set every status from a live count
+## Part 2 — Close each feature
 
 ```text
-per UX spec, in this order:
-1  finish writing ## 6 Open Questions
-2  RE-COUNT the unchecked "- [ ] Q:" lines BY READING THE SECTION ON DISK
-3  count > 0 → status: needs-clarification
-   count = 0 → status: draft
-   never     → accepted (human-only, D5) · superseded (only when another UX replaced this one)
+bigin design close <slug> --run <run>        per feature that owns a UX spec this run touched
 ```
 
-The navigation map gets no status — bump `version`, append `## Changelog`, done.
-
-## Part 3 — Refresh each hub
-
-Per feature that owns a UX spec, **and** every other slug named in that spec's `features:`:
+From the file on disk — never from a worker's report — it:
 
 ```text
-## UX Spec              → [[UX-### <Feature>]] — <status> — <N> screens — updated <date>
-uiux:                   → UX-###
-## Design Directives    → rows a screen really implements: Status open → reflected
-                          Notes: "reflected in UX-### <screen>"
-                          a row NO screen implements STAYS open. Never flip it to look complete.
-## Open Questions / Gates → one line per design question, the SAME sentence as ## 6
-## Notes / History      → one dated bullet: what was designed, from which UCs, and which PP-###
-                          a flow now resolves — named, never marked
-## Changelog            → one line
-
-NEVER TOUCH             Signal Log · ## Pain Points · ## Requirement Readiness · status: · uc: ·
-                        br: · FEATURES.md · PAIN-POINTS.md
+absorbed:      re-stamped WHOLE: every use case this feature owns that has ≥1 ## 2 screen row, at its
+               live version. A use case with no screen row stays OFF, is listed as `not designed`,
+               and keeps the spec at needs-clarification — a 60%-designed feature never reads as done
+status:        needs-clarification if any "- [ ] Q" is open in ## 6 (or a use case is not designed),
+               else draft. Never accepted (human-only, D5) and never superseded
+nav_map:       the navigation map's version as it stands
+relationship_model: `modelled` over an empty or absent ## 7 becomes `none`
+each hub in features:   ## UX Spec pointer line + uiux:
+the owning hub          every open ## 6 question mirrored into ## Open Questions / Gates, tagged
+                        (ref: UX-### § 6 Q<n>) — one question, two places, never two questions —
+                        and one dated ## Notes / History bullet
+each designed UC that is NOT approved   ONE ## Discussion line: "screens for this flow are drafted".
+                        An approved UC gets nothing (D4): the hub pointer is the flow-back
+stale:         cleared, by `bigin cascade`
+the run        `designed:<slug>` recorded, so a resumed run skips this feature
 ```
 
-**A pain-point row is named, never closed.** A flow resolving `PP-004` says so in the hub's
-`## Notes / History` line and in the UX spec's `## 4` `Resolves` cell. It never fills that row's
-`Resolved by` cell, never changes its status, and never touches `PAIN-POINTS.md` — the register is
-the requirement side's, and `/bigin-transform-signal` is what closes a row
-(`design-core.md` § Write map).
+It is idempotent — run it again after a repair. It never touches the Signal Log, `## Pain Points`,
+`## Requirement Readiness`, a hub's `status:` / `uc:` / `br:`, `FEATURES.md`, or `PAIN-POINTS.md`.
 
-## Part 4 — The one line back to the requirement
+**A pain-point row is named, never closed.** A flow resolving `PP-004` says so in its `Resolves` cell;
+`/bigin-transform-signal` is what closes the row (`design-core.md` § Write map). The navigation map
+gets no status — bump `version`, append `## Changelog`, done.
 
-```text
-per UC designed this run:
-    UC status is NOT approved  → append ONE line to its ## Discussion:
-        - **UX-###** (<date>): screens for this flow are drafted — <N> screens, see
-          04-UIUX/UX-### <Feature>.md. Supporting evidence, no requirement change proposed.
-    UC status IS approved      → write NOTHING on the UC. The hub pointer is the flow-back.
-```
+## Part 3 — Nineteen checks, every run
 
-Nothing else on the UC, ever (D4). Not a step, not a rule, not a question, not a version bump.
+`bigin design close` ends by running the lookups and prints them. **A `BLOCK` line is blocking:**
+repair (a scoped worker for anything inside a screen block), re-run the close, then report. A
+`confirm` line is a heuristic — open only the block it names and decide.
 
-## Part 5 — Nineteen checks, every run
+**The engine runs these** — do not repeat them by eye:
 
-Each is a real failure that otherwise reports as success. **A mismatch is blocking:** repair,
-re-check, then report.
+| # | Check |
+|---|---|
+| 1 | every `absorbed:` entry names a UC with ≥1 screen row in `## 2` |
+| 2 | every `Serves` cites a step or flow that exists and is not removed; every inventory row has a `## 3` block and the reverse |
+| 3 | every `Role` is on the closed list or blank; one `primary action` per screen |
+| 4 | no hex, px, font name or `--token` id in a screen spec (D2) |
+| 5 | every open `## 6` question is on the hub |
+| 6 | `status` matches the live open-question count |
+| 7 | no `## Prototype Prompt` heading remains |
+| 9 | `relationship_model:` matches `## 7` on disk |
+| 12 | frontmatter `platform:` equals `## 1`'s Platform line |
+| 13 | every Regions / Layout line uses its platform's vocabulary |
+| 14 (half) | `actors:` and the Actor & Scope table hold the same roles; every row carries a ground |
+| 15 | every screen has an Actor and a Volume; a `many` screen has a find mechanism, its five volume states and a real number |
+| 16 (flag) | each bulk / export / select-all / saved-view / subscription mention with no UC or BR on its line |
+| 17 | `### Coverage` exists, every row's verdict is well-formed, `covered` has a `Covered by`, a `gap` points at an open question, every step, flow, rule and pain point has a row, no pain point is `covered` without a flow naming it; `### Flow Review` has its rows |
+| 18 | every `View ID` is present, `<slug>-<screen-kebab>`, and unique across every spec |
+| 19 | every `Screen Type` is one of the four and agrees with the nav map's `(Landing)` / `(Drill-down)` tags |
+
+**These need a reader** — they are yours, every run:
 
 | # | Check | Why |
 |---|---|---|
-| 1 | every `absorbed:` entry names a UC with ≥1 screen row in `## 2` | a stamped-but-undesigned UC makes the feature read as finished forever |
-| 2 | every screen's `serves` cites an `S#` that exists in that UC and is not removed | a screen serving a deleted step serves nothing |
-| 3 | every element's `Role` cell holds a role from the closed list in `design-screens.md` § Semantic style roles, or is blank; and no screen carries two `primary action` elements | an invented eleventh role is a one-screen vocabulary nothing downstream can map, and two primary actions means the screen is really two screens, or one of them was never primary |
-| 4 | no raw colour, size, or font value — and **no `--token` id** — in any screen spec | D2. A hex pins a value nobody stated; a token id cites a design system this vault does not have, so it resolves to nothing and a render engine quietly picks its own |
-| 5 | every question in `## 6` is mirrored on the hub, same sentence, and is not already open on the UC's `## 5` | one question, two places — never two questions |
-| 6 | each UX spec's `status` matches its live unchecked-question count | the invariant Part 2 exists to hold |
-| 7 | **no `## Prototype Prompt` heading remains** in any spec this run touched | those blocks were a second, hand-written copy of the screens beside them, inlining token values that no longer exist anywhere. `/bigin-render-design-od` builds its own prompt from `## 1`–`## 5` plus the UCs, BRs, and entity register — a leftover block is a stale spec a human may paste in good faith (`3-screens.md` § Adopting an existing UX spec deletes them) |
-| 8 | `{nav_map_file}` lost nothing: no entry deleted, and no `id` changed **in place** — a Stage 4 re-nest adds the new row and retires the old one in § Removing an entry. Every entry's `Points to` (when not "—") names a screen that really exists in an actual UX spec; every entry whose `id` has a dot has a parent `id` that also exists **in the same `## Structure` section** (on `both`, the two shells are two trees — an `id` is unique within its own section, not across both) | D1, and either an orphaned menu entry (dead link) or an orphaned branch (a child with no parent row) reaches a client looking like real IA. An `id` edited in place silently un-points every screen spec citing the old path |
-| 9 | `relationship_model:` matches `## 7` **on disk**: `modelled` ⟺ `## 7` exists with ≥1 row in any of its four tables; `none` ⟺ `## 7` is absent or was deleted | an empty `## 7` reads as "the relationship was considered and there is none" when nobody looked — and a `modelled` flag over no rows makes the next run skip the work |
-| 10 | every **Memory Architecture** row names an `EN-###` field that really exists in that entity's field list, and every filled **stage 3 — autonomous** cell cites a `BR-###` that really exists | D7. A memory over no stored field is a relationship the system cannot have; an ungranted autonomous cell reaches a prototype as the agent acting alone, with nobody having decided it may |
-| 11 | every gap `## 7` produced (an unstated autonomy ceiling, retention rule, memory owner, wrong-answer path, or learning disclosure) is an unchecked `- [ ] Q:` in `## 6` marked as a requirement gap | the gaps are the section's main output. Found and not written down, they are worse than never looked for — the run reports a relationship model that quietly assumed all five |
-| 12 | the spec's `platform:` **and** its `## 1` **Platform** line hold the same value, and that value is the project config's — or both name the same per-feature override and cite the UC, directive, or principle that **explicitly stated** it | a spec silently on the wrong platform produces a prototype in the wrong shell: right screens, right copy, wrong product. Nothing else in the run catches it — every check above passes on a phone spec built for a web project — and it reaches the client as a decision somebody appears to have made |
-| 13 | every screen spec's `Regions` (or its `Layout — …` lines) uses **that platform's** vocabulary — web `header / nav / main / aside / footer`, mobile `header / content / tab-bar / sheet / fab` — and on `both`, every `Layout — Web` / `Layout — Mobile` split is a real difference, not the same block written twice | the wrong vocabulary asks a tool to build a shell the platform does not have (a `tab-bar` on a web screen, a `nav` on a phone one), and a duplicated split reads as a considered difference — so the next run maintains two copies of one layout and they drift |
-| 14 | the frontmatter `actors:` list and the `## 1` **Actor & Scope** table hold the same roles, in the same bands; every row names an actor that really appears in an in-scope UC's `## 1`; and every one of its three cells carries a ground that really exists (a `BR-###`, a UC step, or an `EN-###` cardinality) — no row for an actor no UC names | an invented actor is an invented persona, and every screen designed for them is scope nobody asked for wearing an owner nobody appointed. A guessed `all` in a scope cell is worse: it hands an actor reach no rule granted, and the client approves it by looking at a prototype |
-| 15 | every screen spec carries an `Actor` and a `Scope` line whose actor appears in the Actor & Scope table; every screen at volume `many` carries **at least one find mechanism** (search, filter, or sort) and all five volume states — `empty`, `few`, `many at real scale` (with the real number named, not "several"), `loading`, `error`; and no screen at volume `one` carries find machinery | a `many` screen without find machinery reviews as finished and collapses on the client's real table — and no other check catches it, because every element on it is properly grounded. A `many` state that never names a number gets prototyped at three rows, which tests nothing the client is worried about |
-| 16 | no screen spec carries a bulk action, an export, a "select all matching", a saved view, or a subscription unless a `UC-### S<n>` or a `BR-###` **really grants it** — and every one that was left out because nothing granted it is an unchecked `- [ ] Q:` in `## 6` marked as a requirement gap | D8, the data-side counterpart of check 10. An ungranted bulk affordance reaches the client in a working prototype, they agree it looks right, and it becomes a requirement nobody wrote or costed — except this one deletes five hundred records at a time |
-| 17 | **`## 4`'s `### Coverage` table and `## 5`'s `### Flow Review` table, together.** Coverage exists and is **whole** (`5-verify.md` wrote it): one row per non-removed `S#`/`A#`/`E#` of every in-scope UC, per screen-constraining `BR-###` they cite, per `EN-###` field their steps read or write, **per unresolved hub `PP-###`**, per open hub directive, and per active principle — every row carrying `covered` (with a real screen **and** state in `Covered by`; for a `PP-###`, a real **flow** and where in it), `gap → ## 6 Q<n>` pointing at a question that really exists and is unchecked, or `out of scope — <reason>` citing something that really says so. And Flow Review is equally whole: one row per `## 4` flow, **never** empty and **never** missing — the built-in walk runs every time, so there is no case where the table is legitimately absent | Stage 5's whole output, and the only check that can catch an **omission**. Every other check on this list runs backward — element to ground — and backward passes cleanly on a spec with an entire exception flow missing: nothing on it was invented, because nothing on it was drawn. A `covered` verdict over an empty `Covered by`, or a `gap` pointing at no question, is the table claiming a coverage nobody checked. The Flow Review half catches the same lie one level up: an empty or missing table records that every journey was walked and found sound when nobody walked one |
-| 18 | every in-scope screen's `View ID` is present, kebab-case, mechanically equal to `<feature-slug>-<screen-name-kebab>`, and **unique across every in-scope spec** | a missing or duplicate id is exactly the guess a render tool was supposed to be spared from making — two screens sharing one id collide into one DOM element the moment both render |
-| 19 | every screen's `Screen Type` holds one of the four closed values (`design-screens.md` § View ID and Screen Type); a screen that is the **first** name in some `{nav_map_file}` row's `Points to` cell (tagged `(Landing)`) is `Primary` there and nowhere else; every **other** name in a `Points to` cell (tagged `(Drill-down)`) is `Drill-down` there; and no nav-map row exists for a screen typed `Wizard` or `Tab` | the nav map and the UX spec are two files written by two different stages that never read each other's write — the tag and the type are the same fact stated twice, and Stage 2 tagging a screen `(Landing)` while Stage 3 called it `Drill-down` (or the reverse) means a render tool reading only one of the two builds the wrong shell around it |
-
-**A `PP-###` row is the one to check hardest.** Every other item on the Coverage table is a step, a
-rule, or a field somebody eventually notices missing. A pain point is the thing everybody assumes
-somebody else handled — and a `covered` verdict naming a screen instead of a flow, or naming a flow
-whose `Resolves` cell never mentions that id, is the table recording that the client's complaint was
-addressed when nobody decided it was.
+| 8 | the navigation map lost nothing: `git diff` it — no entry deleted, no `id` changed in place (a re-nest adds the new row and retires the old one); every `Points to` names a real screen; every dotted `id` has its parent in the same `## Structure` section | D1. An `id` edited in place silently un-points every screen spec citing the old path |
+| 10 | every `## 7` Memory Architecture row names an `EN-###` field that really exists, and every filled stage 3 cell cites a real `BR-###` | D7. A memory over no stored field is a relationship the system cannot have |
+| 11 | every gap `## 7` produced is an unchecked `## 6` question marked as a requirement gap | the gaps are that section's main output |
+| 14 (half) | every Actor & Scope actor really appears in an in-scope UC's `## 1`, and each cell's ground really says what the cell claims | an invented actor is an invented persona; a guessed `all` hands an actor reach no rule granted |
+| 16 | each flagged capability is really granted by the UC step or BR it cites — or it comes off the screen and becomes a requirement gap | D8. An ungranted bulk affordance becomes a requirement nobody wrote or costed |
+| 17 (half) | a `covered` row's `Covered by` names something that is really there — and for a `PP-###`, a **flow** and the moment in it the actor stops experiencing that pain, never a screen name | the engine checks the table's shape, not its truth |
+| 13 (half) | on `both`, each `Layout — Web` / `Layout — Mobile` split is a real difference, not one block written twice | a duplicated split is maintained as two copies and they drift |
 
 Also confirm **every feature Stage 1 put on the work-list was reached**: designed, or skipped with a
-stated reason. A feature the run never got to prints as **pending**, never disappears — otherwise the
-next run's scan and the human both assume it was covered.
+stated reason. A feature the run never got to prints as **pending**, never disappears.
 
-## Part 6 — Report
+## Part 4 — Report
 
 ```text
 mode:      bootstrap | extend — navigation map v<x> (<N> entries)
@@ -166,71 +146,25 @@ next:      human review of UX-### → then, when they want a prototype in front 
            requirement gaps → /bigin-transform-signal
 ```
 
-**Report what the vault says after Part 5, not what the run intended.**
+**Report what the vault says after Part 3, not what the run intended.**
 
 ## Failure modes
 
-- **Stamping `absorbed:` from the report instead of the file.** A subagent that reported success
-  without landing its write leaves a feature permanently reading as designed.
-- **Setting status early.** The most common drift in this vault. Count last, from disk.
-- **Flipping a directive to `reflected` because it was in the brief.** It is reflected when a screen
-  implements it, not when it was read.
-- **Refreshing only the owning feature's hub.** The other features in `features:` read as undesigned.
-- **Editing the UC beyond the one `## Discussion` line.** That is `/bigin-transform-signal`'s job and
-  the human gate exists for a reason.
-- **Dropping a feature out of the report because the run ran out of room.** Pending is a result.
-- **Leaving a nav entry pointing at a screen check 9 never confirmed.** It reaches a client as a
-  menu item with nothing real behind it.
-- **Stamping `relationship_model: modelled` from the worker's report.** Same failure as stamping
-  `absorbed:` from a report: the flag says the relationship was modelled, no future run re-opens it,
-  and `## 7` is empty. Read the section, count the rows.
-- **Passing check 10 by eye.** "Grounded by: the customer entity" is not a field. Open the `EN-###`
-  and find the field name, or the row is a requirement gap.
-- **Letting `## 7`'s gaps stay in `## 7`.** A gap named only in the relationship model is invisible
-  to the human review, to the hub, and to `/bigin-transform-signal`. It has to be a `## 6` question.
-- **Stamping a `platform:` the spec's screens do not actually reflect.** The same class of failure as
-  stamping `absorbed:` from a report: the frontmatter says `mobile`, the regions say
-  `nav / main / aside`, and the prompt block builds a sidebar. Read the screens, then stamp
-  (checks 12-13), or the wrong actor's screen (checks 14-16).
-- **Leaving a `## Prototype Prompt` block in a spec this run touched.** It inlines token values that
-  no longer exist anywhere and describes screens that may since have changed. A BA who pastes it in
-  good faith gets a prototype of a design nobody is maintaining (check 7).
-- **Leaving `### Flow Review` empty or absent.** The built-in walk runs every time; an empty or
-  missing table means the run never actually walked the flows, not that anything was skipped
-  (check 17).
+- **Stamping by hand.** `absorbed:`, the status, the hub pointer and the mirrored questions are the
+  engine's. A hand stamp is the one taken from a worker's report, and a worker that reported success
+  without landing its write leaves a feature reading as designed forever.
+- **Closing before `## 6` is finished.** The status is counted from disk at the moment of the close.
+- **Flipping a directive to `reflected` because it was in the worklist.**
+- **Leaving a participant slug out of `features:`.** That hub gets no pointer and reads as undesigned.
+- **Editing a UC beyond the one `## Discussion` line the close writes.** That is
+  `/bigin-transform-signal`'s job and the human gate exists for a reason.
+- **Treating the engine's OK as the whole of Part 3.** It ran the lookups. Checks 8, 10, 11 and the
+  truth behind 14, 16 and 17 are still unread.
+- **Passing check 17 by its shape.** Open the screen a `covered` row names and find the state; for a
+  `PP-###`, open the flow. A screen name in a pain point's `Covered by` is the subject coming up
+  somewhere, not a journey fixing anything.
 - **Filling a pain point's `Resolved by` cell on the hub or the register.** Both are the requirement
-  side's. A flow that fixes `PP-004` names it; `/bigin-transform-signal` closes the row. Closing it
-  here means a pain point reads as settled on the strength of a design nobody has accepted yet.
-- **Reporting the absent design system as a gap.** There is none by design, and a `design system:
-  missing` line teaches every reader that something went wrong in a run that did exactly what it
-  should.
-- **Reporting a render.** Nothing in this skill renders any more. A `render:` line saying "done",
-  "skipped", or "waived" describes a step that was never part of this run, and a reader takes it as
-  evidence a prototype exists.
-- **Passing check 17 by counting rows.** A `### Coverage` table with the right number of rows and a
-  `covered` verdict over an empty `Covered by` cell is exactly the claim the check exists to refuse.
-  Open the screen it names and find the state — and for a `PP-###`, open the FLOW and find the moment
-  the actor stops experiencing that pain. A screen name in a pain point's `Covered by` is the subject
-  coming up somewhere, not a journey fixing anything.
-- **Leaving a stale check count after adding one.** The header, Part 5's heading, and every other
-  place this file says how many checks there are must agree with the table's last row. A header
-  claiming one number over a table holding another teaches the next run to stop early, and nothing
-  fails — it just quietly never runs the checks that were appended. Grep the count before closing.
-- **Passing checks 14-16 by eye.** "Actor: Admin" in a spec proves nothing on its own — open the UC
-  and confirm that actor is really in its `## 1`, and open the `EN-###` and confirm the cardinality
-  that put the screen in the `many` band. A scope table is exactly as trustworthy as the grounds in
-  its last column, and a guessed `all` looks identical to a read one.
-- **Counting a `many` screen as compliant because it has a filter.** Check 15 wants the find
-  mechanism *and* all five volume states, with the real number named in the `many` one. A filter
-  over a list whose only rendered state is three sample rows is machinery over nothing.
-- **Slugifying a `View ID` at check time instead of reading the one already on the row.** The
-  inventory row is the one place it is minted (`3-screens.md` Part 2); re-deriving it here is how a
-  second slugifier eventually disagrees with the first, and check 18 exists to compare against the
-  row, not to regenerate a value it can then only agree with.
-- **Passing check 18 without actually comparing every in-scope spec's `View ID`s against each other.**
-  A collision between two features' screens is invisible reading one spec at a time — it only shows
-  up as two rows sharing a string.
-- **Passing check 19 by confirming the value is one of the four, without opening `{nav_map_file}`.**
-  A `Screen Type: Primary` row whose screen is actually the 2nd name in some entry's `Points to` cell
-  — tagged `(Drill-down)` there — is exactly the mismatch this check exists to catch, and it is
-  invisible from the UX spec alone.
+  side's.
+- **Reporting the absent design system as a gap, or reporting a render.** There is none by design,
+  and nothing in this skill renders.
+- **Dropping a feature out of the report because the run ran out of room.** Pending is a result.

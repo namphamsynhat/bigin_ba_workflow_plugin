@@ -2,10 +2,9 @@
 
 ```text
 runs: orchestrator, inline, after Stage 4's flow review (or its skip) and BEFORE Stage 6 closes
-in:   each UX spec ON DISK (never a worker's report) + the in-scope UCs' step/flow ids + the BR-###
-      they cite + the EN-### fields those steps touch + each hub's OPEN PAIN POINTS + open hub
-      directives + active principles
-out:  a `### Coverage` table under each spec's `## 4 Flows` · repaired spec rows · new `## 6`
+in:   `bigin design items <slug>` — every requirement item, matched by id against the spec ON DISK
+      (never a worker's report)
+out:  a `### Coverage` table under each spec's `## 4 Flows` · new `## 6`
       questions for what is genuinely not designed
 never: a new screen · a new state · a new field · a new flow · a requirement edit · a status
        (Stage 6 owns it)
@@ -22,67 +21,63 @@ and the flow the client cares about is simply not there. That is the failure thi
 
 **It repairs, it does not design.** An item nothing covers is one of three things, and the difference
 is the whole judgment here: a screen that really does carry it and whose row failed to say so
-(→ fix the row), something genuinely not designed (→ a `## 6` question), or something deliberately out
+(→ its worker records it — Part 2), something genuinely not designed (→ a `## 6` question), or something deliberately out
 of scope (→ a `## 6` line citing what put it out). Drawing the missing screen is Stage 3's job, and a
 verify pass that starts designing has stopped verifying.
 
-## Part 1 — Build the requirement item list, by id, not by body
-
-Do **not** re-read the in-scope UCs in full — Stage 3's workers already did, and a second full read in
-the orchestrator is the context this pipeline fans out to avoid. `Grep` the ids and their one-line
-text:
+## Part 1 — Get the item list, already matched by id
 
 ```text
-per feature designed this run, per in-scope UC (the ones on the Stage 1 work-list as NEW | CHANGED):
-
-  steps       {uc_dir}/UC-### …  ## 2 Main Success Scenario   → every S# row NOT marked removed
-  flows       same file          ## 3 Alternative & Exception  → every A# / E# row NOT marked removed
-  rules       every BR-### those rows cite that constrains WHAT THE ACTOR SEES OR MAY DO
-              (a purely back-office calculation rule constrains no screen — say so once, in the
-               verdict cell, rather than listing every one)
-  fields      every EN-### field a step READS or WRITES — not every field the entity owns. An entity
-              with forty fields whose flow touches four contributes four rows
-  pain points the owning hub's ## Pain Points rows still UNRESOLVED — one row each. This is the only
-              forward check that a design actually addressed what the client said hurt: a UC's steps
-              can be delivered end to end by a journey that leaves every pain point exactly where it
-              was, and nothing else in this pipeline notices
-  directives  the owning hub's ## Design Directives rows still at Status: open
-  principles  {design_principles_file} rows still `active`
+bigin --json design items <slug>          per feature designed this run, BEFORE `bigin design close`
 ```
 
-A **removed** step or flow contributes no row: it is not a gap, it is a step that no longer exists.
-A UC the work-list marked `CURRENT` contributes no row either — its coverage was verified the run that
-designed it, and re-verifying it here would re-open questions a human already closed.
-
-## Part 2 — Match each item against the spec on disk
-
-Read the UX spec's `## 2 Screen Inventory` (its `Serves` column), `## 3`'s screen specs (regions,
-elements, States, Interactions), and `## 4`'s flows (their `Path` and `Resolves` cells). Match by
-**id**, never by resemblance: a screen
-whose `Serves` cell says `UC-003 S4` covers `S4`; a screen that merely looks like it would is not a
-match, and treating it as one is how a step gets signed off unbuilt.
+It lists every requirement item of the feature's NEW / CHANGED / DRAFTED use cases — each `S#`, `A#`
+and `E#` not marked removed, each `BR-###` their § 4 mirrors, each hub `PP-###` still unresolved, each
+open hub directive, each active principle — and, per item, `covered_by`: what an **id match** found.
 
 ```text
-item found in Serves / a State / an element               → covered
-a PP-### named in some flow's `Resolves`                  → covered — and `Covered by` names THE
-                                                            FLOW and where in it, never a screen
-                                                            alone. "It appears on the queue screen"
-                                                            is not a pain point being resolved
-item plainly IS on a screen, but no row says so           → REPAIR the row, then covered
-item is nowhere on any screen of any spec this run        → not designed
-item is excluded by something ON RECORD                   → out of scope, and cite what excluded it
+step / flow    the screens whose ## 2 `Serves` cell cites that id
+rule           the screen blocks that name the BR-###
+pain point     the flows whose `Resolves` cell names the PP-###     ← the only match a pain point gets
+directive, principle   whether the spec cites its number at all
 ```
 
-**A pain point matches only on an explicit `Resolves` cell.** Never by resemblance: a flow that looks
-like it would help with `PP-004` and does not name it is not coverage, it is a hope. Stage 3 Part 4c
-required every open pain point to be named or questioned, so an unnamed one here means that step was
-skipped — raise it, do not repair it by writing the id into a flow yourself.
+A removed step contributes no item, and neither does a `CURRENT` use case: its coverage was verified
+the run that designed it. **Do not rebuild this list by reading the use cases** — that second full
+read in the orchestrator is the context this pipeline fans out to avoid.
 
-**The repair is narrow and it is the orchestrator's.** Add the missing `S#`/`A#`/`E#` to a `Serves`
-cell, name the `BR-###` behind a state that already exists, add an entity field to an element list
-that already renders that entity. That is bookkeeping a worker under-recorded. It is **not** a repair
-to add a state, a screen, an element, or a control — those are new design, and new design is a Stage 3
-dispatch on the next run, never an edit made here (D3).
+One kind is not on the list because no id carries it: the **entity fields a step reads or writes**.
+Check those against the element tables of the screens serving that step — the fields the flow
+touches, never every field the entity owns.
+
+## Part 2 — Settle each item
+
+```text
+matched        → `covered`. Open ONLY the screen block(s) in `covered_by` and name the STATE or
+                 element in the Coverage row — a step served only in an error state and a step
+                 served on the default view are different coverage. A rule matched on a screen that
+                 merely mentions it in passing is not covered: say what enforces it there.
+unmatched      → NOT DESIGNED, by default. It becomes a ## 6 question (Part 3) unless one of:
+                   · something ON RECORD excludes it → `out of scope — <cited reason>`
+                   · a back-office rule that constrains no screen → `out of scope`, said once
+                   · you can point at the element, state or interaction on a named screen that
+                     already does that step's work → send it back (below)
+```
+
+**The verifier does not edit `Serves`.** Adding an id to a `Serves` cell turns "nobody designed this"
+into "covered" with one keystroke, and the context most likely to do it is the one that wants the run
+to finish. When a screen really does carry an unmatched item, the **worker** records it: one scoped
+repair dispatch — *"`UC-### S<n>` is served by no `## 2` row. If an element or state of an existing
+screen already carries it, add the id to that row's `Serves` and name the element; if none does,
+change nothing and say so."* — then re-run `bigin design items`. No pointer you can name → no
+dispatch: it is a question.
+
+**A pain point matches only on an explicit `Resolves` cell,** never by resemblance, and is never
+repaired by writing the id into a flow: an unnamed one means Stage 3 Part 4c was skipped. Raise it.
+
+**What stays a repair of yours** is narrow: naming the `BR-###` behind a state that already exists,
+or adding an entity field to an element list that already renders that entity. Never a state, a
+screen, an element or a control — that is new design, and a Stage 3 dispatch on the next run (D3).
 
 ## Part 3 — What a real gap becomes
 
@@ -94,7 +89,7 @@ not designed, and the answer is a DESIGN call
 
 not designed, and the answer would change WHAT THE SYSTEM DOES
     → the same line, marked as a REQUIREMENT GAP, owner: client
-    → /bigin-transform-signal resolves it. NEVER written onto the UC here (D4) — Stage 6 Part 4's
+    → /bigin-transform-signal resolves it. NEVER written onto the UC here (D4) — Stage 6 Part 2's
       one ## Discussion line is the only thing this skill ever puts on a UC
 
 out of scope

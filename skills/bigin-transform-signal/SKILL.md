@@ -1,7 +1,6 @@
 ---
 name: bigin-transform-signal
-description: >-
-  This skill is used when after /extract-signal has filed signals, or when asked to derive use cases or requirements, write or update a UC, process the signal backlog, qualify signals, or check whether a feature's pending UC/BR changes have been answered. Transforms new/held signals from a Feature Hub into drafted/updated Use Cases (UC), Business Rules (BR), and Design Directives through the bigin engine — agents emit JSON change sets, the engine's apply writes every artifact once, gated changes wait in the ledger on a written question — then checks each touched feature's use-case set as a set, recording what nobody has described as a `## Coverage Gaps` row on the hub. Resumable, never blocking on a live human. It never promotes an Entity (EN) doc — /sync-entities is the only skill that promotes one.
+description: "Turn a feature hub's new/held signals into drafted or updated use cases (UC), business rules (BR) and design directives through the engine — agents emit JSON change sets, `bigin apply` writes them, gated changes wait on a written question — then check whether the feature's use cases add up (Coverage Gaps). Use after /extract-signal, or when asked to derive or update a use case, process the signal backlog, or check whether pending changes were answered. Never promotes an entity."
 argument-hint: "[feature slug, or omit for all pending, or resume <run-id>]"
 ---
 
@@ -61,10 +60,12 @@ Missing `_bigin/conventions/`, `_bigin/stages/`, or `_bigin/templates/` → stop
 scope = $ARGUMENTS slug, else every hub with new/held/conflict/question/retract rows or open ledger entries
 
 1  release   bigin ledger release · re-entry · orphan answers                  [1-foldin.md]
-2  qualify   gate each new/held row; outcomes via bigin hub flip               [2-qualification.md]
+2  qualify   bigin qualify <slug> --apply decides the lookup gates; you read only its
+             `check` rows, then gate 4 (dedup); outcomes via bigin hub flip    [2-qualification.md]
              retract rows skip the gates: their source was withdrawn — route them   [extract/4-analysis.md]
 3  route     uc-router Phase A → bigin mint route → Phase B → change sets      [3-routing.md, 3-lane-*.md]
 4  apply     bigin ingest + apply · adjudicate (code-grounded) · conflict + coverage check
+             (coverage reads `bigin worklist coverage <slug>` — never the UC files)
                                                                               [4-sync.md, 4b-coverage.md]
 5  status    bigin status · hub refresh · coverage · lint --full · report      [5-status.md]
 ```
@@ -86,22 +87,17 @@ Workflow(scriptPath: "<vault root>/_runs/$RUN/workflows/transform.js",   # stage
 Stages 1–2 run before it (they are cheap and mostly engine commands); Stage 5 after it. Between steps
 read only `bigin run summary $RUN` (≤ 20 lines) and the workflow's returned JSON — never agent transcripts.
 
-**Fallback — no Workflow tool.** Run the same loop with `Agent` calls, per feature (features in parallel,
-≤ 4; within a feature sequential) — `references/agent-dispatch.md`:
+Inside the workflow the two router phases are separate dispatches, so each gets its own input: Phase A routes on
+index cards (`worklist route --phase a`), and Phase B drafts on full cards for only the UCs Phase A routed to
+(`--phase b --spec <route.out.json>`).
 
-```text
-bigin worklist route <slug> --out _runs/$RUN/tasks/<slug>.route.in.json
-Agent(uc-router, Phase A) → <slug>.route.out.json ; bigin ingest … --kind route --run $RUN
-bigin mint route --spec _runs/$RUN/tasks/<slug>.route.out.json        # serial, locked
-SendMessage(same uc-router, Phase B) → <slug>.changesets.out.json ; bigin ingest … --kind changesets
-bigin apply _runs/$RUN/tasks/<slug>.changesets.out.json --run $RUN
-grounding codebase|both and conflict/held rows → adjudicate (4-sync.md § Part 3)
-bigin hub refresh <slug>
-```
+**Fallback — no Workflow tool.** Run the same loop with `Agent` calls, per feature (features in parallel, ≤ 4;
+within a feature sequential): `references/agent-dispatch.md` is its one home. There ONE `uc-router` does both
+phases — Phase B is a `SendMessage` to the same agent — so it reads the plain `bigin worklist route <slug>` once.
 
-A schema error from `ingest` goes back to the SAME agent once (SendMessage); a second failure parks the
-feature in the report. After every task notification: `bigin metrics add --run $RUN --stage transform
---task <task> --agent <name> --feature <slug> --usage "<the usage block>"`.
+Cost: `bigin ingest --run` records an estimated metrics row for every agent output. When a task notification
+carries a `<usage>` block, add the measured figure: `bigin metrics add --run $RUN --stage transform --task <task>
+--agent <name> --feature <slug> --usage "<the usage block>"`.
 
 ## Lanes
 

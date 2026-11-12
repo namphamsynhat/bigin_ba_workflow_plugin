@@ -17,4 +17,12 @@ def scaffold(vault, spec_path, dry=False):
     if dry:
         return {"id": "INT-(next)", "path": "(dry)"}
     nid, path = mint_int(vault, spec)
+    blocks = spec.get("blocks") or []
+    if any("[q:" in (b.get("text") or "") for b in blocks):
+        # a reply quoting a pack's [q:xxxxxx] tag is that question's answer — record it for the filer
+        from .. import questions
+        vault.forget(path)
+        d = vault.load(path)
+        if questions.prematch(vault, d, [(f"SRC-{i + 1}", b.get("text") or "") for i, b in enumerate(blocks)]):
+            vault.write(d)
     return {"id": nid, "path": vault.rel(path)}

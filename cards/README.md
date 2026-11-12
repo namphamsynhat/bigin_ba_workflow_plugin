@@ -23,6 +23,5 @@ orchestrating skill passes any relevant override text inside the task input, nev
 | `analyst.md` | intake-analyst | `analysis` |
 | `splitter.md` | uc-splitter | `changesets` |
 | `design-screens.md` | bigin-generate-design screens worker | (writes the UX spec — design stage) |
-| `ux-brief.md` | ux-brief-assembler | Design Brief JSON (schema inline in the card) |
 | `ba-review.md`, `ba-triage.md` | bigin-ba (interactive) | loaded on demand |
 | `client-reviewer.md` | `/client-view review` (and bigin-ba when asked to review as a client) | review note (`templates/client-review.md`) |

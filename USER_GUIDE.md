@@ -2,7 +2,7 @@
 
 This guide gets a Business Analyst from "never touched this plugin" to running the pipeline
 day-to-day. For the deep architecture (why things are built the way they are, subagent
-dispatch, the deterministic lint hook), see [README.md](README.md). This document only covers
+dispatch, the deterministic lint hook), see [docs/PIPELINE.md](docs/PIPELINE.md). This document only covers
 what you need to install it and use it.
 
 ## 1. What this plugin does
@@ -505,7 +505,7 @@ _runs/                     the engine's run records, backups and pre-migration s
 02-PRD/PRD-### <Feature>.md    retired (1.13.0) — older PRDs, kept frozen
 ```
 
-A full field-by-field breakdown lives in [README.md](README.md#workflow).
+A full field-by-field breakdown lives in [docs/PIPELINE.md](docs/PIPELINE.md#workflow).
 
 ### Two ways requirements arrive (v1.12)
 
@@ -569,3 +569,16 @@ by `/bigin-new-project`). Never edit the materialized files under `_bigin/conven
 If you're ever unsure what a command actually does or reads, `/bigin-run` and the `bigin-ba`
 agent both re-read that stage's own `SKILL.md` rather than guessing — you can ask either one
 "what does approve-uc do?" and get the current behavior, not a stale summary.
+
+## Closing the communication loop (new)
+
+- **Quotes.** Every extracted signal carries a verbatim `quote`; rows whose quote is not in the source are flagged `[unverified]`, and source the extractor skipped is re-read once. `bigin coverage --stage extract` shows both figures.
+- **Questions.** `bigin questions list` shows open questions with age and what each blocks; `bigin questions pack` writes paste-ready files to `06-Outbox/` (one per Jira key and owner — client, dev, team); `bigin questions sent <pack>` marks them sent. Keep the `[q:xxxxxx]` tag in the reply and the answer finds its question. Nothing is posted anywhere.
+- **Digest.** `bigin digest --for ba|client|dev [--write]` — what came in, changed, was decided, is waiting; the client version has no ids in its words.
+- **Dev cards.** `bigin card EP-###|US-### [--write]` — one short page per screen (and per back-end process with no screen) for the BA + Dev + QC walkthrough: Before → After with its intake cite, rules, out of scope, open questions, acceptance titles, size counts, and an **AI assumed** list (design-only elements, steps no client signal asked for, declared assumptions) to check first. No model call; `--write` saves `_cards.md` in the epic folder. `dev_card: on` in project.md makes the stories stage write it at close.
+- **Build pack.** `bigin card US-###|EP-### --for agent [--write]` — one self-contained file per story in `_build/` for the dev's coding agent: the story, the UC steps it slices, the full text of its rules, its entities' fields, the prototype files for its screens, a `US-###@version` stamp, and the agent rules (each test named after its AC, stop and ask on a gap).
+- **Estimate sheet.** `bigin card EP-### --estimate` — writes `_estimate.md`: one section per card, one row per scope item (a Before → After row or an AC). The dev fills Task / Hours (with AI) / Notes; refreshing keeps their lines, adds new scope rows, and moves rows whose source disappeared under **Source removed**. The BA checks it row by row against the cards; the dev lead reviews only if the BA still finds it too high.
+- **Jira paste text.** `bigin card EP-###|US-### --for jira [--write]` — paste-ready text per story (Summary, links, Description = the story's cards + AC) in `_jira.md`. A human copies it into Jira; the plugin never creates or edits Jira issues. `/approve-story` offers it at hand-off.
+- **Story advisories.** `bigin lint` now advises when a story looks bigger than one PR (> 8 AC, > 3 screens, > 15 flowchart nodes), when § 1 or an AC title is long (plain English for non-native readers), and when `screens:` names a screen the UX spec does not.
+- **Confluence.** List page ids in `confluence_pages:` in project.md; `/bigin-intake` captures each page as a living note and appends only changed sections.
+- **Quality.** `bigin metrics report --quality`; before releasing a card, schema or model change run `workflows/eval.js` on the golden set in `tests/evals/` and record `bigin eval grade <run>`.

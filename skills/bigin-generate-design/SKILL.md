@@ -46,156 +46,29 @@ end up deciding what the system does.
 
 **It never edits a requirement.** UCs, BRs, entities, and the pain-point register are read-only here
 (D4). The one exception is a single `## Discussion` line on a non-approved UC saying "screens exist
-now" (Stage 6 Part 4).
+now" (Stage 6 Part 2, written by `bigin design close`).
 
 **It is headless, with no halt at all.** No checkpoints, no confirmation prompts, no question put to a
 human mid-run, and nothing that stops it before the work either. So it is unconditionally safe to call
-from `/bigin-ba` or an unattended batch. Only a missing or ahead-of-plugin workspace stops it, as in
+from `/bigin-run` or an unattended batch — but not from inside the `bigin-ba` agent, which cannot dispatch
+workers and never routes to design. Only a missing or ahead-of-plugin workspace stops it, as in
 every skill here.
 
-## Platform
+## The standard lives in the vault, not here
 
-**What is being built — a browser app, a phone app, or both.** It comes from `platform:` in
-`_bigin/system/project.md`'s frontmatter, is read **once**, at Stage 1, by the orchestrator, and is
-passed down to every later stage and every dispatched worker. A worker is *told* it and never
-re-derives it: two workers inferring a platform differently produces one product with two navigation
-shells. It changes the *shape* of a design without changing a single requirement — a UC stays
-platform-blind, and platform never becomes a step, a branch, or a business rule (D4).
+Each rule this skill applies has **one home**, in `_bigin/conventions/` — where a worker can read it
+(a `SKILL.md` sits in the plugin install directory, which a subagent cannot reach). Open the section a
+stage file cites; never work from a summary of it.
 
-```text
-platform: web | mobile | both     field absent → web   (the compatibility default)
-
-drives    screen composition   one web form is legitimately three phone sheets — same steps,
-                               more surfaces
-          the nav shell        a sidebar/nav-bar tree (web) vs a TAB BAR of at most 5 (mobile);
-                               on both, two ## Structure sections in one nav-map file
-          regions vocabulary   web: header/nav/main/aside/footer · mobile: header/content/
-                               tab-bar/sheet/fab — the wrong one asks a tool to build a shell
-                               the platform does not have
-          the render shell     what /bigin-render-design-od builds, LATER, if a human asks for a
-                               prototype — never something this run needs installed
-
-does NOT  the FLOWS. One flow per user goal, per actor — never one per platform. A phone splitting
-drive     a web form into three sheets is the same journey on more surfaces, said inside the flow's
-          own Path line, never as a second flow
-
-per-feature override   ONLY a UC, a hub ## Design Directives row, or an active DESIGN-PRINCIPLES
-                       row that EXPLICITLY STATES a platform for that feature, cited as its ground.
-                       An inference from step wording, or from where an actor sits, is NOT an
-                       override — design to the config value and raise an Open Question.
-```
-
-`design-platform.md` § Platform is the standard; this is the procedure.
-
-## Actor scope
-
-**Platform decides a design's shape; actor scope decides its machinery.** A UC is written
-actor-neutral — "the actor views member information" reads the same whether that actor is one member
-looking at their own record or an administrator working a directory of ten thousand. They are two
-products, and a run that merges them on "same place" ships the member's screen to the administrator.
-
-```text
-three facts per actor, READ never assumed, filled into ## 1's Actor & Scope table before any screen
-is mapped:
-    sees whose records   own | assigned subset | their unit's | all
-                         ground: a BR-### on visibility/permission, a UC ## 1 pre-condition
-    how many             one | few | many (unbounded)
-                         ground: an EN-### relationship cardinality, a BR-### cap, a UC step
-    may act on           read one · act on one · act on MANY at once
-                         ground: a UC step or a BR-###. NEVER the volume — D8
-
-the band decides the machinery
-    one    the record. NO find machinery — nothing to find
-    few    the set, listed whole
-    many   a find mechanism (search|filter|sort) + five volume states (empty · few · many AT REAL
-           SCALE, with the number named · loading · error), grounded by the volume fact itself
-
-the merge rule Part 2 applies becomes conditional
-    volume band differs, or capability differs   → TWO screens, each naming its actor — and TWO
-                                                   FLOWS, because the two actors are on two journeys
-    both agree, only field visibility differs    → ONE screen + a `Visible to` cell citing the BR
-
-D8, the data-side counterpart of D7: volume licenses FINDING, never a CAPABILITY. Bulk edit, bulk
-delete, select-all-matching, export, a saved view — granted by a UC step or a BR-###, or a
-REQUIREMENT GAP in ## 6, owner client. Never a control added because an admin would obviously want
-it.
-```
-
-Nothing on record settles a cell → the **narrowest** reading plus an Open Question. Designing wide
-and asking later means the client approves a reach nobody granted. And actor scope never invents an
-actor: it reads the ones the UCs already name and asks three questions about each — a "power user"
-nobody wrote down is a persona, and a screen for one is invented scope with an invented owner.
-
-`design-actor-scope.md` § Actor scope is the standard; `3-screens.md` Part 2a is the procedure.
-
-## User flows and pain points
-
-**The flows are what this stage exists to get right.** A screen inventory says what exists; a flow
-says how a real person gets from a trigger to an outcome — and it is the artifact a client either
-recognises as their own working day or does not.
-
-```text
-ONE flow per user goal, per ACTOR — never one per platform, never one per screen
-    Entry · Path · Success · Failures · Resolves (a PP-###, or "—") · Steps to goal (a number)
-
-D6  a flow must RESOLVE SOMETHING STATED — a UC goal, or a PP-### it names.
-    a journey that resolves neither is invented, and it is an Open Question, not a row.
-
-every open PP-### on a feature's hub gets an ANSWER: a flow that names it, or a ## 6 question
-saying why none does. Stage 5 matches every one forward and surfaces what was skipped.
-```
-
-**A pain point is ground 1b, and 1b alone grounds nothing.** `PP-004: "reviewers can never find what
-they were working on yesterday"` legitimately puts in-progress items first, gives them `emphasis`,
-pre-selects that filter, and argues for a shallower nav placement. It does **not** ground a "recent
-activity" screen nobody's UC asked for — that is existence, it needs ground 1, and without it the
-pain point becomes a question.
-
-**The register is read-only.** A flow names the `PP-###`; it never fills a `Resolved by` cell, never
-changes a status, and never adds a row. `/bigin-transform-signal` closes a pain point.
-
-`design-navigation.md` § User flows and pain points is the standard; `3-screens.md` Part 4c is the
-procedure.
-
-## Semantic style roles — what replaced tokens
-
-A screen spec says what an element is **for**, never what it looks like. One word, from a closed list
-of ten, in the element table's `Role` cell — or blank, which most elements are:
-
-```text
-primary action · secondary action · destructive · danger · warning · success · info ·
-emphasis · muted · (blank)
-
-ALLOWED     `primary action` · `danger` · `muted`
-FORBIDDEN   `#2563eb` · `16px` · `Inter Semibold` · `--color-action-primary` · `btn-primary`
-            → all four are D2 broken. The first three pin a value nobody stated; the last two cite a
-              system this vault does not have, so nothing resolves them and a renderer picks its own
-```
-
-**A role survives a design system it has never met.** "This is the primary action" stays true
-whichever brand, palette, or component library gets bound later — which is exactly why it survives
-where a token name would not. Exactly one `primary action` per screen; a screen needing an eleventh
-role raises a question rather than inventing one nothing else in the vault can map.
-
-## Screen identity — View ID and Screen Type
-
-Two more facts every `## 2 Screen Inventory` row carries, so a render tool never has to guess a DOM
-id or infer how a screen is reached from prose:
-
-```text
-View ID       "<feature slug>-<screen name, kebab-cased>" — mechanical, unique vault-wide, never
-              re-derived and never changed once minted (`design-screens.md` § View ID and Screen
-              Type)
-Screen Type   Primary | Drill-down | Wizard | Tab — Primary is a screen a navigation-map entry
-              opens directly; Drill-down is reached only via a control on a screen already in the
-              inventory; Wizard is one step of a linked sequence; Tab is one of several parallel
-              views of the same place
-```
-
-`{nav_map_file}`'s own `Points to` cell carries the matching half of this fact: the first screen
-named is always tagged `(Landing)`, every screen after it `(Drill-down)` — so a render tool reads
-which name is the door without inferring it from position. The two are written by different stages
-in different files and are cross-checked, never merged into one write (`6-close.md` checks 18-19).
+| Topic | Home |
+| :--- | :--- |
+| Platform: `web \| mobile \| both`, the default, a per-feature override | `design-platform.md` § Platform |
+| Actor scope: whose records, how many, and when one place is two screens | `design-actor-scope.md` § Actor scope |
+| User flows and the pain points they resolve | `design-navigation.md` § User flows and pain points |
+| Semantic roles — the closed list that replaced tokens | `design-screens.md` § Semantic style roles |
+| View ID and Screen Type | `design-screens.md` § View ID and Screen Type |
+| Grounding: what may put a screen, field or state on a spec | `design-grounding.md` § Grounding |
+| The eight hard rules (D1–D8), paths, the write map | `design-core.md` |
 
 ## Operating modes
 
@@ -258,9 +131,9 @@ states, real copy, semantic roles, a nav shell, reviewed flows, and a coverage t
 
   once a rendered artifact exists, a human MAY manually run a perception-first-design (or similar)
   critique skill against it — a real HTML/CSS artifact is what that kind of tool is built to
-  evaluate, unlike the markdown spec this skill produces. Neither this skill nor
-  /bigin-render-design-od invokes one automatically; it is a follow-up step a human reaches for,
-  when they want it, on their own schedule
+  evaluate, unlike the markdown spec this skill produces. This skill never invokes one.
+  /bigin-render-design-od runs `perception-first-design:evaluate` once, on the assembled prototype,
+  when that skill is installed (a by-eye check otherwise); anything beyond that is a human's follow-up
 ```
 
 **Stage 5 is what guards against the failure a required-engine halt used to guard against** — a design
@@ -307,326 +180,74 @@ requirements already imply, plus the gaps they never settled. See **`references/
 ```text
 scope = $ARGUMENTS slug or UC-###, else every {hub_dir} feature
 
-1  scope     platform, then which UCs are NEW / CHANGED / CURRENT     [1-scope.md]
+1  scope     `bigin design scope` — NEW / CHANGED / CURRENT, gates, platform   [1-scope.md]
 2  nav       seed the navigation shell, shaped by the pain points     [2-navigation.md § Part A]
-3  screens   per feature: brief + actor scope → inventory → specs
-             → FLOWS, each naming the pain point it resolves          [3-screens.md]
+3  screens   ONE WORKER PER FEATURE, always: card + `bigin worklist design`
+             → actor scope → inventory → specs → flows                [references/agent-dispatch.md]
+             `bigin design check <slug> --phase wave` after each wave
 4  review    walk every journey as the actor; improve it in place     [4-flow-review.md]
-             the built-in walk, unconditional, every run
-5  verify    FORWARD coverage: every requirement item AND every open
-             pain point → its screen, state, or flow                  [5-verify.md]
-             + render readiness, so a later render cannot lack input
-6  close     extend the nav map, stamp absorbed, set status, refresh
-             hubs, 17 checks                    [2-navigation.md § Part B, 6-close.md]
+5  verify    `bigin design items` — forward coverage by id, then the
+             judgement the ids cannot make, + render readiness        [5-verify.md]
+6  close     extend the nav map, `bigin design close` per feature,
+             the checks the engine cannot run, the report  [2-navigation.md § Part B, 6-close.md]
 ```
 
 Six stages, in order, every invocation, and **no precondition ahead of them**. **Load a stage file on
-reaching that stage**, not up front.
+reaching that stage**, not up front, and load nothing a stage file does not name: the stage files are
+the procedure, and this file deliberately does not repeat them.
 
-The run ends at a verified specification. A prototype is `/bigin-render-design-od`, whenever a human wants
-one.
+The run ends at a verified specification. A prototype is `/bigin-render-design-od`, whenever a human
+wants one.
 
-## Stage 1 — Scope
+## What the engine does, and what stays yours
 
-**First, the one run-wide fact:** read `platform:` from `_bigin/system/project.md` (absent → `web`,
-`design-platform.md` § Platform). **Announce it** in the Stage 1 output and again in the closeout, saying whether it was
-stated or defaulted. Read once; every later stage and every worker is *told* the value.
+`scripts/bigin` (`python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py"`, fallback `python3`) owns every
+lookup in this stage. A UX spec is 40–110 KB; a model re-reading one to count questions or compare ids
+is the expensive way to do it and the one that gets it wrong quietly.
 
-```text
-per feature: compare each UC's live version against the UX spec's absorbed: list
-    not listed        → NEW       design it
-    listed, older     → CHANGED   redesign its screens
-    listed, same      → CURRENT   skip, and SAY SO
-```
+| Command | Replaces |
+| :--- | :--- |
+| `bigin design scope [slug\|UC-###] [--run R]` | Stage 1's three-way read, the four gates, platform, mode, pain-point counts — and it reports `DRAFTED` / `resume: review` when a dead run left screens on disk |
+| `bigin mint ux --count N` | grepping `04-UIUX/` for the highest id |
+| `bigin worklist design <slug> --out <path>` | the worker reading every UC, BR, entity, the hub, the principles and the nav map whole |
+| `bigin design check <slug> --phase wave` | the wave checklist's lookups (inventory ↔ blocks, served steps exist, roles, raw values, regions, View IDs) |
+| `bigin design items <slug>` | building Stage 5's requirement item list and matching it by id |
+| `bigin design close <slug> [--run R]` | stamping `absorbed:`, the status from the live question count, `nav_map:`, the hub pointer and `uiux:`, mirroring `## 6` onto the hub, the one `## Discussion` line — then the lookup checks |
 
-`absorbed:` is the whole staleness mechanism — `sources:` can never go stale, so it can never answer
-"is this design still current?". Four gates then drop what cannot be designed: no main flow, a
-summary-level UC, a UC owned by another feature, a removed UC.
+**Yours, because they need a reader:** every screen boundary and flow (the worker), the flow review,
+whether an unmatched requirement item is really on a screen, whether a directive is implemented,
+the grounds behind an actor's scope, `## 7` against real entity fields, and each `confirm` finding
+the engine hands back.
 
-A `needs-clarification` UC is **in** scope. Its open questions become known gaps in the brief.
-
-**Mode is keyed on the navigation map**, not on a design system: `{nav_map_file}` absent → bootstrap,
-present → extend. A run that looks for `_design-system/` reads a vault shape this plugin no longer
-produces and reports `bootstrap` forever.
-
-Count each feature's **unresolved pain points** and put the count on its work-list line. A count only
-— the statements are Stage 2's and Stage 3's input, and reading them here spends the context the
-fan-out exists to protect.
-
-## Stage 2 — The navigation map (Part A)
-
-Bootstrap it, or load it. It is the menu/navigation system for the product, and **the shape it takes
-is the platform's**: seed its `## Structure` from whatever tree already exists — a dot-path `id` per
-row, so it nests to whatever depth the real IA needs, not a fixed two levels.
+## Resume
 
 ```text
-web     ## Structure              a sidebar / nav-bar shell, arbitrary depth
-mobile  ## Structure              a TAB BAR — at most 5 top-level entries — plus per-screen headers
-                                  and sheets. Depth below a tab is still arbitrary.
-both    ## Structure — Web        BOTH sections, in ONE file, mapping the same feature set onto
-        ## Structure — Mobile     each shell. An `id` is unique within its own section, so the same
-                                  feature is `settings.team` on web and `more.team` on mobile.
+bigin run new --stage design                       → the run id, once, before Stage 1
+bigin run record <run> --task screens:<slug> --status ok    after that feature's wave check passes
+bigin design close <slug> --run <run>              records designed:<slug> itself
 ```
 
-Then read each in-scope feature's **open pain points** — the statements this time. A pain point is a
-navigation fact before it is a screen fact: "reviewers can never find what they were working on
-yesterday" says something must be reachable in one move, and the tree either allows that or it does
-not. It may argue for placement, depth, and sibling order; it may **never** mint an entry pointing at
-a screen no UC asked for (ground 1b).
-
-**Do not pre-build a menu tree.** Part B adds what real screens actually turn out to need. A 6th
-top-level mobile candidate is not a nav decision — it is an Open Question on the nav map (owner:
-team), never a silent sixth row.
-
-## Stage 3 — Screens and flows
-
-```text
-FAN OUT ONE WORKER PER FEATURE SLUG                    [references/agent-dispatch.md]
-    → a feature's UX spec + hub are one ownership domain
-    → features are independent and parallelize safely
-    → one or two features: run it inline, dispatch costs more than the work
-
-a worker NEVER writes:  {nav_map_file} · another feature's UX spec or hub · DESIGN-PRINCIPLES.md
-                        · PAIN-POINTS.md or a hub's ## Pain Points · any UC, BR, or entity
-                        · FEATURES.md
-    → it REPORTS nav candidates, questions, designed UCs, unresolved pain points
-a worker DOES write:    its own feature's UX spec (created from a number the orchestrator minted)
-a worker is TOLD:       the PLATFORM and the method layer — it resolves neither, and cannot: a
-                        subagent cannot read this plugin's install directory. It resolves no RENDER
-                        engine at all — there is none in this run
-```
-
-**Every worker prompt carries `PLATFORM:`** — the resolved value, where it came from, and that
-platform's regions vocabulary. A worker writes it into its `## 1 Design Brief` verbatim; the only
-thing it may resolve itself is a **per-feature override**, and only from a source that explicitly
-states one.
-
-**A feature with 3+ in-scope UCs, or 4+ distinct cited entities, gets a `ux-brief-assembler`
-dispatch first** (`agents/ux-brief-assembler.md`) — it combines that feature's UCs, the `EN-###`
-entities they cite, `BR-###` mirrors, open hub directives, **open pain points**, and active design
-principles into one Design Brief, so the screens worker starts from a pre-digested bundle. It never
-decides a final screen boundary, a role, a state, a flow, or the Part 4b relationship verdict.
-
-**The Actor & Scope table is filled before a single screen is mapped** (`3-screens.md` Part 2a). It
-is the input to the merge rule, not a summary written afterwards.
-
-The mapping that matters: **a run of consecutive steps by the same actor in the same place is one
-screen**; a validation is a state, not a screen; an exception flow is a named error state. **Two UCs
-landing on the same place merge only when their actors' scope agrees.** A `many` screen carries a find
-mechanism and its five volume states with the real number named; a `one` screen carries neither. A
-3–9 step UC normally yields 1–4 screens on `web`, and 2–6 on `mobile`; the bands are **per actor**.
-
-**Then the flows** (Part 4c), which is where the journey gets written down rather than inferred: one
-per user goal per actor, each with its `Resolves` and its `Steps to goal`, and every open pain point
-on the hub either named by a flow or turned into a question.
-
-**Never invent a screen, a field, a state, or a journey.** Every one traces to a UC step, a BR, an
-entity field, an existing screen pattern, or a stated preference — a pain point shapes but never
-creates (D6, ground 1b). Grounded in none of those → an Open Question (D3), and if the answer would
-change what the system *does*, it is flagged as a requirement gap for `/bigin-transform-signal`.
-
-**Part 4b — the relationship model, on the few features that earn one.** Three mechanical tests: the
-system *judges* rather than processes, an `EN-###` field *persists* something per-user between
-sessions, and the trigger *repeats* for the same actor. Three of three → `## 7`; any miss → the
-section is deleted, not left empty. A real agent feature yields **more requirement gaps than rows**
-here, and that is the section working (D7).
-
-## Stage 4 — Flow review
-
-`4-flow-review.md`, in the orchestrator, after every worker has reported. **It runs every time, on
-the built-in walk** — no skill to detect, nothing to skip.
-
-It is the only stage that looks at the product **the way a user meets it**. Five questions per flow —
-does it arrive, is every step earned, can the actor get back, does it start where they are, and
-**does it actually fix the pain point it names** — plus one pass over the whole navigation shell as a
-stranger would meet it.
-
-```text
-MAY CHANGE, in place    a flow's screen order · which screen an interaction leads to · a nav entry's
-                        placement or nesting · a screen's element order · misleading copy · a state
-                        a flow plainly reaches that something already grounds
-MAY ONLY ASK (## 6)     a screen that should exist and does not · a capability nothing grants · a
-                        pain point the flows cannot fix as the requirements stand
-```
-
-A re-nest is still append-only (D1): the new row is added, the old `id` is retired in the nav map's
-§ Removing an entry, and every spec citing the old path is updated. An `id` edited in place silently
-un-points every screen that cited it.
-
-Question 5 is the one this stage exists for. The other four are hygiene a careful reader would catch;
-question 5 is the one nobody catches, because a flow that delivers every UC step reads as complete
-whether or not it makes the client's day better.
-
-## Stage 5 — Verify: coverage and render readiness
-
-`5-verify.md`, in the orchestrator, after the flow review (or its skip). It runs the one direction
-nothing else in this pipeline runs: **forward**, from each requirement item to what carries it.
-
-```text
-every non-removed S# / A# / E# of every in-scope UC        →  the screen AND STATE that carries it
-every BR-### they cite that constrains what an actor
-  sees or may do                                           →  the state, validation, or Visible to
-every EN-### field their steps read or write                →  the element that renders it
-every UNRESOLVED hub PP-###                                 →  the FLOW that resolves it, and where
-every open hub ## Design Directives row                     →  the screen that implements it
-every active DESIGN-PRINCIPLES row                          →  where it applied
-```
-
-**Grounding, the flow review, and Stage 6's checks cannot find an omission**, which is why this stage
-exists. Grounding runs backward — every element back to what licensed it — and a screen never drawn
-has no element to trace. The flow review runs sideways — journey quality — and a journey nobody wrote
-gets no verdict. Only forward proves nothing was dropped.
-
-**A pain point matches only on an explicit `Resolves` cell.** Never by resemblance: a flow that looks
-like it would help and does not name the id is a hope, not coverage — and a pain point is the item
-everybody assumes somebody else handled.
-
-Three verdicts land in a `### Coverage` table under `## 4 Flows`, re-written whole every run:
-`covered` (naming the screen **and** the state — or, for a `PP-###`, the flow and where in it),
-`gap → ## 6 Q<n>`, or `out of scope — <cited reason>`. An uncited exclusion is a gap wearing a
-decision's clothes.
-
-**It repairs, it does not design.** A row that under-recorded coverage a screen really has gets fixed;
-a screen, state, or control that does not exist gets a `## 6` question and waits for the next Stage 3.
-
-**Part 5 is render readiness.** A render may happen months from now, on a tool nobody has picked: this
-platform's regions, real copy and real field names, every state named, every role from the closed
-list, a resolvable nav shell, a `many` screen's real scale in words, a phone screen's device facts,
-every flow's `Path` naming screens that exist. **The visual system is deliberately not on that list** —
-there is none, and raising it as a gap puts a permanent unanswerable question on every spec.
-
-## Stage 6 — Close
-
-Extend the navigation map first (`2-navigation.md` Part B): dedup, reuse before adding, mint ids
-top-down, respect the five-tab cap, bump the version, changelog it. **Nothing is ever deleted or
-renamed in place** (D1).
-
-Then stamp `absorbed:` with `UC-###@version` for **only the UCs that really got a screen row this
-run**, re-stamped whole. Set each status from a live count of unchecked questions on disk. Refresh
-every hub named in `features:`, naming each `PP-###` a flow now resolves — **and never filling that
-row's `Resolved by` cell**, which is the requirement side's.
-
-Then `6-close.md` Part 5's verification checks — **nineteen** today, every one blocking on mismatch.
-Check 3 is the role list; check 4 bans a raw value *and* a `--token` id; check 7 is that no
-`## Prototype Prompt` heading survives in a spec this run touched; check 17 is Stage 5's coverage
-table **and** Stage 4's flow-review table together, including that an empty flow-review table fails
-either way; checks 18-19 are each screen's `View ID` (present, mechanical, unique vault-wide) and
-`Screen Type` (from the closed list, and in agreement with whichever `(Landing)`/`(Drill-down)` tag
-names it in `{nav_map_file}`, when one does).
-
-```text
-mode · platform (+ any per-feature override) · method layer
-actors per feature (scope + volume band) · actor splits · capability gaps raised
-per-feature screens and flows · pain points resolved by a flow / still unresolved
-flow review: N sound / N improved / N gaps · nav entries re-nested
-coverage per feature: N checked / N covered / N gaps / N out of scope · render-ready y|n
-nav entries added (0 deleted, 0 renamed) · directives reflected · skipped
-relationship: modelled|none per feature (+ gaps raised) · skipped
-design system: NONE PRODUCED, by design — never reported as a gap
-pending · questions (design | REQUIREMENT GAP)
-next: human review → /bigin-render-design-od when they want a prototype (their design system, their
-      timing)
-```
-
-## Failure modes
-
-Each produces a run that looks clean. Ordered by cost to discover later.
-
-- **Skipping or rushing Stage 5's forward pass.** It is the only thing in this skill that can find an
-  omission. Every other check runs backward or sideways and passes cleanly on a spec missing a whole
-  exception flow. A design reviewed as complete with a third of the flow absent is the most expensive
-  clean-looking failure this pipeline produces.
-- **Leaving `### Flow Review` empty, or not writing it, when flows exist.** The built-in walk runs
-  every time, over every flow this run designed — an empty table, or none at all, reads as "reviewed,
-  nothing found" when the pass never actually happened.
-- **Giving a flow `sound` without finding the moment its pain point is fixed.** A journey that
-  delivers every UC step and touches nothing the client complained about is exactly the design that
-  reviews well and disappoints in the room.
-- **Leaving an open pain point unanswered.** Every one gets a flow that names it or a question saying
-  why none does. Silence reads as "considered and fine" — and it was never considered.
-- **Letting a pain point ground a screen.** Ground 1b shapes ordering, emphasis, and defaults on a
-  screen a UC already asked for. A "recent activity" panel grounded only in `PP-004` is an invented
-  screen carrying a citation, which reviews as designed where a bare guess would have been caught.
-- **Marking a pain point resolved.** The register is the requirement side's. Name the id; let
-  `/bigin-transform-signal` close the row. Closing it here means a pain point reads as settled on the
-  strength of a design nobody has accepted yet.
-- **Writing a `--token` id, a hex, a px, or a font name into a spec.** All four are D2 broken, and the
-  token id is worst: it cites a design system this vault does not have, so it resolves to nothing and
-  a render engine quietly picks its own value while the spec looks specified.
-- **Inventing an eleventh semantic role.** The ten are closed precisely so one mapping covers the
-  vault. A private role is a one-screen vocabulary nothing downstream can resolve.
-- **Reintroducing a design system, a token file, or a palette.** It is the one thing this stage was
-  changed to stop producing. An invented palette pins the client's brand to a colour nobody chose,
-  and every screen built against it has to be redone the day the real system arrives.
-- **Reporting the absent design system as a gap.** There is none by design. A `design system: missing`
-  line teaches every reader that something went wrong in a run that did exactly what it should.
-- **Leaving a `## Prototype Prompt` block in a spec.** It inlines token values that no longer exist
-  and describes screens that may since have changed. A BA who pastes it in good faith prototypes a
-  design nobody is maintaining.
-- **Ticking a render-readiness box by inventing the input.** Placeholder copy, a guessed scale, a
-  state nobody specified: all three pass, and all three reach the client inside a rendered prototype
-  that looks specified. The render happens later, from a context that is gone.
-- **Turning a coverage gap into an out-of-scope line with no citation.** It reads as a decision
-  somebody made, and the exclusion outlives everyone who could contradict it.
-- **Designing the missing screen inside Stage 4 or Stage 5.** The pass then has no independent verdict
-  left: it drew the thing it was checking for.
-- **Editing a nav entry's `id` in place to re-nest it.** Every screen spec citing the old path now
-  points at nothing, and D1's record of why the IA looks the way it does is gone.
-- **Shortening a flow the requirements made long.** A five-step approval a BR requires is five steps.
-  Cutting one is a design deciding what the system does, and the step reappears in the build after
-  the client approved a journey without it.
-- **Writing two flows for one goal on `both`.** The phone splitting a form into sheets is the same
-  journey on more surfaces — one flow, the split inside its `Path`.
-- **Stamping `absorbed:` for a UC that got no screen.** The feature reads as designed forever.
-- **Designing one screen for two actors whose work is not the same work.** A member reading their own
-  record and an administrator working ten thousand land on "the same place", and whichever actor the
-  prototype renders for, the other got a product that does not fit their job.
-- **A `many` screen with no find machinery, or a `many` state seeded with three rows.** Both review as
-  finished, because every element on them is properly grounded, and both collapse the first time the
-  screen meets the client's real table.
-- **Adding bulk delete or export because an administrator would obviously need it.** D8. Plausible,
-  unstated, and it reaches the client in a working prototype that they approve — except this one
-  deletes five hundred records at a time.
-- **Designing a mobile product with the web regions vocabulary.** A `nav` region on a phone screen
-  asks the render tool to build a shell the platform does not have.
-- **Writing a design decision into a UC.** It bypasses the requirement review gate entirely.
-- **Minting a second UX spec for a feature that has one.** The review splits and both go stale.
-- **Giving every screen a nav entry.** A detail screen opened from a list is not a menu item.
-- **Flipping a directive to `reflected` because it was read.** It is reflected when a screen
-  implements it.
-- **Letting an external pattern catalog ground a screen.** Ground 2a is a pattern *in this vault*; 2b
-  is one from an installed skill, and 2b alone grounds nothing.
-- **A relationship model over nothing stored.** No `EN-###` field means the system cannot remember it,
-  so the row is a requirement gap. Leaving `## 7` in place and empty is the same failure inverted.
-- **Setting status early.** Count the open questions from disk, last, every time.
-- **Reporting a render.** Nothing here renders. A closeout line saying a render was done, skipped, or
-  waived describes a step that was never part of the run.
+A run that died is resumed by starting again with the same `--run`: `bigin design scope --run <run>`
+marks a closed feature `resume: done` (skip it) and a feature whose screens are on disk
+`resume: review` (start it at Stage 4 — **never** dispatch its screens worker again). Without the run
+id the files still say most of it: a use case with a screen row and no `absorbed:` stamp reads
+`DRAFTED`, not `NEW`.
 
 ## Model
 
-Per-feature workers run on the **session default model**, not `haiku`. Deciding how many screens a
-flow needs, which state belongs to which rule, and whether a journey actually resolves a pain point is
-judgment work — the same reason `/bigin-transform-signal` fans out on the default model.
+Per-feature workers run on the **session default model**, not `haiku`: how many screens a flow
+needs, which state belongs to which rule, and whether a journey resolves a pain point are judgement.
+The engine commands need no model at all.
 
 ## Additional resources
 
-- **`references/method-layer.md`** — the **optional** method layer that Stage 3 screens are derived
-  through. None of it can halt anything: the provider table, how to detect each one, the install
-  command to report when none is present, how the built-in method works, the per-step
-  `designer-skills` pattern references, and the ground 2a/2b split that bounds them. Read at Stage 1
-  by the orchestrator; the per-step section is read again by each worker at Stage 3. Stage 4's flow
-  review is unconditional and built-in — it is not part of this method layer, and calls no external
-  critique skill.
-- **`references/agentic-ux.md`** — the relationship model: what the agentic booster does and does not
-  contribute, how the trigger is decided (and why Stage 1 cannot decide it), the five pillars mapped
-  onto `## 7` and `## 3`, a worked example, and the five recurring requirement gaps. Read at Stage 1,
-  by the orchestrator, when the skill is installed. A worker reads `3-screens.md` Part 4b instead.
-- **`references/agent-dispatch.md`** — the per-feature worker prompt, its report contract, and the
-  wave-verification checklist. Read at Stage 3, before fanning out. It also names the dispatch
-  threshold for `agents/ux-brief-assembler.md`.
-- **`agents/ux-brief-assembler.md`** (plugin-root `agents/`, not this skill's `references/`) — the
-  named subagent dispatched per qualifying feature at Stage 3, ahead of the screens worker. It never
-  writes a vault file (only its own `.out.json` brief) and never finalizes a screen boundary; it only assembles.
-- **`/bigin-render-design-od`'s `references/open-design-adapter.md`** — where the Open Design tool
-  contract, the design-system choice, and the halt text live. **This skill never reads it**, and that
-  is the point: a design run has no engine and no design system to resolve.
+- **`references/agent-dispatch.md`** — the worker prompt, its report contract, the wave check. Read
+  at Stage 3, before fanning out.
+- **`references/method-layer.md`** — the **optional** method layer Stage 3 screens are derived
+  through, its detection order and install commands, and the per-step `designer-skills` pattern
+  references. Read at Stage 1; a worker never opens it.
+- **`references/agentic-ux.md`** — the relationship model (`## 7`): what the booster contributes, why
+  Stage 1 cannot decide the trigger, the five recurring requirement gaps. Read at Stage 1 only when
+  a relationship-UX skill is installed.
+- **`/bigin-render-design-od`'s `references/open-design-adapter.md`** — the Open Design contract.
+  **This skill never reads it**: a design run has no engine and no design system to resolve.

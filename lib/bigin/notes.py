@@ -46,7 +46,9 @@ def _note_table(doc):
 
 
 def _cells_of(r, n):
-    notes = [f"[scope:{r['scope']}]"] if r.get("scope") else []
+    notes = ["[unverified]"] if r.get("_unverified") else []
+    if r.get("scope"):
+        notes.append(f"[scope:{r['scope']}]")
     if r.get("supersedes"):
         notes.append("supersedes " + ", ".join(f"#{m}" for m in r["supersedes"]))
     if r.get("notes"):
@@ -102,19 +104,117 @@ def _mark_extracted(doc):
         doc.fm_set("extracted_through", f"SRC-{max(nums)}")
 
 
-def write_signals(vault, path, dry=False):
+NOT_STATED_RATE = 0.30          # 2b-audit.md § When the independent pass is owed
+RAW_LINES_AUDIT = 300
+SELF_REPAIRS_AUDIT = 5
+WHY_TYPES = ("requirement", "feedback")
+UNVERIFIED_RATE = 0.10          # quotes the engine could not find in ## Raw; above this the audit is owed (W1)
+
+
+def audit_verdict(doc, data, added, unverified=()):
+    """Whether the independent source audit is owed — decided HERE, from the note itself, not from the
+    extractor's opinion of its own work (2b-audit.md § When the independent pass is owed).
+
+    Structural triggers are facts about the source: a transcript block, a Jira thread, a long ## Raw,
+    several blocks with an attachment or a thread among them. The extractor contributes only what it alone
+    can know — counts from its self-audit (inversions, contradictions, rows it repaired, blocks it could
+    not read). Its own ``audit_owed`` boolean is ignored: it can no longer talk itself out of the check.
+
+    A high `not stated` rate is a different defect with a different remedy: an auditor cannot make a
+    missing reason appear, so it sends those rows back for the Why search (``why_repair``) instead of
+    buying a second read of the whole source."""
+    from .worklist import _src_blocks
+    blocks = _src_blocks(doc)
+    kinds = [(b.get("kind") or "").lower() for b in blocks]
+    raw = doc.section("Raw")
+    raw_lines = (raw.end - raw.start) if raw else 0
+    sa = data.get("self_audit") or {}
+    reasons = []
+    if any("transcript" in k for k in kinds):
+        reasons.append("transcript block")
+    if (doc.fm_get("source") or "") == "jira":
+        reasons.append("jira thread")
+    if raw_lines >= RAW_LINES_AUDIT:
+        reasons.append(f"## Raw is {raw_lines} lines")
+    if len(blocks) > 1 and any("attachment" in k or "thread" in k for k in kinds):
+        reasons.append("several blocks with an attachment or thread")
+    if int(sa.get("inversions") or 0) or int(sa.get("contradictions") or 0):
+        reasons.append("self-audit found an inversion or contradiction")
+    if int(sa.get("repaired") or 0) > SELF_REPAIRS_AUDIT:
+        reasons.append(f"self-audit repaired {sa.get('repaired')} rows")
+    if sa.get("unread_blocks"):
+        reasons.append("unread block: " + ", ".join(str(x) for x in sa["unread_blocks"]))
+    if added and len(unverified) / len(added) > UNVERIFIED_RATE:
+        reasons.append(f"{len(unverified)} of {len(added)} quotes not found in the source")
+    rows = {int(r.num): r for r in model.note_rows(doc)}
+    asked = [n for n in added if (rows[n].get("Type") or "").strip() in WHY_TYPES]
+    missing = [n for n in asked if norm_ws(rows[n].get("Why")).lower() == "not stated"]
+    out = {"audit_owed": bool(reasons), "audit_reasons": reasons,
+           "not_stated_rate": round(len(missing) / len(asked), 2) if asked else 0.0}
+    if asked and len(missing) / len(asked) > NOT_STATED_RATE:
+        out["why_repair"] = missing
+    return out
+
+
+def _ground(doc, rows, idx):
+    """Mark each new row ``_unverified`` unless its quote is found in the note's ## Raw; return the verified
+    line spans. A row with no quote at all is unverified too — quote is required on new rows."""
+    spans = []
+    for r in rows:
+        hit = idx.locate(r["quote"]) if r.get("quote") else None
+        if hit:
+            spans.append(hit)
+            r.pop("_unverified", None)
+        else:
+            r["_unverified"] = True
+    return spans
+
+
+def _set_flag(doc, n, flagged):
+    r = {int(x.num): x for x in model.note_rows(doc)}.get(int(n))
+    if r is None:
+        return
+    cells = list(r.cells) + [""] * (8 - len(r.cells))
+    notes = [x.strip() for x in cells[7].split(";") if x.strip() and x.strip() != "[unverified]"]
+    cells[7] = "; ".join((["[unverified]"] if flagged else []) + notes)
+    doc.set_row(r.idx, cells)
+
+
+def write_signals(vault, path, dry=False, run=None):
     data = _load(path, "signals")
     doc = vault.load_id(data["int"])
     mode = data.get("mode") or ("append" if model.note_rows(doc) else "fresh")
     res = {"int": data["int"], "mode": mode, "added": [], "edited": []}
     if mode == "fresh" and model.note_rows(doc):
         raise EngineError(f"{data['int']} already has signal rows — use mode append or repair")
+    from . import quotes
+    idx = quotes.RawIndex(doc)
+    spans = quotes.spans_of(doc)
+    prior = re.match(r"^SRC-(\d+)$", (doc.fm_get("extracted_through") or "").strip())
+    after_src = int(prior.group(1)) if prior and model.note_rows(doc) else 0
+    unverified, any_quote = [], False
     if mode == "repair":
+        fresh_rows = [r for r in data["rows"] if not r.get("n")]
+        if any(not r.get("quote") for r in fresh_rows):
+            raise EngineError("repair rows need n (a row without n is appended, and an appended row needs a quote)")
         for r in data["rows"]:
             if not r.get("n"):
-                raise EngineError("repair rows need n")
+                continue
             _edit_row(doc, r["n"], r)
             res["edited"].append(r["n"])
+            if r.get("quote"):
+                any_quote = True
+                hit = idx.locate(r["quote"])
+                if hit:
+                    spans.append(hit)
+                _set_flag(doc, r["n"], not hit)
+                if not hit:
+                    unverified.append(int(r["n"]))
+        if fresh_rows:
+            spans += _ground(doc, fresh_rows, idx)
+            any_quote = True
+            res["added"] = _append_rows(doc, fresh_rows)
+            unverified += [n for r, n in _append_rows.assigned if r.get("_unverified")]
     else:
         first_new = max([int(r.num) for r in model.note_rows(doc)] or [0]) + 1
         for r in data["rows"]:
@@ -122,24 +222,46 @@ def write_signals(vault, path, dry=False):
             if bad:
                 raise EngineError(f"{data['int']}: a row supersedes #{bad[0]}, which is not an earlier row — "
                                   "supersession only points back at rows already in the table")
+        spans += _ground(doc, data["rows"], idx)
+        any_quote = any(r.get("quote") for r in data["rows"])
         res["added"] = _append_rows(doc, data["rows"])
         res["skipped_duplicates"] = _append_rows.skipped
         res["superseded"] = []
+        unverified = [n for r, n in _append_rows.assigned if r.get("_unverified")]
         for r, n in _append_rows.assigned:
             for m in r.get("supersedes") or []:
                 _edit_row(doc, m, {"notes": f"superseded by #{n}"})
                 res["superseded"].append(m)
         _mark_extracted(doc)
-    if data.get("self_audit"):
-        res["audit_owed"] = bool(data["self_audit"].get("audit_owed"))
-    if (doc.fm_get("source") or "") == "jira" and mode != "repair":
-        res["audit_owed"] = True  # a negotiated thread always gets the independent pass (2b-audit.md)
+    res["unverified"] = sorted(set(unverified))
+    if any_quote or quotes.spans_of(doc):
+        # recall: source runs no verified quote came near (only when this note has quotes at all — a note
+        # extracted before quote grounding has nothing to measure against)
+        if spans:
+            if not doc.fm_get("quoted_lines"):
+                doc.fm_set("grounded_from", f"SRC-{after_src + 1}")     # blocks before this predate quotes
+            doc.fm_set("quoted_lines", quotes.fmt_spans(spans))
+        res["uncovered"], res["uncovered_pct"] = quotes.uncovered(doc, spans, after_src)
+    if mode != "repair":
+        res.update(audit_verdict(doc, data, [n for _, n in _append_rows.assigned], unverified))
     touch_updated(doc)
     _flush(vault, doc, dry)
+    if run and not dry:
+        # the resume record, written with the table so one engine step covers both: a killed run knows
+        # the note is extracted AND whether its audit is still owed
+        from . import runs
+        runs.record(vault, run, f"extracted:{data['int']}", "ok", mode)
+        from . import metrics
+        if mode != "repair" and res["added"]:
+            metrics.quality_add(vault, run, "unverified_rate", round(len(res["unverified"]) / len(res["added"]), 3), data["int"])
+        if "uncovered_pct" in res:
+            metrics.quality_add(vault, run, "uncovered_pct", res["uncovered_pct"], data["int"])
+        if res.get("audit_owed"):
+            runs.record(vault, run, f"audit-owed:{data['int']}", "ok", "; ".join(res.get("audit_reasons") or []))
     return res
 
 
-def apply_audit(vault, path, dry=False):
+def apply_audit(vault, path, dry=False, run=None):
     data = _load(path, "audit")
     doc = vault.load_id(data["int"])
     res = {"int": data["int"], "added": [], "edited": [], "flagged": [], "verdict": data.get("verdict")}
@@ -156,6 +278,10 @@ def apply_audit(vault, path, dry=False):
                                        "notes": r.get("notes", "audit: added")} for r in appends])
     touch_updated(doc)
     _flush(vault, doc, dry)
+    if run and not dry:
+        from . import metrics
+        for f in data.get("findings") or []:
+            metrics.quality_add(vault, run, f"audit_finding:{f['kind']}", 1, data["int"])
     return res
 
 

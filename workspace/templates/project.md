@@ -19,6 +19,8 @@ jira_watch: []            # the current sprint's ticket keys: the sweep fetches 
 jira_scope_marker: "Final scope"  # a comment/description heading that states the agreed scope
 jira_onshore: []          # Jira account ids / emails / display names on the onshore side (else client_emails)
 jira_offshore: []         # ... on the offshore side (else team_emails)
+confluence_pages: []      # Confluence page ids or URLs tracked as living intake notes (`/bigin-intake` § Stage 2E)
+confluence_labels: []     # optional: also track pages carrying any of these labels
 project_mode: new        # new | ongoing
 platform: web             # web | mobile | both — drives design screen composition, nav shape, and prototype prompts
 codebase_path:            # absolute path to the product repo — required when project_mode: ongoing
@@ -29,6 +31,7 @@ conflict_policy: ask      # ask | code-first — who settles a factual conflict 
 coverage_id_pattern:      # optional: trace rule-card ids instead of note rows, e.g. XR-[A-Z]+-\d{3}
 budgets:                  # optional: {transform_per_feature_tokens: 600000, extract_per_note_tokens: 150000}
 signal_log: split         # split | inline — hub Signal Logs in <slug>.signals.md (split) or in the hub
+dev_card: off             # off | on — on: the stories stage writes EP-###/_cards.md (`bigin card`); the command works on demand either way
 engine: engine            # engine | legacy — legacy = the v1.8 behaviour, for one minor version only
 workspace_version:        # the plugin version that last materialized _bigin/{conventions,stages,templates,cards}
 updated: <YYYY-MM-DD>

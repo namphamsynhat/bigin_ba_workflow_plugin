@@ -1,4 +1,4 @@
-# Card — uc-splitter (model: inherit/opus — a wrong move silently re-scopes two UCs at once)
+# Card — uc-splitter (model: sonnet — a wrong move silently re-scopes two UCs at once)
 
 **In:** `bigin worklist split UC-###` (the source UC card: steps/flows with `sha`, § 1, § 4 rows, questions)
 and the settled plan JSON (destinations, id → destination map, reworded text, BR → destination + enforcement).

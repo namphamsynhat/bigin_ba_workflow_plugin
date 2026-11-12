@@ -1,7 +1,7 @@
 # Worker dispatch — one per feature (Stages 3-4 only)
 
 ```text
-Agent(session default model, general-purpose, foreground)   # judgment work — not haiku
+Agent(model: "sonnet", general-purpose, foreground)   # judgment work — not haiku; pinned so a session on another model does not change the output
 one per FEATURE SLUG                                         # an epic is one ownership domain
 ≤ 4 features concurrently, verify between waves
 ```

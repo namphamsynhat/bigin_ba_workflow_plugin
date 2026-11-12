@@ -1,6 +1,6 @@
 ---
 name: bigin-run
-description: Drive the Bigin BA pipeline from the main session — read the vault, work out which stage runs next, run it, and keep going while nothing needs a decision. Use when asked to "move this feature forward", "what's next", "what's next on UC-00X", "process the inbox", "drain the intake queue", "import the mined rules", "run the next stage", "take this feature through to a prototype", "process UC-00X" / "process the UC" after a team BA typed their answers straight into the file, or "drive the pipeline". **This is the only home for a run that fans out.** Extract, multi-feature transform, adjudication, design and stories runs dispatch named workers — through the Workflow tool (workflows/*.js) when available, else one Agent call per task — and a subagent cannot dispatch subagents, so they are driven from here, never from inside the `bigin-ba` agent.
+description: "Drive the Bigin BA pipeline from the main session: read the vault, work out which stage is next, run it, and keep going while nothing needs a decision. Use on \"what's next\", \"move this feature forward\", \"process the inbox\", \"import the mined rules\", \"run the next stage\", \"process UC-00X\" after answers were typed into the file, or \"take this feature through to a prototype\". The only home for a run that fans out to worker agents — never run those inside the bigin-ba agent."
 argument-hint: "[feature slug or UC id — omit to pick up whatever is next]"
 ---
 
@@ -55,7 +55,7 @@ With no argument, sweep; with a slug or UC id, scope to it. Determine the stage 
 5a conflict/held rows in a code-grounded vault         → adjudicate (inside transform; alone:
                                                          workflows/adjudicate.js)
 5b "process UC-###" — answers typed in the file        → bigin-ba's process-the-UC pass (cards/ba-drive.md)
-6  a UC has a drafted § 2 and no current design        → /bigin-generate-design
+6  a UC has a drafted § 2 and no current design        → STOP, name `/bigin-generate-design` for the BA to type
 6b THE HUMAN asks for a prototype (never you)          → /bigin-render-design-od — for a Jira ticket this is
                                                          the quick design the dev team shares with the PM
 7  a UC is clear and the human is ready to sign off    → the review flow (cards/ba-review.md) — never headless;
@@ -63,11 +63,13 @@ With no argument, sweep; with a slug or UC id, scope to it. Determine the stage 
                                                          at Ready for Dev (`bigin intake jira-gate --uc`);
                                                          relay every `READY FOR DEV → approve UC-###` a sweep prints
 8  approved UCs with synced: false                     → /sync-entities, when convenient
-9  approved UCs with no current epic/stories           → /bigin-generate-stories
+9  approved UCs with no current epic/stories           → STOP, name `/bigin-generate-stories` for the BA to type
 10 draft stories the human has reviewed               → /approve-story — human-only, like step 7
 ```
 
-Steps 3–6 are momentum: run them back to back. Step 7 is the only decision point; 8–9 lag it freely.
+Steps 3–5 are momentum: run them back to back. Steps 6, 6b and 9 name skills with `disable-model-invocation: true`
+(`/bigin-generate-design`, `/bigin-render-design-od`, `/bigin-generate-stories`): this session cannot call them, so say
+which command to type and stop — never try the Skill tool on them. Step 7 is the only decision point; 8–9 lag it freely.
 6b is never momentum — a render is something a person asks for.
 
 ## Dispatching a fan-out stage
@@ -82,21 +84,16 @@ Steps 3–6 are momentum: run them back to back. Step 7 is the only decision poi
                      max_agents: 6})
      a kill or rate-limit → re-run with resumeFromRunId and the SAME run id: finished tasks are skipped
      (results.jsonl), and every vault write is engine-only and atomic, so there is no half-written file.
-   Otherwise (fallback loop, restructure plan § B.5) — same steps, one Agent call each:
-     bigin worklist <stage> <scope> --out _runs/RUN/tasks/<task>.in.json
-     Agent(<named worker>, prompt = card path + .in.json path + .out.json path)   ← replies ONE line
-     bigin ingest <out> --run RUN     → errors go back to the SAME agent once (SendMessage), then park
-     bigin apply <out> --run RUN      (transform) · note write-signals / audit-apply · file apply · note analysis-apply (extract)
-     transform: route (uc-router Phase A) → bigin mint route --spec <route.out.json> → resume the same
-     uc-router for Phase B → apply → adjudicate (code-grounded) → bigin hub refresh <slug>
-     extract: extractor per note → auditor only when audit_owed → filer per note, SERIALLY → intake-analyst
-              per filed note (applies serially) → lint --full
-3  after every task notification: bigin metrics add --run RUN --stage … --task … --agent … --usage "<usage…>"
+   Otherwise — the same steps with one Agent call per judgement task. The loop has ONE home per stage; follow it,
+   don't restate it: extract → skills/extract-signal/references/agent-dispatch.md ·
+   transform → skills/bigin-transform-signal/references/agent-dispatch.md
+3  cost: `bigin ingest --run` already recorded an estimate per agent output; when a task notification carries a
+   <usage> block, add the measured figure: bigin metrics add --run RUN --stage … --task … --agent … --usage "<usage…>"
 4  bigin run summary RUN   → the stage report; bigin metrics report --run RUN flags budget overruns
 5  bigin lint --full        → the blocking gate at the stage boundary
 ```
 
-Inline thresholds (one feature with ≤ 3 qualified rows; 1–2 features for design/stories) are the stages' own —
+Inline thresholds (one feature with ≤ 3 qualified rows; 1–2 features for stories; design always dispatches) are the stages' own —
 read them in their dispatch references. Never talk yourself past one to avoid a dispatch.
 
 ## Grounding
@@ -112,9 +109,22 @@ when the human is live on UC-A and a different UC/feature needs a slower inline-
 threshold comes back here.
 
 ## Always
+Questions a run raised pass the answer-it-yourself gate (`cards/ba-triage.md`, buckets 1–4) before a human
+sees them — a headless transform raises them unfiltered; relay only what is genuinely the client's or team's.
 Capture before interpreting. `AskUserQuestion` for routing decisions only, never to relay a `- [ ] Q:`.
 Never approve on a human's behalf, set `status` by hand, or run the load stages from inside `bigin-ba`.
+
+After a run that leaves client or dev questions open, run `scripts/bigin questions list` and
+`scripts/bigin questions pack` (writes `06-Outbox/<date>-<Jira key or owner>.md`, one paste-ready file per
+recipient, nothing posted) and tell the BA which packs to paste; once pasted, `scripts/bigin questions sent
+<pack>` stamps them so they are not offered twice. A reply that keeps a pack's `[q:xxxxxx]` tag is matched to its
+question automatically at intake.
 
 ## Output
 Per stage: what ran, what the engine wrote (from `run summary`), what was gated/drifted/parked (from
 `ledger list`), coverage, and what runs next.
+
+End every run with `scripts/bigin digest --for ba` (what came in, changed, was decided, is waiting, is ready to
+approve, is stale downstream, spend). Mention that `--for client` (decided / changed / waiting, ids moved into a
+trailing ref) and `--for dev` (approved changes, stale downstream, delta stories, dev questions) render the same
+facts for the other two audiences; `--write` saves any of them to `06-Outbox/`. No LLM is involved.

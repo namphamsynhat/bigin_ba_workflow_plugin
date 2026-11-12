@@ -1,6 +1,6 @@
 ---
 name: extract-signal
-description: This skill should be used when the ask is to extract signals, process the intake queue, drain 00-Inbox, map intake to features, analyse what a ticket impacts or contradicts, or withdraw a request the client removed. Drains the raw intake queue in 00-Inbox — extracts each communication-mode INT-### note's signals into a flat raw record on the note, audits that record against the source where the audit is owed, anchors every signal to a FEATURES.md slug and files it onto that feature's Signal Log grouped by functional theme, then analyses the filed note against the current requirements (affected features/UCs, conflicts, unclear points → the note's ## Analysis). Agents return JSON; the engine (`scripts/bigin`) does every write. A signal that can't be anchored raises a written question instead of a guess. Codebase-mode notes are imported by `/bigin-intake` (`bigin intake codebase`) and never come here. Never drafts or edits a UC.
+description: "Drain the raw intake queue in 00-Inbox: extract each note's signals, audit them against the source where owed, file them onto feature hubs by theme, then analyse each note against current requirements (affected use cases, conflicts, unclear points). Use on \"extract signals\", \"process the intake queue\", \"map intake to features\", \"what does this ticket impact\", or to withdraw a request the client removed. Never drafts a UC."
 argument-hint: "[resume <run-id>]"
 disallowed-tools: AskUserQuestion
 ---
@@ -59,34 +59,23 @@ Workflow(scriptPath: "_runs/RUN/workflows/extract.js",   # staged by `run new`; 
          args: {run: RUN, vault: ".", plugin_root: "${CLAUDE_PLUGIN_ROOT}", notes: [<INT ids>]})
 ```
 
-Per note, in parallel: `worklist extract` → `signal-extractor` → `ingest` + `note write-signals`; when the
-extractor reports `audit_owed`: `worklist audit` → `signal-auditor` → `note audit-apply`. Then filing, **serially**
-(a later note's theme may extend a row an earlier note just filed): `worklist file` → `signal-filer` → `ingest` +
-`file apply`. Then analysis per filed note (agents in parallel, applies serially): `worklist analyze` →
-`intake-analyst` → `ingest` + `note analysis-apply`. Then `lint --full` and `coverage --stage file`. Resume = re-run with the same `run`
-(completed tasks are skipped via `run done`), or the Workflow tool's `resumeFromRunId`.
+Per note, in parallel: `signal-extractor` → `ingest` + `note write-signals --run` (which prints the engine's
+`audit_owed` verdict and any `why_repair` rows) → a Why repair by the same extractor where `not stated` runs over
+30% → `signal-auditor` + `note audit-apply` where the audit is owed. Then filing, **serially** (a later note's theme
+may extend a row an earlier note just filed): `worklist file` → `signal-filer` → `ingest` + `file apply`. Then
+analysis per filed note (agents in parallel, applies serially): `worklist analyze` → `intake-analyst` → `ingest` +
+`note analysis-apply`. Then `lint --full` and `coverage --stage file`. Resume = re-run with the same `run`
+(completed tasks are skipped via `run done`; an audit still owed from a stopped run is picked up), or the Workflow
+tool's `resumeFromRunId`.
 
-**Without it (B.5 fallback)** — the same steps, one `Agent` call per judgement task:
-
-```text
-for note in queue:                                   # extractors may run 4 at a time; filers never overlap
-  bigin worklist extract <INT> --out _runs/RUN/tasks/<INT>.extract.in.json
-  Agent(signal-extractor): "card <plugin>/cards/extractor.md · in <…>.extract.in.json · out <…>.signals.out.json"
-  bigin ingest <out> --kind signals --run RUN         # invalid → SendMessage the errors to the same agent, once
-  bigin note write-signals <out>                       # prints audit_owed
-  owed → bigin worklist audit <INT> --out … ; Agent(signal-auditor) ; bigin ingest … --kind audit ; bigin note audit-apply <out>
-  bigin worklist file <INT> --out … ; Agent(signal-filer) ; bigin ingest … --kind filing ; bigin file apply <out>
-  bigin run record RUN --task filed:<INT> --status ok
-  bigin worklist analyze <INT> --out … ; Agent(intake-analyst) ; bigin ingest … --kind analysis ; bigin note analysis-apply <out>
-  bigin run record RUN --task analysed:<INT> --status ok
-  bigin metrics add --run RUN --stage extract --task <INT> --agent <name> --usage "<usage block>"   # per agent
-bigin lint --full ; bigin coverage --stage file
-```
+**Without it** — the same steps, one `Agent` call per judgement task: follow `references/agent-dispatch.md`, the
+one home of the fallback loop (extractors may run 4 at a time; filers never overlap).
 
 Between steps read only the one-line agent reply and `bigin run summary RUN` (≤ 20 lines) — never an agent
 transcript, never `## Raw`. **Never audit inline** in this context: either the extractor's self-audit stands or a
-fresh `signal-auditor` is dispatched. The audit-owed triggers live in `2b-audit.md` § When the independent pass is
-owed; report which depth ran on each note (`audit: self` vs `audit: independent (<trigger>)`).
+fresh `signal-auditor` is dispatched — and **the engine decides which**: `note write-signals` prints `audit_owed`
+and `audit_reasons` from the note's structure and the extractor's self-audit counts (`2b-audit.md` § When the
+independent pass is owed). Report the depth that ran on each note (`audit: self` vs `audit: independent (<reason>)`).
 
 **Gate.** `bigin lint --full` closes the run and is blocking. A filing gap (note rows anchored to a slug that no hub
 row cites) → dispatch `signal-filer` in hub-repair mode scoped to exactly those rows, `bigin file apply`, re-run
@@ -136,11 +125,11 @@ analysis:  INT-###: affects UC-### (S#), BR-###, new goal "<title>" · conflicts
 registers: PP minted <ids> · PP matched <ids> · entities N · design N
 parked:    INT-### awaiting an answer (N open) · awaiting a feature mapping
 gate:      bigin lint --full: clean | repaired (<what>) | UNAVAILABLE (<why>) · coverage --stage file: missing N
-tokens:    bigin metrics report --run RUN
+tokens:    bigin metrics report --run RUN   (measured where usage was recorded; always an estimate from task files)
 ```
 
 ## Additional resources
 
-- `references/agent-dispatch.md` — the prompt shape for each agent in the fallback loop, and the audit-owed test.
+- `references/agent-dispatch.md` — the fallback loop, the prompt shape for each agent, and the re-spawns.
 - `cards/extractor.md`, `cards/auditor.md`, `cards/filer.md`, `cards/analyst.md` — what each agent reads (≤ 3 KB each).
 - `_bigin/stages/extract/` — the human reference the cards are derived from.

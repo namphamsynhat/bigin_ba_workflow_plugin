@@ -31,7 +31,7 @@ actors: []              # every role § 1's Actor & Scope table carries, each as
                         # A spec with two actors at different volume bands must carry SEPARATE
                         # screens for them, not one screen serving both. Verified in Stage 6
                         # (check 14). Absent on a spec written before this key existed —
-                        # 3-screens.md § Adopting an existing UX spec builds it on the next run.
+                        # 3-screens-adopt.md (via 3-screens.md § Adopting an existing UX spec) builds it on the next run.
 sources: []             # UC-###/BR-###/EN-###/PP-### ids + DESIGN-PRINCIPLES row #s + hub directive #s
 absorbed: []            # UC-<NNN>@<version> — THE staleness record. Only UCs that really got
                         # screens this run. Re-stamped WHOLE every run (`design-core.md` § Staleness).

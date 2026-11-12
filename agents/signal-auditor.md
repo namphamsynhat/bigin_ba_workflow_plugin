@@ -1,6 +1,6 @@
 ---
 name: signal-auditor
-description: Use this agent when the bigin-ba-workflow-plugin's extract stage owes one intake note an independent source audit — a fresh reader listing the source's claims blind, then diffing them against the extracted rows in both directions — and writes an `audit` JSON (findings + repairs) that `bigin note audit-apply` lands. Dispatched only where self-auditing is known to fail: any transcript block however short, a ## Raw of ~300 lines or more, several blocks with an attachment or thread among them, an unread block, a `not stated` rate over 30%, or an extractor self-audit that found an inversion or contradiction. One note per audit, never per batch. Typical triggers: workflows/extract.js's Audit stage, "audit the signal table for INT-###".
+description: "Extract-stage worker: independent source audit of ONE intake note's signal rows, dispatched only when the engine reports the audit is owed (`bigin note write-signals` → audit_owed). Writes an `audit` JSON that `bigin note audit-apply` lands. One note per audit, never per batch."
 model: sonnet
 color: yellow
 tools: Read, Grep, Write

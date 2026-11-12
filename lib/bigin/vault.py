@@ -681,6 +681,22 @@ def _strip_trailing_blank(lines):
 
 # ---------------------------------------------------------------------------- questions
 
+_Q_TAGS = re.compile(r"\((?:owner|ref|asked|sent|answered):[^)]*\)|\[q:[0-9a-f]{6}\]|↦\s*\S+")
+
+
+def q_clean(text):
+    """A question's words without its inline tags — (owner:)(ref:)(asked:)(sent:), a [q:…] tag, ↦ target."""
+    return re.sub(r"\s+", " ", _Q_TAGS.sub("", text or "")).strip()
+
+
+def q_tag(text):
+    """Stable 6-hex id of a question's normalised words. Computed, never stored: the same question hashes the
+    same across runs, files and edits to its tags, so a reply that quotes ``[q:3fa9c1]`` finds it again."""
+    import hashlib
+    core = re.sub(r"[^a-z0-9]+", " ", q_clean(text).lower()).strip()
+    return hashlib.sha1(core.encode("utf-8")).hexdigest()[:6]
+
+
 class Question:
     __slots__ = ("start", "end", "checked", "text", "answer", "indent")
 
@@ -691,6 +707,32 @@ class Question:
     @property
     def answered(self):
         return bool(self.answer and self.answer.strip())
+
+    def _tag(self, key):
+        m = re.search(r"\(%s:\s*([^)]*)\)" % key, self.text)
+        return m.group(1).strip() if m else None
+
+    @property
+    def owner(self):
+        return self._tag("owner")
+
+    @property
+    def ref(self):
+        return self._tag("ref")
+
+    @property
+    def asked(self):
+        m = re.match(r"^(\d{4}-\d{2}-\d{2})$", self._tag("asked") or "")
+        return m.group(1) if m else None
+
+    @property
+    def sent(self):
+        m = re.match(r"^(\d{4}-\d{2}-\d{2})\s+via\s+(.+)$", self._tag("sent") or "")
+        return (m.group(1), m.group(2).strip()) if m else None
+
+    @property
+    def tag(self):
+        return q_tag(self.text)
 
 
 def questions_in(doc, start, end):

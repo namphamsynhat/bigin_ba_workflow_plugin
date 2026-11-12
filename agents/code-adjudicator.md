@@ -1,7 +1,7 @@
 ---
 name: code-adjudicator
-description: Use this agent when a code-grounded Bigin vault (project.md `grounding: codebase` or `both`) has a Signal Log row in `conflict` or `held` that the code can settle — two readings of the same behaviour, or a rule whose as-built truth is disputed. It referees ONE row against the read-only repositories, cites `repo:path:symbol :lines` for every claim, and writes an `adjudication` JSON (verdict + optional change sets) that `bigin apply` lands. Typical triggers: workflows/adjudicate.js fanning out one referee per conflict row, a P0/security row getting its independent second judge, and `/bigin-transform-signal` asking to settle a conflict from code.
-model: inherit
+description: "Transform-stage worker for code-grounded vaults: referees ONE `conflict`/`held` Signal Log row against the read-only repositories and writes an `adjudication` JSON with code citations. Dispatched by workflows/adjudicate.js, including the second judge on P0/security rows."
+model: sonnet
 color: orange
 tools: Read, Grep, Glob, Write
 ---

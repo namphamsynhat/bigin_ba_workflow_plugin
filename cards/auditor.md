@@ -1,7 +1,7 @@
 # Card — signal-auditor (model: sonnet — a mechanical two-way cross-check, run only where it is owed)
 
 **In:** `bigin worklist audit <INT>` JSON — `src_blocks` (line ranges) and `rows` [{n, type, signal, why, source}].
-Dispatched only when the extractor reported `audit_owed`.
+Dispatched only when the engine reports `audit_owed` (`bigin note write-signals`).
 **Out:** schema `audit` → `{kind:"audit", int, findings:[{kind, n?, detail}], repairs:[{action, n?, …}], verdict}`.
 `bigin note audit-apply` applies the repairs; you write only your `.out.json`.
 

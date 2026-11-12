@@ -25,28 +25,44 @@ Add only per-run facts the agent cannot derive: a project override's text (never
 "hub-repair mode: rows #…", "fold-in run: questions answered since last run". **Never paste a procedure** into a
 prompt — two copies of one rule drift apart, and the card is the one home.
 
-## After each agent
+## The loop — per note
 
 ```text
-bigin ingest <out> --kind <schema> --run <run>
-    INVALID → SendMessage the listed errors to the SAME agent once ("rewrite <out> so it validates");
-              still invalid → record the task failed, park the note, move on
-bigin note write-signals <signals.out.json>      # prints {added, audit_owed}
-bigin note audit-apply <audit.out.json>
-bigin file apply <filing.out.json>               # prints {hub_rows, pp, en, hubs_created, status}
-bigin note analysis-apply <analysis.out.json>    # prints {affected, conflicts, blocking, questions_added, rows_flagged, status}
-bigin metrics add --run <run> --stage extract --task <INT> --agent <name> --usage "<usage block>"
+for note in queue:                                   # extractors may run 4 at a time; filers never overlap
+  bigin worklist extract <INT> --out _runs/RUN/tasks/<INT>.extract.in.json
+  Agent(signal-extractor) → <INT>.signals.out.json
+  bigin ingest <out> --kind signals --run RUN        # INVALID → SendMessage the errors to the SAME agent once
+  bigin note write-signals <out> --run RUN           # prints {added, audit_owed, audit_reasons, why_repair?};
+                                                     # records extracted:<INT> (and audit-owed:<INT>)
+  why_repair present → SendMessage(same extractor): "REPAIR run (mode: repair): rows #… have Why `not stated`;
+       redo the Why search; output only the rows whose Why you found, with n" → <INT>.whyrepair.out.json
+       bigin ingest … --kind signals --run RUN ; bigin note write-signals <that file>
+  audit_owed → bigin worklist audit <INT> --out … ; Agent(signal-auditor) ; bigin ingest … --kind audit --run RUN ;
+       bigin note audit-apply <out> ; bigin run record RUN --task audited:<INT> --status ok
+  bigin worklist file <INT> --out … ; Agent(signal-filer) ; bigin ingest … --kind filing --run RUN ;
+       bigin file apply <out>                         # prints {hub_rows, pp, en, hubs_created, status}
+  bigin run record RUN --task filed:<INT> --status ok
+  bigin worklist analyze <INT> --out … ; Agent(intake-analyst) ; bigin ingest … --kind analysis --run RUN ;
+       bigin note analysis-apply <out>                # prints {affected, conflicts, blocking, questions_added, …}
+  bigin run record RUN --task analysed:<INT> --status ok
+bigin lint --full ; bigin coverage --stage file
 ```
 
-## The audit-owed test
+A schema error from `ingest` goes back to the SAME agent once ("rewrite <out> so it validates"); still invalid →
+record the task failed, park the note, move on.
 
-Dispatch `signal-auditor` when ANY holds (`_bigin/stages/extract/2b-audit.md` § When the independent pass is owed):
-any block is a transcript (however short) · `## Raw` ≥ ~300 lines · more than one block with an attachment or thread
-among them · the extractor reported an unread block or `not stated` over 30% · its self-audit found an inversion or a
-contradiction · its self-audit repaired more than 5 rows. Otherwise the self-audit stands — report `audit: self`.
+**Cost is recorded for you.** `bigin ingest --run` writes an estimated metrics row for every agent output (card +
+task input + source lines + output). When a task notification carries a `<usage>` block, add the measured figure
+too: `bigin metrics add --run RUN --stage extract --task <INT> --agent <name> --usage "<usage block>"`.
+
+## Audit depth — the engine's call
+
+`bigin note write-signals` decides: `audit_owed: true` with `audit_reasons` → dispatch `signal-auditor`; otherwise
+the extractor's self-audit stands and the note is reported `audit: self`. The triggers are
+`_bigin/stages/extract/2b-audit.md` § When the independent pass is owed. Never override the verdict in either
+direction, and never audit inline.
 
 ## Re-spawns
 
 - The extractor reports an unread block → re-dispatch scoped to that block (`mode: append`).
-- `not stated` > 30% of requirement/feedback rows → re-dispatch scoped to those rows (`mode: repair`) to redo the
-  Why search.
+- `why_repair` rows (`not stated` over 30%) → the Why repair in the loop above. It is not an audit trigger.

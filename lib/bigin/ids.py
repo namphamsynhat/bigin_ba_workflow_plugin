@@ -358,6 +358,31 @@ def mint_route(vault, route_path):
     return [(k, v) for k, v in minted.items()]
 
 
+def reserve_ux(vault, count=1):
+    """Reserve the next ``count`` UX-### numbers for the design stage, under the id lock.
+
+    A UX spec's FILE is written later, by a worker, so the number has to be held in between: the highest
+    number handed out is kept in ``01-Requirements/.ids.reserved.json`` and a later call never returns it
+    again, even when the file it was reserved for was never written. Replaces "grep the folder for the
+    highest UX-###", which reads a failed or denied search as "no ids yet" and reuses one."""
+    import json
+    if count < 1:
+        raise EngineError("mint ux needs --count ≥ 1")
+    with id_lock(vault):
+        on_disk = max(_scan_numbers(glob.glob(os.path.join(vault.ux_dir, "UX-*.md")), "UX") or [0])
+        rp = os.path.join(vault.req, ".ids.reserved.json")
+        try:
+            reserved = load_json(rp) if os.path.exists(fs_path(rp)) else {}
+        except ValueError:
+            reserved = {}
+        start = max(on_disk, int(reserved.get("UX") or 0))
+        ids_ = [fmt("UX", start + k) for k in range(1, count + 1)]
+        reserved["UX"] = start + count
+        with open(fs_path(rp), "w", encoding="utf-8") as f:
+            json.dump(reserved, f, indent=2)
+    return ids_
+
+
 def mint_from_spec(vault, kind, spec_path):
     if kind == "route":
         return mint_route(vault, spec_path)

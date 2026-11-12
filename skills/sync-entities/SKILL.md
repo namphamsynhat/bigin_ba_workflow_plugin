@@ -1,7 +1,6 @@
 ---
 name: sync-entities
-description: >-
-  Promote and update the entities an approved use case references — each one written as a complete data dictionary for a real-world business object (every known field, enum values spelled out, attribute-shaped fragments absorbed into their owner) — and refresh the feature hub(s) that UC belongs to: the vault-wide bookkeeping `/approve-uc` no longer does inline. Run with no argument to drain every UC still waiting (`status: approved`, `synced: false`), or name one UC to process just it. Use whenever convenient after one or more approvals — at the end of a review session, before anything that needs current entity data, or any time in between.
+description: "Promote and update the entities an approved use case references, each as a full data dictionary, and refresh the feature hubs it belongs to. Run with no argument for every approved UC not yet synced, or name one UC. Use after approvals, or before anything that needs current entity data."
 argument-hint: "[UC-### to sync one · EN-### or `rebuild` to repair entity dictionaries · omit to process every UC still waiting on sync]"
 ---
 

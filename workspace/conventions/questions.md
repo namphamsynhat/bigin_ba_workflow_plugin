@@ -59,7 +59,7 @@ applies wherever `/extract-signal` or `/bigin-transform-signal` write a
 ```
 - [ ] Q: <How it works today — plain business language, no ids.> <What the new request changed —
   plain business language.> <The one decision needed, as its own question sentence: yes/no,
-  A-or-B, or an (a)/(b)/(c) list when there are three or more options.> (owner: client|team)
+  A-or-B, or an (a)/(b)/(c) list when there are three or more options.> (owner: client|team|dev)
   (ref: UC-###, BR-###, INT-### — traceability only, safe to ignore when answering)
 ```
 
@@ -78,6 +78,19 @@ applies wherever `/extract-signal` or `/bigin-transform-signal` write a
   split them into separate `Q:` lines instead.
 - **Never assume the reader has the note open elsewhere.** The question must stand alone even if
   it's the only line anyone reads.
+- **Ask once, where the decision lives.** A question about the whole feature — which operators, markets
+  or releases it serves, which regulation applies, what is in the first release — is ONE question on the
+  **feature hub** (`add_question`, target `HUB`), not a copy on every use case it touches. Raised per
+  use case it parks each of them behind the same answer, in slightly different words, and the client
+  reads the same decision three times. Before adding any question, read the open ones on the card you
+  were given: one that already asks for the same decision is not asked again, however differently you
+  would have worded it.
+- **One assumption, one question.** When requirement content comes from an assumption the team wrote
+  down (an intake note recording what the BA assumed, not what the client said), each assumption gets
+  its own question, opening `Assumption —` and naming the single thing assumed, so the client can
+  confirm one and correct another. Three or four assumptions under one "are these right?" cannot be
+  answered with yes or no, and a "mostly" leaves all of them open. The question's `(ref: …)` names the
+  step or flow the assumption produced, so a correction lands on the right line.
 
 **Rules — readability.** Pairing every id with its meaning is necessary but *not sufficient*: a
 question can satisfy every rule above and still be unreadable, because it's written in vault
@@ -89,6 +102,11 @@ register — dense with ids, in one long sentence, using vocabulary coined while
   *fold-in*, *bucket*, *UC/BR/INT/PP/EN*. Push every id into the trailing `(ref: …)` parenthetical
   where a reader can skip it. `owner: team` may use ids inline — still always paired with what
   they say.
+- **`owner: dev` is the build team's question.** Use it when only how the system is, or will be, built can
+  settle the answer — an API, a data source, a limit the platform enforces — never for a business decision. It is
+  read by the dev team through a Jira comment, so lead with the Jira key (`ACME-123:`), then the question; ids and
+  implementation terms (field, endpoint, table) are welcome, still paired with what they mean. The tags
+  `(owner: client|team|dev)` and, once the engine adds them, `(asked: …)` / `(sent: … via …)` trail the line.
 - **Use only the client's own words for the business concepts.** Never invent a term to compress
   something ("the 20% cap bucket", "the narrative-question set") unless the client or the source
   document actually used it. If you need a name for a group of things, list the things.

@@ -123,6 +123,7 @@
           "owner": {
             "enum": [
               "client",
+              "dev",
               "team"
             ]
           },

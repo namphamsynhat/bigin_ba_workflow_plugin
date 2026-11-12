@@ -1,7 +1,7 @@
 ---
 name: uc-splitter
-description: Use this agent when /restructure-uc has a SETTLED split plan for a Use Case that outgrew one user goal — a human (live, or by answering a Stage 3 granularity question) decided where the seam falls — and that plan must become change sets. It reads the engine's split worklist plus the plan and writes one `changesets` JSON: `drop_step`/`drop_flow` ("moved to UC-###") on the source, `create_uc` (keyed) or `new_step_after`/`new_flow` on each destination, `mirror_br` for every rule that follows, `link` for sources/features. `scripts/bigin apply` mints ids and writes the files. Never invoke it to decide the seam, to mint an id, or to touch a hub.
-model: inherit
+description: "Turns a human-SETTLED split plan from /restructure-uc into one `changesets` JSON that moves steps, flows and rule mirrors to the new use cases. Never decides the seam, mints an id or touches a hub."
+model: sonnet
 color: orange
 tools: Read, Grep, Write
 ---

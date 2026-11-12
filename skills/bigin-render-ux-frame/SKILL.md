@@ -1,6 +1,6 @@
 ---
 name: bigin-render-ux-frame
-description: Render pure, modular UX design frames for a specified feature (UX-###) directly from the requirements vault (UX specs, navigation map, ENTITIES.md, use cases, business rules). Plans every screen in the screen inventory (1 screen = 1 frame), then generates multiple standalone HTML files (1 HTML file = 1 frame) without outer page layouts (no sidebar, no masthead, no footer) for seamless downstream prototype assembly.
+description: "Render standalone HTML frames (one per screen, no outer page shell) for one feature's UX spec (UX-###) from the requirements vault, ready for prototype assembly. Use on \"render frame\", \"render ux frame\", or when the assembler reports a missing screen."
 argument-hint: "<UX-###> [--screen <id>] [--state <name>] [--design-system <id>]"
 triggers:
   - "bigin-render-ux-frame"

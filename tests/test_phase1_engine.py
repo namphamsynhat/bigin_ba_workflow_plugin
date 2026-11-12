@@ -531,3 +531,106 @@ def test_lint_flags_sensitive_values():
         f.write("\nContact finance-ops@acme-grants.example.com or db01.internal for details.\n")
     code, out = run(root, "lint", "--full")
     assert code == 1 and "sensitive value reproduced" in out and "e-mail" in out and "internal host" in out
+
+
+# --- W1: quote-grounded signals and the recall sweep ---------------------------------------------
+
+def _signals_file(root, rows, mode=None):
+    import json as _j
+    d = {"kind": "signals", "int": "INT-003", "rows": rows}
+    if mode:
+        d["mode"] = mode
+    return write_json(root, "w1.signals.json", d)
+
+
+def _row(signal, quote=None, source="Dana Client 2026-09-12"):
+    r = {"type": "requirement", "signal": signal, "why": "not stated", "source": source}
+    if quote is not None:
+        r["quote"] = quote
+    return r
+
+
+def test_quote_verified_paraphrase_flagged_and_curly_quotes_normalised():
+    import json as _j
+    root, _ = fresh("comm-vault")
+    p = os.path.join(root, "00-Inbox/INT-003.md")
+    s = read(root, "00-Inbox/INT-003.md").replace("the applicant's previous grants", "the applicant’s   previous grants")
+    with open(p, "w", encoding="utf-8", newline="\n") as f:
+        f.write(s)
+    rows = [_row("Appeals are filed in 14 days", "Appeals must be filed within 14 days of the rejection"),
+            _row("Reviewers see earlier grants", "reviewers want to see the applicant's previous grants"),   # straight vs curly + spacing
+            _row("Appeals deadline", "appellants have two weeks"),                                             # paraphrase
+            _row("No quote at all")]
+    code, out = run(root, "--json", "note", "write-signals", _signals_file(root, rows))
+    res = _j.loads(out)
+    assert code == 0 and res["unverified"] == [3, 4], res
+    assert any("quotes not found" in x for x in res["audit_reasons"]) and res["audit_owed"] is True, res
+    note = read(root, "00-Inbox/INT-003.md")
+    assert note.count("[unverified]") == 2 and "quoted_lines:" in note, note
+
+
+def test_quote_repair_clears_flag_and_unverified_rate_below_threshold_keeps_audit_off():
+    import json as _j
+    root, _ = fresh("comm-vault")
+    code, out = run(root, "--json", "note", "write-signals", _signals_file(root, [_row("Appeals deadline", "two weeks")]))
+    assert _j.loads(out)["unverified"] == [1]
+    fix = [{"n": 1, "type": "requirement", "signal": "Appeals deadline", "source": "Dana Client 2026-09-12",
+            "quote": "filed within 14 days of the rejection"}]
+    code, out = run(root, "--json", "note", "write-signals", _signals_file(root, fix, mode="repair"))
+    res = _j.loads(out)
+    assert code == 0 and res["unverified"] == [] and res["edited"] == [1], res
+    assert "[unverified]" not in read(root, "00-Inbox/INT-003.md")
+    # 1 unverified of 11 is 9% — under the 10% line, the audit is not owed on that count alone
+    rows = [_row(f"claim {i}", "Appeals must be filed within 14 days of the rejection", source=f"s{i}") for i in range(10)]
+    rows.append(_row("one more", "never said"))
+    res = _j.loads(run(root, "--json", "note", "write-signals", _signals_file(root, rows, mode="append"))[1])
+    assert res["unverified"] and not any("quotes not found" in x for x in res["audit_reasons"]), res
+
+
+def test_uncovered_source_runs_are_reported_and_legacy_notes_are_left_alone():
+    import json as _j
+    root, _ = fresh("comm-vault")
+    p = os.path.join(root, "00-Inbox/INT-003.md")
+    extra = "\n".join(f"Line {i} of an unrelated discussion about the colour of buttons." for i in range(1, 9))
+    s = read(root, "00-Inbox/INT-003.md").replace("when reviewing.\n", "when reviewing.\n" + extra + "\n", 1)
+    with open(p, "w", encoding="utf-8", newline="\n") as f:
+        f.write(s)
+    res = _j.loads(run(root, "--json", "note", "write-signals",
+                       _signals_file(root, [_row("Appeals are filed in 14 days", "Appeals must be filed within 14 days of the rejection")]))[1])
+    assert res["uncovered"] and res["uncovered"][0]["src"] == "SRC-1" and res["uncovered_pct"] > 50, res
+    code, out = run(root, "coverage", "--stage", "extract")
+    assert "unread" in out and "INT-003" in out, out
+    # a note whose rows predate quotes (INT-001 in the fixture) has no quoted_lines and is never judged
+    code, out = run(root, "--json", "coverage", "--stage", "extract")
+    assert "INT-001" not in _j.loads(out)["grounding"], out
+
+
+def test_quoted_lines_survive_front_matter_growth_and_coverage_ignores_pre_quote_blocks():
+    import json as _j
+    root, _ = fresh("comm-vault")
+    p = os.path.join(root, "00-Inbox/INT-003.md")
+    filler = "\n".join(f"Filler line {i} about the colour of buttons." for i in range(1, 9))
+    s = read(root, "00-Inbox/INT-003.md").replace("when reviewing.\n", "when reviewing.\n" + filler + "\nThe final decision letter goes out by post.\n", 1)
+    open(p, "w", encoding="utf-8", newline="\n").write(s)
+    run(root, "note", "write-signals", _signals_file(root, [_row("Letter by post", "The final decision letter goes out by post.")]))
+    note = read(root, "00-Inbox/INT-003.md")
+    # grow the front matter after the fact: the stored spans must not drift with it
+    open(p, "w", encoding="utf-8", newline="\n").write(note.replace("\nupdated:", "\nextra_key: 1\nupdated:", 1))
+    g = _j.loads(run(root, "--json", "coverage", "--stage", "extract")[1])["grounding"]["INT-003"]
+    assert g["uncovered"] and g["uncovered"][0]["lines"][1] < [i for i, l in enumerate(read(root, "00-Inbox/INT-003.md").splitlines(), 1) if "final decision" in l][0] - 3, g
+    assert "grounded_from" in read(root, "00-Inbox/INT-003.md")
+
+
+def test_advisory_question_and_story_lint_prints_but_never_fails():
+    from bigin import stories
+    root, _ = fresh("comm-vault")
+    p = os.path.join(root, "01-Requirements/_ucs", [f for f in os.listdir(os.path.join(root, "01-Requirements/_ucs")) if f.startswith("UC-002")][0])
+    s = read(root, os.path.relpath(p, root)).replace("## 6.", "- [ ] Q: Check UC-002 signal handling\n- [ ] Q: Is BR-001 enough? (owner: client)\n\n## 6.", 1)
+    open(p, "w", encoding="utf-8", newline="\n").write(s)
+    code, out = run(root, "lint", "--full")
+    assert code == 0 and "advisory: question wording" in out, out
+    assert "no `(owner" in out and "does not end with `?`" in out and "names a vault id or term" in out, out
+    text = "---\nid: US-001\n---\n\n## 6\n\nScenario: Fast\n  Given a member\n  Then it is quick and user-friendly\n\nScenario: Fine\n  Given a\n  When b\n  Then c\n"
+    issues = stories.ac_issues(text)
+    assert any("no When" in m for _, m in issues) and any("user-friendly" in m for _, m in issues), issues
+    assert not any("Fine" in m for _, m in issues), issues

@@ -70,6 +70,13 @@ class Index:
             reasons.append("removed")
         if aid.startswith("UC") and model.is_placeholder(d):
             reasons.append("not yet drafted (§ 2 is still the template placeholder)")
+        elif aid.startswith("UC") and not nq and status not in ("approved", "removed"):
+            # a drafted UC with no question open reads as ready for sign-off — unless who it is for, or
+            # why, was never written AND nobody is asking: that gap is silent everywhere else
+            from .changeset import field_value
+            blank = [f for f in ("Primary Actor", "Business Need / Goal") if field_value(d, "1", f) == ""]
+            if blank:
+                reasons.append("§ 1 " + " and ".join(blank) + " not filled, and no open question asks for it")
         if model.has_staged(d):
             reasons.append("staged content awaiting fold-in")
         if self.pending.get(aid):

@@ -37,11 +37,21 @@ section — one row per story:
 | [[US-001 Book a free slot]] | P1 | UC-003 S1–S6 | draft |
 ```
 
+## Part 3b — Dev cards (only when `dev_card: on`)
+
+When `project.md` sets `dev_card: on`, run `scripts/bigin card EP-<NNN> --write` for each epic this run touched.
+It writes `_cards.md` in the epic folder: one short card per screen (and per back-end process no screen serves),
+rendered from the vault with no model call. Never edit `_cards.md`; fix the story, UC or UX spec and render it
+again. With `dev_card: off` (the default) skip this part — anyone can still run the command on demand.
+The build packs (`--for agent --write`), the estimate sheet (`--estimate`) and the Jira paste text (`--for jira`) come later, at
+`/approve-story`'s hand-off step — a pack built before approval says so in its header.
+
 ## Part 4 — Report
 
 ```text
 per feature: EP-### (new|updated) · stories new / updated / unchanged · drifted approved stories
              snapshot (new <folder> | reused | none) + gaps · open questions · verification 8/8
+             dev cards (written: N cards, M AI-assumed lines | off)
 next: review the epic and stories, then /approve-story <US-###…> (or the whole EP-###)
 ```
 

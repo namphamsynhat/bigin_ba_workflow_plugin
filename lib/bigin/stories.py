@@ -181,6 +181,12 @@ def section(text, number):
     return out
 
 
+def has_criteria(text):
+    """True when § 6 holds at least one Scenario (Gherkin keyword or a Given/When/Then line)."""
+    return any(re.search(r"\bScenario\b|^\s*(?:[-*]\s*)?(?:\*\*)?(?:Given|When|Then)\b", line, re.I)
+               for line in section(text, 6))
+
+
 def ac_tags(text):
     """{(uc or None, id)} named by the acceptance-criteria tags in § 6 — ``[S3]``, ``[E1, BR-004]``,
     ``[UC-003 E2]``. Markdown links and anything that isn't an id are ignored."""
@@ -222,9 +228,13 @@ def expand_slice(item, order):
 
 
 def coverage(vault):
-    """Per epic: every live S#/A#/E# of each source UC that no story slices or tags."""
+    """Per epic: every live S#/A#/E# of each source UC that no story slices or tags.
+
+    A slice only counts when its story has at least one acceptance criterion: `slice_of: UC-003 S1-S4`
+    on a story whose § 6 holds no Scenario claims four steps and proves none, so that story covers
+    nothing and is named under ``no_criteria``."""
     from . import model
-    res = {"epics": 0, "stories": 0, "units": 0, "covered": 0, "missing": []}
+    res = {"epics": 0, "stories": 0, "units": 0, "covered": 0, "missing": [], "no_criteria": []}
     stories = [vault.load(p) for p in vault.story_paths()]
     for ep_path in vault.epic_paths():
         ep = vault.load(ep_path)
@@ -243,10 +253,13 @@ def coverage(vault):
             for s in mine:
                 slices = parse_slices(s.fm_get("slice_of") or "")
                 story_ucs = set()
+                testable = has_criteria(s.text)
+                if not testable and s.id not in res["no_criteria"]:
+                    res["no_criteria"].append(s.id)
                 for item in slices:
                     u, ids = expand_slice(item, order)
                     story_ucs.add(u)
-                    if u == uc_id:
+                    if u == uc_id and testable:
                         got |= ids
                 for u, sid in ac_tags(s.text):
                     if u == uc_id or (u is None and uc_id in story_ucs):
@@ -262,8 +275,82 @@ def report(res, list_all=False):
              f"  UC steps/flows {res['units']:>6}  in the epics' source UCs",
              f"  covered        {res['covered']:>6}  sliced (slice_of) or tagged in a story's § 6",
              f"stage checked: stories — missing {len(res['missing'])}"]
+    if res.get("no_criteria"):
+        lines.append("  no acceptance criteria (their slices cover nothing): " + ", ".join(res["no_criteria"]))
     if res["missing"]:
         shown = res["missing"] if list_all else res["missing"][:20]
         lines.append("  " + ", ".join(shown) + ("" if list_all or len(res["missing"]) <= 20
                                                  else f" … (+{len(res['missing']) - 20}, --list for all)"))
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------- acceptance criteria (advisory)
+
+WEAK_WORDS = ("appropriate", "user-friendly", "user friendly", "intuitive", "seamless", "quickly", "as needed",
+              "properly", "etc.", "and so on", "easy to use", "fast")
+
+
+def ac_issues(text):
+    """[(line, message)] — each ``Scenario`` should carry Given, When and Then, and avoid a short list of
+    unmeasurable words. Advisory only: such lists over-flag, so nothing here fails a lint run."""
+    start, lines = _body_lines(text)
+    out, i = [], 0
+    while i < len(lines):
+        m = re.match(r"^\s*Scenario(?: Outline)?:\s*(.*)$", lines[i])
+        if not m:
+            i += 1
+            continue
+        j = i + 1
+        while j < len(lines) and lines[j].strip() and not re.match(r"^\s*(Scenario|```|#)", lines[j]):
+            j += 1
+        block = lines[i:j]
+        missing = [k for k in ("Given", "When", "Then") if not any(re.match(r"^\s*%s\b" % k, b) for b in block)]
+        if missing:
+            out.append((start + i + 1, "scenario `%s` has no %s step" % (m.group(1).strip()[:40], "/".join(missing))))
+        low = " ".join(block).lower()
+        weak = [w for w in WEAK_WORDS if re.search(r"\b%s" % re.escape(w), low)]
+        if weak:
+            out.append((start + i + 1, "scenario `%s` uses %s — say what is observable" % (m.group(1).strip()[:40], ", ".join("`%s`" % w for w in weak[:3]))))
+        i = j
+    return out
+
+
+# ---------------------------------------------------------------------------- size and plain English (advisory)
+
+MAX_AC, MAX_SCREENS, MAX_NODES = 8, 3, 15
+MAX_SENTENCE_WORDS, MAX_AC_TITLE_WORDS = 25, 12
+
+
+def size_issues(text, screens=()):
+    """[message] when a story looks bigger than one dev-day / one PR. Counts only — lint cannot measure a day."""
+    out = []
+    n_ac = sum(1 for x in section(text, 6) if re.match(r"^\s*(?:[-*]\s*)?(?:\*\*)?Scenario\b", x))
+    if n_ac > MAX_AC:
+        out.append(f"{n_ac} acceptance criteria (> {MAX_AC})")
+    if len(screens) > MAX_SCREENS:
+        out.append(f"{len(screens)} screens (> {MAX_SCREENS})")
+    nodes = set()
+    for x in section(text, 3):
+        nodes |= set(re.findall(r"\b([A-Za-z]\w*)\s*[\[\({]", x))
+    if len(nodes) > MAX_NODES:
+        out.append(f"{len(nodes)} flowchart nodes (> {MAX_NODES})")
+    return out
+
+
+def plain_english_issues(text):
+    """[(where, message)] for long sentences in § 1 and long AC titles — the parts the dev card shows."""
+    out = []
+    body = " ".join(x.strip() for x in section(text, 1) if x.strip() and not x.strip().startswith("<"))
+    for sent in re.split(r"(?<=[.!?])\s+", body):
+        words = len(re.findall(r"[\w'’-]+", sent))
+        if words > MAX_SENTENCE_WORDS:
+            out.append(("§ 1", f"a {words}-word sentence (> {MAX_SENTENCE_WORDS}): `{sent[:50]}…` — split it"))
+    for x in section(text, 6):
+        m = re.match(r"^\s*(?:[-*]\s*)?(?:\*\*)?Scenario(?: Outline)?:\s*(.*?)(?:\*\*)?\s*$", x)
+        if m:
+            title = re.sub(r"\[[^\]]+\]", "", m.group(1))
+            title = re.sub(r"^AC\d+\s*[—-]\s*", "", title).strip()
+            words = len(re.findall(r"[\w'’-]+", title))
+            if words > MAX_AC_TITLE_WORDS:
+                out.append(("§ 6", f"AC title of {words} words (> {MAX_AC_TITLE_WORDS}): `{title[:50]}…`"))
+    return out

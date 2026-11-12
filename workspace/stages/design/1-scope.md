@@ -2,7 +2,7 @@
 
 ```text
 runs: orchestrator, FIRST
-in:   $ARGUMENTS (a slug, a UC-###, or nothing) + every feature hub
+in:   $ARGUMENTS (a slug, a UC-###, or nothing) → `bigin design scope`
 out:  the work-list: per feature, which UCs are NEW, which are CHANGED, which are CURRENT
     + the project's platform, read once here and passed to every later stage and worker
     + each feature's open pain-point COUNT (a count — the statements are Stage 2's input)
@@ -12,42 +12,37 @@ never: designing anything · reading a whole UC yet · touching a file · lookin
 Read `design-core.md` § Staleness and `design-platform.md` § Platform before this stage. They define the three-way
 read below and the one project-wide fact this stage resolves for the whole run.
 
-## Part 1 — Which features are candidates
+## Part 1 — Run the scan
 
 ```text
-$ARGUMENTS is a slug        → that feature only
-$ARGUMENTS is a UC-###      → that UC's primary_feature only
-$ARGUMENTS is empty         → every file in {hub_dir}
+bigin run new --stage design                 once — the run id every later command takes
+bigin design scope [<slug> | UC-###] --run <run>
 ```
 
-Read only each hub's **frontmatter** here (`uc:`, `uiux:`) plus its `## Design Directives` row count.
-Full UC bodies are Stage 3's job — a scan that reads every UC in full burns the run before a single
-screen is written.
+One command, and the whole of Parts 2–5b below: it reads every candidate hub's `uc:` list, compares
+each use case's **live frontmatter version** against the owning UX spec's `absorbed:`, applies the four
+gates, counts each hub's open pain points and directives, and reads the platform and the mode. Print
+what it prints and continue. **Do not re-do it by hand, and do not open a UC or a UX spec at this
+stage** — the parts below say what its output *means*, so you can explain a line, not so you can
+recompute it.
 
-## Part 2 — The three-way read, per UC
+## Part 2 — The states it reports
 
 ```text
-per candidate feature:
-    ucs      = the hub's uc: list
-    ux       = {ux_dir}/UX-### for this feature   (from the hub's uiux:, else Grep {ux_dir}
-                                                   for feature: <slug>)
-    absorbed = ux.absorbed:  or []  if no UX yet
-
-    per uc in ucs:
-        live = that UC file's frontmatter version        # read the frontmatter, not the hub table
-        uc not in absorbed                → NEW
-        uc in absorbed at an older version → CHANGED
-        uc in absorbed at the same version → CURRENT
-    # ux.stale: (bigin cascade) lists exactly the CHANGED ones — a cross-check, never a substitute for
-    # the comparison; re-stamping absorbed in 6-close clears it
+NEW       the use case is on no absorbed: list                       → design it
+CHANGED   absorbed at an older version (1.2 → 1.4)                   → redesign its screens
+CURRENT   absorbed at the live version                               → skip, and SAY SO
+DRAFTED   NOT absorbed, but a ## 2 row of the spec already serves it → a run died between Stage 3
+          and Stage 6. Its screens are on disk: resume at Stage 4, never dispatch its worker again
+resume: review | done   (with --run) this run already wave-checked, or closed, that feature
 ```
 
-`CURRENT` is a result, not a silence. Report it (`<slug>: 3 UC current, nothing to redesign`) so a
-human can tell "already designed" from "the run never got there".
+`CURRENT` is a result, not a silence: a human has to be able to tell "already designed" from "the run
+never got there". `ux.stale:` (`bigin cascade`) lists exactly the `CHANGED` ones — a cross-check.
 
-## Part 3 — Four gates, in order, stopping at the first failure
+## Part 3 — The four gates behind a `skipped` line
 
-Per UC marked `NEW` or `CHANGED`:
+Applied by the scan, in order, stopping at the first failure:
 
 | # | Gate | Fails when | Then |
 |---|---|---|---|
@@ -72,126 +67,50 @@ A design-only feature gets a UX spec with a `## 1 Design Brief` and `## 3 Screen
 the directives describe, an empty `absorbed:`, and no `## 4 Flows`. **Never mint a placeholder UC**
 to give this stage something to key on.
 
-## Part 5 — Mode, and the platform
-
-Two project-wide facts get settled here, once, before any feature is looked at.
+## Part 5 — Mode, platform, pain points: what the last lines mean
 
 ```text
-{nav_map_file} absent  → BOOTSTRAP   Stage 2 creates the navigation map
-{nav_map_file} present → EXTEND      Stage 2 loads its tree and adds to it
+mode: bootstrap | extend      keyed on {nav_map_file} and nothing else. There is no design system in
+                              this pipeline and no token file to look for
+                              (`design-platform.md` § Rendering is a separate step).
+platform: <v> (stated)        project.md says web | mobile | both
+platform: web (defaulted)     the key is absent, or holds a bad value (named on the line). `web` is
+                              what every run before the field existed produced. Announce it as
+                              DEFAULTED, never as stated, and never ask — this skill is headless
+pp: <N> open                  a COUNT per feature. The statements are Stage 2's and Stage 3's input
+new UX ids needed: <N>        the argument for `bigin mint ux --count <N>` at Stage 3
 ```
 
-Announce the mode in the report. On `BOOTSTRAP`, two or more features make a better first navigation
-tree than one — but one is allowed; just say the shell will be thin.
-
-**Mode is about navigation and nothing else.** There is no design system in this pipeline and no
-token file to look for: colour, type, spacing, and components are supplied later by a design team or
-bound at render time (`design-platform.md` § Rendering is a separate step). A run that goes looking
-for `_design-system/` is reading for a vault shape this plugin stopped producing.
-
-Then read `platform:` from `_bigin/system/project.md`'s frontmatter — **once, here, for the whole
-run** (`design-platform.md` § Platform):
-
-```text
-platform: web | mobile | both   → that value, announced as STATED
-key absent                      → web, the compatibility default. Announce it as DEFAULTED, never
-                                  as a stated value (§ Adopting an existing project config below)
-a value that is none of the three → treat as web, announce it as defaulted, and name the bad value
-                                  in the report. Never guess which of the three a typo meant
-```
-
-`web` is the compatibility default on purpose: it is what every design run before this field existed
-produced, so an unstamped project keeps designing exactly as it always did rather than silently
-changing shape mid-engagement.
-
-**Announce it alongside the mode, then pass it down.** Stages 2–6 and every worker this run
-dispatches are *told* the platform in their instructions. No later stage and no worker re-reads the
-project config to decide it — two workers inferring a platform differently produces one product with
-two navigation shells, and neither of them looks wrong on its own.
-
-Part 5 establishes the **project default** only. A per-feature override — a UC, a hub `## Design
-Directives` row, or an active `DESIGN-PRINCIPLES` row that *explicitly states* a platform for that
-feature — is resolved in Stage 3, per feature, against the UC bodies this stage deliberately does
-not read (Part 1). This stage neither hunts for one nor pre-empts one, and a hub's directive row
-**count** is not evidence of one.
-
-## Part 5b — Note the pain points, do not read them yet
-
-Per candidate feature, count the rows in its hub's `## Pain Points` section that are **not** resolved.
-A count, on the work-list line — nothing more. The statements themselves are Stage 2's and Stage 3's
-input (`design-navigation.md` § User flows and pain points), and reading them here costs the same
-context the Part 1 rule exists to protect.
-
-The count earns its place because it is what a human scans the work-list for: a feature carrying six
-open pain points and one UC is a feature whose flows matter more than its screen count, and that is
-visible here or nowhere.
+The platform here is the **project default**. A per-feature override exists only where a hub
+`## Design Directives` row or an active `DESIGN-PRINCIPLES` row *explicitly states* one; it is resolved
+at Stage 3 from the worklist, and never inferred from how a step is worded. Every later stage and
+every worker is *told* the platform — none re-reads the project config.
 
 ## Part 6 — Print the work-list, then keep going
 
-This stage is **headless, with no exception.** Print the work-list and continue — no confirmation, no
-question, and **no halt at all**. There used to be one: a required design engine, checked here, that
-stopped the whole run when it was absent. Rendering is now `/bigin-render-design-od`, a separate skill a
-human invokes when they want a prototype, so the tool this stage does not use can no longer stop the
-work this stage does. Nothing in this skill renders, so nothing in this skill needs a renderer.
+**Headless, with no exception**: print the scan's output, add the method line, and continue. No
+confirmation, no question, no halt — a missing flow, an unclear directive or an uninstalled design
+tool is a skip, an Open Question, or somebody else's step. Nothing in this skill renders, so nothing
+here checks for a renderer.
 
 ```text
-work-list:
-  <slug>  UX-### (existing | new)  platform: web  pp: 3 open  — UC-003 NEW, UC-007 CHANGED (1.2 → 1.4), UC-009 CURRENT
-  <slug>  design-only              platform: web  pp: 0 open  — 3 open directive(s)
-  skipped <slug>/UC-###                                       — <gate that failed>
-mode: bootstrap | extend (navigation map v<x>)
-platform: web | mobile | both (stated | defaulted)
+<the output of `bigin design scope`, verbatim>
 method: <wds | figma | <plugin> | built-in>          # the OPTIONAL method layer, never a renderer
 ```
 
-`platform:` sits on the announcement line **and** on every work-list line, and the repetition is the
-point: at this stage every line carries the project default, so a Stage 3 per-feature override
-prints in exactly this shape against exactly one slug. A human then sees *which* feature diverged
-and why, instead of holding one global value in their head and diffing it against prose further down
-the run.
-
 ## Failure modes
 
-- **Trusting the hub's `## Use Cases` table for a version.** It is a snapshot. Read the UC file's own
-  frontmatter, every time.
-- **Treating a missing `absorbed:` as "current".** No `absorbed:` means nothing was ever designed —
-  that is `NEW`, the loudest case in the list.
-- **Designing a UC from the wrong feature.** Gate 3 exists because two features would otherwise both
-  draw the same screens, and the second one to run would look like the design changed.
-- **Skipping a `needs-clarification` UC.** Its flow is real; its gaps are questions. Design what is
-  stated and ask about the rest.
-- **Reading every UC in full at this stage.** Scope is a frontmatter question.
-- **Inferring the platform from how a UC or a directive is worded.** "The courier scans the parcel"
-  reads phone-shaped and states nothing; "at a desk" says where an actor is, not what is being
-  built. The platform comes from the config, and only an *explicit* statement overrides it — later,
-  in Stage 3, cited as that feature's ground. An inferred platform reaches the client as a decision
-  somebody made.
-- **Letting a worker re-derive the platform.** It is read once, here, and passed down. A worker that
-  opens `_bigin/system/project.md` to check for itself is the second reader that eventually
-  disagrees with the first, and the product gets two navigation shells.
-- **Treating an absent `platform:` as a reason to ask.** This skill is headless and may be running
-  unattended from `/bigin-ba`. Absent means `web`, announced as defaulted, and reported as something
-  to stamp — the question belongs to `/bigin-upgrade-project`, where a human is present.
-- **Announcing a defaulted platform as a stated one.** `web` because nobody said and `web` because
-  the client said are the same design and completely different facts; collapsing them means nobody
-  ever comes back to stamp the config.
-- **Halting for anything.** A missing UC flow, an unclear directive, an ungrounded screen, an
-  uninstalled design tool: every one of those is a skip, an Open Question, or somebody else's step.
-  This skill has no halt, and re-introducing one turns an unattended pipeline into one that waits.
-- **Checking for a render engine here.** It was a real precondition once, and removing it was the
-  point of splitting rendering out: a stage that reads use cases and writes markdown was stopping
-  because a prototype tool was not installed. `/bigin-render-design-od` checks its own engine, when a
-  human asks it to render.
-- **Naming a design tool, or pasting an install command, into this guide.** Every stage guide is
-  engine-agnostic. The install commands live in `/bigin-render-design-od`'s own adapter, and a copy
-  here is the copy that goes stale.
-- **Checking for a design system or a token file.** There is none, by design: the visual system is
-  the design team's or the render engine's (`design-platform.md` § Rendering is a separate step).
-  A run that keys its mode on `_design-system/` reads a vault shape this plugin no longer produces,
-  reports `bootstrap` forever, and tells Stage 2 to seed something nothing will ever cite.
-- **Reading the pain-point statements here.** Part 5b wants a count. The statements are what Stage 2
-  shapes the flows against and Stage 3 grounds an emphasis with — pulling them into the orchestrator
-  now spends the context the whole fan-out exists to protect, twice.
+- **Recomputing the scan by reading hubs and UCs.** It costs the context the fan-out exists to
+  protect, and a hand comparison is where a `CHANGED` gets read as `CURRENT`.
+- **Dispatching a screens worker for a `DRAFTED` or `resume: review` feature.** Its screens exist; a
+  second worker redesigns them and the first set's questions are orphaned.
+- **Skipping a `needs-clarification` use case.** It passes every gate: its flow is real, its gaps are
+  questions. Design what is stated and ask about the rest.
+- **Inferring the platform from wording.** "The courier scans the parcel" reads phone-shaped and
+  states nothing. Only an explicit statement overrides the config.
+- **Announcing a defaulted platform as a stated one.** Same design, different fact — and nobody comes
+  back to stamp the config.
+- **Looking for a design system, a token file, or a render engine.** None is part of this run.
 
 ## Adopting an existing project config
 

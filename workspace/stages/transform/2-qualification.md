@@ -26,6 +26,16 @@ else. Two things to expect from one, though — Gate 1 will not fail it (the que
 the one that just got answered), and Stage 3 must draft it **from the decision recorded in its Notes**,
 not from the original signal text (`3-lane-uc.md` § Conflict).
 
+**Start with the engine.** `python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" qualify <slug> --apply` (fallback
+`python3`) decides everything in gates 1–3 that is a lookup — an open question naming the row, an attachment
+missing on disk, a cited note row that does not resolve — flips those rows to `held` with the notes below, and
+prints three lists: `pass`, `held`, and `check`. Open an intake note **only for a `check` row**, and read
+only what the entry quotes: an open question that names no row (gate 1 — same subject?), a note row
+corrected after filing (gate 3 — is the hub clause stale?), an e-mail note still awaiting a reply (gate 2).
+Gate 4 is not decided by the engine: it is a judgement about meaning, and it is yours for every `pass` row
+and every `check` row you clear. The gate text below is the rule the engine applies and the rule you apply
+to what it hands back.
+
 Each gate has exactly one outcome per case — write that outcome, never improvise a new one. **Every
 outcome is written by the engine:** `python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" hub flip <slug> <n>=<status>[:<dest>][@<note>]` (fallback `python3`)
 — never by editing the Signal Log. A failed row is **parked, not deleted**; the next run re-checks it,

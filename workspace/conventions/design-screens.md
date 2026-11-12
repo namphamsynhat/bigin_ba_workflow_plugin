@@ -66,7 +66,7 @@ until somebody renders)* · `## Changelog`.
 own prompt from these sections, the UCs, the BRs, and the entity register, so a second hand-written
 copy of the same screens was a drifting duplicate of the thing beside it. A spec written before this
 change carries `## Prototype Prompt — …` headings; they are harmless and self-heal on that feature's
-next design run (`3-screens.md` § Adopting an existing UX spec).
+next design run (`3-screens.md` § Adopting an existing UX spec → `3-screens-adopt.md`).
 
 `## 7` is **appended after `## 6`, never inserted before it.** Renumbering `## 6 Open Questions`
 would silently invalidate every hub mirror, stage guide, and verification check that cites it by

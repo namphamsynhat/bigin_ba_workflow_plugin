@@ -135,6 +135,7 @@
           "owner": {
             "enum": [
               "client",
+              "dev",
               "team"
             ]
           }
@@ -165,6 +166,7 @@
           "owner": {
             "enum": [
               "client",
+              "dev",
               "team"
             ]
           },

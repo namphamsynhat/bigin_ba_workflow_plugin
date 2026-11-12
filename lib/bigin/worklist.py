@@ -42,6 +42,35 @@ def uc_card(vault, d, full=False):
     return card
 
 
+def _short(text, n):
+    t = (text or "").strip()
+    return t if len(t) <= n else t[:n] + "…"
+
+
+def uc_index_card(d):
+    """Enough of a UC to decide whether a row belongs to it — and nothing an edit needs (no `sha`, no
+    questions). Phase A routes on these; Phase B gets the full card of each UC actually routed to."""
+    from .changeset import field_value
+    card = {"id": d.id, "title": model.title_of(d), **_fm(d, ("status", "primary_feature", "features", "level"))}
+    card["summary"] = {f: _short(field_value(d, "1", f), 200) for f in SUMMARY_FIELDS if field_value(d, "1", f) is not None}
+    card["steps"] = [{"id": s.id, "actor": _short(s.actor, 120), "system": _short(s.system, 80)}
+                     for s in model.steps(d) if not s.dropped]
+    card["flows"] = [{"id": f.id, "name": f.name} for f in model.flows(d) if not f.dropped]
+    card["brs"] = model.s4_brs(d)
+    return card
+
+
+def _route_targets(spec_path):
+    """UC ids a Phase A route.json routed to, plus the ids minted for its `new` entries."""
+    from .util import load_json
+    route_ = load_json(spec_path)
+    ids = {r.get("target") for r in route_.get("routes") or [] if re.match(r"^UC-\d+$", r.get("target") or "")}
+    minted = re.sub(r"\.json$", "", spec_path) + ".minted.json"
+    if os.path.exists(minted):
+        ids |= set(load_json(minted).values())
+    return ids
+
+
 def br_card(d, full=False):
     stmt = model.br_statement(d)
     return {"id": d.id, "title": model.title_of(d), **_fm(d, ("status", "feature", "uc")),
@@ -100,12 +129,23 @@ def route(vault, slug, args=None):
         if r["status"] == "retract":
             r["retract"] = _retract_info(vault, slug, r)
             extra |= set(re.findall(r"\bUC-\d+\b", r["destination"] or ""))
+    # One dispatch that does both phases (the fallback loop resumes the same agent) reads full cards once.
+    # Two dispatches (workflows/transform.js) read twice, so each phase gets only what it decides on:
+    #   --phase a              index cards — route on goal and steps, no shas, no questions
+    #   --phase b --spec <route.out.json>   full cards for the UCs Phase A routed to (and those just
+    #                          minted); every other candidate stays an index card, for step ids and links
+    phase = getattr(args, "phase", None) if args is not None else None
+    spec = getattr(args, "spec", None) if args is not None else None
+    if phase == "b" and not spec:
+        raise EngineError("worklist route --phase b needs --spec <the Phase A route.out.json>")
+    targets = (_route_targets(spec) | extra) if phase == "b" else set()
     cands, index = [], []
     for p in vault.uc_paths():
         d = vault.load(p)
         feats = [d.fm_get("primary_feature")] + d.fm_list("features")
-        if slug in feats or d.id in extra:
-            cands.append(uc_card(vault, d))
+        if slug in feats or d.id in extra or d.id in targets:
+            full_card = phase is None or (phase == "b" and d.id in targets)
+            cands.append(uc_card(vault, d) if full_card else uc_index_card(d))
         index.append(f"{d.id} {model.title_of(d)} [{d.fm_get('primary_feature')}]")
     brs = []
     for b in hub.fm_list("br"):
@@ -116,10 +156,18 @@ def route(vault, slug, args=None):
             # compact: the router greps a BR file only when it needs the full statement
             brs.append({"id": d.id, "title": model.title_of(d), "uc": d.fm_list("uc"), "sha": sha(stmt),
                         "statement": stmt[:160] + ("…" if len(stmt) > 160 else "")})
-    return {"$schema_version": 1, "kind": "worklist", "stage": "route", "feature": slug,
-            "hub": {"name": hub.fm_get("name"), "status": hub.fm_get("status")},
-            "rows": rows, "candidates": cands, "brs": brs, "uc_index": index,
-            "output": {"phase_a": "route", "phase_b": "changesets"}}
+    w = {"$schema_version": 1, "kind": "worklist", "stage": "route", "feature": slug,
+         "hub": {"name": hub.fm_get("name"), "status": hub.fm_get("status")},
+         "rows": rows, "candidates": cands, "brs": brs, "uc_index": index,
+         "output": {"phase_a": "route", "phase_b": "changesets"}}
+    if phase:
+        w["phase"] = phase
+        w["read"] = ("candidates are index cards (no sha, no questions): decide WHERE each row goes; the edit text "
+                     "comes in Phase B" if phase == "a" else
+                     "full cards (with sha and open questions) only for the UCs Phase A routed to; an index card "
+                     "has no sha — never anchor an edit on one. A row that turns out to need a UC shown only as an "
+                     "index card → add_question or gate it, do not guess its current text")
+    return w
 
 
 def _retract_info(vault, slug, row):
@@ -280,9 +328,39 @@ def file_(vault, nid, args=None):
                 for q in questions_in(hd, s_.start, s_.end):
                     if not q.checked:
                         open_elsewhere.append({"hub": f, "question": q.text[:300]})
-    return {"$schema_version": 1, "kind": "worklist", "stage": "file", "int": nid, "rows": rows, "features": feats,
-            "declared_features": d.fm_list("declared_features"), "hubs": hubs,
-            "open_questions_elsewhere": open_elsewhere[:80], "output": "filing"}
+    kept, omitted = _relevant_questions(open_elsewhere, rows)
+    w = {"$schema_version": 1, "kind": "worklist", "stage": "file", "int": nid, "rows": rows, "features": feats,
+         "declared_features": d.fm_list("declared_features"), "hubs": hubs,
+         "open_questions_elsewhere": kept, "output": "filing"}
+    if omitted:
+        w["open_questions_elsewhere_omitted"] = omitted
+    from . import questions
+    pm = questions.prematched(vault, d)
+    if pm:
+        # the reply quoted a pack's [q:…] tag: confirm THIS answer for THAT question (filing.answers), don't search
+        w["prematched_answers"] = pm
+    return w
+
+
+QUESTIONS_ELSEWHERE_MAX = 30
+
+
+def _terms(text):
+    return {t for t in re.findall(r"\w{3,}", (text or "").lower()) if not t.isdigit()}
+
+
+def _relevant_questions(questions, rows):
+    """Step 5b (a row that answers a question raised elsewhere) needs the questions a row could plausibly
+    answer, not every open question in the vault. Small sets pass whole; a large one is ranked by the
+    words it shares with this note's rows and cut — the count left out is reported, never hidden."""
+    if len(questions) <= QUESTIONS_ELSEWHERE_MAX:
+        return questions, 0
+    vocab = set()
+    for r in rows:
+        vocab |= _terms(r.get("signal"))
+    ranked = sorted(enumerate(questions), key=lambda iq: (-len(_terms(iq[1]["question"]) & vocab), iq[0]))
+    keep = sorted(i for i, _ in ranked[:QUESTIONS_ELSEWHERE_MAX])
+    return [questions[i] for i in keep], len(questions) - len(keep)
 
 
 def release(vault, scope, args=None):
@@ -302,10 +380,125 @@ def split(vault, uid, args=None):
             "output": "changesets"}
 
 
+def coverage(vault, slug, args=None):
+    """Stage 4b input (4b-coverage.md): one feature's use-case SET, compact — so the pass that asks
+    whether the set adds up reads this instead of every UC, BR and register file. The two lenses that are
+    pure lookups come back already answered under ``mechanical``; the other four are the reader's."""
+    from .changeset import field_value
+    from .vault import find_tables
+    hp = vault.hub_path(slug)
+    if not os.path.exists(hp):
+        raise EngineError(f"no hub '{slug}'")
+    hub = vault.load(hp)
+    ucs, cited_pp, mirrored = [], set(), {}
+    for p in vault.uc_paths():
+        d = vault.load(p)
+        feats = [d.fm_get("primary_feature")] + d.fm_list("features")
+        if slug not in feats or (d.fm_get("status") or "") in ("removed", "consolidated"):
+            continue
+        card = uc_index_card(d)
+        card["owns"] = d.fm_get("primary_feature") == slug
+        for f in ("Pre-conditions", "Post-conditions (success)"):
+            v = field_value(d, "1", f)
+            if v:
+                card["summary"][f] = _short(v, 400)
+        card["entities"] = d.fm_list("entities")
+        card["pain_points"] = d.fm_list("pain_points")
+        card["drafted"] = not model.is_placeholder(d)
+        cited_pp |= set(card["pain_points"])
+        for _, c in model.s4_rows(d):
+            mirrored.setdefault(c[0], []).append({"uc": d.id, "enforced_at": (c[2] if len(c) > 2 else "").strip()})
+        ucs.append(card)
+    brs, unenforced = [], []
+    for b in hub.fm_list("br"):
+        p = vault.find(b)
+        if not p:
+            continue
+        d = vault.load(p)
+        if (d.fm_get("status") or "") == "removed":
+            continue
+        stmt = model.br_statement(d)
+        brs.append({"id": d.id, "title": model.title_of(d), "statement": _short(stmt, 300), "mirrored_in": mirrored.get(d.id, [])})
+        live = [m for m in mirrored.get(d.id, []) if m["enforced_at"] and m["enforced_at"] not in ("—", "-")]
+        if not model.is_placeholder_statement(stmt) and not live:
+            unenforced.append({"br": d.id, "title": model.title_of(d),
+                               "finding": "mirrored in no use case" if not mirrored.get(d.id) else "mirrored with no enforcement point"})
+    pps, uncited = [], []
+    reg = os.path.join(vault.req, "PAIN-POINTS.md")
+    if os.path.exists(reg):
+        rd = vault.load(reg)
+        for t in find_tables(rd, rd.body_start, len(rd.lines)):
+            ci, st, stt, ft = t.col("PP-###"), t.col("Statement"), t.col("Status"), t.col("Feature")
+            if ci is None or stt is None or ft is None:
+                continue
+            for r in t.rows():
+                if len(r) <= max(ci, st or 0, stt, ft) or slug not in re.split(r"[\s,/]+", r[ft].strip()):
+                    continue
+                if r[stt].strip().lower() in ("resolved", "rejected", "addressed"):
+                    continue
+                pp = {"id": r[ci].strip(), "statement": r[st].strip() if st is not None else "", "status": r[stt].strip()}
+                pps.append(pp)
+                if pp["id"] not in cited_pp:
+                    uncited.append(pp)
+    gaps = []
+    gt = hub.table("Coverage Gaps") if hub.section("Coverage Gaps") else None
+    if gt is not None:
+        hdr = [h.strip() for h in gt.header]
+        for r in gt.rows():
+            gaps.append(dict(zip(hdr, [c.strip() for c in r])))
+    return {"$schema_version": 1, "kind": "worklist", "stage": "coverage", "feature": slug,
+            "hub": {"name": hub.fm_get("name"), "status": hub.fm_get("status"), "description": hub.fm_get("description")},
+            "use_cases": ucs, "brs": brs, "pain_points": pps, "existing_gaps": gaps,
+            "has_gaps_section": hub.section("Coverage Gaps") is not None,
+            "mechanical": {
+                "rule": unenforced,       # lens `rule`: a BR no use case enforces
+                "goal": uncited,          # lens `goal`, pain-point half: an open PP no use case cites
+                "note": "these two lenses are lookups and are complete; lifecycle, precondition, actor, data "
+                        "and the rest of goal need a reader. Each is still a gap ONLY if the record is silent "
+                        "(4b-coverage.md § The lens) — check existing_gaps before raising one."},
+            "read": "this is the whole input for the coverage pass: do not open the UC, BR or register files"}
+
+
+def stories(vault, slug, args=None):
+    """Stories stage: everything a story worker reads, and nothing else — each approved UC of the feature with
+    its live steps and flows, the BR statements it cites, and the entity data dictionaries it cites. The worker
+    never opens the UC, BR or entity files. ``--rows UC-001,UC-002`` restricts to those UCs."""
+    only = set(args.rows.split(",")) if args is not None and getattr(args, "rows", None) else None
+    ucs, brs, ens = [], {}, {}
+    for p in vault.uc_paths():
+        d = vault.load(p)
+        feats = {d.fm_get("primary_feature")} | set(d.fm_list("features"))
+        if slug not in feats or (d.fm_get("status") or "") not in ("approved", "enriched") or (only and d.id not in only):
+            continue
+        c = uc_card(vault, d, full=True)
+        for s in c["steps"]:
+            s.pop("sha", None)
+        for f in c["flows"]:
+            f.pop("sha", None)
+        c["steps"] = [s for s in c["steps"] if not s.get("dropped")]
+        c["flows"] = [f for f in c["flows"] if not f.get("dropped")]
+        c["version"] = str(d.fm_get("version") or "")
+        ucs.append(c)
+        for b in c["brs"]:
+            bp = vault.find(b)
+            if bp and b not in brs:
+                bc = br_card(vault.load(bp), full=True)
+                brs[b] = {"id": b, "title": bc["title"], "statement": bc["statement"]}
+        for en in d.fm_list("entities"):
+            ep = vault.find(en) if re.match(r"^EN-\d+$", str(en)) else None
+            if ep and en not in ens:
+                ed = vault.load(ep)
+                ens[en] = {"id": en, "title": model.title_of(ed), "fields": _short(_clean("\n".join(ed.lines[ed.body_start:])), 2500)}
+    return {"$schema_version": 1, "kind": "worklist", "stage": "stories", "feature": slug, "use_cases": ucs,
+            "brs": sorted(brs.values(), key=lambda x: x["id"]), "entities": sorted(ens.values(), key=lambda x: x["id"]),
+            "read": "this is the whole input for the slices: do not open the UC, BR or EN files"}
+
+
 def build(vault, stage, scope, args=None):
     from .analysis import worklist as analyze
+    from .design import worklist as design
     fn = {"route": route, "adjudicate": adjudicate, "extract": extract, "audit": audit, "file": file_,
-          "analyze": analyze, "release": release, "split": split}.get(stage)
+          "analyze": analyze, "release": release, "split": split, "coverage": coverage, "design": design, "stories": stories}.get(stage)
     if not fn:
         raise EngineError(f"no worklist for stage '{stage}'")
     return fn(vault, scope, args)
@@ -313,7 +506,7 @@ def build(vault, stage, scope, args=None):
 
 def summary(res):
     bits = []
-    for k in ("rows", "candidates", "brs", "src_blocks", "items"):
+    for k in ("rows", "candidates", "use_cases", "brs", "rules", "entities", "src_blocks", "items"):
         if k in res:
             bits.append(f"{len(res[k])} {k}")
     return ", ".join(bits) or "ok"

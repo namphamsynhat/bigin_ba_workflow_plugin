@@ -638,3 +638,37 @@ def test_feature_from_an_earlier_ticket_is_an_update_not_new():
     _signal(root, b, "renewals")
     t = _report(root)["tickets"]
     assert [(x["key"], x["kind"]) for x in t] == [("ACME-2", "update")], t
+
+
+def _dev_day(extra_comment):
+    d = ready_for_dev()
+    d["comments"].append(extra_comment)
+    d["issue"]["fields"]["updated"] = "2026-10-08T09:00:00.000+0700"
+    return d
+
+
+def test_dev_feedback_only_in_dev_phase_and_only_for_offshore_authors():
+    root = setup()
+    _with_dev(root)
+    r = capture(root, day1())
+    _cite(root, "UC-001", r["id"])
+    # before the ticket reaches dev, an offshore comment is ordinary intake — nothing is reported
+    pre = day5()
+    pre["comments"].append({"id": "10400", "author": OFFSHORE, "created": "2026-10-05T12:00:00.000+0700",
+                            "updated": "2026-10-05T12:00:00.000+0700", "body": adf("Which table holds the reviewers?")})
+    assert "dev_feedback" not in capture(root, pre)
+    capture(root, ready_for_dev())
+    # in dev: an onshore (client) comment is not dev feedback …
+    on = _dev_day({"id": "10500", "author": ONSHORE, "created": "2026-10-08T08:00:00.000+0700",
+                   "updated": "2026-10-08T08:00:00.000+0700", "body": adf("Thanks, looks good.")})
+    assert "dev_feedback" not in capture(root, on)
+    # … an offshore one is, with the UCs built from the ticket
+    off = _dev_day({"id": "10501", "author": OFFSHORE, "created": "2026-10-08T08:30:00.000+0700",
+                    "updated": "2026-10-08T08:30:00.000+0700", "body": adf("The API cannot return the second reviewer.")})
+    off["comments"].append({"id": "10500", "author": ONSHORE, "created": "2026-10-08T08:00:00.000+0700",
+                            "updated": "2026-10-08T08:00:00.000+0700", "body": adf("Thanks, looks good.")})
+    res = capture(root, off)
+    assert res["dev_feedback"] == [{"key": "ACME-123", "int": r["id"], "ucs": ["UC-001"], "stories": []}], res
+    assert "dev feedback" in note_text(root, res)
+    code, out = run(root, "digest", "--for", "ba", "--since", "2026-01-01")
+    assert code == 0 and "## Dev feedback" in out and "UC-001" in out.split("## Dev feedback")[1], out

@@ -26,7 +26,7 @@ from . import jsonschema_lite, model
 from .edit import (append_changelog, bump_version, changelog_has, q_core, question_block,
                    same_question, touch_updated)
 from .util import EngineError, append_jsonl, load_json, norm_ws, sha, sort_ids, today
-from .vault import cell_value, find_tables, questions_in, render_row, split_cells
+from .vault import cell_value, find_tables, q_clean, questions_in, render_row, split_cells
 
 ORDER = {
     "create_uc": 0, "create_br": 0,
@@ -498,7 +498,7 @@ def op_answer_question(doc, kind, cs):
         t = model.decision_table(doc)
         m = re.search(r"\(ref:\s*([^)]*)\)", hit.text)
         o = re.search(r"\(owner:\s*([^)]*)\)", hit.text)
-        topic = re.sub(r"\((owner|ref):[^)]*\)", "", hit.text).strip()
+        topic = q_clean(hit.text)
         raised = "; ".join(x for x in ((o.group(1) if o else ""), (m.group(1) if m else "")) if x) or "not stated"
         doc.splice(hit.start, hit.end, [])
         t = model.decision_table(doc)
@@ -526,7 +526,7 @@ def settle_answered(doc):
             continue
         m = re.search(r"\(ref:\s*([^)]*)\)", q.text)
         o = re.search(r"\(owner:\s*([^)]*)\)", q.text)
-        topic = re.sub(r"\((owner|ref):[^)]*\)", "", q.text).strip()
+        topic = q_clean(q.text)
         raised = "; ".join(x for x in ((o.group(1) if o else ""), (m.group(1) if m else "")) if x) or "not stated"
         doc.splice(q.start, q.end, [])
         t = model.decision_table(doc)
@@ -961,6 +961,9 @@ def apply(vault, changesets, run=None, dry=False, release_ids=None):
             from . import cascade
             res["stale"] = [f"{c['id']} ({', '.join(c['stale'])})" for c in cascade.run(vault) if c["stale"]]
         if run and not dry:
+            from . import metrics
+            for tid in sorted(set(res["reverted"])):
+                metrics.quality_add(vault, run, "approved_flip", 1, tid)
             for bucket in ("applied", "already", "gated", "drift", "invalid"):
                 for e in res[bucket]:
                     append_jsonl(os.path.join(vault.runs_dir, run, "results.jsonl"),

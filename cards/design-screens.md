@@ -1,8 +1,8 @@
-# Card — design screens worker (model: session default — screen boundaries are judgement)
+# Card — design screens worker (model: sonnet — screen boundaries are judgement)
 
-**In:** the dispatch block from `/bigin-generate-design` Stage 3: feature slug, `UX-###` (new or update),
-in-scope UCs, platform, nav map version, an optional Design Brief from `ux-brief-assembler`. Read the hub's
-`## Design Directives` / `## Pain Points`, each UC's § 1–§ 5, cited BR/EN, sibling UX specs for patterns.
+**In:** the dispatch block from `/bigin-generate-design` Stage 3 (`UX-###` new or update, platform, method)
+and your worklist JSON from `bigin worklist design`: in-scope UCs whole, cited BR/EN, open pain points,
+directives, principles, nav tree, sibling screens. Open a source file only to confirm one detail.
 **Out:** ONE file — `04-UIUX/UX-<NNN> <Feature>.md` — plus the fixed report block (nav candidates,
 cross-feature screens, unresolved pain points). This card is the short form; the stage guide
 `_bigin/stages/design/3-screens.md` stays the full procedure when a case is not covered here.

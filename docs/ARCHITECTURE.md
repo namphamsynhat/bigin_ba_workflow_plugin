@@ -40,16 +40,22 @@ Exit codes: `0` ok · `1` findings/missing (lint, coverage) · `2` refused (bad 
 | `ids.py` | `mint uc\|br\|int\|route --spec` | Next id = highest in use (file names **and** `id:`) + 1, under `exclusive_file_lock` on `01-Requirements/.ids.lock` (fcntl on POSIX, msvcrt on Windows). Instantiates templates (structure, never guidance). `mint route` mints every `new` UC a uc-router Phase A proposed and writes `<route>.minted.json`. |
 | `hub.py` | `hub refresh\|flip\|sweep\|citers\|fix-tables` | Replaces the retired `hub-bookkeeper` agent. `refresh`: `uc:` pointers, ## Use Cases, ## Requirement Readiness (one row per artifact; Ready ⟺ status ≠ needs-clarification ∧ 0 open questions ∧ nothing pending in the ledger or ## Discussion ∧ § 2 drafted), ADD-ONLY ## Open Questions / Gates mirror (ticks a mirror only when its source is ticked with an `A:`; coverage gaps mirrored), one Changelog line. Signal Log and Coverage Gaps are never edited — the write is refused if they change. Idempotent. |
 | `mirror.py` | `mirror br`, `links sync` | § 4 statements ← the BR's current rule (never over a placeholder, never over a row that reads as a *different* rule — reported instead); enforcement points validated against live step/flow ids; `brs:` = § 4. `links sync`: BR `uc:` ⊇ mirroring UCs, UC `features:` ⊇ BR features, `sources:` ⊇ INT ids cited outside comments, FEATURES.md UC column. |
+| `design.py` | `design scope\|items\|check\|close`, `worklist design`, `mint ux --count` | The design stage's lookups, from the UX spec on disk: Stage 1 scope (NEW / CHANGED / CURRENT per UC against `absorbed:`, the four gates, platform, mode; `DRAFTED` and `resume:` when a dead run left screens behind), the screens worker's worklist (in-scope UCs whole, cited BR/EN, open pain points, directives, principles, nav tree, sibling screens), Stage 5's requirement items matched forward by id, the mechanical half of the nineteen close checks (`block` vs `confirm` findings), and close (stamp `absorbed:`, status from the live question count, hub pointer + `uiux:`, questions mirrored with `(ref: UX-### § 6 Q<n>)`, the one UC `## Discussion` line, `designed:<slug>` on the run). Screen boundaries, flows, the flow review and whether an unmatched item is really on a screen stay with a model. |
+| `qualify.py` | `qualify <slug> [--apply]` | Transform Stage 2's lookup gates per `new`/`held` Signal Log row: an open note question naming the row (reads `#7`, `row 34`, `rows 7, 10 and 14–16`), an attachment missing on disk, a cited note row that does not resolve. Returns `pass` / `held` (flipped with `--apply`) / `check` — the rows only a reader can weigh, each with exactly the text needed. Gate 4 (dedup) stays a judgement. |
 | `status.py` | `status` | UC/BR status from a live open-question count; moves only between `draft` and `needs-clarification`. |
 | `coverage.py` | `coverage --stage extract\|file\|transform` | Traceability. Row mode (default): every note signal row. Id mode (`--id-pattern` or project `coverage_id_pattern`): every rule-card id, optionally against `--universe`. Filed units whose hub rows are all question/conflict/held count as *parked*. |
 | `lint.py` | `lint --full\|--hook [--quiet]\|--self-test\|--fix-citations` | The former `hooks/bigin-lint.py` (still there as a shim). v1.9 adds: comment-masked section parsing, ledger-aware staged-row check, split-Signal-Log support, and a tier-2 check that flags e-mail addresses, key-like tokens and internal hostnames in UC/BR/hub text. |
 | `jsonschema_lite.py` + `schema/` | — | Draft 2020-12 subset validator; schemas `changeset`, `changesets`, `route`, `signals`, `audit`, `filing`, `adjudication`, `verdicts`, `result`, `rule-card`. |
 | `changeset.py` | `apply <file\|dir> [--run] [--dry]` | **The only writer of UC/BR/hub content for new work** (§ 2). |
 | `ledger.py` | `ledger list\|render\|release\|supersede` | Change sets gated on a question (§ 3). |
-| `worklist.py` | `worklist route\|adjudicate\|extract\|audit\|file\|release\|split <scope> [--out]`, `context <ID> --sections` | Compact task inputs (§ 4). |
-| `notes.py` | `note write-signals\|audit-apply <json>`, `file apply <filing.json>` | Engine half of extraction and filing. Note row ids are engine-assigned and permanent; the note's status is written last. |
+| `worklist.py` | `worklist route\|adjudicate\|extract\|audit\|file\|analyze\|release\|split\|coverage <scope> [--out]`, `context <ID> --sections` | Compact task inputs (§ 4). `route --phase a\|b` splits the router's input across its two dispatches; `file` ranks open questions elsewhere and reports the cut; `coverage` is the Stage 4b input for one feature's use-case set, with the two lookup lenses (`rule`, pain-point `goal`) pre-computed. |
+| `questions.py` | `questions list\|pack\|sent`; `prematch` at intake | Open questions carry `(asked:)` / `(sent: … via …)`; a computed `[q:xxxxxx]` tag (hash of the words) names each. `list` ages and ranks by what a question blocks (open ledger change sets, UCs at needs-clarification); `pack` writes `06-Outbox/` paste files per Jira key or owner; a reply quoting a tag is recorded on its note as a pre-matched answer for the filer. Nothing is posted. |
+| `digest.py` | `digest [--since date\|run] [--for ba\|client\|dev] [--write]` | The same vault facts for three readers, no LLM: came in (Capture history), changed (UCs/BRs updated since, Before / After), decided (Decision log, released ledger entries), waiting (`questions`), ready to approve (no open question or change set, `jira.approval_gate` ok), stale downstream (`cascade`), dev feedback (offshore comments on a ticket already in dev), spend (`metrics`). `--for client` moves every id into a trailing `(ref: …)`. |
+| `intake/confluence.py` | `intake confluence --page <raw.json>` | One living INT note per Confluence page (`source: confluence`). High-water mark `conf:<pageId>@v<n>` in `source_ids`; the last body is kept in `00-Inbox/_raw/confluence/<id>.json`; a newer version is diffed by heading section — changed/added sections append one block each, a removed one a `removed` block. Shares `intake/common.py` (`append_blocks`, capture history) with Jira. |
+| `metrics.py` quality · `evalgrade.py` | `metrics report --quality` · `metrics quality-add` · `eval prepare\|grade <run>` | Passive quality rows in `_runs/<id>/quality.jsonl` (unverified-quote rate, uncovered source %, auditor findings by kind, repair rounds, approved → draft flips) and question latency (`(asked:)` → `(answered:)`). `eval` stages and grades the golden set in `tests/evals/` by code only (recall, precision, type accuracy, inversions, routing lane/target); `workflows/eval.js` runs the real extractor/router on it — by hand, before a card, schema or model change. |
+| `notes.py` | `note write-signals\|audit-apply <json>`, `file apply <filing.json>` | Engine half of extraction and filing. Note row ids are engine-assigned and permanent; the note's status is written last. `write-signals` also looks each row's `quote` up in `## Raw` (`quotes.py`): a row whose quote is absent is flagged `[unverified]`, over 10% unverified owes the audit, and source runs of ≥ 5 lines far from any verified quote are returned as `uncovered`. |
 | `runs.py` | `run new\|summary\|done\|record`, `ingest <json> [--kind] [--run]` | `_runs/<id>/` run ledger; schema-validates an agent's output before anything applies it. |
-| `metrics.py` | `metrics add\|report` | Token/agent accounting per run, budget overruns from project `budgets:`. |
+| `metrics.py` | `metrics add\|report` | Token/agent accounting per run, budget overruns from project `budgets:`. `ingest --run` writes an **estimated** row for every agent output (card + task input + source lines + output, a lower bound) with no agent involved; `metrics add --usage` adds a **measured** one. The two are reported side by side, never summed. |
 | `intake/` | `intake codebase\|communication` | Codebase rule-card import (no LLM) and locked note scaffolding (§ 6). |
 | `migrate.py` | `migrate snapshot\|plan\|all\|discussion-to-ledger\|strip-guidance\|split-signal-log` | Vault format migrations (`docs/MIGRATION.md`). |
 | `audit.py` | `audit [--baseline <tgz\|dir>] [--strict] [--id-pattern]` | Read-only invariant audit (C1–C12) against a pre-run snapshot: questions add-only, step ids kept, Signal Log rows kept, no automated approvals. |
@@ -112,7 +118,8 @@ What `bigin apply` guarantees, so no agent has to:
 Works with or without the Workflow tool:
 
 1. The orchestrating skill runs `bigin worklist <stage> <scope> --out _runs/<id>/tasks/<task>.in.json`. The worklist
-   holds only what the task needs — rows, anchor texts with their `sha`, UC cards (summary, steps, flows, § 4 ids, open
+   holds only what the task needs (and only what THIS dispatch decides on: `worklist route --phase a|b` splits the
+   router's input when its two phases are separate dispatches) — rows, anchor texts with their `sha`, UC cards (summary, steps, flows, § 4 ids, open
    questions), BR cards, a vault-wide UC title index — never whole files. `bigin context <ID> --sections 1,5` gives a
    comment-free slice of one artifact.
 2. The agent prompt is its card path + the `.in.json` path + the `.out.json` path. The agent reads its card and the
@@ -126,21 +133,26 @@ Works with or without the Workflow tool:
 
 Workflow scripts have no shell, so every engine step runs through a cheap *engine-runner* agent (`haiku`, low
 effort) that executes exactly the given `scripts/bigin` commands and returns their JSON. Judgement agents are dispatched
-by `agentType` with their card.
+by `agentType` with their card. **One runner per transition, not per command:** a runner call carries every command
+up to the next judgement (validate → write → record → build the next worklist), because each spawn pays a fresh
+agent's fixed cost. That is two runners per feature in transform and three per note in extract, plus a handful per
+run; `tests/test_workflows.py` pins the counts.
 
 | Script | Per unit | Steps |
 |---|---|---|
-| `transform.js` | feature (pipelined across features) | `worklist route` → uc-router Phase A (`route`) → ingest (one repair round) → `mint route` → uc-router Phase B (`changesets`) → ingest → `apply` → (code-grounded) `adjudicate.js` → `hub refresh` + record + `coverage` → `lint --full` |
+| `transform.js` | feature (pipelined across features) | `worklist route --phase a` (index cards) → uc-router Phase A (`route`) → [ingest · `mint route` · `worklist route --phase b --spec`] (full cards for the routed UCs only) → uc-router Phase B (`changesets`) → [ingest · `apply` · `hub refresh` · record] → (code-grounded) `adjudicate.js` → once per run: impact, coverage, `lint --full`. A schema failure gets one repair round by the same judge. |
 | `adjudicate.js` | conflict/held row | `worklist adjudicate` → one `code-adjudicator` per row (a second independent judge for P0/security rows; disagreement leaves it for a human) → `ingest` + `apply` |
-| `extract.js` | note | `worklist extract` → `signal-extractor` (`signals`) → `note write-signals` → (audit owed) `worklist audit` → `signal-auditor` → `note audit-apply`; then **serial** `signal-filer` per note → `file apply`; `lint --full` + `coverage --stage file` |
+| `eval.js` | golden-set case | `eval prepare` → `signal-extractor` (and `uc-router` where the case has a route worklist) per case → `eval grade` (code only). By hand, before releasing a card, schema or model change. |
+| `extract.js` | note | `signal-extractor` (`signals`) → [ingest · `note write-signals --run` · `worklist audit`] — the **engine** returns `audit_owed` and `why_repair` → Why repair by the same extractor (`not stated` > 30%) → one quote/recall repair round by the same extractor (`unverified`, `uncovered`) → `signal-auditor` → `note audit-apply` where owed; then **serial** `signal-filer` per note → `file apply`; then `intake-analyst` per note → `note analysis-apply`; `lint --full` + `coverage --stage file` |
 
 Resume: every workflow records task completion in `_runs/<id>/results.jsonl` (`bigin run record`) and skips what
 `bigin run done <id>` lists; the Workflow tool's own resume caches unchanged agent calls. Writes are engine-only and
 atomic, so a rate-limit stop leaves a clean resume point. Without the Workflow tool, the skill runs the same steps
 with `Agent` calls (the B.5 loop above).
 
-Model tiering (agent frontmatter): `uc-router`, `code-adjudicator`, `uc-splitter` — `inherit`;
-`signal-extractor`, `signal-filer`, `signal-auditor` — `sonnet`; engine runners — `haiku`.
+Model tiering (agent frontmatter): every judgement agent is pinned to `sonnet` (`uc-router`, `code-adjudicator`, `uc-splitter`, `bigin-ba`,
+`signal-extractor`, `signal-filer`, `signal-auditor`, `intake-analyst`) so a session on another model cannot change the output; the design and
+story workers are dispatched with `model: "sonnet"`; engine runners — `haiku`.
 
 ## 6. Two intake modes, one pipeline
 

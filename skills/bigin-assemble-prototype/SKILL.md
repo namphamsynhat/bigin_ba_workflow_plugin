@@ -1,6 +1,6 @@
 ---
 name: bigin-assemble-prototype
-description: Assembles modular UX design frame artifacts (ux-###-scr-##-*.html) into a unified, full-fidelity clickable prototype following the project navigation map (04-UIUX/_ux/navigation-map.md) and the exact app shell / master layout of the selected design system. Derives the navigation layout (top horizontal tabs, side nav, icon rail, or mobile tab bar) directly from the active design system rather than hardcoding a left menu. Intelligently handles multi-state scenarios (loading, active data, empty, error), cross-audits the assembled prototype against the spec vault to identify coverage gaps, triggers bigin-render-ux-frame in a self-healing loop until all requirements are 100% covered, validates interactive functionality, and incrementally updates existing prototypes without creating duplicate files.
+description: "Assemble rendered UX frames (ux-###-scr-##-*.html) into one clickable prototype that follows the navigation map and the design system's app shell, audit it against the UX specs, and render frames that are missing. Use on \"assemble prototype\", \"prototype assembly\", or to update an existing prototype."
 argument-hint: "[--all | <UX-### ...> | --audit | --states | --layout <auto|top-nav|side-nav|rail>]"
 triggers:
   - "bigin-assemble-prototype"
@@ -27,7 +27,7 @@ od:
 > - **DO NOT ask the user clarifying questions or collect discovery briefs.**
 > - **ALL ARCHITECTURE, ROLE TAXONOMIES, SCHEMAS, AND FLOWS ARE FULLY DEFINED IN THE VAULT.**
 > - Read the vault files (`04-UIUX/_ux/navigation-map.md`, `04-UIUX/UX-### *.md`, `01-Requirements/ENTITIES.md`, `_ucs/`, `_brs/`) directly on disk using your file-reading tools.
-> - Follow the self-healing requirement coverage loop until **100% of declared screens are assembled and verified**.
+> - Follow the self-healing requirement coverage loop until **100% of declared screens are assembled and verified** — capped at three rounds; what is still missing then is reported by name, not retried.
 
 Assembles all modular UX design frame artifacts (`ux-<ux_id>-scr-<screen_id>-<slug>.html`) generated across features into a **single, full-fidelity, interactive, multi-role prototype** (`index.html` or existing prototype entry), bound strictly to the project's navigation map and **derived directly from the selected design system's native app shell**.
 
@@ -349,7 +349,12 @@ The skill guarantees 100% fidelity by running a **closed-loop verification loop*
      - `01-Requirements/_ucs/` (Primary and secondary use-case flows)
    - Cross-check against screens mounted in the master prototype.
    - Calculate the **Requirement Coverage Score**:
-     $$\text{Coverage Score} = \left( \frac{\text{Mounted Screens}}{\text{Total Declared Screens}} \right) \times 100\%$$
+     $$\text{Coverage Score} = \left( \frac{\text{Declared Screens With a Frame}}{\text{Total Declared Screens}} \right) \times 100\%$$
+     Declared screens that have a frame — never the number of frames on disk, which duplicate or undeclared
+     frames would inflate. `assemble_prototype.py --audit-only` prints the score and the missing list.
+   - A navigation-map name that differs from its frame's file name is mapped in the vault's
+     `04-UIUX/_ux/screen-aliases.json` (`{"<name, lower-case>": "<frame file>.html"}`). Aliases are project
+     data; the plugin ships none.
 
 2. **Self-Healing Branching**:
    - **Case A: Frame exists on disk but was unlinked/missed during assembly**:
@@ -359,9 +364,13 @@ The skill guarantees 100% fidelity by running a **closed-loop verification loop*
      - Identify the feature ID (`UX-###`) and Screen ID (`SCR-##`) lacking an artifact.
      - Trigger/execute `@bigin-render-ux-frame UX-###` to generate the missing modular frame(s).
      - Once generated, ingest the new frame artifact.
-   - **Case C: Repeat Loop**:
-     - Re-evaluate audit metrics.
-     - **DO NOT STOP until Requirement Coverage is 100%.**
+   - **Case C: Repeat, at most three rounds**:
+     - Re-evaluate audit metrics after each round.
+     - Stop at 100%, **or after three rounds, or as soon as a round closes no gap** — whichever comes first.
+       A screen that three renders did not produce will not appear on the fourth; it needs a person
+       (a spec the renderer cannot satisfy, a name that needs an alias, a screen that was never specified).
+     - Below 100% at the stop: report the score and **name every missing screen** (`UX-### SCR-##: <name>`)
+       with what was tried. Never report an incomplete prototype as complete, and never loop on.
 
 ---
 
@@ -410,7 +419,7 @@ When the project updates requirements (e.g. a business rule changes in `UX-003`,
      - The active design system and its adopted shell archetype (`top-nav`, `side-nav`, `rail`, or `bottom-nav`).
      - Total screens assembled.
      - All active roles and portal routes.
-     - The Requirement Coverage Score (100%).
+     - The Requirement Coverage Score — and, below 100%, every missing screen by name.
      - Verification confirmation.
 
 ---

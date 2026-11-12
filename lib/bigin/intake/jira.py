@@ -40,6 +40,7 @@ import os
 import re
 
 from ..ids import mint_int
+from .common import _history, append_blocks  # noqa: F401  (shared with intake/confluence.py)
 from ..util import EngineError, load_json, today
 
 PHASES = ("active", "scope-agreed", "dev", "done", "ignore", "withdrawn")
@@ -354,7 +355,8 @@ def _who(vault, person, seen):
 
 
 def events(vault, t, have):
-    """New (sort key, block, source_id) triples for everything ``have`` (the note's source_ids) lacks."""
+    """New (sort key, block, source_ids[, author side]) tuples for everything ``have`` (the note's source_ids)
+    lacks. Comment and description-revision events carry the author's side as a 4th element."""
     key = t["key"]
     have = set(have)
     sides = {}
@@ -378,7 +380,7 @@ def events(vault, t, have):
         ref = f"{key}#desc — " + (f"{_who(vault, by, sides)} " if by else "") + _ts(when)
         out.append(((when, "1"), {"kind": "description", "ref": ref,
                                   "text": f"**{t['summary']}**\n\n" + (t["description"] or "_(no description)_")},
-                    [f"jira:{key}#desc@{dh}"]))
+                    [f"jira:{key}#desc@{dh}"], side_of(vault, by) if by else None))
     for c in t["comments"]:
         sid = f"jira:{key}#c{c['id']}@{_ts(c['updated'])}"
         if sid in have:
@@ -387,7 +389,8 @@ def events(vault, t, have):
         ref = f"{key}#c{c['id']} — {_who(vault, c['author'], sides)} {_ts(c['created'])}" + \
             (f" (edited {_ts(c['updated'])})" if edited else "")
         out.append(((c["updated"] if edited else c["created"], "2" + c["id"]),
-                    {"kind": "comment", "ref": ref, "text": c["body"] or "_(empty comment)_"}, [sid]))
+                    {"kind": "comment", "ref": ref, "text": c["body"] or "_(empty comment)_"}, [sid],
+                    side_of(vault, c["author"])))
     for h in t["changes"]:
         sid = f"jira:{key}#chg{h['id']}"
         if sid in have:
@@ -666,6 +669,8 @@ def capture(vault, raw_path, dry=False):
         vault.forget(path)
         d = vault.load(path)
         _history(d, f"captured {key} ({t['type']}, {t['status']} → phase {phase}): {len(blocks)} block(s)")
+        from .. import questions
+        questions.prematch(vault, d, [(f"SRC-{i + 1}", b["text"]) for i, b in enumerate(blocks)])
         vault.write(d)
         return dict(res, action="minted", id=nid, path=vault.rel(path))
 
@@ -681,9 +686,16 @@ def capture(vault, raw_path, dry=False):
         return dict(res, action="closed", id=nid, path=vault.rel(note.path), new_blocks=0)
     if not sids and all((note.fm_get(k) or "") == str(v) for k, v in jira_fm.items()):
         return dict(res, action="unchanged", id=nid, path=vault.rel(note.path))
+    if was == "dev" and phase == "dev":
+        # offshore (dev team) voices on a ticket already in development: reported for the digest, no gate.
+        # Changes to approved stories keep the existing delta-story path.
+        if any(len(e) > 3 and e[3] == "offshore" and e[1] for e in evs):
+            res["dev_feedback"] = _dev_feedback(vault, nid, key)
     if dry:
         return dict(res, action="append", id=nid, path=vault.rel(note.path))
-    append_blocks(note, blocks)
+    nums = append_blocks(note, blocks)
+    from .. import questions
+    questions.prematch(vault, note, [(f"SRC-{n}", b["text"]) for n, b in zip(nums, blocks)])
     note.fm_set("source_ids", have + sids)
     for k, v in jira_fm.items():
         note.fm_set(k, v)
@@ -706,7 +718,8 @@ def capture(vault, raw_path, dry=False):
     note.fm_set("updated", today())
     _history(note, f"jira sweep {key} ({t['status']} → phase {phase}): {len(blocks)} new block(s)"
              + ("; note re-opened (status: raw)" if blocks else "")
-             + ("; ticket reached dev — its use cases may now be approved" if res.get("released") else ""))
+             + ("; ticket reached dev — its use cases may now be approved" if res.get("released") else "")
+             + ("; dev feedback — the build team commented on a ticket in development" if res.get("dev_feedback") else ""))
     vault.write(note)
     if phase == "withdrawn" and not gone and not dry:
         from ..analysis import withdraw
@@ -717,39 +730,13 @@ def capture(vault, raw_path, dry=False):
     return dict(res, action="appended" if blocks else "updated", id=nid, path=vault.rel(note.path))
 
 
-def append_blocks(doc, blocks):
-    """Append ``### SRC-n`` blocks to ## Raw (after the last existing block) and to ``raw_sources``.
-    Never touches an existing block."""
-    if not blocks:
-        return []
-    s = doc.section("Raw")
-    if s is None:
-        raise EngineError(f"{doc.name}: no ## Raw section")
-    nums = [int(m.group(1)) for m in (re.match(r"^### SRC-(\d+)\b", x) for x in doc.lines[s.start:s.end]) if m]
-    n = max(nums or [0])
-    lines, manifest = [], doc.fm_list("raw_sources")
-    for b in blocks:
-        n += 1
-        lines += [f"### SRC-{n} · {b['kind']} · {b['ref']}", "", b["text"].rstrip(), ""]
-        manifest.append(f"SRC-{n} · {b['kind']} · {b['ref']}")
-    pos = s.end
-    while pos > s.start and not doc.lines[pos - 1].strip():
-        pos -= 1
-    doc.splice(pos, pos, [""] + lines[:-1])
-    doc.fm_set("raw_sources", manifest)
-    return list(range(n - len(blocks) + 1, n + 1))
-
-
-def _history(doc, line):
-    s = doc.section("Capture history")
-    entry = f"- {today()} — {line}"
-    if s is None:
-        doc.insert_section("Capture history", [entry], after="Raw")
-        return
-    pos = s.end
-    while pos > s.start and not doc.lines[pos - 1].strip():
-        pos -= 1
-    doc.splice(pos, pos, [entry])
+def _dev_feedback(vault, nid, key):
+    """[{key, int, ucs, stories}] — what the dev team's new comment lands on: the UCs built from this ticket
+    (``ucs_from``) and the stories that slice them (``impact.walk``)."""
+    from .. import impact
+    ucs = [u for u, _, _ in ucs_from(vault, nid)]
+    stories = [x["id"] for x in impact.walk(vault, ucs={u: set() for u in ucs}).get("stories", [])] if ucs else []
+    return [{"key": key, "int": nid, "ucs": ucs, "stories": stories}]
 
 
 def render(res):

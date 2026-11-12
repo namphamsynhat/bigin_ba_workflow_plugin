@@ -1,6 +1,6 @@
 ---
 name: restructure-uc
-description: Split a Use Case that has outgrown one user goal into two or more use cases, once a human has judged the seam — live, while reviewing a UC, or by answering a `/bigin-transform-signal` Stage 3 granularity question (`3-lane-uc.md` § Recognizing drift). Moves existing `S#`/`A#`/`E#` content to its new home (the source's originals become `Dropped — moved to UC-###`, never renumbered) through engine change sets, repoints every affected `BR-###`, and refreshes every touched feature hub. Assumes the split reorganizes signals already on file — it never invents a new intake note for the reorganization itself, only for a genuinely new decision the human explicitly names. Use when a UC mixes more than one primary actor or trigger, when `/bigin-transform-signal` has raised (and a human has answered) a granularity question, or when asked to "split this UC", "restructure UC-###", or "this use case isn't created well, break it apart".
+description: "Split a use case that has outgrown one user goal into two or more, once a human has decided the seam (live, or by answering a granularity question): moves steps and flows through engine change sets without renumbering, repoints business rules, refreshes hubs. Use on \"split this UC\", \"restructure UC-###\", or when a UC mixes more than one primary actor or trigger."
 argument-hint: "<UC id, e.g. UC-011> [proposed split, e.g. \"spend channels into 3 UCs, switch into its own\"]"
 ---
 

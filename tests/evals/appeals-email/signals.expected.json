@@ -1,0 +1,4 @@
+{"rows": [
+  {"type": "constraint", "signal": "Appeals must be filed within 14 days of the rejection", "quote": "Appeals must be filed within 14 days of the rejection"},
+  {"type": "requirement", "signal": "Reviewers see the applicant's previous grants when reviewing", "quote": "reviewers want to see the applicant's previous grants when reviewing"}
+]}

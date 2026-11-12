@@ -157,6 +157,12 @@ def cmd_coverage(args, rest):
 def cmd_mint(args, rest):
     from bigin import ids
     v = vault_of(args)
+    if args.kind == "ux":
+        res = ids.reserve_ux(v, args.count)
+        out(args, res, "\n".join(res))
+        return 0
+    if not args.spec:
+        raise EngineError(f"mint {args.kind} needs --spec")
     res = ids.mint_from_spec(v, args.kind, args.spec)
     if args.kind == "route":
         out(args, dict(res), "\n".join(f"{k} = {i}" for k, i in res) or "nothing to mint")
@@ -204,6 +210,36 @@ def cmd_apply(args, rest):
     return 2 if res.get("rejected") else 0
 
 
+def cmd_qualify(args, rest):
+    from bigin import qualify
+    v = vault_of(args)
+    res = qualify.qualify(v, args.slug, apply=args.apply, dry=args.dry)
+    out(args, res, qualify.render(res))
+    return 0
+
+
+def cmd_design(args, rest):
+    from bigin import design
+    v = vault_of(args)
+    if args.action == "scope":
+        res = design.scope(v, args.scope, run=args.run)
+        out(args, res, design.render_scope(res))
+        return 0
+    if not args.scope:
+        raise EngineError(f"design {args.action} needs a feature slug")
+    if args.action == "items":
+        res = design.items(v, args.scope)
+        out(args, res, design.render_items(res))
+        return 0
+    if args.action == "check":
+        res = design.check(v, args.scope, phase=args.phase)
+        out(args, res, design.render_check(res))
+    else:
+        res = design.close(v, args.scope, run=args.run, dry=args.dry)
+        out(args, res, design.render_close(res))
+    return 0 if res["ok"] else 2
+
+
 def cmd_ingest(args, rest):
     from bigin import runs
     v = vault_of(args)
@@ -235,9 +271,9 @@ def cmd_note(args, rest):
     from bigin import notes
     v = vault_of(args)
     if args.action == "write-signals":
-        res = notes.write_signals(v, args.path, dry=args.dry)
+        res = notes.write_signals(v, args.path, dry=args.dry, run=args.run)
     elif args.action == "audit-apply":
-        res = notes.apply_audit(v, args.path, dry=args.dry)
+        res = notes.apply_audit(v, args.path, dry=args.dry, run=args.run)
     elif args.action == "analysis-apply":
         from bigin import analysis
         res = analysis.apply(v, args.path, dry=args.dry)
@@ -283,6 +319,12 @@ def cmd_intake(args, rest):
             raise EngineError("intake jira: --issue <raw.json> is required")
         res = jira.capture(v, args.issue, dry=args.dry)
         out(args, res, jira.render(res))
+    elif args.mode == "confluence":
+        from bigin.intake import confluence
+        if not args.page:
+            raise EngineError("intake confluence: --page <raw.json> is required")
+        res = confluence.capture(v, args.page, dry=args.dry)
+        out(args, res, confluence.render(res))
     elif args.mode in ("jira-sprint", "jira-gate"):
         from bigin.intake import jira
         if args.uc:
@@ -350,9 +392,85 @@ def cmd_metrics(args, rest):
         res = metrics.add(v, args.run, args.stage, args.task, args.agent, args.tokens, args.feature, args.tool_uses,
                           args.duration_ms, args.usage)
         out(args, res, f"metrics: +{res['tokens']} tokens ({args.stage}/{args.task})")
+    elif args.action == "quality-add":
+        res = metrics.quality_add(v, args.run, args.kind, args.value, args.task, args.feature)
+        out(args, res, f"quality: {args.kind} ({args.run})" if res else "quality: no such run — nothing recorded")
+    elif args.quality:
+        res = metrics.quality_report(v, args.run)
+        out(args, res, metrics.render_quality(res))
     else:
         res = metrics.report(v, args.run)
         out(args, res, metrics.render(res))
+    return 0
+
+
+def cmd_questions(args, rest):
+    from bigin import questions
+    v = vault_of(args)
+    if args.action == "list":
+        items = questions.listing(v, args.owner, args.feature)
+        out(args, items, questions.render_list(items))
+    elif args.action == "pack":
+        packs = questions.pack(v, args.owner, dry=args.dry)
+        out(args, packs, "\n".join(f"{p['pack']}  ({len(p['questions'])} question(s))" for p in packs) or "nothing to send")
+    else:
+        if not args.target:
+            raise EngineError("questions sent needs the pack file")
+        res = questions.sent(v, args.target, dry=args.dry)
+        out(args, res, f"{res['pack']}: stamped {res['stamped']} question(s) sent via {res['target']}")
+    return 0
+
+
+def cmd_digest(args, rest):
+    from bigin import digest
+    v = vault_of(args)
+    data = digest.build(v, args.since)
+    text = digest.render(data, args.audience)
+    path = digest.write(v, text, args.audience) if args.write and not args.dry else None
+    out(args, dict(data, audience=args.audience, written=path), text + (f"\n[written: {path}]" if path else ""))
+    return 0
+
+
+def cmd_card(args, rest):
+    from bigin import card, handoff
+    v = vault_of(args)
+    if args.estimate:
+        res = handoff.estimate(v, args.target, dry=args.dry)
+        out(args, {k: x for k, x in res.items() if k != "text"},
+            f"{res['path']}: {res['sections']} section(s) · total {res['total']:g} h · "
+            f"{res['added']} new scope row(s) · {res['source_removed']} with source removed")
+        return 0
+    if args.audience == "agent":
+        packs = handoff.packs(v, args.target)
+        paths = [handoff.write_pack(v, p) for p in packs] if args.write and not args.dry else []
+        text = "\n\n".join(p["text"] for p in packs) if not paths else "\n".join(f"[written: {x}]" for x in paths)
+        out(args, {"packs": [{"id": p["id"], "version": p["version"]} for p in packs], "written": paths}, text)
+        return 0
+    if args.audience == "jira":
+        res = handoff.jira_text(v, args.target)
+        path = handoff.write_jira(v, res) if args.write and not args.dry else None
+        out(args, {"written": path}, f"[written: {path}]" if path else res["text"])
+        return 0
+    res = card.build(v, args.target)
+    text = card.render(res)
+    path = card.write(v, res, text) if args.write and not args.dry else None
+    out(args, dict(res, written=path), text + (f"\n[written: {path}]" if path else ""))
+    return 0
+
+
+def cmd_eval(args, rest):
+    from bigin import evalgrade
+    from bigin.vault import PLUGIN_ROOT
+    v = vault_of(args)
+    if not args.run:
+        raise EngineError("eval grade needs the run id")
+    cases = args.cases or os.path.join(PLUGIN_ROOT, "tests", "evals")
+    if args.action == "prepare":
+        res = evalgrade.prepare(v, args.run, cases)
+        out(args, res, "\n".join(f"{r['case']}: {r['extract_in']}" for r in res) or "no cases")
+        return 0
+    res = evalgrade.grade(v, args.run, cases)
+    out(args, res, evalgrade.render(res))
     return 0
 
 
@@ -480,9 +598,10 @@ def build_parser():
     s.add_argument("--list", action="store_true")
     s.set_defaults(fn=cmd_coverage)
 
-    s = sub.add_parser("mint", help="mint UC/BR/INT/EP/US ids from a JSON spec (file-locked)")
-    s.add_argument("kind", choices=["uc", "br", "int", "ep", "us", "route"])
-    s.add_argument("--spec", required=True)
+    s = sub.add_parser("mint", help="mint UC/BR/INT/EP/US ids from a JSON spec; reserve UX ids (file-locked)")
+    s.add_argument("kind", choices=["uc", "br", "int", "ep", "us", "route", "ux"])
+    s.add_argument("--spec", help="JSON spec (every kind but ux)")
+    s.add_argument("--count", type=int, default=1, help="ux: how many UX-### numbers to reserve")
     s.add_argument("--dry", action="store_true")
     s.set_defaults(fn=cmd_mint)
 
@@ -492,11 +611,14 @@ def build_parser():
     s.set_defaults(fn=cmd_context)
 
     s = sub.add_parser("worklist", help="build a compact JSON task input for an agent")
-    s.add_argument("stage", choices=["route", "adjudicate", "extract", "audit", "file", "analyze", "release", "split"])
+    s.add_argument("stage", choices=["route", "adjudicate", "extract", "audit", "file", "analyze", "release", "split", "coverage", "design", "stories"])
     s.add_argument("scope", help="feature slug, INT id, or UC id")
     s.add_argument("--out")
     s.add_argument("--rows", help="restrict to these Signal Log rows (comma-separated)")
     s.add_argument("--uc", help="UC ids to include as candidates (comma-separated)")
+    s.add_argument("--phase", choices=["a", "b"], help="route only: a = index cards to route on; "
+                   "b = full cards for the UCs --spec routed to (two-dispatch runs; omit when one agent does both)")
+    s.add_argument("--spec", help="route --phase b: the Phase A route.out.json")
     s.set_defaults(fn=cmd_worklist)
 
     s = sub.add_parser("apply", help="validate and apply change sets (the only writer of UC/BR/hub content)")
@@ -504,6 +626,23 @@ def build_parser():
     s.add_argument("--run")
     s.add_argument("--dry", action="store_true")
     s.set_defaults(fn=cmd_apply)
+
+    s = sub.add_parser("design", help="design-stage bookkeeping: scope (Stage 1), items (Stage 5 forward match), "
+                       "check (the lookup checks), close (stamp absorbed, status, hub pointer, questions)")
+    s.add_argument("action", choices=["scope", "items", "check", "close"])
+    s.add_argument("scope", nargs="?", help="feature slug (scope also takes a UC-###, or nothing for every feature)")
+    s.add_argument("--phase", choices=["wave", "close"], default="close", help="check: wave = right after a screens "
+                   "worker reports (no Coverage / Flow Review / status yet); close = Stage 6 Part 5")
+    s.add_argument("--run")
+    s.add_argument("--dry", action="store_true")
+    s.set_defaults(fn=cmd_design)
+
+    s = sub.add_parser("qualify", help="transform Stage 2: decide the lookup gates (open question, source on disk, "
+                       "cite resolves) per new/held Signal Log row; hand back only the rows a reader must weigh")
+    s.add_argument("slug")
+    s.add_argument("--apply", action="store_true", help="flip the rows that failed a gate to `held` with their note")
+    s.add_argument("--dry", action="store_true")
+    s.set_defaults(fn=cmd_qualify)
 
     s = sub.add_parser("ingest", help="schema-validate an agent's .out.json and store it under _runs/")
     s.add_argument("path")
@@ -526,6 +665,7 @@ def build_parser():
     s.add_argument("path", help="the agent's .out.json — or, for withdraw, the INT id")
     s.add_argument("--reason", help="withdraw: why the request was removed (required — it is what the team reads later)")
     s.add_argument("--by", help="withdraw: who removed it and where, e.g. 'client, PROJ-12 cancelled 2026-11-10'")
+    s.add_argument("--run", help="write-signals: also record extracted:<INT> (and audit-owed:<INT>) in this run")
     s.add_argument("--dry", action="store_true")
     s.set_defaults(fn=cmd_note)
 
@@ -545,8 +685,9 @@ def build_parser():
 
     s = sub.add_parser("intake", help="scaffold an intake note (communication), capture a Jira ticket (jira), start a sprint watch list (jira-sprint), "
                                       "or import rule cards (codebase)")
-    s.add_argument("mode", choices=["codebase", "communication", "jira", "jira-sprint", "jira-gate"])
+    s.add_argument("mode", choices=["codebase", "communication", "jira", "jira-sprint", "jira-gate", "confluence"])
     s.add_argument("--issue", help="jira: the raw MCP JSON for one ticket (issue + comments + changelog)")
+    s.add_argument("--page", help="confluence: the raw page JSON ({id, title, version, body, …}) — one living note per page")
     s.add_argument("--sprint", help="jira-sprint: the new sprint's name")
     s.add_argument("--keys", nargs="+", help="jira-sprint: the sprint's ticket keys (space or comma separated); "
                                              "every other ticket note stops being watched")
@@ -598,8 +739,41 @@ def build_parser():
     )
     s.set_defaults(fn=cmd_launcher)
 
+    s = sub.add_parser("questions", help="open questions: list (age, what each blocks), pack (06-Outbox paste files), sent (stamp a pack)")
+    s.add_argument("action", choices=["list", "pack", "sent"])
+    s.add_argument("target", nargs="?", help="sent: the pack file")
+    s.add_argument("--owner", choices=["client", "dev", "team"])
+    s.add_argument("--feature")
+    s.add_argument("--dry", action="store_true")
+    s.set_defaults(fn=cmd_questions)
+
+    s = sub.add_parser("eval", help="golden set: prepare stages tests/evals/<case> under a run; grade scores the extractor / router outputs — code only")
+    s.add_argument("action", choices=["prepare", "grade"])
+    s.add_argument("run", nargs="?")
+    s.add_argument("--cases", help="the golden-set folder (default: the plugin's tests/evals)")
+    s.set_defaults(fn=cmd_eval)
+
+    s = sub.add_parser("digest", help="what came in / changed / was decided / is waiting, for the BA, the client or the dev team (no LLM)")
+    s.add_argument("--since", help="a date (YYYY-MM-DD) or a run id; default: the previous run")
+    s.add_argument("--for", dest="audience", choices=["ba", "client", "dev"], default="ba")
+    s.add_argument("--write", action="store_true", help="save to 06-Outbox/digest-<date>-<audience>.md")
+    s.add_argument("--dry", action="store_true")
+    s.set_defaults(fn=cmd_digest)
+
+    s = sub.add_parser("card", help="dev cards: one checkable page per screen / back-end process of an epic or story (no LLM)")
+    s.add_argument("target", help="EP-### (the whole card stack) or US-### (the cards that story touches)")
+    s.add_argument("--for", dest="audience", choices=["human", "agent", "jira"], default="human",
+                   help="human: the card stack · agent: the build pack per story · jira: paste-ready text for a human to post")
+    s.add_argument("--write", action="store_true", help="save (_cards.md · _build/US-###.md for --for agent · _jira.md for --for jira)")
+    s.add_argument("--estimate", action="store_true", help="write / refresh the epic's _estimate.md (keeps the dev's lines)")
+    s.add_argument("--dry", action="store_true")
+    s.set_defaults(fn=cmd_card)
+
     s = sub.add_parser("metrics", help="token/agent accounting per stage")
-    s.add_argument("action", choices=["add", "report"])
+    s.add_argument("action", choices=["add", "report", "quality-add"])
+    s.add_argument("--quality", action="store_true", help="report: quality rows (unverified quotes, uncovered source, audit findings, repair rounds, flips) and question latency")
+    s.add_argument("--kind", help="quality-add: the row kind, e.g. repair_round:schema")
+    s.add_argument("--value", type=float, default=1)
     s.add_argument("--run")
     s.add_argument("--stage")
     s.add_argument("--task")

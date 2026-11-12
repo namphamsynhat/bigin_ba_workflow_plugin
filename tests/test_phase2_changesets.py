@@ -266,9 +266,9 @@ def test_split_moves_rule_and_resolves_new_keys():
 def test_extract_path_write_signals_then_file_apply():
     root, _ = fresh("comm-vault")
     sig = write_json(root, "sig.json", {"kind": "signals", "int": "INT-003", "rows": [
-        {"type": "constraint", "signal": "Appeals must be filed within 14 days of the rejection", "why": "not stated", "source": "Dana Client 2026-09-12"},
-        {"type": "pain-point", "signal": "Reviewers cannot see an applicant's previous grants", "source": "Dana Client 2026-09-12"},
-        {"type": "requirement", "signal": "Reviewers see the applicant's previous grants when reviewing", "why": "derived from #2", "source": "Dana Client 2026-09-12"}]})
+        {"type": "constraint", "signal": "Appeals must be filed within 14 days of the rejection", "why": "not stated", "source": "Dana Client 2026-09-12", "quote": "Appeals must be filed within 14 days of the rejection"},
+        {"type": "pain-point", "signal": "Reviewers cannot see an applicant's previous grants", "source": "Dana Client 2026-09-12", "quote": "Appeals must be filed within 14 days of the rejection"},
+        {"type": "requirement", "signal": "Reviewers see the applicant's previous grants when reviewing", "why": "derived from #2", "source": "Dana Client 2026-09-12", "quote": "Appeals must be filed within 14 days of the rejection"}]})
     code, out = run(root, "note", "write-signals", sig)
     assert code == 0 and '"added": [1, 2, 3]' in out, out
     code, out = run(root, "note", "write-signals", sig)

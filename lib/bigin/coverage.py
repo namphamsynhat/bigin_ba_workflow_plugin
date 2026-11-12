@@ -153,7 +153,16 @@ def run(vault, stage=None, id_pattern=None, universe_file=None, notes=None):
                        (row_dest.get(u) and (row_state.get(u, set()) & model.PROCESSED))}
         parked = {u for u in filed - transformed if row_state.get(u) and row_state[u] <= model.PARKED | model.PROCESSED | {"staged-gated"}}
         parked |= {u for u in extracted - filed if unit_status[u] in ("question", "conflict")}
-        res.update(notes_without_table=empty_notes, units=len(units), extracted=len(extracted), filed=len(filed),
+        from . import quotes
+        grounding = {}
+        for nid, d in _note_ids(vault, notes):
+            sp = quotes.spans_of(d)
+            if not sp:
+                continue                                    # extracted before quote grounding: nothing to measure
+            gm = re.match(r"^SRC-(\d+)$", str(d.fm_get("grounded_from") or "").strip())
+            _runs, pct = quotes.uncovered(d, sp, int(gm.group(1)) - 1 if gm else 0)
+            grounding[nid] = {"unverified": len(quotes.unverified_rows(d)), "uncovered_pct": pct, "uncovered": _runs}
+        res.update(grounding=grounding, notes_without_table=empty_notes, units=len(units), extracted=len(extracted), filed=len(filed),
                    transformed=len(transformed), parked=len(parked))
         stage = stage or ("transform" if transformed else "file" if filed else "extract")
         need = {"extract": extracted, "file": filed | parked, "transform": transformed | parked}[stage]
@@ -177,6 +186,9 @@ def report(res, list_all=False):
         lines.append(f"  extract   {res['extracted']:>6}  rows in ## Extracted signals")
         lines.append(f"  file      {res['filed']:>6}  cited by a hub Signal Log row (or rejected)")
         lines.append(f"  transform {res['transformed']:>6}  reached an applied UC/BR (or rejected)")
+        for nid, g in sorted((res.get("grounding") or {}).items()):
+            lines.append(f"  quotes    {nid}: {g['unverified']} unverified, {g['uncovered_pct']}% of source lines unread"
+                         + (f" ({', '.join(u['src'] + ' ' + str(u['lines'][0]) + '-' + str(u['lines'][1]) for u in g['uncovered'][:4])})" if g["uncovered"] else ""))
         if res.get("notes_without_table"):
             lines.append(f"  notes past raw with no signal table: {', '.join(res['notes_without_table'])}")
     lines.append(f"  parked    {res['parked']:>6}  awaiting a human answer (question/conflict/held)")

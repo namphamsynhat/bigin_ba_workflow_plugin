@@ -3,8 +3,8 @@ export const meta = {
   description: 'Bigin transform: per feature route (uc-router A) → mint → draft change sets (uc-router B) → bigin apply → adjudicate (code-grounded) → hub refresh + coverage',
   whenToUse: 'Called by /bigin-transform-signal or /bigin-run for one or more feature slugs. args: {run, vault, plugin_root, features: [slug], rows?: {slug: [row#]}, grounding, max_agents, bin?}',
   phases: [
-    { title: 'Route', detail: 'worklist + uc-router Phase A per feature' },
-    { title: 'Draft', detail: 'mint new UCs, uc-router Phase B → change sets' },
+    { title: 'Route', detail: 'index-card worklist + uc-router Phase A per feature' },
+    { title: 'Draft', detail: 'mint new UCs, full cards for the routed UCs, uc-router Phase B → change sets' },
     { title: 'Apply', detail: 'bigin ingest + apply (one write per artifact)' },
     { title: 'Adjudicate', detail: 'code-adjudicator per conflict/held row (code-grounded vaults only)' },
     { title: 'Close', detail: 'hub refresh, coverage, impact on each intake note, lint' },
@@ -43,15 +43,17 @@ const TASK_SCHEMA = {
   required: ['status'],
 }
 
-// one engine step: run commands in order, stop at the first non-zero exit; `data` = parsed stdout
-// of the LAST command when it printed JSON (every command below uses --json where it matters)
-function engine(label, phase, cmds) {
+// ONE runner per transition, not per command: every spawn pays a fresh agent's fixed cost to run a few
+// shell lines, so each call carries everything up to the next judgement — two runners per feature
+// (after Phase A, after Phase B). `pick` names the command whose stdout is the result (default: the last).
+function engine(label, phase, cmds, pick) {
   const list = cmds.map((c, i) => `${i + 1}. ${c}`).join('\n')
+  const k = pick || cmds.length
   return agent(
     `You are the Bigin engine runner. From the vault root \`${VAULT}\`, run these shell commands in order with Bash, ` +
     `exactly as written, and nothing else — no reading files, no edits, no retries except once on "changed on disk".\n${list}\n` +
     `Stop at the first command that exits non-zero and return {ok:false, error:<its last 15 lines>}. ` +
-    `Otherwise return {ok:true, data:<the last command's stdout parsed as JSON, or {text:<stdout>} if it is not JSON>}.`,
+    `Otherwise return {ok:true, data:<the stdout of command ${k} parsed as JSON, or {text:<stdout>} if it is not JSON>}.`,
     { label, phase, schema: RUNNER_SCHEMA, model: 'haiku', effort: 'low' })
 }
 
@@ -64,15 +66,22 @@ function judge(agentType, card, input, output, label, phase, extra) {
     { label, phase, schema: TASK_SCHEMA, agentType })
 }
 
-async function ingestOrRetry(file, kind, agentType, card, input, label, phase) {
-  let r = await engine(`ingest ${label}`, phase, [`${BIN} --json ingest ${file} --kind ${kind} --run ${RUN}`])
-  if (r && r.ok && r.data && r.data.ok !== false) return true
-  // one repair round: the same judge fixes its own output against the schema errors
-  const errs = (r && (r.error || JSON.stringify((r.data || {}).errors || []))) || 'unknown'
-  await judge(agentType, card, input, file, `${label} (repair)`, phase,
-    `Your previous ${file} failed schema validation: ${errs.slice(0, 1500)}. Rewrite it so it validates.`)
-  r = await engine(`ingest ${label} #2`, phase, [`${BIN} --json ingest ${file} --kind ${kind} --run ${RUN}`])
-  return !!(r && r.ok && r.data && r.data.ok !== false)
+const ROUTER = 'bigin-ba-workflow-plugin:uc-router'
+const schemaError = r => r && !r.ok && /"errors"|INVALID|not valid JSON|schema error/.test(r.error || '')
+
+// run a transition whose first command is `ingest <file>`; a schema failure gets ONE repair round — the judge
+// (`who` = {agentType, card}) fixes its own file against the errors (it is told not to re-read its inputs unless
+// an error needs them). Identical in extract.js and transform.js — tests/test_workflows.py pins that.
+async function ingestThen(cmds, pick, file, input, label, phase, who) {
+  let r = await engine(label, phase, cmds, pick)
+  if (schemaError(r)) {
+    await judge(who.agentType, who.card, input, file, `${label} (repair)`, phase,
+      `REPAIR: \`${file}\` — the file you wrote — failed schema validation: ${(r.error || '').slice(0, 1500)}. ` +
+      `Open that file, correct only what the errors name, and write it back. Re-read the task input only if an error needs it.`)
+    r = await engine(`${label} #2`, phase, cmds, pick)
+    if (r) r.repaired = true
+  }
+  return r
 }
 
 // resume: features whose close step already recorded ok in results.jsonl are skipped
@@ -82,79 +91,82 @@ const done = new Set(((doneR && doneR.data && doneR.data.text) || '').split(/\r?
 const todo = A.features.filter(f => !done.has(`close:${f}`))
 if (todo.length < A.features.length) log(`resume: skipping ${A.features.length - todo.length} finished feature(s)`)
 
+const rowsArg = slug => (A.rows && A.rows[slug] ? ` --rows ${A.rows[slug].join(',')}` : '')  // Stage 2's qualified rows
+const inA = slug => `${TASKS}/${slug}.route.in.json`     // Phase A: index cards
+const inB = slug => `${TASKS}/${slug}.draft.in.json`     // Phase B: full cards for the routed UCs only
+
+// every Phase A worklist in one runner (`|| true`: a slug with no hub must not stop the others — its
+// router then reports BLOCKED on the missing input)
+if (todo.length) {
+  await engine('worklists: route', 'Route', todo.map(slug => `${BIN} worklist route ${slug}${rowsArg(slug)} --phase a --out ${inA(slug)} || true`))
+}
+
 const results = await pipeline(
   todo,
-  // 1 — worklist + Phase A
+  // 1 — Phase A (route on index cards), then ONE runner: validate → mint → build the Phase B worklist
   async (slug) => {
-    const inA = `${TASKS}/${slug}.route.in.json`
-    const rowsArg = A.rows && A.rows[slug] ? ` --rows ${A.rows[slug].join(',')}` : ''  // Stage 2's qualified rows
-    const w = await engine(`worklist ${slug}`, 'Route', [`${BIN} worklist route ${slug}${rowsArg} --out ${inA}`,
-      `${BIN} --json run record ${RUN} --task worklist:${slug} --status ok`])
-    if (!w || !w.ok) return { slug, stage: 'worklist', error: w && w.error }
     const outA = `${TASKS}/${slug}.route.out.json`
-    const r = await judge('bigin-ba-workflow-plugin:uc-router', 'router.md', inA, outA, `route ${slug}`, 'Route',
+    const r = await judge(ROUTER, 'router.md', inA(slug), outA, `route ${slug}`, 'Route',
       'This is PHASE A: output schema `route` (lib/bigin/schema/route.json). Route every row/clause; propose new UCs only as `new` entries with a key.')
     if (!r || r.status !== 'OK') return { slug, stage: 'route', error: r && r.reason }
-    const ok = await ingestOrRetry(outA, 'route', 'bigin-ba-workflow-plugin:uc-router', 'router.md', inA, `route ${slug}`, 'Route')
-    return ok ? { slug, inA, outA } : { slug, stage: 'route-ingest', error: 'route.json invalid after one repair' }
+    const m = await ingestThen([`${BIN} --json ingest ${outA} --kind route --run ${RUN}`,
+      `${BIN} --json mint route --spec ${outA}`,
+      `${BIN} worklist route ${slug}${rowsArg(slug)} --phase b --spec ${outA} --out ${inB(slug)}`],
+      null, outA, inA(slug), `mint ${slug}`, 'Draft', { agentType: ROUTER, card: 'router.md' })
+    if (!m || !m.ok) return { slug, stage: schemaError(m) ? 'route-ingest' : 'mint', error: m && m.error }
+    return { slug, outA }
   },
-  // 2 — mint (engine, locked) + Phase B
+  // 2 — Phase B (draft on full cards), then ONE runner: validate → apply (→ close, when nothing sits between)
   async (s) => {
     if (!s || s.error) return s
-    const m = await engine(`mint ${s.slug}`, 'Draft', [`${BIN} --json mint route --spec ${s.outA}`])
-    if (!m || !m.ok) return { ...s, stage: 'mint', error: m && m.error }
     const outB = `${TASKS}/${s.slug}.changesets.out.json`
     const minted = s.outA.replace(/\.json$/, '.minted.json')
-    const r = await judge('bigin-ba-workflow-plugin:uc-router', 'router.md', s.inA, outB, `draft ${s.slug}`, 'Draft',
+    const r = await judge(ROUTER, 'router.md', inB(s.slug), outB, `draft ${s.slug}`, 'Draft',
       `This is PHASE B: your Phase A routing is \`${s.outA}\`, minted ids for its new UCs are \`${minted}\` (key → UC id; ` +
-      `absent file = nothing minted). Output schema \`changesets\`: every qualified row becomes final-text change sets with ` +
+      `absent file = nothing minted). The task input now carries FULL cards (sha, open questions) for the UCs you routed to. ` +
+      `Output schema \`changesets\`: every qualified row becomes final-text change sets with ` +
       `trace {int, note_rows, hub, hub_rows, xr?}; use anchors (ref + sha) exactly as the worklist shows them.`)
     if (!r || r.status !== 'OK') return { ...s, stage: 'draft', error: r && r.reason }
-    const ok = await ingestOrRetry(outB, 'changesets', 'bigin-ba-workflow-plugin:uc-router', 'router.md', s.inA, `draft ${s.slug}`, 'Draft')
-    return ok ? { ...s, outB } : { ...s, stage: 'draft-ingest', error: 'changesets invalid after one repair' }
-  },
-  // 3 — apply
-  async (s) => {
-    if (!s || s.error) return s
-    const a = await engine(`apply ${s.slug}`, 'Apply', [`${BIN} --json apply ${s.outB} --run ${RUN}`])
-    if (!a || !a.ok) return { ...s, stage: 'apply', error: a && a.error }
+    const cmds = [`${BIN} --json ingest ${outB} --kind changesets --run ${RUN}`, `${BIN} --json apply ${outB} --run ${RUN}`]
+    if (!CODE) cmds.push(`${BIN} hub refresh ${s.slug}`, `${BIN} run record ${RUN} --task close:${s.slug} --status ok`)
+    const a = await ingestThen(cmds, 2, outB, inB(s.slug), `apply ${s.slug}`, 'Apply', { agentType: ROUTER, card: 'router.md' })
+    if (!a || !a.ok) return { ...s, stage: schemaError(a) ? 'draft-ingest' : 'apply', error: a && a.error }
     const d = a.data || {}
     const n = k => (Array.isArray(d[k]) ? d[k].length : 0)
-    return { ...s, applied: n('applied'), already: n('already'), gated: n('gated'), drift: n('drift'),
+    return { ...s, outB, closed: !CODE, applied: n('applied'), already: n('already'), gated: n('gated'), drift: n('drift'),
              invalid: n('invalid') + n('rejected'), review: d.review || [], reverted: d.reverted || [], stale: d.stale || [] }
   },
-  // 4 — adjudicate (code-grounded only): one referee per conflict/held row, verdicts applied by the engine
+  // 3 — adjudicate (code-grounded only): one referee per conflict/held row, verdicts applied by the engine;
+  //     the close step then needs its own runner because adjudication sits between apply and close
   async (s) => {
     if (!s || s.error || !CODE) return s
     const res = await workflow({ scriptPath: `${VAULT}/_runs/${RUN}/workflows/adjudicate.js` },
       { run: RUN, vault: VAULT, plugin_root: A.plugin_root, feature: s.slug, p0_panel: A.p0_panel !== false })
-    return { ...s, adjudicated: res }
+    const c = await engine(`close ${s.slug}`, 'Close', [`${BIN} hub refresh ${s.slug}`,
+      `${BIN} run record ${RUN} --task close:${s.slug} --status ok`])
+    return { ...s, adjudicated: res, closed: !!(c && c.ok) }
   },
-  // 5 — close: derived tables, coverage, record
+  // 4 — a failed feature is recorded so the summary names it (the only extra runner, and only on failure)
   async (s) => {
-    if (!s || s.error) {
-      if (s) await engine(`record ${s.slug}`, 'Close', [`${BIN} run record ${RUN} --task close:${s.slug} --status failed --note "${(s.stage || '')}"`])
-      return s
-    }
-    const c = await engine(`close ${s.slug}`, 'Close', [
-      `${BIN} hub refresh ${s.slug}`,
-      `${BIN} run record ${RUN} --task close:${s.slug} --status ok`,
-      `${BIN} --json coverage --stage transform || true`])
-    return { ...s, coverage: c && c.data ? { missing: (c.data.missing || []).length, parked: c.data.parked } : null }
+    if (s && s.error) await engine(`record ${s.slug}`, 'Close', [`${BIN} run record ${RUN} --task close:${s.slug} --status failed --note "${(s.stage || '')}"`])
+    return s
   },
 )
 
-// impact is an OUTPUT of this run, not a stage: every intake note the hubs cite gets its ## Impact section
-// regenerated (what it changed, through which rule, which features, which UX/epics/stories are now stale)
+// once per run, not per feature: impact is an OUTPUT of this run (every intake note the hubs cite gets its
+// ## Impact section regenerated); coverage is vault-wide; lint is the stage-boundary gate
 const impact = await engine('impact', 'Close', [`${BIN} --json impact touched --write`])
+const cov = await engine('coverage', 'Close', [`${BIN} --json coverage --stage transform || true`])
 const lint = await engine('lint --full', 'Close', [`${BIN} lint --full || true`])
 const out = results.filter(Boolean)
+const coverage = cov && cov.data && !cov.data.text ? { missing: (cov.data.missing || []).length, parked: cov.data.parked } : null
 return {
   run: RUN,
   features: out.map(r => ({ feature: r.slug, error: r.error || null, stage: r.error ? r.stage : 'done',
     applied: r.applied || 0, gated: r.gated || 0, drift: r.drift || 0, invalid: r.invalid || 0,
     review: r.review || [], reverted: r.reverted || [], stale: r.stale || [],
-    coverage: r.coverage || null, adjudicated: r.adjudicated || null })),
+    coverage, adjudicated: r.adjudicated || null })),
+  coverage,
   impact: impact && impact.ok && Array.isArray(impact.data) ? impact.data.filter(i => i.written).map(i => ({ int: i.int, ...i.summary })) : [],
   lint: lint && lint.data ? (lint.data.text || '').split(/\r?\n/)[0] : 'not run',
   next: `bigin run summary ${RUN}`,

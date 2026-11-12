@@ -1,6 +1,6 @@
 ---
 name: client-view
-description: Build, refresh, or review-as a key client stakeholder's point of view. Mode build/refresh reads everything one client contact said in the vault (their emails, unambiguous transcript turns, Jira comments, answers attributed to them) and writes a cited profile of what they want, how they decide, what they push back on, and the words they use — incrementally, reading only notes added since the last build. Mode review reads that profile and a use case, business rule, whole feature, UX spec or rendered prototype, and answers in that person's voice — a verdict, issues ranked by how much they would care, each with the why traced to their own words and a suggested fix — saved as a dated review note. Use when asked to "build/update the client view (or persona) for <person>", "refresh <person>'s view", "review UC-012 / feature X / UX-003 as <person>", "what would <person> think of this", or "use the client view to review". Never edits the reviewed artifact.
+description: "Build or refresh a cited profile of one client stakeholder's point of view from everything they said in the vault, or review a use case, rule, feature, UX spec or prototype in that person's voice (saved as a dated review note; never edits the artifact). Use on \"build/update the client view for <person>\", \"review UC-012 as <person>\", \"what would <person> think of this\"."
 argument-hint: "build|refresh <person> · review <UC-###|BR-###|feature-slug|UX-###|prototype path> as <person>"
 ---
 

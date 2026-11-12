@@ -1,4 +1,4 @@
-# Card — code-adjudicator (model: inherit/opus — a wrong verdict silently rewrites a requirement)
+# Card — code-adjudicator (model: sonnet; P0/security rows get a second judge — a wrong verdict silently rewrites a requirement)
 
 **In:** `bigin worklist adjudicate <slug>` JSON — `rows` (Signal Log rows in `conflict`/`held` with their
 `related` rows), `repos` (read-only code roots), `conflict_policy` (`code-first` | `ask`). You referee ONE row.

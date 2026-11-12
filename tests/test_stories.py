@@ -302,3 +302,13 @@ def test_mint_ep_then_us_numbers_vault_wide_and_links_the_story():
     us_rel = os.path.join("03-Epics-Stories", "EP-002 Grant intake", "US-003 Submit an application.md")
     text = read(root, us_rel)
     assert "epic: EP-002" in text and "priority: P1" in text
+
+
+def test_a_story_with_no_acceptance_criteria_covers_nothing():
+    """A slice claims steps; only a Scenario proves them. Strip § 6 and the story's whole slice is uncovered."""
+    bare = STORY_1.split("## 6. Acceptance Criteria")[0] + "## 6. Acceptance Criteria\n\n"
+    root, _v = _vault(bare)
+    code, out = run(root, "coverage", "--stage", "stories")
+    assert code == 1, out
+    assert "no acceptance criteria" in out and "US-001" in out, out
+    assert "EP-001 UC-005 S1" in out, out

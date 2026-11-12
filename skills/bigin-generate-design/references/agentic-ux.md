@@ -58,7 +58,7 @@ dispatch    tells each worker to run Part 4b's trigger test itself, per feature
 Stage 5     verifies the outcome from disk (checks 10-12) — never from the worker's report
 ```
 
-For the orchestrator's own inline runs (one or two features), the test is `3-screens.md` Part 4b:
+The test itself is `3-screens.md` Part 4b, run by the worker:
 the system judges rather than processes, **and** an `EN-###` field persists something per-user between
 sessions, **and** the trigger recurs for the same actor. Three of three, or `none`.
 

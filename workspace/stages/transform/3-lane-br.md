@@ -43,6 +43,9 @@ from `{template_br}`, adds it to the hub's `br:` list, and resolves `new:<key>` 
 If <condition>, then <the system must | must not> <effect>.
 ```
 
+Keep the statement in plain English — it is printed on the dev cards: ≤ 25 words where the rule allows,
+the same terms as the UC and the entity, no idioms.
+
 Stated so a tester can produce a pass case and a fail case from it alone.
 
 - **Condition in business terms**, not the client's incidental phrasing. "Over 5 million" needs its

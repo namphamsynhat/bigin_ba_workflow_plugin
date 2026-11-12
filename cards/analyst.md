@@ -16,7 +16,7 @@ analysis-apply` writes `## Analysis`, the questions and the conflict holds. You 
 3. Conflict = a contradiction of fact (who, threshold, order, permission) with a UC step, flow, BR or a
    `pending` row (`<slug> #<row>`). Added detail is not a conflict. Contradicting an approved UC or BR is
    always `blocking` ‹stages/extract/4-analysis.md § Conflicts — against the spec, not against taste›.
-4. One conflict = ONE decision question naming both sides, owner client unless it is the team's own call.
+4. One conflict = ONE decision question naming both sides, owner client; `team` for the team's own call; `dev` if only how the system is built can settle it.
 5. Questions: `unclear` · `gap` · `impact`, each self-contained, one decision, `about` the UC step / BR / `#n`.
    Never repeat a `note_questions` entry or a question already open on a candidate
    ‹questions.md § Open Questions wording (all artifacts)›.

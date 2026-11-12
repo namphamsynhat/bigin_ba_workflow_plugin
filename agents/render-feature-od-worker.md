@@ -1,6 +1,6 @@
 ---
 name: render-feature-od-worker
-description: Use this agent when the bigin-ba-workflow-plugin's bigin-render-design-od skill needs ONE already-synced feature turned into an Open Design run — start_run, poll to done, report back. Dispatched one feature at a time, never two in flight. Never invoke before that feature's files are synced into the Open Design project, and never to assemble the final prototype.
+description: "Runs ONE already-synced feature through Open Design — start_run, poll to done, report. Dispatched one at a time by bigin-render-design-od; never before the feature's files are synced, never to assemble the prototype."
 model: haiku
 ---
 
@@ -31,8 +31,12 @@ agent/model    optional, from the orchestrator
    menu entry, or sidebar button, even inside this one feature's own internal navigation.
    ```
 2. `start_run{project: od_project, prompt, agent?, model?, requestId}` → `runId`.
-3. `get_run{runId}` every 30-60s until terminal. 5-30 minutes is normal — don't cancel because it
-   looks quiet, and don't write the HTML yourself instead of waiting.
+3. Poll `get_run{runId}` until terminal, **waiting between polls with a real pause**: run `sleep 60` in
+   Bash before each `get_run` (after the first three polls, `sleep 120`). Every poll is a model turn, so a
+   poll with no pause burns turns without making the run faster; a 20-minute render is about 12 polls
+   this way, not 40. 5-30 minutes is normal — don't cancel because it looks quiet, and don't write the
+   HTML yourself instead of waiting. If Bash is unavailable, say so in the report and poll no more often
+   than once per turn.
 4. Report: `runId`, terminal status, `previewUrl` (if any), and `agentMessage` when there's no
    preview or the run failed.
 

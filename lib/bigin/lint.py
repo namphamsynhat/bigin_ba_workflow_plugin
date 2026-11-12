@@ -232,7 +232,11 @@ class Findings(object):
         self.by_check.setdefault(check, []).append(message)
 
     def total(self):
-        return sum(len(v) for v in self.by_check.values())
+        """Blocking findings. A check named ``advisory: …`` is printed but never fails the run."""
+        return sum(len(v) for k, v in self.by_check.items() if not k.startswith("advisory:"))
+
+    def advisory(self):
+        return {k: v for k, v in self.by_check.items() if k.startswith("advisory:")}
 
     def for_file(self, relpath):
         """Messages that name ``relpath`` (per-file checks always lead with it)."""
@@ -761,6 +765,12 @@ def check_note_coverage(vault, findings):
                 continue
             slugs = [s.strip() for s in re.split(r"[,·/]| and ", feature) if s.strip()]
             cited = hub_cites.get((int_id, int(num)), [])
+            if cited and len(cells) > 7 and "[unverified]" in cells[7]:
+                findings.add(
+                    "unverified note row reached a hub",
+                    "%s #%s is flagged [unverified] (its quote is not in the source) yet hub `%s` cites it — "
+                    "fix the quote or reject the row" % (int_id, num, cited[0]),
+                )
             for slug in slugs:
                 hits = cited.count(slug)
                 if hits == 0:
@@ -990,6 +1000,15 @@ def check_story_file(vault, path, findings):
                      "what the business needs" % (r, line_no, term))
     for line_no, msg in stories.mermaid_errors(text):
         findings.add("mermaid block", "%s:%d %s" % (r, line_no, msg))
+    for line_no, msg in stories.ac_issues(text)[:5]:
+        findings.add("advisory: acceptance criterion", "%s:%d %s" % (r, line_no, msg))
+    if kind == "story":
+        big = stories.size_issues(text, as_list(fm.get("screens")))
+        if big:
+            findings.add("advisory: story may be bigger than one PR",
+                         "%s: %s — consider splitting it (one story ≈ one dev-day / one PR)" % (r, ", ".join(big)))
+        for where, msg in stories.plain_english_issues(text)[:3]:
+            findings.add("advisory: plain English", "%s %s: %s" % (r, where, msg))
 
 
 def check_stale_flags(vault, findings):
@@ -1064,9 +1083,112 @@ def check_story_links(vault, findings):
             findings.add("story without its epic", "%s is not listed in %s's `stories:`" % (r, epic))
 
 
+def check_story_screens(vault, findings):
+    """A story's `screens:` names screens of its feature's UX spec (§ 2 `Screen` or `View ID`) — the dev
+    cards group stories by screen, so a free-text name is a story no card can find. Advisory: older
+    vaults used SCR-## labels, and a feature with no UX spec is not checked."""
+    from bigin import design
+    from bigin.vault import Vault
+    v = Vault(vault)
+    if not v.story_paths() or not v.ux_paths():
+        return
+    feature_of = {}
+    for p in v.epic_paths():
+        d = v.load(p)
+        feature_of[d.id] = (d.fm_get("feature") or "").strip()
+    known = {}
+    for p in v.story_paths():
+        d = v.load(p)
+        slug = feature_of.get((d.fm_get("epic") or "").strip())
+        if not slug or not d.fm_list("screens"):
+            continue
+        if slug not in known:
+            spec = design.spec_of(v, slug)
+            inv = design.parse(spec)["inventory"] if spec else None
+            known[slug] = None if inv is None else {design._name(r.get(k, "")) for r in inv for k in ("Screen", "View ID")}
+        names = known[slug]
+        if names is None:
+            continue
+        bad = [s for s in d.fm_list("screens") if s not in names]
+        if bad:
+            findings.add("advisory: story screen not in the UX spec",
+                         "%s lists screens: [%s], which the %s UX inventory does not name — use the View ID"
+                         % (rel(vault, p), ", ".join(bad), slug))
+
+
 TIER1_GLOBAL = [check_ids]
-TIER2 = [check_secrets, check_staged_has_entry, check_question_rows, check_status_invariant, check_pointers, check_note_coverage,
-         check_step_references, check_story_links, check_stale_flags]
+Q_OPEN = re.compile(r"^\s*- \[ \] Q:\s?(.*)$")
+Q_IDS = re.compile(r"\b(?:UC|BR|INT|EN|PP|US|EP|UX)-\d+\b")
+Q_VAULT_TERMS = re.compile(r"\b(signal|intake|staged|fold-in|bucket)\b", re.I)
+
+
+def check_question_style(vault, findings):
+    """Mechanical half of questions.md, advisory: an open question ends with `?`, names its owner, runs to at most
+    three sentences before its `(ref:)`, and for owner client carries no id or vault term in the ask."""
+    paths = (sorted(glob.glob(os.path.join(vault, "00-Inbox", "INT-*.md"))) + hub_files(vault) +
+             sorted(glob.glob(os.path.join(vault, "01-Requirements", "_ucs", "*.md"))) +
+             sorted(glob.glob(os.path.join(vault, "01-Requirements", "_brs", "*.md"))))
+    for p in paths:
+        in_comment = False
+        for n, line in enumerate(read_text(p).splitlines(), 1):
+            if "<!--" in line:
+                in_comment = "-->" not in line
+                continue
+            if in_comment:
+                in_comment = "-->" not in line
+                continue
+            m = Q_OPEN.match(line)
+            if not m:
+                continue
+            raw = m.group(1)
+            ask = re.split(r"\(ref:", raw)[0]
+            ask = re.sub(r"\((?:owner|asked|sent|answered):[^)]*\)|↦\s*\S+", "", ask).strip()
+            owner = re.search(r"\(owner:\s*([^)]*)\)", raw)
+            where = "%s:%d" % (rel(vault, p), n)
+            if not owner:
+                findings.add("advisory: question wording", "%s has no `(owner: client|team|dev)`" % where)
+            if not ask.endswith("?"):
+                findings.add("advisory: question wording", "%s does not end with `?`" % where)
+            if len(re.findall(r"[.?!](?:\s|$)", ask)) > 3:
+                findings.add("advisory: question wording", "%s runs past three sentences before its ref" % where)
+            if owner and owner.group(1).strip() == "client" and (Q_IDS.search(ask) or Q_VAULT_TERMS.search(ask)):
+                findings.add("advisory: question wording",
+                             "%s is for the client but names a vault id or term — push ids into `(ref:)`" % where)
+
+
+CONF_BLOCK = re.compile(r"^### SRC-(\d+) · (\S+) · ", re.M)
+
+
+def check_confluence_note(vault, path, findings):
+    """A `source: confluence` note is the engine's (`bigin intake confluence`): it carries its page's high-water
+    mark ``conf:<pageId>@v<n>`` in source_ids (else the next capture re-appends the whole page) and every
+    block is a section or a removed section."""
+    fm = frontmatter(path)
+    if (fm.get("source") or "").strip() != "confluence":
+        return
+    text = read_text(path)
+    head = text.split("\n---", 1)[0]
+    page = (fm.get("confluence_id") or "").strip().strip('"')
+    if not page or not re.search(r"conf:%s@v\d+" % re.escape(page), head):
+        findings.add("confluence note without a high-water mark",
+                     "%s has no `conf:<pageId>@v<n>` in source_ids matching confluence_id — the next capture "
+                     "would append the whole page again" % rel(vault, path))
+    raw = "\n".join(section(text, r"^##\s+Raw"))
+    for m in CONF_BLOCK.finditer(raw):
+        if m.group(2) not in ("section", "removed"):
+            findings.add("confluence block of an unknown kind",
+                         "%s SRC-%s is `%s` — confluence blocks are written by `bigin intake confluence` "
+                         "(section | removed), never by hand" % (rel(vault, path), m.group(1), m.group(2)))
+
+
+def check_confluence_notes(vault, findings):
+    """Tier 2 (full lint only — never on the PostToolUse hook path)."""
+    for path in sorted(glob.glob(os.path.join(vault, "00-Inbox", "INT-*.md"))):
+        check_confluence_note(vault, path, findings)
+
+
+TIER2 = [check_confluence_notes, check_question_style, check_secrets, check_staged_has_entry, check_question_rows, check_status_invariant, check_pointers, check_note_coverage,
+         check_step_references, check_story_links, check_stale_flags, check_story_screens]
 
 
 JIRA_BLOCK = re.compile(r"^### SRC-(\d+) · (ticket|comment|description|fields) · (\S+) — (.*)$", re.M)
@@ -1223,6 +1345,8 @@ def run_full(root):
 
     if not findings.total():
         sys.stdout.write("bigin-lint v%s (%s): clean (tier 1 + tier 2) over %s\n" % (ver, ppath, vault))
+        if findings.advisory():
+            sys.stdout.write("\n%s\n" % findings.render())
         return 0
     sys.stdout.write("bigin-lint v%s (%s): %d finding(s) over %s\n\n%s\n" % (ver, ppath, findings.total(), vault, findings.render()))
     return 1

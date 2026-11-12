@@ -1,9 +1,8 @@
-# Card — Story writer (model: session default — slicing and translating for a product owner is judgement)
+# Card — Story writer (model: sonnet — slicing and translating for a product owner is judgement)
 
 **In:** the dispatch block from `/bigin-generate-stories`: feature slug, `EP-###` (new or update), the story
 ids to use, UCs TO SLICE (approved, with versions), PENDING / NOT YOURS UCs, approved stories (never edit),
-SNAPSHOT folder or none, DESIGN `UX-###@version` or none. Read each UC in full, every BR in `brs:`, every EN
-in `entities:`, the UX spec §§ 2-4, `SNAPSHOT.md`, and `_bigin/templates/{epic,user-story}.md` (the schema).
+SNAPSHOT folder or none, DESIGN `UX-###@version` or none. Read `scripts/bigin worklist stories <slug>` (the UC steps, BRs and ENs the slices cite — do not open those files), the UX spec §§ 2-4, `SNAPSHOT.md`, and `_bigin/templates/{epic,user-story}.md` (the schema).
 **Out:** files inside `03-Epics-Stories/EP-<NNN> <Feature>/` only, all `status: draft`, and the reply block.
 `_bigin/stages/stories/3-slice.md` and `4-write.md` stay the full procedure.
 
@@ -15,12 +14,14 @@ in `entities:`, the UX spec §§ 2-4, `SNAPSHOT.md`, and `_bigin/templates/{epic
 4. Business language only — what a person sees, does, or is told. Keep every validation, record, and
    notification the step carried ‹stages/stories/4-write.md § The translation rule›.
 5. Screens are reported from the snapshot and the UX spec, image first, labels as the prototype shows them.
-   A field or message nothing grounds → § 8 question ‹stages/stories/4-write.md § Per story›.
+   A field or message nothing grounds → § 8 question (`owner: dev` if only the build can settle it) ‹stages/stories/4-write.md § Per story›.
 6. One Gherkin `Scenario` per rule and per error path, numbered, tagged `[S#]` `[E#]` `[BR-###]`.
 7. Copy open questions with their original sentence. Never edit an approved story: report it as drifted and
    write the change as a delta story (`delta_of`) ‹stages/stories/1-scope.md § Part 5 — Drift on an existing epic›.
    `sources` / `jira` are derived by the engine — never type them.
 8. Leave `absorbed:` empty and never touch a hub — the orchestrator closes.
+9. Plain English in § 1 and AC titles (dev cards): ≤ 25-word sentences, ≤ 12-word titles, one term per thing.
+   `screens:` = UX View IDs. One story ≈ one PR: ≤ 8 AC, ≤ 3 screens.
 
 ## Example (UC-003 E1 "slot already taken", folded)
 US-001 Book a free slot — § 6:

@@ -1,6 +1,6 @@
 ---
 name: enrich-feature
-description: Manually re-run domain research for one feature — the automatic pass `/extract-signal` § Step 2a already ran the moment this feature's hub was first created. Use this when the feature's scope has changed materially since that run, when the automatic run failed or was skipped (no research method resolved, a dispatch error, offline), or when a human just wants fresher grounding before drafting use cases. Never runs against a feature with no hub yet — that's what § Step 2a is for.
+description: "Manually re-run domain research for one feature whose hub already exists — when its scope changed materially, the automatic run at hub creation failed or was skipped, or fresher grounding is wanted before drafting use cases."
 argument-hint: "<feature-slug>"
 ---
 

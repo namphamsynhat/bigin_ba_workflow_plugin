@@ -2,9 +2,13 @@
 
 ```text
 runs: orchestrator, per in-scope feature, immediately after Part 3's conflict check
-in:   the feature's whole live UC set (each one's ## 1 and ## 2), its BR-### files, the hub's
-      one-line description + its {requirements_file} row, its open PP-### rows, and the entities
-      its UCs and BRs cite
+in:   ONE file — `python "${CLAUDE_PLUGIN_ROOT}/lib/bigin/cli.py" --json worklist coverage <slug>` (fallback
+      `python3`): every live UC of the feature as a compact card (## 1 summary with pre/post-conditions,
+      ## 2 step ids and text, flows, cited entities and pain points), its BR-### statements with where
+      each is enforced, its open PP-### rows, the existing `## Coverage Gaps` rows, and `mechanical` —
+      the `rule` lens and the pain-point half of the `goal` lens already answered, because both are
+      lookups. Do NOT open the UC, BR or register files: at ten use cases that is ~100 KB of files
+      against ~35 KB of worklist, in the context that still has to be coherent at the end of the run
 out:  one `## Coverage Gaps` row per gap found, on that feature's hub · existing rows re-statused ·
       the open ones mirrored into ## Open Questions / Gates
 never: minting a UC · drafting a step, flow, or rule to fill a gap · parking a UC that is otherwise
@@ -46,7 +50,9 @@ Skip a feature with **no UC at all** — there is no set to reason about, and it
 
 ## The lens — six tests, in this order
 
-Run every one. Each names a gap only when **both** halves hold: the business plainly needs it, **and**
+Run every one — `rule`, and `goal` for pain points, arrive pre-computed in the worklist's `mechanical`
+block; weigh them against the guard below like any other finding, then run the other four yourself.
+Each names a gap only when **both** halves hold: the business plainly needs it, **and**
 the record is silent — no UC, no pending change, no BR, no open question, and no signal that
 says it lives somewhere else.
 

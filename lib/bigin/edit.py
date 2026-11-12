@@ -42,13 +42,17 @@ def question_block(text, owner=None, ref=None, answer="", indent="", checked=Fal
         q += f" (owner: {owner})"
     if ref and "(ref:" not in q:
         q += f" (ref: {ref})"
+    if not checked and "(asked:" not in q:
+        q += f" (asked: {today()})"          # when it entered the vault — `bigin questions list` ages it from here
+    if checked and answer and "(asked:" in q and "(answered:" not in q:
+        q += f" (answered: {today()})"       # `bigin metrics report --quality` reads asked → answered as latency
     box = "x" if checked else " "
     return [f"{indent}- [{box}] Q: {q}", f"{indent}  A: {answer}".rstrip()]
 
 
 def q_core(text):
     """Question text without its trailing (owner:…)(ref:…) tags, whitespace-normalised, lowercased."""
-    t = re.sub(r"\((owner|ref):[^)]*\)", "", text or "")
+    t = re.sub(r"\((owner|ref|asked|sent|answered):[^)]*\)", "", text or "")
     t = re.sub(r"↦\s*\S+", "", t)
     return norm_ws(t).lower()
 

@@ -159,6 +159,13 @@ name a speaker                  → only when who said it matters AND attributio
 uncertain attribution           → omit the name, never "Travis/Bridget"
 ```
 
+**Quote every new row.** `quote` is the words of the cited block the row rests on, copied — never paraphrased —
+at most 240 characters (`...` skips a middle). The engine looks for it in `## Raw` (whitespace, case and curly
+quotes ignored); a quote it cannot find, or a missing one, marks the row `[unverified]`, and over 10% unverified
+owes the independent audit. One repair round follows: fix the quote of a flagged row, or leave it out. The same
+round hands you runs of source (five lines or more, not near any quote) that no row came from — read them and
+extract, or return no rows.
+
 ## Special cases
 
 | Case | Do |
@@ -307,9 +314,10 @@ permanent ids): correct in place, append after the highest `#` ever used, never 
 12 cites        every Source names a specific block, and the quoted words are in it
 13 self-audit   § Step 6 walked every block against the table; every category it found is repaired,
                 and the repairs are reported by row # and category
-14 audit owed   the note is judged against `2b-audit.md` § When the independent pass is owed, and the
-                verdict goes in `self_audit.audit_owed` + `reason` — the workflow dispatches on it, so an
-                unstated verdict silently downgrades a transcript to no audit at all
+14 audit facts  `self_audit` carries honest COUNTS — inversions, contradictions, rows repaired, blocks left
+                unread. The engine decides whether the independent pass is owed from those and from the
+                note's structure (`2b-audit.md` § When the independent pass is owed); your opinion of
+                your own table is not an input, so under-reporting a count is the only way to skip a check
 ```
 
 ## Safety

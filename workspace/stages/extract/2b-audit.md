@@ -116,18 +116,29 @@ This second read of the source is roughly half the cost of the whole extract cha
 dispatch is no longer the only check — it is the check for the notes where self-auditing is known to
 fail. Spend it there and nowhere else.
 
+**The engine makes this call, not the extractor.** `bigin note write-signals` prints `audit_owed` and
+`audit_reasons`; the extractor's own `self_audit.audit_owed` is ignored. A writer asked whether its own
+table needs checking says no exactly when the check matters — in practice notes with every reason
+`not stated` were self-reported as needing no audit.
+
 ```text
-DISPATCH signal-auditor when ANY holds:
-    any source block's kind is `transcript`      # however short — see below
-    the note is `source: jira`                  # a negotiated thread; the engine sets audit_owed itself
-    ## Raw is ~300 lines or more
-    more than one source block, and any of them is an attachment or a thread
-    2a reported a block it could not read, or `not stated` over 30% of requirement/feedback rows
-    2a's self-audit found an inversion or a contradiction   # it found one; assume it missed one
-    2a's self-audit repaired more than 5 rows
+audit_owed (engine) when ANY holds:
+    any source block's kind is `transcript`      # however short — see below        ┐
+    the note is `source: jira`                  # a negotiated thread               │ read off the
+    ## Raw is 300 lines or more                                                     │ note itself
+    more than one source block, and any of them is an attachment or a thread        ┘
+    2a's self-audit found an inversion or a contradiction   # it found one; assume it missed one  ┐ counts
+    2a's self-audit repaired more than 5 rows                                                     │ 2a
+    2a reported a block it could not read                                                         ┘ reports
 
 OTHERWISE the extractor's § Step 6 self-audit stands as the audit. The orchestrator reports it as
-"audit: self (<N> lines, <kind>)" — never as a dispatched audit, so a reader can tell which depth ran.
+"audit: self" — never as a dispatched audit, so a reader can tell which depth ran.
+
+why_repair (engine) — NOT an audit trigger:
+    `not stated` over 30% of the requirement/feedback rows just written
+    → the SAME extractor is re-dispatched on exactly those rows (`mode: repair`) to redo the
+      § The Why field search. A second reader of the whole source cannot make a missing reason
+      appear; the row-scoped search is the remedy, at a fraction of the cost.
 ```
 
 **Never skip on a transcript, however short it looks.** The failures this pass exists to catch —

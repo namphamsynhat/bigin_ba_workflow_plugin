@@ -1,7 +1,7 @@
 # Stage 3 — Screens: turn one feature's flows into a UX spec
 
 ```text
-runs: one worker per FEATURE (a subagent, or the orchestrator inline for a small run)
+runs: one worker per FEATURE — a subagent, always (references/agent-dispatch.md)
 in:   this feature's NEW/CHANGED UCs + its BRs, entities, directives, principles
 out:  {ux_dir}/UX-<NNN> <Feature>.md — brief, screen inventory, screen specs, flows
       + ## 7 Relationship Model, on a feature that passes Part 4b's trigger (most do not)
@@ -13,56 +13,56 @@ never: an invented screen · a raw colour/size/token id · an invented nav entry
          export, or saved view the requirements did not grant (D8)
 ```
 
-Read `design-screens.md` § The UX spec, `design-screens.md` § Screen spec, `design-screens.md` § Semantic style roles, `design-screens.md` § View ID and Screen Type, `design-grounding.md` § Grounding,
-`questions.md` § Open questions, `design-actor-scope.md` § Actor scope, `design-navigation.md` § User flows and pain points, `design-review.md` § The relationship model,
-`design-navigation.md` § The navigation map, and `design-platform.md` § Platform first.
+Your card (`_bigin/cards/design-screens.md`) comes first. The standard behind each Part is in
+`_bigin/conventions/` — `design-screens.md` (the UX spec, screen spec, semantic roles, View ID),
+`design-grounding.md`, `design-actor-scope.md`, `design-navigation.md`, `design-platform.md`,
+`questions.md`. **Open a section when a Part cites it**, not all of them up front.
 
 ---
 
-## Part 1 — Read the brief, in this order
+## Part 1 — Read the brief: your worklist
+
+Your dispatch names a **worklist JSON** (`<slug>.design.in.json`, built by `bigin worklist design`).
+It is the whole requirement input, read once, in place of the hub, every UC, every BR, every entity,
+the principles file and the navigation map:
 
 ```text
-0  your dispatch prompt        platform: web | mobile | both — the orchestrator read the project
-                               config once, at Stage 1, and passed it to you. You never open the
-                               project config to check it, and you never resolve a design engine:
-                               two workers inferring a platform differently produce one product
-                               with two navigation shells.
-1  the hub                     {hub_dir}/<slug>.md   → ## Design Directives (Status: open), actors
-2  each UC in scope, in full   ## 1 actors/trigger/pre+post · ## 2 steps · ## 3 branches
-                               ## 4 rule mirror · ## 5 Still open (these are KNOWN GAPS)
-3  each BR named in ## 4       the real rule text — the mirror is short on purpose
-                               — note any rule about WHO MAY SEE OR DO WHAT: whose records an actor
-                                 reaches, and whether they may act on many at once. Part 2a's
-                                 three facts are read from these, and nowhere else.
-4  each EN in the UC's entities:  the field list, types, required?, enum values
-                               — note any field holding per-user history, preference, pattern, or
-                                 score: Part 4b's trigger turns on whether one exists
-                               — note each RELATIONSHIP CARDINALITY (one Account has many Orders):
-                                 it is what tells Part 2a whether an actor's set is one, few, or
-                                 unbounded, and the band decides the screen's machinery
-5  the hub's ## Pain Points    every row NOT resolved — PP-### and the client's own words. These
-                               are what the FLOWS have to fix (Part 5), and what shapes emphasis and
-                               ordering on a screen. They never create one (ground 1b)
-6  {design_principles_file}    rows with Status: active
-7  {nav_map_file}              its ## Structure — the tree that already exists, at whatever depth,
-                               so a new entry joins an existing branch instead of starting a
-                               parallel one
-8  the existing UX spec, if any        you UPDATE it; you never fork it
-9  ONE sibling UX spec, at most, and only when this feature needs a pattern the nav map does not
-   already name — a list, a queue, an approval, a wizard. Pick it from {nav_map_file}'s
-   ## Structure, which names which feature owns which branch; grep {ux_dir} for the pattern
-   rather than reading specs to find out who has it. Reuse beats inventing (ground 2).
-   → NEVER read every UX-*.md. At two features that is a habit; at ten it is nine specs in
-     context before this feature's first screen, and the ten-feature project is the one where
-     the cost lands.
+dispatch prompt     platform: web | mobile | both — resolved by the orchestrator. You never open the
+                    project config to check it and you never resolve a design engine: two workers
+                    inferring a platform differently produce one product with two navigation shells.
+use_cases           each UC to design (state NEW | CHANGED): `summary` = § 1 actors, trigger, pre- and
+                    post-conditions · `steps` · `flows` (branches, whole) · `rules` (the § 4 mirror)
+                    · `known_gaps` = § 5 Still open — work around them, never guess past them
+other_use_cases     CURRENT (already designed) or NOT YOURS (designed in the owner's spec). Context only.
+rules               each mirrored BR's real statement — note any rule about WHO MAY SEE OR DO WHAT:
+                    Part 2a's three facts are read from these, and nowhere else
+entities            fields, types, required?, enum values, and `relationships` — note a field holding
+                    per-user history, preference, pattern or score (Part 4b's trigger turns on one),
+                    and each CARDINALITY (one Account has many Orders): it tells Part 2a whether an
+                    actor's set is one, few, or unbounded
+pain_points         every hub row NOT resolved, in the client's words. The FLOWS have to fix these
+                    (Part 4c); they shape emphasis and ordering and never create a screen (ground 1b)
+directives          the hub's ## Design Directives rows at Status: open
+principles          DESIGN-PRINCIPLES rows at Status: active
+nav_map.structure   the tree that already exists, so a new entry joins a branch instead of starting
+                    a parallel one
+ux                  the existing spec's path and screen list, if any — you UPDATE it, never fork it
+sibling_screens     every other spec's screens by name and type. Open ONE sibling spec, and only to
+                    reuse a pattern named here (a list, a queue, an approval, a wizard) — reuse beats
+                    inventing (ground 2). NEVER read every UX-*.md.
+```
+
+**Open a UC, BR or EN file only to confirm one detail the worklist summarised** — a step's exact
+wording, a field's enum. A worker that re-reads the sources "to be safe" has paid for them twice.
+No worklist in the dispatch (an older orchestrator) → read those same sources directly, in the order
+above.
 
 There is **no design system to read** and no token file: a screen names a semantic ROLE
 (`design-screens.md` § Semantic style roles), and the visual system is supplied later by a design
 team or bound at render time. A worker that goes looking for `_design-system/` finds either nothing
 or a stale folder nothing reads.
-```
 
-Write `## 1 Design Brief` from step 0 and steps 1–6: actors, platform, the pain points in scope, the
+Write `## 1 Design Brief` from the dispatch and the worklist: actors, platform, the pain points in scope, the
 principles applied, the directives applied, and the known gaps (each open UC question, one line,
 marked as a gap). Then fill
 its **Actor & Scope** table — one row per actor the in-scope UCs name — per Part 2a below. Fill it
@@ -220,7 +220,7 @@ Sees whose records   own | assigned subset | their unit's | all
                      ground → a BR-### about visibility or permission · the UC's ## 1
                               pre-conditions · how the UC itself defines the actor
 How many             one | few (a countable handful) | many (unbounded — it grows with the business)
-                     ground → the EN-### relationship cardinality you noted in Part 1 step 4 ·
+                     ground → the EN-### relationship cardinality in the worklist (`entities`) ·
                               a BR-### stating a cap · a UC step that says so
 May act on           read one · act on one · act on MANY at once
                      ground → a UC step or a BR-###. NEVER the volume (see the D8 line below).
@@ -556,68 +556,9 @@ by nothing stored, or a report the system ranks the same way for everyone all fa
 them has a relationship to model. **Never pass a test on a plausible reading**: the step verb, the
 entity field, and the trigger are either there or they are not.
 
-### What you write, and what grounds it
-
-Four sub-blocks (the template carries the tables). Every row is grounded per `design-grounding.md` § Grounding or it is
-not a row:
-
-```text
-Relationship Context   duration · frequency · the AUTONOMY CEILING · memory sensitivity
-                       ← a UC trigger/post-condition, a BR, an active principle row, a directive
-                       "not stated" is a real value → a requirement gap in ## 6. Never a plausible
-                       number: "users return weekly" invented here becomes a fact downstream.
-
-Memory Architecture    what it carries between sessions · WHICH EN-### FIELD holds it · which
-                       screen surfaces it · who may see, correct, or clear it
-                       ← the entity field, ALWAYS. No field → not a row, a requirement gap.
-
-Trust Map              per screen or per agent decision: what it SHOWS vs what it DOES at stage 1
-                       (transparent) / 2 (selective) / 3 (autonomous), and the correction path
-                       ← a BR about who may do this, a confidence/threshold rule, or an E-flow
-                       Only fill a stage a BR actually GRANTS (D7). An unfilled stage 3 is the
-                       correct answer when nothing granted autonomy.
-
-Proposed Measures      at most THREE, owner team, each naming what would be observed and which row
-                       above it tests. Never a requirement, never a target, never a screen.
-```
-
-A trust stage is **not** a state. `## 3`'s States table is within one session (empty, loading,
-error, success). A trust stage is the same screen at relationship month 1 versus month 12 — put it
-in `## 7` and, where it changes what a screen shows, note the stage next to that element in `## 3`.
-
-### The guardrail — this is where an agentic run goes wrong
-
-An installed relationship-UX skill hands you a pattern catalog: memory dashboards, goal dashboards,
-planning canvases, preference-evolution maps, contextual timelines. Those are **whole screens**, and
-they arrive with a citation, which makes an invented screen look designed.
-
-```text
-an external pattern is ground 2b (`design-grounding.md` § Grounding) — it shapes HOW something already grounded is built.
-it can NEVER ground THAT a screen, field, or state exists.
-
-"the relationship-UX skill recommends a memory dashboard"     → not a ground. Not a screen.
-"UC-014 S3: the reviewer checks what the assistant learned"    → a ground. Now design that screen,
-                                                                 and use the catalog for its shape.
-```
-
-Same test as Part 2's: **never invent a screen the flow never asked for**, however good the pattern.
-
-### The gaps are the deliverable
-
-A UC almost never states an autonomy ceiling, a retention rule, or who owns the memory. So a real
-agent feature produces **more requirement gaps here than design rows** — that is this section
-working, not failing. Each one goes in `## 6`, marked `requirement-gap`, and belongs to
-`/bigin-transform-signal`. Write none of them onto the UC (D4).
-
-The recurring five, all requirement gaps whenever unanswered:
-
-```text
-what may the agent do WITHOUT asking, and above what confidence?   → autonomy. A BR, or a gap.
-how long is this remembered, and can the user clear it?            → retention. A BR, or a gap.
-who else can see what it learned about this user?                  → visibility. A BR, or a gap.
-what happens when it is WRONG — who is accountable, what is undone? → an E-flow, or a gap.
-does the user know it is learning from them?                        → disclosure. A BR, or a gap.
-```
+**On a pass, read `3-screens-relationship.md`** (beside this file) before writing `## 7`: what the
+four sub-blocks hold, what grounds each row, and the guardrail that keeps a pattern catalog from
+inventing screens. On a miss, skip it — most features do.
 
 ## Part 4c — The flows, and the pain points they resolve
 
@@ -640,7 +581,7 @@ ONE flow per user goal, per ACTOR — never one per platform, never one per scre
 
 ```text
 it delivers a UC's ## 2, end to end       → sufficient on its own. Every UC in scope gets a flow.
-it also fixes a PP-### from Part 1 step 5 → NAME IT in `Resolves`. This is the flow saying why the
+it also fixes a PP-### from the worklist (`pain_points`) → NAME IT in `Resolves`. This is the flow saying why the
                                             journey is shaped this way rather than another way that
                                             also delivers the steps
 it does neither                            → it is not a flow. It is an invented journey, and it is
@@ -734,7 +675,8 @@ rows, in the same order, and never a role the table does not carry.
 
 Set `relationship_model:` from Part 4b — `modelled` with `## 7` filled, or `none` with `## 7`
 deleted. An **existing spec created before `## 7` existed** simply has no such section: add it if the
-trigger passes now, and otherwise leave the spec without it (§ Adopting an existing UX spec below).
+trigger passes now, and otherwise leave the spec without it (§ Adopting an existing UX spec below,
+and `3-screens-adopt.md`).
 
 Leave `status: draft`. Leave `absorbed:` **empty** — the orchestrator stamps it in Stage 6, after it
 has checked which UCs really got screens.
@@ -900,106 +842,7 @@ Report what you designed; do not report coverage you did not write down.
 
 ## Adopting an existing UX spec
 
-`## 7 Relationship Model` was added to `{template_ux}` after some specs already existed. There is no
-content to transform and nothing to migrate:
-
-```text
-spec has no ## 7, trigger passes now   → add the section, set relationship_model: modelled
-spec has no ## 7, trigger misses       → leave it exactly as it is. `relationship_model:` absent
-                                         reads the same as `none`.
-spec HAS ## 7 from an earlier run      → update it in place like any other section. Never fork it.
-```
-
-`platform` arrived the same way, and the same shape applies. A spec written before it existed has no
-`Platform` value in its `## 1 Design Brief` (or the literal words "not stated"):
-
-```text
-no Platform value                       → a `web` spec, by definition — `web` is the absent-platform
-                                          default, and web is exactly what that run produced
-next design run of its feature          → self-heals: write Platform from the dispatch slot
-dispatched platform is now mobile|both  → still not a fork: same spec, updated in place
-```
-
-**A spec written against a design system** carries three things this pipeline no longer produces,
-and all three self-heal in place — never by forking the spec:
-
-```text
-## 3 element tables with a `Token(s)` column   → rename the column `Role` and re-fill it from the
-                                                 closed list (`design-screens.md` § Semantic style
-                                                 roles). A cell holding `--color-action-primary` on
-                                                 the submit button becomes `primary action`; a cell
-                                                 holding a hex, a px, or a font name becomes the
-                                                 role it was standing in for, or BLANK. Do not try
-                                                 to preserve the old token name anywhere: nothing
-                                                 resolves it any more.
-## 5 Design System Usage                       → becomes ## 5 Navigation & Flow Review. Keep its
-                                                 nav rows (they are still true); drop `Design system
-                                                 version`, `Tokens used`, `Components used`, and
-                                                 `Added this run`.
-## Prototype Prompt — … blocks (2 or 4)        → DELETE them, all of them. /bigin-render-design-od
-                                                 builds its own prompt from ## 1-## 5, the UCs, the
-                                                 BRs, and the entity register, so these are a stale
-                                                 second copy of the screens beside them — and they
-                                                 inline token values that no longer exist anywhere.
-                                                 Say so in the ## Changelog line.
-frontmatter `design_system:`                   → drop the key. `nav_map:` stays.
-```
-
-`## 4 Flows` written before `Resolves` and `Steps to goal` existed carries neither: fill both this
-run, per Part 4c, for every flow in the section — including flows this run did not otherwise touch.
-An unfilled `Resolves` reads as "no pain point applies here", which is a claim nobody made.
-
-`## 1`'s **Actor & Scope** table, `## 2`'s `Actor` and `Volume` columns, and `## 3`'s `Actor` /
-`Scope` lines arrived the same way, and this one has real content behind it — a spec written before
-them may carry a screen that quietly serves two actors with different scope:
-
-```text
-spec has no `actors:` key and no   → build both this run from the in-scope UCs' ## 1 actors, per
-Actor & Scope table                  Part 2a. The absent key IS the marker of a spec written before
-                                     this existed; its presence is the marker of one already
-                                     migrated. The table is not a backfill of what the old run
-                                     meant — it is read fresh from the requirements, like any
-                                     other Part 1 input.
-existing ## 2 rows, 5 columns      → add the Actor and Volume columns and fill them for every row,
-                                     including rows this run did not otherwise touch: an unfilled
-                                     cell reads as "no actor has been checked here", which is true
-                                     and needs to stop being true.
-an existing row serves two UCs     → run Part 2a's comparison on it NOW. Scope agrees → leave the
-whose actors' scope DISAGREES        merged row, one actor per the table. Scope disagrees → SPLIT
-                                     it into two rows this run, and say so in the ## Changelog line:
-                                     it is the same correction as any other, not a fork, and the
-                                     spec is still updated in place.
-an existing `many` screen with no  → add them this run (Part 4). The volume fact grounded them all
-find machinery or volume states      along; the earlier run had no rule telling it to look.
-a bulk action or export already    → do NOT silently delete it. Check whether a UC step or BR-###
-on an existing screen                grants it: granted → cite the ground and keep it. Nothing
-                                     grants it → raise it as a requirement gap in ## 6 and say in
-                                     the report that an ungranted capability is already on a screen
-                                     a client may have seen (D8).
-```
-
-That last row is the one that matters: a capability already sitting in a spec has probably already
-been prototyped, so removing it silently loses the fact that somebody was shown it. Raise it, let
-`/bigin-transform-signal` settle whether it was ever meant to exist.
-
-`## 2`'s `View ID` and `Screen Type` columns arrived the same way, and self-heal the same way:
-
-```text
-existing ## 2 rows, no View ID / Screen Type columns   → add both this run, for EVERY row including
-                                                          ones this run did not otherwise touch: mint
-                                                          each View ID mechanically (§ View ID and
-                                                          Screen Type), and classify each Screen Type
-                                                          by re-reading how it is actually reached
-                                                          TODAY — its own nav-map row and tag, or the
-                                                          absence of one. Never a placeholder on
-                                                          either column.
-a screen {nav_map_file} already tags (Landing) or       → its Screen Type is fixed by that tag:
-(Drill-down)                                              Primary for (Landing), Drill-down for
-                                                          (Drill-down). Wizard and Tab apply only to
-                                                          a screen the nav map does not name at all.
-```
-
-Every spec self-heals on the next design run of its feature. A spec whose feature is never redesigned
-keeps working — nothing downstream requires `## 7`, a `Platform` value, an Actor & Scope table, a
-`Role` column, or a `Resolves` cell to exist. `/bigin-render-design-od` reads whichever shape it finds
-and reports what it could not resolve rather than halting.
+Only when you are UPDATING a spec written before the current template — it has no `## 7`, a `Token(s)`
+column, a `## 5 Design System Usage`, `## Prototype Prompt` blocks, or no `actors:` / `platform:` key.
+Then read `_bigin/stages/design/3-screens-adopt.md` before you touch it, and follow it. A spec created
+this run, or one already in the current shape, needs nothing from that file — do not open it.

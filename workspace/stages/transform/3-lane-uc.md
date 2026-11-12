@@ -101,6 +101,9 @@ adopted FR gets the UC through a `link` set on `uc`. Report the adoption explici
 ## Writing a step
 
 - **One step, one action** by one actor — an interaction, a validation, or a state change.
+- **Plain English.** Steps become rows of the dev cards, read by people for whom English is a second
+  language: ≤ 25 words per sentence, active voice, no idioms, and the same term for the same thing every
+  time (the entity's name, the BR's words).
 - **Actor intent, never UI gesture.** "Parent provides the student's details", not "Parent types into
   the name field and clicks Next". Gestures belong to `/bigin-generate-design`, which is downstream and free
   to choose differently.

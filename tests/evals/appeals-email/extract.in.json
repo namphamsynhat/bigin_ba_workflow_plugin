@@ -1,0 +1,31 @@
+{
+  "$schema_version": 1,
+  "kind": "worklist",
+  "stage": "extract",
+  "int": "INT-003",
+  "path": "00-Inbox/INT-003.md",
+  "note": {
+    "kind": "feedback",
+    "source": "email",
+    "source_ref": "Re: appeals",
+    "declared_features": [],
+    "attachments": []
+  },
+  "src_blocks": [
+    {
+      "src": "SRC-1",
+      "kind": "email",
+      "ref": "Dana Client 2026-09-12",
+      "lines": [
+        23,
+        26
+      ],
+      "chars": 172
+    }
+  ],
+  "mode": "fresh",
+  "answered_questions": [],
+  "last_row": 0,
+  "output": "signals",
+  "read": "read ONLY the listed line ranges of the note (and attachments named in a block); never the whole note"
+}

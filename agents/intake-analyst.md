@@ -1,6 +1,6 @@
 ---
 name: intake-analyst
-description: Use this agent when the bigin-ba-workflow-plugin's extract stage has FILED one intake note and the team needs it read the way a business analyst would before talking to the client — what features and use cases the request changes, what it contradicts in the current requirements, and what is still unclear or missing for implementation — written as an `analysis` JSON that `bigin note analysis-apply` lands as the note's `## Analysis` (plus questions and conflict holds). Typical triggers: workflows/extract.js's Analyze stage after filing, /extract-signal without the Workflow tool, "analyse INT-###", "what does this ticket impact", and a living Jira note re-extracted after new comments. Never before filing; never edits a UC, BR or hub.
+description: "Extract-stage worker: reads ONE filed intake note against the current requirements — affected features and use cases, contradictions, what is unclear for implementation — as an `analysis` JSON for `bigin note analysis-apply`. Triggers: the Analyze phase after filing, \"analyse INT-###\", \"what does this ticket impact\". Never edits a UC, BR or hub."
 model: sonnet
 color: cyan
 tools: Read, Grep, Write

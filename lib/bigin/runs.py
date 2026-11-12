@@ -74,6 +74,8 @@ def ingest(vault, path, kind=None, run=None):
             shutil.copy2(fs_path(path), fs_path(os.path.join(d, os.path.basename(path))))
         record(vault, run, os.path.basename(path), "ok" if not errs else "failed",
                f"{kind}: {len(errs)} schema error(s)" if errs else kind)
+        from . import metrics   # every validated or rejected output cost a model call — count both
+        metrics.estimate(vault, run, os.path.join(d, os.path.basename(path)), kind)
     return res
 
 
@@ -93,16 +95,17 @@ def summary(vault, run):
     for e in results:
         counts[e.get("status")] = counts.get(e.get("status"), 0) + 1
     metrics = load_jsonl(os.path.join(d, "metrics.jsonl"))
-    tokens = sum(int(m.get("tokens") or 0) for m in metrics)
+    tokens = sum(int(m.get("tokens") or 0) for m in metrics if not m.get("est"))
+    est = sum(int(m.get("tokens") or 0) for m in metrics if m.get("est"))
     problems = [e for e in results if e.get("status") in ("failed", "blocked", "drift", "invalid")]
     return {"id": run, "stage": plan.get("stage"), "scope": plan.get("scope"), "counts": counts,
-            "agents": len(metrics), "tokens": tokens, "problems": problems[-10:]}
+            "agents": len(metrics), "tokens": tokens, "tokens_estimated": est, "problems": problems[-10:]}
 
 
 def render_summary(s):
     lines = [f"run {s['id']} — {s.get('stage') or '?'} {s.get('scope') or ''}".rstrip(),
              "results: " + (", ".join(f"{k} {v}" for k, v in sorted(s["counts"].items())) or "none"),
-             f"agents: {s['agents']} · tokens: {s['tokens']:,}"]
+             f"agents: {s['agents']} · tokens: {s['tokens']:,} measured · ≥ {s.get('tokens_estimated', 0):,} estimated"]
     for p in s["problems"]:
         lines.append(f"  {p.get('status')}: {p.get('task')} {p.get('target') or ''} {p.get('note') or ''}".rstrip())
     return "\n".join(lines[:20])

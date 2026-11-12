@@ -41,7 +41,7 @@
           "n": {
             "type": "integer",
             "minimum": 1,
-            "description": "row # \u2014 required for repair, ignored for fresh/append (the engine numbers)"
+            "description": "row # — required for repair, ignored for fresh/append (the engine numbers)"
           },
           "type": {
             "enum": [
@@ -68,6 +68,11 @@
             "type": "string",
             "minLength": 1
           },
+          "quote": {
+            "type": "string",
+            "maxLength": 240,
+            "description": "the words of the cited block this row rests on, copied verbatim (no paraphrase). Required on new rows: the engine looks for it in ## Raw and flags the row [unverified] when it is absent. A repair row with n may carry a corrected quote."
+          },
           "notes": {
             "type": "string"
           },
@@ -77,7 +82,7 @@
               "dropped",
               "open"
             ],
-            "description": "living Jira tickets (2-extraction.md \u00a7 A living Jira ticket): agreed by both sides / dropped in the discussion / proposed and never answered. Rendered as a [scope:x] Notes prefix."
+            "description": "living Jira tickets (2-extraction.md § A living Jira ticket): agreed by both sides / dropped in the discussion / proposed and never answered. Rendered as a [scope:x] Notes prefix."
           },
           "supersedes": {
             "type": "array",
@@ -107,8 +112,20 @@
         },
         "reason": {
           "type": "string"
+        },
+        "repaired": {
+          "type": "integer",
+          "description": "rows the self-audit corrected or added"
+        },
+        "unread_blocks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "SRC-n ids the extractor could not read"
         }
-      }
+      },
+      "description": "What only the extractor can know about its own pass. The engine decides whether the independent audit is owed (bigin note write-signals → audit_owed, audit_reasons); `audit_owed` here is accepted for older outputs and ignored."
     }
   }
 }

@@ -23,50 +23,42 @@ import json
 import argparse
 from pathlib import Path
 
-# Mapping of known aliases in navigation-map.md to specific screen filenames if names differ slightly
-CANONICAL_ALIASES = {
-    "portal requests queue": "ux-003-scr-08-my-requests.html",
-    "request review": "ux-003-scr-07-submit-a-request.html",
-    "parent account list": "ux-001-scr-03-registration-review.html",
-    "family detail view": "ux-001-scr-05-portal-home.html",
-    "spend chooser / hub screen": "ux-006-scr-02-payment-request-form.html",
-    "spend chooser": "ux-006-scr-02-payment-request-form.html",
-    "payment request review (admin)": "ux-006-scr-05-payment-request-review-admin.html",
-    "payment request review": "ux-006-scr-05-payment-request-review-admin.html",
-    "wallet detail & adjustment (admin)": "ux-004-scr-09-wallet-detail-adjustment-deactivation-admin.html",
-    "wallet detail & adjustment & deactivation (admin)": "ux-004-scr-09-wallet-detail-adjustment-deactivation-admin.html",
-    "amazon shopping requests queue (shop-03)": "ux-011-scr-03-amazon-shopping-requests-queue.html",
-    "asin catalog & allowlist management (shop-04)": "ux-011-scr-04-asin-catalog-allowlist-management.html",
-    "admin overview & dashboard": "ux-008-scr-01-admin-overview-dashboard.html",
-    "cycle spend ledger (rpt-01)": "ux-008-scr-02-cycle-spend-ledger-rpt-01.html",
-    "cycle spend ledger [rpt-01]": "ux-008-scr-02-cycle-spend-ledger-rpt-01.html",
-    "usbe biannual sgo report (rpt-02)": "ux-008-scr-03-usbe-biannual-sgo-report-rpt-02.html",
-    "school tuition reconciliation (rpt-03)": "ux-008-scr-04-school-tuition-reconciliation-rpt-03.html",
-    "donor tax credit cap tracker (rpt-04)": "ux-008-scr-05-donor-tax-credit-cap-tracker-rpt-04.html",
-    "reports catalog & ledgers": "ux-008-scr-02-cycle-spend-ledger-rpt-01.html",
-    "vendor self-service portal": "ux-005-scr-06-vendor-self-service-portal.html",
-    "received tuition payments": "ux-007-scr-01-received-tuition-payments.html",
-    "assigned applicants list": "ux-007-scr-02-assigned-applicants-list.html",
-    "applicant certification & fee review": "ux-007-scr-03-applicant-certification-fee-review.html",
-    "tuition & fee schedule declaration": "ux-007-scr-04-tuition-fee-schedule-declaration.html",
-    "mid-cycle tuition fee adjustment review": "ux-007-scr-05-mid-cycle-tuition-fee-adjustment-review.html",
-    "parent fee adjustment request drawer": "ux-007-scr-06-parent-fee-adjustment-request-drawer.html",
-    "universal messaging panel / drawer": "ux-009-scr-01-universal-messaging-panel-drawer.html",
-    "universal messaging drawer": "ux-009-scr-01-universal-messaging-panel-drawer.html",
-    "notification channel preferences": "ux-009-scr-02-notification-channel-preferences.html",
-    "cycle management": "ux-010-scr-01-cycle-management.html",
-    "attestation versions": "ux-010-scr-04-attestation-versions.html",
-    "cycle detail": "ux-010-scr-02-cycle-detail.html",
-    "award cycle status dashboard": "ux-010-scr-03-award-cycle-status-dashboard.html",
-    "attestation re-acknowledgment prompt": "ux-010-scr-05-attestation-re-acknowledgment-prompt.html",
-    "approved products catalog & cart": "ux-011-scr-01-approved-products-catalog-cart.html",
-    "order confirmation & tracking": "ux-011-scr-02-order-confirmation-tracking.html",
-    "donor dashboard": "ux-002-scr-05-donor-dashboard.html",
-    "donor list": "ux-002-scr-02-donor-list.html",
-    "unposted gifts queue": "ux-002-scr-03-unposted-gifts-queue.html",
-    "record donation": "ux-002-scr-01-record-donation.html",
-    "donor profile": "ux-002-scr-04-donor-profile.html"
-}
+# Screen-name aliases are PROJECT data, never plugin data: a navigation-map name that differs from its
+# frame's file name is mapped in the vault, at 04-UIUX/_ux/screen-aliases.json
+#   {"<name as written in navigation-map.md, lower-case>": "<frame file name>.html"}
+# main() loads it; with no file the table is empty and matching falls back to names.
+CANONICAL_ALIASES = {}
+ALIASES_FILE = os.path.join("04-UIUX", "_ux", "screen-aliases.json")
+
+
+def load_aliases(vault_dir):
+    path = os.path.join(vault_dir, ALIASES_FILE)
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError) as e:
+        print(f"WARNING: {ALIASES_FILE} is unreadable ({e}) — ignoring it")
+        return {}
+    return {str(k).strip().lower(): str(v).strip() for k, v in data.items()} if isinstance(data, dict) else {}
+
+
+def _name_tokens(name):
+    return [t for t in re.sub(r"[^a-z0-9]+", " ", (name or "").lower()).split() if t]
+
+
+def names_match(declared, assembled):
+    """A declared screen name and a frame's name are the same screen when their words are equal, or one's
+    words (at least two) are all words of the other. Whole words only: a bare substring ('list' inside
+    'checklist') is not a match, and a one-word name never matches a longer one."""
+    d, a = _name_tokens(declared), _name_tokens(assembled)
+    if not d or not a:
+        return False
+    if d == a:
+        return True
+    small, big = (d, a) if len(d) <= len(a) else (a, d)
+    return len(small) >= 2 and set(small) <= set(big)
 
 # Canonical SVG icons for IBM Carbon Design System navigation items
 CARBON_ICONS = {
@@ -409,7 +401,7 @@ def audit_spec_vault(vault_dir, frames):
                 matched = True
             else:
                 for an in assembled_names:
-                    if name_clean in an or an in name_clean:
+                    if names_match(name_clean, an):
                         matched = True
                         break
             if not matched:
@@ -423,10 +415,11 @@ def audit_spec_vault(vault_dir, frames):
         audit_report["total_declared"] += len(declared_screens)
         audit_report["missing_screens"].extend(missing)
 
-    if audit_report["total_declared"] > 0:
-        audit_report["coverage_pct"] = (len(frames) / audit_report["total_declared"]) * 100.0
-    else:
-        audit_report["coverage_pct"] = 100.0 if len(frames) > 0 else 0.0
+    # coverage = declared screens that HAVE a frame ÷ declared screens. Counting frames instead would let
+    # duplicate or undeclared frames hide a missing screen (12 frames for 10 declared reads 120%).
+    declared = audit_report["total_declared"]
+    audit_report["matched"] = declared - len(audit_report["missing_screens"])
+    audit_report["coverage_pct"] = (audit_report["matched"] / declared) * 100.0 if declared else 0.0
 
     return audit_report
 
@@ -1554,6 +1547,11 @@ def main():
     project_dir = os.path.abspath(args.project)
     vault_dir = os.path.abspath(args.vault)
 
+    CANONICAL_ALIASES.clear()
+    CANONICAL_ALIASES.update(load_aliases(vault_dir))
+    if CANONICAL_ALIASES:
+        print(f"Loaded {len(CANONICAL_ALIASES)} screen alias(es) from {ALIASES_FILE}")
+
     print(f"==> Ingesting modular frames from: {project_dir}")
     frames = parse_screen_frames(project_dir)
     print(f"Found {len(frames)} modular frame files.")
@@ -1571,14 +1569,17 @@ def main():
     print("\n--- Requirement Coverage Audit ---")
     print(f"Total Declared Screens in Spec Vault: {audit['total_declared']}")
     print(f"Total Modular Frames Assembled:      {audit['total_assembled']}")
+    print(f"Declared Screens With a Frame:       {audit['matched']}")
     print(f"Requirement Coverage Score:          {audit['coverage_pct']:.1f}%")
 
     if audit['missing_screens']:
         print(f"\nMissing Screens ({len(audit['missing_screens'])}):")
         for ms in audit['missing_screens']:
             print(f"  ❌ {ms}")
-    else:
+    elif audit['total_declared']:
         print("\n✅ 100% of declared vault screens are covered by artifact frames!")
+    else:
+        print("\n⚠️  No declared screens found in 04-UIUX/UX-*.md — nothing to measure coverage against.")
 
     if args.audit_only:
         return

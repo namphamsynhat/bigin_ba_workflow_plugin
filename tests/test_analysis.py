@@ -213,3 +213,16 @@ def test_feature_withdraw_dry_writes_nothing():
     before = digest(root)
     _json(root, "feature", "withdraw", "payments", "--reason", "too costly", "--dry")
     assert digest(root) == before
+
+
+def test_owner_dev_is_accepted_everywhere_a_question_has_an_owner():
+    root, _ = fresh("comm-vault")
+    a = _analysis()
+    a["questions"][0]["owner"] = "dev"
+    res = _json(root, "note", "analysis-apply", write_json(root, "adev.json", a))
+    assert res["questions_added"] >= 1
+    assert "(owner: dev)" in read(root, NOTE)
+    from helpers import ROOT
+    for kind in ("filing", "analysis", "changeset", "changesets", "route"):
+        with open(os.path.join(ROOT, "lib", "bigin", "schema", f"{kind}.json"), encoding="utf-8") as f:
+            assert '"dev"' in f.read(), kind

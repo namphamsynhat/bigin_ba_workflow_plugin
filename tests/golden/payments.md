@@ -161,7 +161,7 @@ that replaced it) · conflict (contradicts an earlier directive, awaiting a huma
 
 - [ ] Q: Should partial payments be allowed? (owner: client) (ref: INT-002 #5)
   A:
-- [ ] Q: Is there a maximum amount a parent may request? (owner: client) (ref: INT-001 #2)
+- [ ] Q: Is there a maximum amount a parent may request? (owner: client) (ref: INT-001 #2) (asked: 2026-09-27)
   A:
 
 ## Changelog

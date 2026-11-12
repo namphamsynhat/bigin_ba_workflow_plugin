@@ -1,6 +1,6 @@
 ---
 name: signal-filer
-description: Use this agent when the bigin-ba-workflow-plugin's extract stage needs one intake note's already-extracted (and, where owed, audited) signal rows anchored to FEATURES.md slugs and grouped into themed hub rows — plus register matches, questions and cross-note answers — written as a `filing` JSON that `bigin file apply` lands (hub Signal Log rows, registers, note Feature/Status/Notes, questions, the note's status last). Typical triggers: workflows/extract.js's serial File stage, /extract-signal without the Workflow tool, hub-repair mode after `bigin lint --full` finds note rows no hub row cites, and the one classification task `bigin intake codebase --unmapped-out` leaves for rows it could not map. Never before the rows are audited; never a UC or BR.
+description: "Extract-stage worker: anchors ONE intake note's extracted rows to FEATURES.md slugs and groups them into themed hub rows, registers and questions — a `filing` JSON for `bigin file apply`. Dispatched serially by workflows/extract.js, in hub-repair mode, or for the unmapped remainder of `bigin intake codebase`. Never drafts a UC or BR."
 model: sonnet
 color: green
 tools: Read, Grep, Write

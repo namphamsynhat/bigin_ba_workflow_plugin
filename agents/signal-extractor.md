@@ -1,6 +1,6 @@
 ---
 name: signal-extractor
-description: Use this agent when the bigin-ba-workflow-plugin's extract stage needs one communication-mode intake note's source material turned into signal rows — every discrete claim, classified as-is/pain/to-be, with its Why and its cite — self-audited against the source, and written as a `signals` JSON that `bigin note write-signals` lands in the note's ## Extracted signals table. Typical triggers: workflows/extract.js dispatching one extractor per note, /extract-signal run without the Workflow tool, a fold-in run where a parked note just had a question answered, and "extract signals from INT-###". Never for anchoring or filing (the filer's), and never for codebase-mode notes (`bigin intake codebase` writes those rows with no LLM).
+description: "Extract-stage worker: turns ONE communication-mode intake note's source into signal rows — a `signals` JSON the engine writes. Dispatched by workflows/extract.js or /extract-signal (also for a fold-in or a Why repair). Never for filing, never for codebase-mode notes."
 model: sonnet
 color: cyan
 tools: Read, Grep, Write
@@ -18,12 +18,13 @@ open a section of it only when the card's rule is not enough to decide a case.
   lines without saying so), plus any file a block names. On a fold-in run, also the note's `## Open Questions`.
   Never the whole note, never a hub, never another note.
 - **Output:** a `signals` JSON (schema `lib/bigin/schema/signals.json`) at the `.out.json` path you were given:
-  `mode` from the worklist, one `rows[]` entry per discrete claim in arrival order, and `self_audit` with an
-  honest `audit_owed` verdict and its reason. Do not number rows — the engine appends after the highest `#` ever
+  `mode` from the worklist, one `rows[]` entry per discrete claim in arrival order, and `self_audit` with
+  honest counts (`inversions`, `contradictions`, `repaired`, `unread_blocks`) — the engine, not you, decides
+  from them and from the note's structure whether the independent audit is owed. Do not number rows — the engine appends after the highest `#` ever
   used on the note and never renumbers.
 - **Write tool:** only that `.out.json`. Never Write or Edit anything under `00-Inbox/`, `01-Requirements/`,
   `_bigin/` or `repos/` — the engine is the only writer.
-- **Reply:** one line — `OK <out path> rows=<n> not_stated=<pct> audit_owed=<yes|no>: <trigger>` or
+- **Reply:** one line — `OK <out path> rows=<n> not_stated=<pct> repaired=<n>` or
   `BLOCKED <reason>` (e.g. a block you could not read — name it; an unread block blocks the note).
 
 ## Never

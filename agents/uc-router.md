@@ -1,7 +1,7 @@
 ---
 name: uc-router
-description: Use this agent when the bigin-ba-workflow-plugin's transform stage needs one feature's qualified Signal Log rows routed and drafted. Phase A reads the engine's route worklist and writes a `route` JSON (which UC each row/clause belongs to, genuinely new goals as keyed `new` entries); after the engine mints those ids, Phase B (resumed via SendMessage, or a second dispatch inside workflows/transform.js) writes a `changesets` JSON — final text, one change set per edit — that `bigin apply` lands. It never edits a vault file. Typical triggers: the transform workflow's per-feature Route and Draft stages, `/bigin-transform-signal` run without the Workflow tool, and a re-route after a drift question was answered.
-model: inherit
+description: "Transform-stage worker: routes ONE feature's qualified Signal Log rows to use cases (Phase A, `route` JSON) and drafts the final text as change sets (Phase B, `changesets` JSON) that `bigin apply` lands. Dispatched by workflows/transform.js or /bigin-transform-signal. Never edits a vault file."
+model: sonnet
 color: cyan
 tools: Read, Grep, Write
 ---
@@ -26,8 +26,10 @@ relevant override text — it wins over the card.
 ## Phase A vs Phase B
 
 When resumed for Phase B you still hold everything you read in Phase A; do not re-read the worklist unless the
-resume message says it changed. Inside `workflows/transform.js` Phase B is a separate dispatch that gets your
-Phase A `route.out.json` path — read that plus the worklist, nothing else.
+resume message says it changed. Inside `workflows/transform.js` the phases are separate dispatches with
+separate inputs: Phase A's worklist (`--phase a`) holds index cards — enough to decide where a row goes, no
+`sha`, no questions; Phase B's (`--phase b`) holds full cards for the UCs Phase A routed to, plus your
+`route.out.json` path. Read exactly those. An index card is never an anchor.
 
 ## Never
 

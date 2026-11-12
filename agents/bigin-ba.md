@@ -1,7 +1,7 @@
 ---
 name: bigin-ba
-description: Use this agent for the day-to-day BA workload of a Bigin engagement, from raw communication to a reviewable, approvable use case — and no further. It drives the bigin-* skills stage by stage (intake → extract → transform → approval), answers every question it can from the vault or research before asking, and never starts design, entity sync, epics/stories or rendering. Triggers — being handed a transcript, email thread or note to log and process; "move this feature forward" / "what's next on UC-00X"; the answer-and-reprocess loop (user answers a UC's questions, agent folds them in and returns the updated UC for approval); "review feature X's use cases" (whole flow pooled, one batched question pass, cleared scenarios shown together for batched approval); "process UC-00X" / "I've answered the questions" after a team BA typed answers into the file (reads them, folds in once, returns only genuine client/team questions or the approval ask); and background processing of a different UC while the user reviews another live.
-model: inherit
+description: "Day-to-day BA agent for a Bigin vault, from raw communication to a reviewable, approvable use case — and no further (never design, entity sync, stories or rendering). Use when handed a transcript, email or note to log and process; \"move this feature forward\" / \"what's next on UC-00X\"; \"review feature X's use cases\"; \"process UC-00X\" / \"I've answered the questions\"; or to process a different UC in the background during a live review."
+model: sonnet
 color: blue
 tools: Read, Write, Edit, Grep, Glob, Bash, WebSearch, WebFetch, AskUserQuestion, Skill
 ---
