@@ -1,7 +1,7 @@
 # Conventions — the vault-wide registers
 
-The four cross-feature registers and the mapping rules that decide what lands in each:
-entities, pain points, design principles, and the retired scenario register — plus how a signal
+The cross-feature registers and the mapping rules that decide what lands in each:
+entities, pain points, design principles, the glossary, and the retired scenario register — plus how a signal
 becomes an artifact, and what happens when it maps to no feature at all.
 
 **Read by** `/extract-signal` (filing), `/bigin-transform-signal` (Stage 4 sync), `/sync-entities`.
@@ -222,6 +222,36 @@ reads it **directly** and seeds the shared design system's `## Foundations` from
 preference, and so a feature that reaches design before approval still produces screens
 consistent with what the client has said. That register is **read-only** to the design stage: it
 holds client-stated preferences, and a token or pattern an agent chose is not one.
+
+## Glossary
+
+`01-Requirements/GLOSSARY.md` (`type: glossary`, singleton, `_bigin/templates/glossary.md`) is the one place
+that says what the project's words mean and which word the vault writes:
+
+| Term | Meaning | Also called | Source |
+|------|---------|-------------|--------|
+
+- **Term** — the one name used in every use case, rule and story.
+- **Meaning** — one or two plain sentences, in this project's sense. **Blank = not stated yet**; it is never
+  guessed (hard rule 1). A human fills it in, or asks the client.
+- **Also called** — every other name for the same thing, separated by `;`: the client's wording, a Vietnamese
+  term, a code or Jira name.
+- **Source** — `INT-### #row`, or the name of the person who added the row.
+
+**The file belongs to a human.** No id, no status, no approval step: add a row, fix a meaning or add a name by
+hand at any time, and the next run uses it. The engine's writes are limited to three, all through
+`bigin file apply` from the filer's `terms[]`: append a row for a new term, add a name to `Also called`, fill a
+**blank** `Meaning`. It never renames a term and never changes a meaning somebody wrote.
+
+**How it is used.** A worklist (`file`, `route`, `design`, `stories`) carries a `glossary` block holding only
+the rows whose term or other name appears in that task's text, plus the rule: write the `Term`; another name
+appears only inside a quote. `bigin lint --full` lists, as advisory findings, a name that leads to two terms
+and a use case or rule that writes another name instead of the term.
+
+**What belongs here.** A named thing, role, state, document or abbreviation a newcomer to the project would
+not know. An entity is one row here (its name and its other names) and one `EN-###` doc (its fields) — never
+a glossary row per field. To rename a term, change `Term` and move the old name into `Also called`; lint
+then shows every place still using it.
 
 ## Business Scenarios (retired)
 

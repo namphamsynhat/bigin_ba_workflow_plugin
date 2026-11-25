@@ -1,10 +1,10 @@
-# Card — signal-filer (model: sonnet — scope-matching judgement; weaker models file by adjacency)
+# Card — signal-filer (model: sonnet — scope-matching judgement; weaker ones file by adjacency)
 
 **In:** `worklist file <INT>` JSON — unfiled `rows` [{n, type, signal, why, source, scope?, supersedes?}], `features` (slug, name,
-status), `declared_features`, `hubs` (last row #, recent rows). Never read `## Raw`.
+status), `declared_features`, `hubs` (last #, recent rows). Never read `## Raw`.
 **Out:** `filing` → `rows` (n → feature, status, notes) · `hub_rows` (themed rows) · `questions` ·
-`pain_points` · `entities` · `design_principles` · `answers` · `note_status`/`tags`. `bigin file apply` writes
-hubs, registers, note columns, note status. You write only your `.out.json`.
+`pain_points` · `entities` · `terms` · `design_principles` · `answers` · `note_status`/`tags`. `bigin file apply`
+writes the vault. You write only your `.out.json`.
 
 ## Rules
 1. Anchor row by row on described scope, never adjacency; no confident match → `unresolved — candidates: a / b`
@@ -16,7 +16,8 @@ hubs, registers, note columns, note status. You write only your `.out.json`.
 5. A row spanning two features: both hubs (`feature: "a / b"`), once each.
 6. Conflicting pair → both `conflict`, `conflicts_with` an existing hub row when it contradicts one, ONE client
    question ‹stages/extract/3-filing.md § Step 3 — Conflicts inside one note›.
-7. Registers per signal: match a PP first (`match`); entity = owning object + its fields ‹stages/extract/3-filing.md § Step 4 — Registers›.
+7. Registers per signal: match a PP first (`match`); entity = owning object + its fields; `terms` per `glossary.rule`
+   ‹stages/extract/3-filing.md § Step 4 — Registers›.
 8. Questions: every unresolved anchor, flagged row, conflict pair, derived row; missing rationale = ONE batched
    question + a `rationale: in question | non-blocking` note on every not-stated row
    ‹stages/extract/3-filing.md § Step 5 — Questions›, worded per ‹questions.md § Open Questions wording (all artifacts)›.

@@ -1187,7 +1187,30 @@ def check_confluence_notes(vault, findings):
         check_confluence_note(vault, path, findings)
 
 
-TIER2 = [check_confluence_notes, check_question_style, check_secrets, check_staged_has_entry, check_question_rows, check_status_invariant, check_pointers, check_note_coverage,
+def check_glossary(vault, findings):
+    """Advisory. The glossary (01-Requirements/GLOSSARY.md) is a human's table: a name must lead to one term,
+    and a use case or rule writes the Term, not one of its other names (quotes are left alone)."""
+    try:
+        from bigin import glossary
+    except ImportError:
+        return
+    rows = glossary.load(vault)
+    if not rows:
+        return
+    for msg in glossary.problems(rows):
+        findings.add("advisory: glossary name is ambiguous", "01-Requirements/%s: %s" % (glossary.FILE, msg))
+    if not any(r["also"] for r in rows):
+        return
+    for path in sorted(glob.glob(os.path.join(vault, "01-Requirements", "_ucs", "*.md"))) + \
+            sorted(glob.glob(os.path.join(vault, "01-Requirements", "_brs", "*.md"))):
+        text = re.sub(r"<!--.*?-->", "", read_text(path), flags=re.S)
+        text = re.sub(r"\A---\n.*?\n---\n", "", text, flags=re.S)
+        for name, term in glossary.other_names_used(rows, text):
+            findings.add("advisory: glossary term not used",
+                         "%s: says '%s' — the glossary term is '%s'" % (rel(vault, path), name, term))
+
+
+TIER2 = [check_glossary, check_confluence_notes, check_question_style, check_secrets, check_staged_has_entry, check_question_rows, check_status_invariant, check_pointers, check_note_coverage,
          check_step_references, check_story_links, check_stale_flags, check_story_screens]
 
 

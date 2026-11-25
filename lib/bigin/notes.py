@@ -5,7 +5,7 @@
                    appends continue after the last #. Feature/Status are never touched here.
 ``apply_audit``    audit.json (signal-auditor) → appended / edited / flagged rows, same rules.
 ``file_apply``     filing.json (signal-filer) → note Feature/Status/Notes, themed hub Signal Log rows,
-                   registers (PAIN-POINTS / ENTITIES / DESIGN-PRINCIPLES), questions, Step 5b answers,
+                   registers (PAIN-POINTS / ENTITIES / DESIGN-PRINCIPLES / GLOSSARY), questions, Step 5b answers,
                    and the note's status — LAST, so a crash never leaves a note looking filed.
 """
 import glob
@@ -347,7 +347,7 @@ def _register_rows(vault, fname):
     p = os.path.join(vault.req, fname)
     if not os.path.exists(p):
         tpl = {"PAIN-POINTS.md": "pain-points-register.md", "ENTITIES.md": "entities-register.md",
-               "DESIGN-PRINCIPLES.md": "design-principles-register.md"}[fname]
+               "DESIGN-PRINCIPLES.md": "design-principles-register.md", "GLOSSARY.md": "glossary.md"}[fname]
         with open(vault.template_path(tpl), encoding="utf-8") as f:
             vault.create(p, f.read())
     d = vault.load(p)
@@ -365,7 +365,7 @@ def file_apply(vault, path, dry=False):
     nid = data["int"]
     note = vault.load_id(nid)
     note_rows = {int(r.num): r for r in model.note_rows(note)}
-    res = {"int": nid, "rows": 0, "hub_rows": {}, "questions": 0, "pp": [], "en": [], "dp": 0, "answers": 0,
+    res = {"int": nid, "rows": 0, "hub_rows": {}, "questions": 0, "pp": [], "en": [], "dp": 0, "terms": [], "answers": 0,
            "hubs_created": [], "status": None}
     # 0 — declared-slug exception (3-filing.md): a slug the HUMAN declared at capture gets a proposed row
     declared = set(note.fm_list("declared_features"))
@@ -504,6 +504,37 @@ def file_apply(vault, path, dry=False):
                      "Category": dp.get("category", ""), "Source": dp.get("source", nid), "Status": "active", "Notes": ""}
             _append_register(dp_doc, t, [cells.get(h, "") for h in t.header])
             res["dp"] += 1
+        for tm in data.get("terms") or []:
+            # the glossary is a human's file: append a row, add a name, fill a BLANK meaning — nothing else
+            from . import glossary
+            g_doc, t = reg(glossary.FILE)
+            src = f"{nid} #{tm['n']}" if tm.get("n") else nid
+            have = glossary.parse(g_doc.text)
+            hit = glossary.merge(have, tm["term"], tm.get("also") or [])
+            if hit is None:
+                cells = {"Term": tm["term"], "Meaning": tm.get("meaning", ""),
+                         "Also called": "; ".join(tm.get("also") or []), "Source": src}
+                _append_register(g_doc, t, [cells.get(h, "").replace("|", "/") for h in t.header])
+                touch_updated(g_doc)
+                res["terms"].append(tm["term"])
+                continue
+            mc, ac = t.col("Meaning"), t.col("Also called")
+            for i, r in zip(t.row_idxs, t.rows()):
+                if not r or glossary.key(r[0]) != glossary.key(hit["term"]):
+                    continue
+                r = list(r) + [""] * (len(t.header) - len(r))
+                before = list(r)
+                known = {glossary.key(x) for x in [hit["term"]] + hit["also"]}
+                extra = [x for x in [tm["term"]] + (tm.get("also") or []) if glossary.key(x) not in known]
+                if ac is not None and extra:
+                    r[ac] = "; ".join(hit["also"] + list(dict.fromkeys(x.replace("|", "/") for x in extra)))
+                if mc is not None and not r[mc].strip() and tm.get("meaning"):
+                    r[mc] = tm["meaning"].replace("|", "/")
+                if r != before:
+                    g_doc.set_row(i, r)
+                    touch_updated(g_doc)
+                    res["terms"].append(hit["term"])
+                break
         for d in regs.values():
             _flush(vault, d, dry)
     # 4 — questions

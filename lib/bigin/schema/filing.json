@@ -201,6 +201,36 @@
         }
       }
     },
+    "terms": {
+      "type": "array",
+      "description": "glossary: a business term this note introduces, or a new name for a listed one",
+      "items": {
+        "type": "object",
+        "required": [
+          "term"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "term": {
+            "type": "string",
+            "minLength": 1
+          },
+          "meaning": {
+            "type": "string",
+            "description": "only when the source states it — never inferred"
+          },
+          "also": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "n": {
+            "type": "integer"
+          }
+        }
+      }
+    },
     "design_principles": {
       "type": "array",
       "items": {

@@ -262,6 +262,14 @@ entity/field → resolve the OWNING BUSINESS OBJECT first — the thing the busi
                genuinely distinct objects either
                owning object genuinely unclear → a question, never a row named after the field
 
+term         → the worklist's `glossary` block lists the terms these rows already mention, and the rule
+               a business term a newcomer would not know, not listed → `terms[]`: term, also, n
+                 + meaning ONLY when the source states it; unstated → leave it out (a blank Meaning
+                   is a visible gap a human fills — a guessed one reads as fact everywhere after)
+               a new name for a listed term → that same term, the new name in `also`
+               the engine appends or merges the {glossary_file} row; it never renames a term or
+               rewrites a meaning (`registers.md` § Glossary)
+
 durable cross-cutting design/brand/tone/accessibility/content preference
              → a {design_principles_file} row, IN ADDITION to normal Signal Log filing
              → not durable when it's plainly scoped to one feature

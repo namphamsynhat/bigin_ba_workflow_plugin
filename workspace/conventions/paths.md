@@ -21,6 +21,7 @@ and subagent runs in.
 | `{entities_file}` | `01-Requirements/ENTITIES.md` | Proposed `EN-###` register — candidates, before promotion. |
 | `{fr_dir}` | `01-Requirements/_frs/` | **Retired, read-only.** Pre-UC `FR-<NNN> <Title>.md` files. Nothing writes here any more; a UC that took one over carries it in `absorbs:` and the FR carries `absorbed_by:` (`_bigin/stages/transform/3-lane-uc.md` § Adopting an existing FR). Absent in a vault created after the UC migration. |
 | `{scenarios_file}` | `01-Requirements/SCENARIOS.md` | **Retired, read-only.** Pre-UC `SCN-###` cross-feature register. A cross-feature flow is now one `UC-###` whose `features:` lists every slug it touches. Existing rows stay, marked superseded by the UC that absorbed them. |
+| `{glossary_file}` | `01-Requirements/GLOSSARY.md` | Business terms: the one name the vault writes, its meaning, its other names. Hand-edited. |
 | `{pain_points_file}` | `01-Requirements/PAIN-POINTS.md` | Canonical `PP-###` register. Each hub mirrors its own rows from here. |
 | `{design_principles_file}` | `01-Requirements/DESIGN-PRINCIPLES.md` | Durable, cross-cutting design constraints. |
 | `{ux_dir}` | `04-UIUX/` | One UX spec per feature: `UX-<NNN> <Feature>.md`, from `/bigin-generate-design`. Listed here because `/bigin-generate-stories` **reads** it (its screen specs quote the screens). **Read-only from this side** — everything about *writing* a screen, and the rest of the design `{variable}` table (`{ux_system_dir}`, `{nav_map_file}`, `{template_ux}`, …), lives in `design-core.md` § Paths, not here. |

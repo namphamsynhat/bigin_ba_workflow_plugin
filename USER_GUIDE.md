@@ -393,6 +393,23 @@ To formally sign off a use case once it's ready:
 /approve-uc UC-042
 ```
 
+### Keeping the project's terms consistent (the glossary)
+
+`01-Requirements/GLOSSARY.md` is one table you own:
+
+| Term | Meaning | Also called | Source |
+|------|---------|-------------|--------|
+| Reviewer | Staff member who decides an application | assessor; người thẩm định | INT-003 #1 |
+
+- **Add or fix a row by hand at any time.** There is no id, status or approval — the next run uses what the file says.
+- `/extract-signal` adds a row when a note introduces a term, and adds a new name to **Also called** when the
+  client uses a different word for a term already listed. It never renames a term or changes a meaning you wrote.
+- **A blank Meaning means nobody stated it** — fill it in or ask the client. It is never guessed.
+- Agents are given only the rows a task mentions, and write the **Term** in use cases, rules, designs and stories.
+- `bigin lint --full` lists (as advice, never blocking) a use case or rule that uses another name instead of the
+  term, and a name that appears under two terms. To rename a term, change **Term** and move the old name into
+  **Also called** — lint then shows every place still using it.
+
 ### Generating a design
 
 ```
@@ -490,6 +507,7 @@ _bigin/                    engagement config + the materialized rulebook (plugin
 00-Inbox/                  raw captures, one INT-### file per intake, verbatim
 01-Requirements/
   FEATURES.md              the feature registry — everything anchors to a row here
+  GLOSSARY.md              the project's terms: what each means and the one name we write (edit by hand)
   _features/<slug>.md      one hub per feature: signal log, use cases, coverage gaps, entities
   _ucs/UC-### <Title>.md   one use case per user goal — the core requirement artifact
   _brs/BR-### <Title>.md   one business rule per file

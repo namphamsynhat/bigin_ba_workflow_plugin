@@ -178,6 +178,8 @@ _bigin/templates/                 blank scaffolds for every artifact type, same 
 ├── PAIN-POINTS.md               canonical PP-### register
 ├── ENTITIES.md                  candidate EN-### rows a signal reveals (proposed only)
 ├── DESIGN-PRINCIPLES.md         durable, cross-cutting design constraints
+├── GLOSSARY.md                  business terms: Term | Meaning | Also called | Source — hand-edited;
+│                                 agents get the matching rows and write the Term
 ├── _features/<slug>.md          one Feature Hub per slug — Signal Log, Use Cases, Coverage Gaps,
 │                                 Requirement Readiness, Entities, Pain Points
 ├── _ucs/UC-<NNN> <Title>.md      one Use Case doc per user goal — THE requirement artifact:

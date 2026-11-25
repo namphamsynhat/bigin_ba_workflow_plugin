@@ -11,6 +11,7 @@ What stays with a reader is what needs one: whether an unmatched item is really 
 directive is implemented, whether a journey is sound. Everything here is a lookup, and a lookup done by
 a model is both the expensive way to do it and the one that gets it wrong quietly.
 """
+import json
 import os
 import re
 
@@ -345,18 +346,22 @@ def worklist(vault, slug, args=None):
         existing = {"id": spec.id, "path": vault.rel(spec.path), "version": str(spec.fm_get("version") or ""),
                     "screens": [{k: r.get(k, "") for k in ("Screen", "View ID", "Screen Type", "Actor", "Volume", "Serves")}
                                 for r in parse(spec)["inventory"]]}
-    return {"$schema_version": 1, "kind": "worklist", "stage": "design", "feature": slug,
+    from .worklist import _glossary
+    rules = [b for b in brs.values() if b]
+    return _glossary(vault, {
+            "$schema_version": 1, "kind": "worklist", "stage": "design", "feature": slug,
             "hub": {"name": hub.fm_get("name"), "description": hub.fm_get("description")},
             "ux": existing or {"id": None, "note": "new — the dispatch names the UX-### minted for you"},
             "platform_default": sc["platform"], "nav_map": {"version": sc["nav_map"], "structure": {
                 k: [{c: r.get(c, "") for c in ("id", "Label", "Points to (screen)")} for r in rows]
                 for k, rows in nav.items()}},
             "use_cases": ucs, "other_use_cases": others,
-            "rules": [b for b in brs.values() if b], "entities": [_entity(vault, e) for e in ents],
+            "rules": rules, "entities": [_entity(vault, e) for e in ents],
             "pain_points": open_pain_points(hub), "directives": open_directives(hub),
             "principles": active_principles(vault), "sibling_screens": siblings,
             "read": "this is your whole requirement input. Open a UC, BR or EN file only to confirm one detail "
-                    "this summarised; open ONE sibling spec only when you reuse a pattern named in sibling_screens."}
+                    "this summarised; open ONE sibling spec only when you reuse a pattern named in sibling_screens."},
+        json.dumps([ucs, rules], ensure_ascii=False))
 
 
 # ---------------------------------------------------------------------------- Stage 5: forward items

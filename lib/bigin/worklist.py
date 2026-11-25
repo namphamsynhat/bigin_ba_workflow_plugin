@@ -12,6 +12,15 @@ from .vault import strip_comments
 SUMMARY_FIELDS = ("Primary Actor", "Secondary Actor(s)", "Business Need / Goal", "Trigger")
 
 
+def _glossary(vault, w, text, propose=False):
+    """Attach the glossary rows this task's text mentions (glossary.py) — matching rows only, never the file."""
+    from . import glossary
+    g = glossary.for_worklist(vault.root, text, propose)
+    if g:
+        w["glossary"] = g
+    return w
+
+
 def _clean(text):
     t = strip_comments(text or "")
     t = re.sub(r"\n{3,}", "\n\n", t)
@@ -160,6 +169,7 @@ def route(vault, slug, args=None):
          "hub": {"name": hub.fm_get("name"), "status": hub.fm_get("status")},
          "rows": rows, "candidates": cands, "brs": brs, "uc_index": index,
          "output": {"phase_a": "route", "phase_b": "changesets"}}
+    _glossary(vault, w, " ".join(f"{r['signal']} {r['notes']}" for r in rows))
     if phase:
         w["phase"] = phase
         w["read"] = ("candidates are index cards (no sha, no questions): decide WHERE each row goes; the edit text "
@@ -332,6 +342,7 @@ def file_(vault, nid, args=None):
     w = {"$schema_version": 1, "kind": "worklist", "stage": "file", "int": nid, "rows": rows, "features": feats,
          "declared_features": d.fm_list("declared_features"), "hubs": hubs,
          "open_questions_elsewhere": kept, "output": "filing"}
+    _glossary(vault, w, " ".join(f"{r['signal']} {r['why']}" for r in rows), propose=True)
     if omitted:
         w["open_questions_elsewhere_omitted"] = omitted
     from . import questions
@@ -489,9 +500,11 @@ def stories(vault, slug, args=None):
             if ep and en not in ens:
                 ed = vault.load(ep)
                 ens[en] = {"id": en, "title": model.title_of(ed), "fields": _short(_clean("\n".join(ed.lines[ed.body_start:])), 2500)}
-    return {"$schema_version": 1, "kind": "worklist", "stage": "stories", "feature": slug, "use_cases": ucs,
-            "brs": sorted(brs.values(), key=lambda x: x["id"]), "entities": sorted(ens.values(), key=lambda x: x["id"]),
-            "read": "this is the whole input for the slices: do not open the UC, BR or EN files"}
+    w = {"$schema_version": 1, "kind": "worklist", "stage": "stories", "feature": slug, "use_cases": ucs,
+         "brs": sorted(brs.values(), key=lambda x: x["id"]), "entities": sorted(ens.values(), key=lambda x: x["id"]),
+         "read": "this is the whole input for the slices: do not open the UC, BR or EN files"}
+    import json
+    return _glossary(vault, w, json.dumps([ucs, list(brs.values())], ensure_ascii=False))
 
 
 def build(vault, stage, scope, args=None):
