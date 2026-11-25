@@ -1,144 +1,103 @@
-# Bigin BA Workflow Plugin
+# Bigin BA
 
-A Claude Code plugin for the BA, Dev and QC team. AI does the heavy work: it reads client communication and
-writes use cases, rules, designs and stories. People review it **fast**: short cards show what changes and
-which lines the AI assumed. Then devs build from a pack their coding agent can read.
+A Claude Code plugin that keeps the development team's **second brain**: one folder of plain Markdown
+that holds what the client said, what was decided, and what will be built.
 
-**Who does what**
+It captures client communication and Jira tickets, turns them into use cases, rules, designs and
+stories, and traces every line back to its source. AI does the writing. **A person approves.**
 
-| Role | Owns |
-|---|---|
-| BA / PO | intake, use-case approval, story approval, checking the estimate |
-| Dev | the estimate, the code, one PR per story |
-| QC | the acceptance criteria tests, the regression list |
-| Dev lead | reviews an estimate only when the BA says it is too high |
-
----
+```
+capture ─► extract ─► draft ─► approve ─► design ─► approve ─► stories ─► approve ─► build
+ intake     signals   use cases  (person)  screens +  (person)  epic +     (person)
+                      + rules              prototype            stories
+```
 
 ## Install
 
 ```
-/plugin install bigin-ba-workflow-plugin --marketplace namphamsynhat/bigin_ba_workflow_plugin
+/plugin marketplace add https://github.com/namphamsynhat/bigin_ba_workflow_plugin.git#v2
+/plugin install bigin-ba@bigin
 ```
 
-Older Claude Code: `/plugin marketplace add namphamsynhat/bigin_ba_workflow_plugin`, then
-`/plugin install bigin-ba-workflow-plugin@bigin-ba-workflow`.
+Version 2 lives on the `v2` branch. Version 1 (`bigin-ba-workflow-plugin`, last release 1.14.0) stays on
+`main` and on the `v1` branch. A version 2 vault cannot be read by version 1, or the other way round.
 
-Once per project: run **`/bigin-new-project`**. It creates the workspace (the "vault") and asks for the
-project settings. After a plugin update, run **`/bigin-upgrade-project`**.
+To try a local copy: `claude --plugin-dir /path/to/this/folder`.
 
----
+Needs Python 3.9 or newer (`python3`). For Jira intake, connect an Atlassian MCP server. For meetings,
+connect Claude Meetings (or another transcript tool). For email, connect any mail tool. Without them, paste the text or give a file.
 
-## The workflow, step by step
+## Daily use
+
+| When | Run |
+|------|-----|
+| Once per project | `/bigin-ba:setup` |
+| New material arrived | `/bigin-ba:intake` — paste text, give a file, name Jira keys, or `sweep` |
+| "What now?" | `/bigin-ba:next` — runs every step that needs no person, then reports |
+| Ready to review | `/bigin-ba:approve <feature>` — one session: answer by choice, read the review cards, decide |
+| "What did the client say about …?" | `/bigin-ba:ask <question>` |
+| Build an MVP to show the client | `/bigin-ba:handoff <feature>` — a folder your development plugin builds from |
+| "What would the client think of this?" | `/bigin-ba:client-view build Anna`, then `review UC-003 as Anna` |
+
+The single steps, if you want to run one by hand: `/bigin-ba:extract`, `/bigin-ba:draft`,
+`/bigin-ba:design`, `/bigin-ba:stories`.
+
+## What the vault looks like
 
 ```
- 1 Capture ─► 2 Extract ─► 3 Use cases ─► 4 Approve UC ─► 5 Design ─► 6 Stories
-                                                                          │
- 9 Build ◄── 8 Estimate ◄── 7 Approve stories + 15-minute walkthrough ◄──┘
+bigin.md                  project settings and contacts
+INDEX.md                  generated: everything that exists, and what is waiting
+00-inbox/                 INT-### notes — the source, word for word, plus its signals
+01-requirements/
+  GLOSSARY.md             the project's terms
+  features/               one page per feature
+  use-cases/              UC-### — one user goal each
+  rules/                  BR-### — one business rule each
+  entities/               the data dictionary
+02-design/                UX-### — screens and flows; prototypes/<feature>.html
+03-stories/               EP-###/ — an epic and its US-### stories
+04-clients/               one profile per client person, and reviews written as them
+05-handoff/               generated build packs, one folder per feature
 ```
 
-**Tip:** if you are not sure what runs next, use **`/bigin-run`**. It reads the vault, picks the next step
-and keeps going until something needs a human.
+## How review works
 
-### 1. Capture — BA, every morning
-**`/bigin-intake`** saves new meetings, emails, Jira tickets, Confluence pages or a typed note into
-`00-Inbox/`, unchanged. A Jira ticket is tracked: later sweeps add only its new comments.
+- **Nothing is guessed.** A missing fact becomes an open question with an owner: client, team or dev.
+  Type the answer on its `A:` line, then run `/bigin-ba:next`: it writes the answer into the text.
+  `bigin questions --owner client` lists what to send.
+- **One question, one place.** A question about one use case sits in that use case. A question about
+  several sits on the feature page and names them, so one answer there frees them all.
+- **Few questions, visible assumptions.** Only a real decision becomes a question, at most 5 per file.
+  A detail with a sensible default is written as an assumption, with its reason, and you confirm the
+  list when you approve. `bigin assumptions --owner client` prints the list to send.
+- **The work never waits for a yes.** A default that changes how the client works is a proposal:
+  "We plan to do X. Is that right?" The use case, design and prototype go ahead as proposed. Only the
+  stories wait for the answer. `bigin questions --kind confirm` prints the yes/no list.
+- **You read a card, not a file.** `bigin card UC-003` shows the summary, what changed since the last
+  approval, the questions with their choices, and the assumptions. The steps that name a source are
+  counted, not shown; the full text is one word away. Use cases and stories start with a summary.
+- **Everything is traced.** Each step names its source (`INT-004 #3`). Each design and story names the
+  use-case version it was built from. When a use case changes, `bigin status` lists what is now stale.
+- **Approval is yours.** Only `/bigin-ba:approve`, run by a person, sets `approved`. A change to an
+  approved file sets it back to `draft`.
+- **MVP.** `/bigin-ba:handoff` writes a build pack from the approved use cases: brief, use cases with
+  full rule text, data, screens, acceptance scenarios, and the list of what may still change. It may
+  go out with unconfirmed proposals. Point any development plugin at its `README.md`.
+- **Hand-off.** A story holds its flow, screens, full rule text and acceptance criteria. Give the file
+  to the developer or their coding agent.
 
-### 2. Extract — BA
-**`/extract-signal`** reads each new note, pulls out every requirement, files it under its feature, and
-writes an **Analysis** on the note: which features and use cases it touches, what it contradicts, and what
-is unclear.
-- A request the client takes back: `scripts/bigin note withdraw INT-### --reason "…"`.
-- A whole feature dropped: `scripts/bigin feature withdraw <feature> --reason "…"`.
+## What is inside the plugin
 
-### 3. Use cases — BA
-**`/bigin-transform-signal`** turns the filed requirements into use cases (`UC-###`) and business rules
-(`BR-###`). It never guesses: a missing fact becomes an **open question**.
-- Answer the questions in the file, then run `/bigin-run` (or say "process UC-00X").
-- Questions for the client: `scripts/bigin questions pack`, then send the file from `06-Outbox/`.
-- Client-friendly view to share: **`/client-view`**.
-- A use case that grew too big: **`/restructure-uc`**.
+| Path | What |
+|------|------|
+| `skills/` | eleven skills: `setup` `intake` `extract` `draft` `approve` `design` `stories` `handoff` `next` `ask` `client-view` |
+| `agents/` | `signal-extractor` (reads one note) · `spec-reviewer` (independent second reading) |
+| `reference/rules.md` | the one rulebook every skill and agent reads |
+| `templates/` | one template per file type |
+| `bin/bigin` | a small Python helper: ids, file copies, checks, status, approval. No AI. `bigin --help` |
+| `hooks/hooks.json` | after each write to a vault: check the file, refresh `INDEX.md` |
+| `tests/` | `python3 -m unittest discover tests` |
 
-### 4. Approve use cases — BA / PO
-**`/approve-uc UC-###`** once it has no open questions. Later, run **`/sync-entities`** to update the
-data dictionary.
+To change how the plugin behaves, edit `reference/rules.md` first: it is the single source of the rules.
 
-### 5. Design — BA / designer
-**`/bigin-generate-design`** writes the screens and user flows (`UX-###`), then **`/bigin-render-ux-frame`**
-and **`/bigin-assemble-prototype`** build a clickable prototype.
-
-### 6. Stories — BA
-**`/bigin-generate-stories`** cuts approved use cases into epics and user stories (`EP-###`, `US-###`),
-each with acceptance criteria and frozen screenshots of the prototype. A change to an approved story
-becomes a new **delta story**; the approved one is never rewritten.
-
-### 7. Approve stories and walk through — BA + Dev + QC
-**`/approve-story EP-###`** shows the **dev cards**: one short page per screen (and per back-end process
-with no screen). Each card has:
-- **Before → After** for every change, with the client request it came from
-- the rules on that screen, what is out of scope, open questions, acceptance criteria titles
-- **AI assumed (check these!)**: lines no client request asked for. Review these first.
-- **Unchanged but affected**: what QC should regression-test
-
-Then hold a **15-minute call** (BA + Dev + QC) on the cards and the prototype. Confirm or reject every
-"AI assumed" line. A confirmed one becomes a story § 8 *Decision*; a rejected one becomes a question or a
-new intake note.
-
-| Command | Gives you |
-|---|---|
-| `scripts/bigin card EP-### --write` | `_cards.md` — the cards for the call |
-| `scripts/bigin card EP-### --for jira --write` | `_jira.md` — paste-ready text per story. **A human copies it into Jira**; the plugin never posts to Jira |
-
-To make the stories step write the cards automatically, set `dev_card: on` in `_bigin/system/project.md`.
-
-### 8. Estimate — Dev, checked by BA
-1. `scripts/bigin card EP-### --estimate` creates `_estimate.md`: one section per card, one row per change
-   or acceptance criterion.
-2. The **dev** fills in Task, Hours (with AI) and Notes. Add more task lines under a row by leaving Key
-   blank. Use your coding agent's plan step on the build pack (step 9) to find the tasks.
-3. The **BA** checks the sheet row by row against the cards:
-   - a task with no card row → extra scope, or a misunderstanding
-   - a card row with no task → missed scope
-4. Only if the BA still finds the total too high does the **dev lead** review it.
-
-Running `--estimate` again keeps every line the dev wrote. It only adds new rows and moves rows whose
-source is gone under **Source removed**.
-
-### 9. Build — Dev
-`scripts/bigin card US-### --for agent --write` creates `_build/US-###.md`, one self-contained file per
-story: the story, its use-case steps, the full rule text, entity fields and prototype files. Give it to
-your coding agent (Claude Code). The rules inside:
-- put `US-###@version` in the PR title
-- name each test after its acceptance criterion, e.g. `US-004 AC3 — Slot taken`
-- stop and ask when the pack does not answer something
-
-QC checks that every acceptance criterion has a test with its name.
-
----
-
-## Rules for everyone
-
-- **Plain English.** Short sentences (≤ 25 words), one term for one thing. `bigin lint` gives advice
-  when a story text is too long.
-- **One story ≈ one PR ≈ one dev-day.** Lint gives advice above 8 acceptance criteria or 3 screens.
-- **Never edit engine-made files** (`_cards.md`, `_estimate.md` scope rows, `_build/`, `_jira.md`).
-  Fix the story, use case or design, and run the command again.
-- **Check before trusting.** If a line has no source, it is in "AI assumed". Nobody approves without
-  reviewing that list.
-
-## Useful commands
-
-| Command | What it does |
-|---|---|
-| `/bigin-run` | Do the next step |
-| `scripts/bigin digest --for ba\|client\|dev` | What came in, changed, was decided, is waiting |
-| `scripts/bigin questions` | Every open question, its age and what it blocks |
-| `scripts/bigin impact INT-###` | What one request touches across the vault |
-| `scripts/bigin lint` | Check the vault |
-
-## More detail
-
-- [USER_GUIDE.md](USER_GUIDE.md) — every skill and command in depth
-- [docs/PIPELINE.md](docs/PIPELINE.md) — the full pipeline reference (stages, engine, configuration)
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the plugin is built
-- [docs/MIGRATION.md](docs/MIGRATION.md) — what changed in each version
+See [NOTES.md](NOTES.md) for what changed from version 1 and what is still open.

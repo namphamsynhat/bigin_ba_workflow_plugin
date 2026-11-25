@@ -1,0 +1,1111 @@
+#!/usr/bin/env python3
+"""bigin — the bookkeeping helper for a Bigin BA vault.
+
+Python 3.9+, standard library only. Skills call it; people can too.
+It numbers files, checks links and statuses, and reports what is waiting.
+It never writes requirement content: that is the job of the skills.
+"""
+import argparse
+import datetime
+import json
+import os
+import re
+import shutil
+import sys
+import unicodedata
+from pathlib import Path
+
+PLUGIN_ROOT = Path(__file__).resolve().parent.parent
+TEMPLATES = PLUGIN_ROOT / "templates"
+CONFIG = "bigin.md"
+INDEX = "INDEX.md"
+
+INBOX = "00-inbox"
+REQ = "01-requirements"
+DESIGN = "02-design"
+STORIES = "03-stories"
+CLIENTS = "04-clients"
+HANDOFF = "05-handoff"
+
+# kind -> (id prefix, folder, template)
+KINDS = {
+    "int": ("INT", INBOX, "intake.md"),
+    "uc": ("UC", f"{REQ}/use-cases", "use-case.md"),
+    "br": ("BR", f"{REQ}/rules", "rule.md"),
+    "ux": ("UX", DESIGN, "design.md"),
+    "ep": ("EP", STORIES, "epic.md"),
+    "us": ("US", STORIES, "story.md"),
+}
+NAMED = {  # kinds named by slug, not by number
+    "feature": (f"{REQ}/features", "feature.md"),
+    "entity": (f"{REQ}/entities", "entity.md"),
+    "client": (CLIENTS, "client.md"),
+}
+FOLDERS = [INBOX, f"{INBOX}/files", f"{REQ}/features", f"{REQ}/use-cases",
+           f"{REQ}/rules", f"{REQ}/entities", DESIGN, f"{DESIGN}/prototypes", STORIES,
+           CLIENTS, f"{CLIENTS}/reviews"]
+
+ID_RE = re.compile(r"\b(INT|UC|BR|UX|EP|US)-(\d{3,})\b")
+BUILT_RE = re.compile(r"^(INT|UC|BR|UX|EP|US)-\d{3,}@\d+$")
+Q_RE = re.compile(r"^\s*- \[([ xX])\] Q:\s*(.+)$")
+A_RE = re.compile(r"^\s+A:\s*(.*)$")
+OPTIONS_RE = re.compile(r"^\s+Options:\s*(.*)$")
+STEP_RE = re.compile(r"^\|\s*([SAE]\d+(?:\.\d+)?)\s*\|.*\|([^|]*)\|\s*$", re.M)
+SUMMARY_WORDS = 120
+OWNER_RE = re.compile(r"\(owner:\s*([a-z]+)\)")
+REF_RE = re.compile(r"\(ref:\s*([^)]*)\)")
+ASSUME_RE = re.compile(r"^- (A\d+):\s*(.+)$")
+CONFIRM_RE = re.compile(r"\(confirm\)")
+MAX_CLIENT_QUESTIONS = 5
+APPLIED_RE = re.compile(r"\(applied\b[^)]*\)")
+RAW_RE = re.compile(r"^## Raw\s*$.*?(?=^## Signals\s*$(?![\s\S]*^## Signals\s*$))", re.M | re.S)
+COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
+
+STATUS = {
+    "intake": {"raw", "extracted", "withdrawn"},
+    "feature": {"proposed", "active", "built", "dropped"},
+    "entity": {"current"},
+    "use-case": {"draft", "approved", "removed"},
+    "rule": {"draft", "approved", "removed"},
+    "design": {"draft", "approved", "removed"},
+    "epic": {"draft", "approved", "done", "removed"},
+    "story": {"draft", "approved", "done", "removed"},
+}
+SIGNAL_STATUS = {"new", "drafted", "question", "conflict", "rejected", "withdrawn"}
+SIGNAL_TYPES = {"requirement", "rule", "as-is", "pain", "decision", "question", "design"}
+OWNERS = {"client", "team", "dev"}
+APPROVABLE = {"use-case", "rule", "design", "epic", "story"}
+
+
+def today():
+    return datetime.date.today().isoformat()
+
+
+def die(msg, code=2):
+    print(f"bigin: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def slugify(text, limit=50):
+    text = text.replace("đ", "d").replace("Đ", "D")
+    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    text = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    return text[:limit].strip("-") or "untitled"
+
+
+def squash(text):
+    """Lower case, letters and digits only: lets a quote match its source despite quote marks and spacing."""
+    return " ".join(re.findall(r"[^\W_]+", text.lower()))
+
+
+# ---------- vault and files ----------
+
+def find_vault(start=None):
+    env = os.environ.get("BIGIN_VAULT")
+    here = Path(env or start or os.getcwd()).resolve()
+    for folder in [here, *here.parents]:
+        if (folder / CONFIG).is_file():
+            return folder
+    return None
+
+
+def need_vault(args):
+    vault = find_vault(getattr(args, "vault", None))
+    if not vault:
+        die(f"no vault here (no {CONFIG}). Run /bigin-ba:setup first.")
+    return vault
+
+
+def split_front(text):
+    """Return (frontmatter dict, body). Values are str or list of str."""
+    meta = {}
+    if not text.startswith("---"):
+        return meta, text
+    end = text.find("\n---", 3)
+    if end == -1:
+        return meta, text
+    for line in text[3:end].splitlines():
+        if ":" not in line or line.lstrip().startswith("#"):
+            continue
+        key, value = line.split(":", 1)
+        value = value.strip()
+        if value.startswith("[") and value.endswith("]"):
+            meta[key.strip()] = [v.strip().strip("'\"") for v in value[1:-1].split(",") if v.strip()]
+        else:
+            meta[key.strip()] = value.strip("'\"")
+    return meta, text[end + 4:]
+
+
+def set_front(text, key, value):
+    """Set one frontmatter key, keeping every other line as it is."""
+    if isinstance(value, list):
+        value = "[" + ", ".join(value) + "]"
+    end = text.find("\n---", 3)
+    head, rest = text[:end], text[end:]
+    line_re = re.compile(rf"^{re.escape(key)}:.*$", re.M)
+    new = f"{key}: {value}"
+    head = line_re.sub(lambda _m: new, head, count=1) if line_re.search(head) else f"{head}\n{new}"
+    return head + rest
+
+
+class Doc:
+    def __init__(self, path, vault):
+        self.path = path
+        self.rel = path.relative_to(vault).as_posix()
+        self.text = path.read_text(encoding="utf-8")
+        self.meta, self.body = split_front(self.text)
+        self.type = self.meta.get("type", "")
+        self.clean = COMMENT_RE.sub("", self.body)  # body without template hints
+        if self.type == "intake":  # source text is data: its ids and checkboxes are not ours
+            self.clean = RAW_RE.sub("## Raw\n\n", self.clean, count=1)
+        self.id = self.meta.get("id", "")
+        self.title = self.meta.get("title", "")
+        self.status = self.meta.get("status", "")
+        self.feature = self.meta.get("feature", "")
+
+    def version(self):
+        v = self.meta.get("version", "")
+        return int(v) if str(v).isdigit() else 0
+
+    def questions(self):
+        """Every question in the file. state: open (no answer) · answered (answer not applied yet) · closed.
+        confirm: the question carries our proposal, already in the text; the client only says yes or no."""
+        out, lines = [], self.clean.splitlines()
+        for i, line in enumerate(lines):
+            m = Q_RE.match(line)
+            if not m:
+                continue
+            answer = options = ""
+            for nxt in lines[i + 1:i + 3]:  # an optional "Options:" line, then "A:"
+                if OPTIONS_RE.match(nxt):
+                    options = OPTIONS_RE.match(nxt).group(1).strip()
+                    continue
+                answer = A_RE.match(nxt).group(1).strip() if A_RE.match(nxt) else ""
+                break
+            owner, ref = OWNER_RE.search(line), REF_RE.search(line)
+            if APPLIED_RE.search(answer) or (m.group(1) != " " and not answer):
+                state = "closed"
+            else:
+                state = "answered" if answer else "open"
+            out.append({"state": state, "owner": owner.group(1) if owner else "",
+                        "confirm": bool(CONFIRM_RE.search(line)), "options": options,
+                        "text": CONFIRM_RE.sub("", REF_RE.sub("", OWNER_RE.sub("", m.group(2)))).strip(),
+                        "refs": sorted({x.group(0) for x in ID_RE.finditer(ref.group(1))} if ref else ()),
+                        "doc": self})
+        return out
+
+    def assumptions(self):
+        """(number, owner, text) of each line under '## Assumptions' that was not rejected."""
+        m = re.search(r"^## Assumptions\s*$(.*?)(?=^## |\Z)", self.clean, re.M | re.S)
+        out = []
+        for line in (m.group(1).splitlines() if m else []):
+            a = ASSUME_RE.match(line)
+            if a and not a.group(2).startswith("Rejected"):
+                owner = OWNER_RE.search(line)
+                out.append((a.group(1), owner.group(1) if owner else "", OWNER_RE.sub("", a.group(2)).strip()))
+        return out
+
+    def section(self, name):
+        m = re.search(rf"^## {name}\s*$(.*?)(?=^## |\Z)", self.clean, re.M | re.S)
+        return m.group(1).strip() if m else ""
+
+    def steps(self):
+        """(step id, source cell) of every step row in a use case's flow tables."""
+        if self.type != "use-case":  # a story's flow table has no Source column
+            return []
+        return [(m.group(1), m.group(2).strip()) for m in STEP_RE.finditer(self.clean)]
+
+    def open_questions(self):
+        """(owner, text) of the questions nobody has answered yet."""
+        return [(q["owner"], q["text"]) for q in self.questions() if q["state"] == "open"]
+
+    def signals(self):
+        """Rows of the '## Signals' table as dicts."""
+        m = re.search(r"^## Signals\s*$(.*?)(?=^## |\Z)", self.clean, re.M | re.S)
+        rows = []
+        for line in (m.group(1).splitlines() if m else []):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) >= 7 and cells[0].isdigit():
+                rows.append(dict(zip(["n", "type", "signal", "quote", "feature", "status", "lands"], cells)))
+        return rows
+
+    def source_text(self):
+        """The raw source of an intake note: its Raw section plus the files it links to, for matching."""
+        m = RAW_RE.search(COMMENT_RE.sub("", self.body))
+        text = m.group(0) if m else ""
+        for name in set(re.findall(r"\]\((files/[^)]+)\)", text)):
+            try:
+                text += (self.path.parent / name).read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                return None  # a source we cannot read as text: do not judge the quotes
+        return squash(text)
+
+    def refs(self):
+        """Every artifact id this file mentions, except its own."""
+        head = self.text[:len(self.text) - len(self.body)]
+        found = {m.group(0) for m in ID_RE.finditer(head + self.clean)}
+        found.discard(self.id)
+        return found
+
+
+def load(vault):
+    docs = []
+    for folder in (INBOX, REQ, DESIGN, STORIES):
+        for path in sorted((vault / folder).rglob("*.md")):
+            if "files" in path.relative_to(vault / folder).parts[:-1]:
+                continue  # raw attachments are not vault documents
+            doc = Doc(path, vault)
+            if doc.type in STATUS:
+                docs.append(doc)
+    return docs
+
+
+def by_id(docs):
+    return {d.id: d for d in docs if d.id}
+
+
+# ---------- questions across files ----------
+
+def pending(docs):
+    """Questions that are not settled yet: open, or answered but not applied to the text."""
+    return [q for d in docs if d.status not in ("removed", "withdrawn", "dropped")
+            for q in d.questions() if q["state"] != "closed"]
+
+
+def blockers(doc, docs):
+    """Unsettled questions that stop this file: its own, and those elsewhere that name it in (ref: ...)."""
+    return [q for q in pending(docs) if q["doc"] is doc or doc.id in q["refs"]]
+
+
+def soft(q):
+    """A proposal the client has not confirmed yet. It warns; it stops only the stories."""
+    return q["confirm"] and q["state"] == "open"
+
+
+def unconfirmed(doc, docs):
+    """(id, question) for each unconfirmed proposal that holds something this epic or story is built from."""
+    ids, out = by_id(docs), []
+    for item in doc.meta.get("built_from", []):
+        src = ids.get(item.split("@")[0])
+        out += [(src.id, q) for q in (blockers(src, docs) if src else []) if soft(q)]
+    return out
+
+
+def words(text):
+    return frozenset(w for w in re.findall(r"[a-z0-9]+", text.lower()) if len(w) > 2)
+
+
+def twins(docs):
+    """Pairs of questions in different files that ask the same thing, when at least one is still open."""
+    qs = [(q, words(q["text"])) for d in docs for q in d.questions()]
+    out = []
+    for i, (a, wa) in enumerate(qs):
+        for b, wb in qs[i + 1:]:
+            if a["doc"] is b["doc"] or "open" not in (a["state"], b["state"]) or len(wa) < 4:
+                continue
+            if len(wa & wb) / len(wa | wb) >= 0.8:
+                out.append((a, b))
+    return out
+
+
+# ---------- checks ----------
+
+def check_doc(doc, ids, features):
+    """Return (errors, warnings) for one file."""
+    err, warn = [], []
+    if doc.status not in STATUS[doc.type]:
+        err.append(f"status '{doc.status}' is not one of: {', '.join(sorted(STATUS[doc.type]))}")
+    numbered = doc.type not in ("feature", "entity")
+    if numbered and not doc.path.name.startswith(doc.id + "-"):
+        err.append(f"file name must start with its id '{doc.id}-'")
+    if not numbered and doc.id != doc.path.stem:
+        err.append(f"id '{doc.id}' must equal the file name '{doc.path.stem}'")
+    for ref in sorted(doc.refs()):
+        if ref not in ids:
+            err.append(f"mentions {ref}, which does not exist")
+    wanted = doc.meta.get("features", []) if doc.type == "entity" else [doc.feature]
+    for slug in filter(None, wanted):
+        if slug not in features:
+            err.append(f"feature '{slug}' has no page in {REQ}/features/")
+    questions = [q for q in doc.questions() if q["state"] != "closed"]
+    for q in questions:
+        if q["state"] == "open" and q["owner"] not in OWNERS:
+            warn.append(f"question without (owner: client|team|dev): {q['text'][:60]}")
+        for ref in q["refs"]:
+            if ref not in ids:
+                err.append(f"question names {ref} in (ref: ...), which does not exist")
+    mine = [q for q in questions if q["state"] == "open" and q["owner"] == "client"]
+    asked, proposed = sum(1 for q in mine if not q["confirm"]), sum(1 for q in mine if q["confirm"])
+    if asked > MAX_CLIENT_QUESTIONS and doc.type != "intake":
+        warn.append(f"{asked} open client questions (at most {MAX_CLIENT_QUESTIONS}): keep the ones that "
+                    "change what gets built, and turn the rest into proposals to confirm or assumptions")
+    if proposed > MAX_CLIENT_QUESTIONS:
+        warn.append(f"{proposed} proposals to confirm (at most {MAX_CLIENT_QUESTIONS}): keep the ones that "
+                    "change how people work, and turn the rest into assumptions")
+    if doc.status == "approved" and doc.type in APPROVABLE:
+        hard = [q for q in questions if not soft(q) or doc.type in ("epic", "story")]
+        if hard:
+            err.append(f"approved but has {len(hard)} unsettled question(s): set status to draft")
+        if str(doc.version()) != doc.meta.get("approved_version", ""):
+            err.append("changed after approval (version differs from approved_version): set status to draft")
+    if doc.type in ("use-case", "story") and len(doc.section("Summary").split()) > SUMMARY_WORDS:
+        warn.append(f"summary is {len(doc.section('Summary').split())} words (at most {SUMMARY_WORDS}): "
+                    "it is what people read first")
+    if doc.type in ("use-case", "rule") and doc.status != "removed" and not doc.meta.get("sources"):
+        warn.append("no sources: nobody asked for this in the inbox")
+    for item in doc.meta.get("built_from", []):
+        if not BUILT_RE.match(item):
+            err.append(f"built_from entry '{item}' must look like UC-001@2")
+            continue
+        ref, ver = item.split("@")
+        src = ids.get(ref)
+        if src and src.version() > int(ver):
+            warn.append(f"stale: built from {item}, but {ref} is now version {src.version()}")
+        if src and src.status == "removed":
+            warn.append(f"stale: built from {ref}, which was removed")
+    if doc.type == "intake":
+        source = doc.source_text()
+        for row in doc.signals():
+            where = f"signal #{row['n']}"
+            quoted = re.findall(r'"([^"]+)"', row["quote"].replace("“", '"').replace("”", '"'))
+            if source and row["status"] != "withdrawn" and not (quoted and all(
+                    squash(part) in source for q in quoted for part in re.split(r"\.\.\.|…", q))):
+                warn.append(f"{where}: its quote is not in the source, word for word")
+            if row["type"] not in SIGNAL_TYPES:
+                err.append(f"{where}: type '{row['type']}' is not valid")
+            if row["status"] not in SIGNAL_STATUS:
+                err.append(f"{where}: status '{row['status']}' is not valid")
+            if row["status"] == "drafted" and not ID_RE.search(row["lands"]):
+                err.append(f"{where}: status is drafted but 'Lands in' names no UC or BR")
+            slug = row["feature"]
+            if slug and slug != "?" and slug not in features:
+                err.append(f"{where}: feature '{slug}' has no page")
+    return err, warn
+
+
+def check_all(docs):
+    ids = by_id(docs)
+    features = {d.id for d in docs if d.type == "feature"}
+    results, seen = {}, {}
+    for doc in docs:
+        err, warn = check_doc(doc, ids, features)
+        if doc.id in seen:
+            err.append(f"id {doc.id} is also used by {seen[doc.id]}")
+        seen.setdefault(doc.id, doc.rel)
+        results[doc.rel] = (err, warn)
+    for q in pending(docs):
+        for ref in q["refs"]:
+            target = ids.get(ref)
+            if target and target is not q["doc"] and target.status == "approved":
+                results[target.rel][1].append(f"approved, but a question in {q['doc'].id} is about it: "
+                                              f"{q['text'][:60]}")
+    for doc in docs:
+        if doc.type in ("epic", "story") and doc.status in ("draft", "approved"):
+            for ref, q in unconfirmed(doc, docs):
+                results[doc.rel][0 if doc.status == "draft" else 1].append(
+                    f"built from {ref}, which has a proposal the client has not confirmed. "
+                    f"Stories wait for the answer: {q['text'][:60]}")
+    for a, b in twins(docs):
+        if a["state"] != "open":
+            a, b = b, a
+        how = "is also open in" if b["state"] == "open" else "is already answered in"
+        results[a["doc"].rel][1].append(
+            f"same question {how} {b['doc'].id}: keep it in one file, and close this one with "
+            f"'A: see {b['doc'].id} (applied)': {a['text'][:60]}")
+    return results
+
+
+def print_results(results, stream=sys.stdout, warnings=True):
+    errors = 0
+    for rel, (err, warn) in results.items():
+        for e in err:
+            print(f"ERROR {rel}: {e}", file=stream)
+        for w in (warn if warnings else []):
+            print(f"warn  {rel}: {w}", file=stream)
+        errors += len(err)
+    return errors
+
+
+# ---------- reports ----------
+
+def pack_meta(readme):
+    try:
+        return split_front(readme.read_text(encoding="utf-8"))[0]
+    except OSError:
+        return {}
+
+
+def waiting(docs, vault=None):
+    """What the vault is waiting for, as (step, lines) in workflow order."""
+    ids = by_id(docs)
+    live = [d for d in docs if d.status not in ("removed", "withdrawn", "dropped")]
+    steps = []
+
+    raw = [f"{d.id} {d.title}" for d in live if d.type == "intake" and d.status == "raw"]
+    steps.append(("extract — notes not read yet", raw))
+
+    per_feature = {}
+    blocked = []
+    for d in live:
+        if d.type != "intake":
+            continue
+        for row in d.signals():
+            if row["status"] == "new" and row["type"] != "design":
+                per_feature.setdefault(row["feature"] or "?", []).append(d.id)
+            elif row["status"] in ("question", "conflict"):
+                blocked.append(d.id)
+    steps.append(("draft — signals not in a use case yet (rows: bigin trace <feature>)",
+                  [f"{slug}: {len(rows)} from {', '.join(sorted(set(rows)))}"
+                   for slug, rows in sorted(per_feature.items())]))
+    blocked = [f"signals held by a question or conflict: {blocked.count(i)} in {i}" for i in sorted(set(blocked))]
+
+    todo = pending(live)
+    answered = {}
+    for q in todo:
+        if q["state"] == "answered":
+            answered[q["doc"].id] = answered.get(q["doc"].id, 0) + 1
+    steps.append(("apply — answers not written into the text yet",
+                  [f"{doc_id}: {n} answer(s)" for doc_id, n in sorted(answered.items())]))
+
+    asks = {}
+    for q in todo:
+        if q["state"] == "open" and not q["confirm"]:
+            asks.setdefault(q["owner"] or "no owner", []).append(q["doc"].id)
+    steps.append(("answer — open questions",
+                  [f"{owner}: {len(v)} in {', '.join(sorted(set(v)))}" for owner, v in sorted(asks.items())]
+                  + blocked))
+
+    proposals = {}
+    for q in todo:
+        if soft(q):
+            proposals.setdefault(q["owner"] or "no owner", []).append(q["doc"].id)
+    steps.append(("confirm — our proposals, waiting for a yes (work goes on; stories wait)",
+                  [f"{owner}: {len(v)} in {', '.join(sorted(set(v)))}" for owner, v in sorted(proposals.items())]))
+
+    hard = [q for q in todo if not soft(q)]
+    held = {q["doc"].id for q in hard} | {ref for q in hard for ref in q["refs"]}
+    waits = {q["doc"].id for q in todo if soft(q)} | {ref for q in todo if soft(q) for ref in q["refs"]}
+    ready = [f"{d.id} {d.title}" for d in live
+             if d.type in APPROVABLE and d.status == "draft" and d.id not in held]
+    steps.append(("approve — drafts with no open question (a person decides)", ready))
+
+    built = {}
+    for d in live:
+        for item in d.meta.get("built_from", []):
+            built.setdefault(item.split("@")[0], set()).add(d.type)
+    approved_ucs = [d for d in live if d.type == "use-case" and d.status == "approved"]
+    steps.append(("design — approved use cases with no design",
+                  [f"{d.id} {d.title} ({d.feature})" for d in approved_ucs if "design" not in built.get(d.id, ())]))
+    steps.append(("stories — approved use cases with no story",
+                  [f"{d.id} {d.title} ({d.feature})" for d in approved_ucs
+                   if "story" not in built.get(d.id, ()) and d.id not in waits]))
+
+    stale = []
+    for d in live:
+        for item in d.meta.get("built_from", []):
+            ref, _, ver = item.partition("@")
+            src = ids.get(ref)
+            if src and ver.isdigit() and (src.version() > int(ver) or src.status == "removed"):
+                stale.append(f"{d.id} was built from {item}; {ref} is now "
+                             + ("removed" if src.status == "removed" else f"version {src.version()}"))
+    for readme in sorted((vault / HANDOFF).glob("*/README.md")) if vault else []:
+        for item in pack_meta(readme).get("built_from", []):
+            ref, _, ver = item.partition("@")
+            src = ids.get(ref)
+            if src and ver.isdigit() and src.version() > int(ver):
+                stale.append(f"build pack {readme.parent.name} holds {item}; {ref} is now version "
+                             f"{src.version()} (bigin pack {readme.parent.name})")
+    steps.append(("refresh — built on an older version", stale))
+    return steps
+
+
+def render_index(docs, vault=None):
+    out = ["# Index", "",
+           f"_Generated by `bigin` on {today()}. Do not edit: it is rewritten on every change._", "",
+           "## Waiting", ""]
+    steps = waiting(docs, vault)
+    if not any(lines for _, lines in steps):
+        out.append("Nothing is waiting.")
+    for step, lines in steps:
+        if lines:
+            out.append(f"**{step}**")
+            out += [f"- {line}" for line in lines] + [""]
+    features = [d for d in docs if d.type == "feature"]
+    for feat in sorted(features, key=lambda d: d.id):
+        out += ["", f"## {feat.title or feat.id} (`{feat.id}`, {feat.status})", "",
+                "| ID | Title | Type | Status | Version | Open questions | Assumptions |", "|---|---|---|---|---|---|---|"]
+        own = [d for d in docs if d.feature == feat.id and d.type not in ("feature", "intake")]
+        for d in [feat] + sorted(own, key=lambda d: d.id):
+            link = f"[{d.id}]({d.rel.replace(' ', '%20')})"
+            out.append(f"| {link} | {d.title} | {d.type} | {d.status} | {d.version() or ''} "
+                       f"| {len(blockers(d, docs)) or ''} | {len(d.assumptions()) or ''} |")
+    notes = [d for d in docs if d.type == "intake"]
+    out += ["", "## Inbox", "", "| ID | Title | Source | Date | Status | Signals |", "|---|---|---|---|---|---|"]
+    for d in sorted(notes, key=lambda d: d.id, reverse=True):
+        out.append(f"| [{d.id}]({d.rel}) | {d.title} | {d.meta.get('source', '')} "
+                   f"| {d.meta.get('date', '')} | {d.status} | {len(d.signals()) or ''} |")
+    return "\n".join(out) + "\n"
+
+
+def write_index(vault, docs):
+    (vault / INDEX).write_text(render_index(docs, vault), encoding="utf-8")
+
+
+# ---------- commands ----------
+
+def cmd_init(args):
+    vault = Path(args.dir or os.getcwd()).resolve()
+    for folder in FOLDERS:
+        (vault / folder).mkdir(parents=True, exist_ok=True)
+    made = []
+    for name, template in ((CONFIG, "config.md"), (f"{REQ}/GLOSSARY.md", "glossary.md"),
+                           ("CLAUDE.md", "vault-claude.md")):
+        target = vault / name
+        if not target.exists():
+            text = (TEMPLATES / template).read_text(encoding="utf-8")
+            target.write_text(text.replace("{{date}}", today()), encoding="utf-8")
+            made.append(name)
+    write_index(vault, load(vault))
+    print(f"vault ready at {vault}")
+    print("created: " + (", ".join(made) or "nothing new (already set up)"))
+
+
+def cmd_new(args):
+    vault = need_vault(args)
+    docs = load(vault)
+    kind, title = args.kind, args.title.strip()
+    values = {"title": title, "date": today(), "feature": args.feature or "", "epic": args.epic or ""}
+    if args.feature and args.feature not in {d.id for d in docs if d.type == "feature"}:
+        die(f"feature '{args.feature}' has no page. Create it: bigin new feature \"<Name>\"")
+    if kind in NAMED:
+        folder, template = NAMED[kind]
+        values["id"] = slugify(title)
+        path = vault / folder / f"{values['id']}.md"
+    else:
+        prefix, folder, template = KINDS[kind]
+        used = [int(m.group(2)) for d in docs for m in [ID_RE.fullmatch(d.id)] if m and m.group(1) == prefix]
+        values["id"] = f"{prefix}-{max(used, default=0) + 1:03d}"
+        name = f"{values['id']}-{slugify(title)}"
+        if kind == "ep":
+            path = vault / folder / name / f"{name}.md"
+        elif kind == "us":
+            epic = next((d for d in docs if d.id == args.epic and d.type == "epic"), None)
+            if not epic:
+                die("a story needs its epic: --epic EP-###")
+            values["feature"] = values["feature"] or epic.feature
+            path = epic.path.parent / f"{name}.md"
+        else:
+            path = vault / folder / f"{name}.md"
+    if path.exists():
+        die(f"{path.relative_to(vault)} already exists")
+    text = (TEMPLATES / template).read_text(encoding="utf-8")
+    for key, value in values.items():
+        text = text.replace("{{" + key + "}}", value)
+    if args.file and kind != "int":
+        die("--file is for intake notes only: bigin new int \"<Title>\" --file <path>")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    if args.file:
+        for line in add_files(vault, path, args.file):
+            print(f"{values['id']} {line}")
+    write_index(vault, load(vault))
+    print(f"{values['id']} {path.relative_to(vault).as_posix()}")
+
+
+def add_files(vault, note, files):
+    """Copy source files into 00-inbox/files/ and add one Raw block per file. Returns the block names."""
+    text = note.read_text(encoding="utf-8")
+    note_id = split_front(text)[0]["id"]
+    made = []
+    for name in files:
+        src = Path(name).expanduser()
+        if not src.is_file():
+            die(f"{name}: no such file")
+        copy = vault / INBOX / "files" / f"{note_id}-{src.name}"
+        n = 2
+        while copy.exists() and copy.read_bytes() != src.read_bytes():
+            copy = vault / INBOX / "files" / f"{note_id}-{src.stem}-{n}{src.suffix}"
+            n += 1
+        shutil.copyfile(src, copy)
+        try:
+            size = f"{len(copy.read_text(encoding='utf-8').splitlines())} lines"
+        except UnicodeDecodeError:
+            size = "not plain text - open it with the Read tool"
+        block = f"SRC-{len(re.findall(r'^### SRC-', COMMENT_RE.sub('', text), re.M)) + 1}"
+        entry = (f"### {block} · file · {src.name}\n\n"
+                 f"The full source, word for word: [files/{copy.name}](files/{copy.name}) ({size}).\n\n")
+        at = [m.start() for m in re.finditer(r"^## Signals\s*$", text, re.M)]
+        if not at:
+            die(f"{note.name} has no '## Signals' section")
+        text = text[:at[-1]] + entry + text[at[-1]:]
+        made.append(f"{block} files/{copy.name}")
+    text = set_front(set_front(text, "status", "raw"), "updated", today())
+    note.write_text(text.rstrip("\n") + f"\n- {today()} — added " + ", ".join(made) + "\n", encoding="utf-8")
+    return made
+
+
+def cmd_attach(args):
+    vault = need_vault(args)
+    doc = by_id(load(vault)).get(args.id)
+    if not doc or doc.type != "intake":
+        die(f"{args.id}: no intake note with that id")
+    for line in add_files(vault, doc.path, args.files):
+        print(f"{args.id} {line}")
+    write_index(vault, load(vault))
+
+
+def cmd_status(args):
+    vault = need_vault(args)
+    docs = load(vault)
+    if args.feature:
+        keep = {d.id for d in docs if d.feature == args.feature} | {args.feature}
+        docs_view = [d for d in docs if d.id in keep or d.type == "intake"]
+    else:
+        docs_view = docs
+    steps = waiting(docs_view, vault)
+    if args.feature:  # keep only the signal lines of this feature
+        steps = [(s, [l for l in lines if not s.startswith("draft") or l.startswith(args.feature + ":")])
+                 for s, lines in steps]
+    if args.json:
+        print(json.dumps({s.split(" — ")[0]: lines for s, lines in steps}, indent=2))
+        return
+    empty = True
+    for step, lines in steps:
+        if lines:
+            empty = False
+            print(step)
+            for line in lines:
+                print(f"  {line}")
+    if empty:
+        print("Nothing is waiting.")
+    errors = sum(len(e) for e, _ in check_all(docs).values())
+    if errors:
+        print(f"\n{errors} check error(s): run `bigin check`")
+
+
+def cmd_questions(args):
+    vault = need_vault(args)
+    count = 0
+    docs = load(vault)
+    scope = {args.feature} | {d.id for d in docs if d.feature == args.feature}
+    for q in pending(docs):
+        doc = q["doc"]
+        if args.feature and not scope & {doc.id, *q["refs"]}:
+            continue
+        if args.owner and q["owner"] != args.owner:
+            continue
+        if args.kind and (args.kind == "confirm") != q["confirm"]:
+            continue
+        count += 1
+        tag = (q["owner"] or "no owner") + (", confirm" if q["confirm"] else "")
+        if q["state"] == "answered":
+            tag += ", answered - not applied yet"
+        holds = f"  holds: {', '.join(q['refs'])}" if q["refs"] else ""
+        print(f"- [{tag}] {q['text']}  ({doc.id}, {doc.rel}){holds}")
+        if q["options"] and q["state"] == "open":
+            print(f"    options: {q['options']}")
+    print(f"\n{count} unsettled question(s)")
+
+
+def cmd_assumptions(args):
+    """Assumptions in files a person has not approved yet: the list to confirm."""
+    docs = load(need_vault(args))
+    scope = {args.feature} | {d.id for d in docs if d.feature == args.feature}
+    count = 0
+    for doc in docs:
+        if doc.status in ("approved", "done", "removed", "withdrawn", "dropped"):
+            continue
+        if args.feature and doc.id not in scope:
+            continue
+        for number, owner, text in doc.assumptions():
+            if args.owner and owner != args.owner:
+                continue
+            count += 1
+            print(f"- [{owner or 'no owner'}] {text}  ({doc.id} {number})")
+    print(f"\n{count} assumption(s) not confirmed yet")
+
+
+def cmd_check(args):
+    vault = need_vault(args)
+    docs = load(vault)
+    results = check_all(docs)
+    if args.file:
+        target = Path(args.file).resolve()
+        results = {rel: r for rel, r in results.items() if (vault / rel).resolve() == target}
+    errors = print_results(results)
+    write_index(vault, docs)
+    if not errors:
+        print(f"ok — {len(results)} file(s) checked")
+    sys.exit(1 if errors else 0)
+
+
+def cmd_hook(_args):
+    """PostToolUse hook: check the file just written and refresh the index. Quiet outside a vault."""
+    try:
+        data = json.load(sys.stdin)
+        written = Path(data.get("tool_input", {}).get("file_path", "")).resolve()
+    except (ValueError, OSError):
+        return
+    # start from the file: the vault may be a folder inside the project, not the project folder itself
+    vault = find_vault(written.parent) or find_vault(os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd"))
+    if not vault or vault not in written.parents or written.suffix != ".md" or written.name == INDEX:
+        return
+    rel = written.relative_to(vault).as_posix()
+    if not rel.startswith((INBOX, REQ, DESIGN, STORIES)):
+        return
+    docs = load(vault)
+    write_index(vault, docs)
+    results = {r: v for r, v in check_all(docs).items() if r == rel}
+    errors = [f"{r}: {e}" for r, (err, _) in results.items() for e in err]
+    if errors:  # "block" sends the reason back to Claude; the file is already written
+        reason = "bigin check failed on the file you just wrote. Fix it:\n- " + "\n- ".join(errors)
+        print(json.dumps({"decision": "block", "reason": reason}))
+
+
+def cmd_approve(args):
+    vault = need_vault(args)
+    docs = load(vault)
+    doc = by_id(docs).get(args.id)
+    if not doc or doc.type not in APPROVABLE:
+        die(f"{args.id}: nothing to approve with that id")
+    if doc.status == "approved" and str(doc.version()) == doc.meta.get("approved_version", ""):
+        die(f"{args.id} is already approved at version {doc.version()}", 1)
+    features = {d.id for d in docs if d.type == "feature"}
+    draft = Doc(doc.path, vault)
+    draft.status, draft.meta["approved_version"] = "draft", ""
+    errors, warnings = check_doc(draft, by_id(docs), features)
+    final = doc.type in ("epic", "story")  # the hand-off to the build: nothing unconfirmed goes in
+    for q in blockers(doc, docs):
+        where = "" if q["doc"] is doc else f" (in {q['doc'].id})"
+        if soft(q) and not final:
+            warnings.append(f"not confirmed by the client yet{where}: {q['text'][:70]}")
+            continue
+        what = "open question" if q["state"] == "open" else "answer not applied to the text yet"
+        errors.append(f"{what}{where}: {q['text'][:70]}")
+    for ref, q in (unconfirmed(doc, docs) if final else []):
+        errors.append(f"built from {ref}, which has a proposal the client has not confirmed: {q['text'][:70]}")
+    if errors:
+        for e in errors:
+            print(f"ERROR {e}", file=sys.stderr)
+        die(f"{args.id} not approved", 1)
+    text = doc.text
+    for key, value in (("status", "approved"), ("approved_version", str(doc.version())),
+                       ("approved_by", args.by), ("updated", today())):
+        text = set_front(text, key, value)
+    line = f"- v{doc.version()} ({today()}) — approved by {args.by}"
+    if re.search(r"^## Changelog\s*$", text, re.M):
+        text = text.rstrip("\n") + "\n" + line + "\n"
+    doc.path.write_text(text, encoding="utf-8")
+    write_index(vault, load(vault))
+    for w in warnings:
+        print(f"warn  {w}")
+    print(f"{args.id} approved at version {doc.version()} by {args.by}")
+
+
+def tally(doc, docs):
+    """What a person must read in this file: (open questions, proposals, answers to apply, assumptions,
+    steps that name no source note at all)."""
+    qs = blockers(doc, docs)
+    return ([q for q in qs if q["state"] == "open" and not q["confirm"]], [q for q in qs if soft(q)],
+            [q for q in qs if q["state"] == "answered"], doc.assumptions(),
+            [s for s, src in doc.steps() if not ID_RE.search(src)])
+
+
+def card_lines(doc, docs):
+    """The review card of one file: what it is, what changed, and only the parts that need a person."""
+    asks, proposals, answered, assumed, soft_steps = tally(doc, docs)
+    was = doc.meta.get("approved_version", "")
+    head = f"{doc.id} {doc.title} — {doc.type}, {doc.status}, version {doc.version()}"
+    if was:
+        head += f" (version {was} was approved by {doc.meta.get('approved_by', '?')})"
+    out = [head, ""]
+    summary = doc.section("Summary")
+    if not summary and doc.type == "rule":
+        summary = next((l for l in doc.clean.splitlines() if l.strip() and not l.startswith("#")), "")
+    out += ["Summary"] + [f"  {l}" for l in (summary or "(none written - read the full text)").splitlines()] + [""]
+    if doc.type in ("story", "epic"):
+        titles = re.findall(r"^\s*Scenario:\s*(.+)$", doc.clean, re.M)
+        if titles:
+            out += [f"Acceptance scenarios ({len(titles)})"] + [f"  - {x}" for x in titles] + [""]
+    if was.isdigit():
+        changes = [l for l in doc.section("Changelog").splitlines()
+                   for m in [re.match(r"- v(\d+)\b", l)] if m and int(m.group(1)) > int(was) and "approved by" not in l]
+        out += [f"Changed since version {was}"] + [f"  {l}" for l in changes or ["  nothing recorded"]] + [""]
+
+    def ask(q):
+        where = "" if q["doc"] is doc else f" (in {q['doc'].id})"
+        return [f"  - [{q['owner'] or 'no owner'}] {q['text']}{where}"] + ([f"      options: {q['options']}"] if q["options"] else [])
+
+    if asks:
+        out += [f"Open questions ({len(asks)}) - these stop approval"] + [l for q in asks for l in ask(q)] + [""]
+    if answered:
+        out += [f"Answers not written into the text yet ({len(answered)}) - run /bigin-ba:next"] \
+               + [l for q in answered for l in ask(q)] + [""]
+    if proposals:
+        out += [f"Proposals the client has not confirmed ({len(proposals)})"] + [l for q in proposals for l in ask(q)] + [""]
+    if assumed:
+        out += [f"Assumptions ({len(assumed)}) - approving confirms them"] \
+               + [f"  - {n} [{owner or 'no owner'}] {text}" for n, owner, text in assumed] + [""]
+    steps = doc.steps()
+    if steps:
+        partly = [s for s, src in steps if ID_RE.search(src) and re.search(r"assumed|proposed", src)]
+        out += [f"Steps: {len(steps)}, not shown here. {len(steps) - len(soft_steps)} name a source note"
+                + (f"; of these, {len(partly)} are also shaped by an assumption or a proposal above." if partly else ".")]
+        if soft_steps:
+            out += [f"Steps with no source at all - read these: {', '.join(soft_steps)}"]
+        out += [""]
+    if not (asks or answered or proposals or assumed or soft_steps):
+        out += ["Nothing in this file is assumed, proposed or open.", ""]
+    return out + [f"Full text: {doc.rel}"]
+
+
+def cmd_card(args):
+    vault = need_vault(args)
+    docs = load(vault)
+    doc = by_id(docs).get(args.id)
+    if not doc:
+        die(f"{args.id}: nothing with that id")
+    if doc.type != "feature":
+        _, warnings = check_all(docs)[doc.rel]
+        print("\n".join(card_lines(doc, docs)))
+        for w in warnings:
+            print(f"warn  {w}")
+        return
+    own = sorted((d for d in docs if d.feature == doc.id and d.type in APPROVABLE and d.status != "removed"),
+                 key=lambda d: (list(STATUS).index(d.type), d.id))
+    print(f"{doc.title or doc.id} — feature, {doc.status}. {len(own)} file(s).\n")
+    seen, total = [], 0
+    for d in own:
+        asks, proposals, answered, assumed, soft_steps = tally(d, docs)
+        total += len(d.clean.split())
+        parts = [f"{len(x)} {name}" for x, name in ((asks, "question(s)"), (answered, "answer(s) to apply"),
+                                                    (proposals, "proposal(s)"), (assumed, "assumption(s)")) if x]
+        state = "approved" if d.status in ("approved", "done") else ("held" if asks or answered else "ready to review")
+        print(f"- {d.id} {d.title} [{d.type}, v{d.version()}, {state}] " + (", ".join(parts) or "nothing to decide"))
+        seen += [q for q in asks + proposals if q not in seen]
+    print(f"\nThe full text is about {total} words. To decide: {sum(1 for q in seen if not q['confirm'])} "
+          f"open question(s), {sum(1 for q in seen if q['confirm'])} proposal(s).")
+    for q in seen:
+        tag = (q["owner"] or "no owner") + (", confirm" if q["confirm"] else "")
+        print(f"- [{tag}] {q['text']} ({q['doc'].id})" + (f"\n    options: {q['options']}" if q["options"] else ""))
+
+
+def cut(body, *names):
+    """The body without the named '## ' sections."""
+    for name in names:
+        body = re.sub(rf"^## {name}\s*$.*?(?=^## |\Z)", "", body, flags=re.M | re.S)
+    return re.sub(r"\n{3,}", "\n\n", body).strip() + "\n"
+
+
+def cmd_pack(args):
+    """Write the build pack of one feature: its approved use cases, as files a coding agent can read.
+    Only copies text that is already in the vault; acceptance.md is written by the handoff skill."""
+    vault = need_vault(args)
+    docs = load(vault)
+    ids, slug = by_id(docs), args.feature
+    feature = ids.get(slug)
+    if not feature or feature.type != "feature":
+        die(f"{slug}: no feature with that slug")
+    ucs, left = [], []
+    for d in sorted((d for d in docs if d.type == "use-case" and d.feature == slug), key=lambda d: d.id):
+        hard = [q for q in blockers(d, docs) if not soft(q)]
+        if d.status == "removed":
+            continue
+        if d.status != "approved":
+            left.append(f"{d.id} {d.title} — not approved yet")
+        elif hard:
+            left.append(f"{d.id} {d.title} — held by an open question: {hard[0]['text'][:80]}")
+        else:
+            ucs.append(d)
+    if not ucs:
+        die(f"{slug}: no approved use case to hand over" + "".join(f"\n  {x}" for x in left), 1)
+    wanted = {r for d in ucs for r in d.meta.get("rules", [])}
+    rules = sorted((d for d in docs if d.type == "rule" and d.status != "removed"
+                    and d.id in wanted), key=lambda d: d.id)
+    entities = [d for d in docs if d.type == "entity" and slug in d.meta.get("features", [])]
+    designs = [d for d in docs if d.type == "design" and d.feature == slug and d.status != "removed"]
+    out = vault / HANDOFF / slug
+    out.mkdir(parents=True, exist_ok=True)
+    files = {}
+
+    def note(d):
+        return "" if d.status == "approved" else f"> Status: {d.status} — a person has not approved this yet.\n\n"
+
+    files["brief.md"] = ("what the feature is, who uses it, what is in and out of scope",
+                         cut(feature.clean, "Open questions", "Changelog"))
+    files["use-cases.md"] = ("each use case step by step, then the full text of every rule",
+                             "\n---\n\n".join(cut(d.clean, "Open questions", "Changelog") for d in ucs)
+                             + "\n---\n\n# Rules in full\n\n"
+                             + "\n".join(note(d) + re.sub(r"^# ", "## ", cut(d.clean, "Open questions", "Changelog"), flags=re.M)
+                                         for d in rules))
+    if entities:
+        files["data.md"] = ("the business objects and their fields",
+                            "\n---\n\n".join(cut(d.clean, "Open questions", "Changelog") for d in entities))
+    if designs:
+        files["screens.md"] = ("the screens and flows of the design",
+                               "\n---\n\n".join(note(d) + cut(d.clean, "Open questions", "Changelog") for d in designs))
+    used = ucs + rules + designs
+    lines = ["# Open items", "",
+             "The build may go on. These parts may still change: build them so they are easy to change.", "",
+             "## Proposals the client has not confirmed", ""]
+    seen = []
+    for d in used:
+        for q in blockers(d, docs):
+            if soft(q) and q not in seen:
+                seen.append(q)
+                held = ", ".join(sorted({q["doc"].id, *q["refs"]} & {x.id for x in used})) or q["doc"].id
+                lines.append(f"- {q['text']} ({held})")
+    lines += ([] if seen else ["None."]) + ["", "## Assumptions", ""]
+    count = 0
+    for d in used:
+        for number, owner, text in d.assumptions():
+            count += 1
+            lines.append(f"- {d.id} {number} [{owner or 'no owner'}]: {text}")
+    lines += ([] if count else ["None."]) + ["", "## Not in this pack", ""] + [f"- {x}" for x in left or ["Nothing was left out."]]
+    files["open-items.md"] = ("proposals not confirmed, assumptions, and what was left out", "\n".join(lines) + "\n")
+    for d in designs:
+        proto = vault / d.meta.get("prototype", "") if d.meta.get("prototype") else None
+        if proto and proto.is_file():
+            shutil.copyfile(proto, out / "prototype.html")
+    for name, (_, text) in files.items():
+        (out / name).write_text(text, encoding="utf-8")
+    listing = [f"| `{name}` | {what} |" for name, (what, _) in files.items()]
+    listing.append("| `acceptance.md` | one testable scenario per rule and per error path "
+                   + ("|" if (out / "acceptance.md").exists() else "— **not written yet**: run /bigin-ba:handoff |"))
+    if (out / "prototype.html").exists():
+        listing.append("| `prototype.html` | the clickable prototype: the reference for the screens |")
+    built = [f"{d.id}@{d.version()}" for d in used]
+    readme = ["---", "type: handoff", f"feature: {slug}", f"generated: {today()}",
+              "built_from: [" + ", ".join(built) + "]", "---", "",
+              f"# Build pack: {feature.title or slug}", "",
+              "Generated from the requirements vault. **Do not edit these files**: they are written again",
+              "when a requirement changes. Send questions and feedback to the business analyst.", "",
+              "| File | Holds |", "|------|-------|", *listing, "",
+              "## For the builder", "",
+              "- Read `brief.md` first, then `use-cases.md`. Plan and slice the work yourself.",
+              "- Every scenario in `acceptance.md` becomes a test. Name the test after its scenario.",
+              "- Keep the ids (`UC-001 S2`, `BR-003`) in test names and commit messages.",
+              "- `open-items.md` lists what may still change. Do not treat those parts as final.",
+              "- If the pack does not answer something, stop and ask. Do not guess.", ""]
+    (out / "README.md").write_text("\n".join(readme), encoding="utf-8")
+    write_index(vault, docs)
+    print(f"build pack: {out.relative_to(vault).as_posix()}/ — {len(ucs)} use case(s), {len(rules)} rule(s), "
+          f"{len(seen)} proposal(s) not confirmed, {count} assumption(s)")
+    for x in left:
+        print(f"left out: {x}")
+    if not (out / "acceptance.md").exists():
+        print("acceptance.md is not written yet")
+    if args.to:
+        target = Path(args.to).expanduser().resolve() / slug
+        if vault in target.parents or target == vault:
+            die("--to must be a folder outside the vault")
+        shutil.copytree(out, target, dirs_exist_ok=True)
+        print(f"copied to {target}")
+
+
+def cmd_trace(args):
+    vault = need_vault(args)
+    docs = load(vault)
+    ids = by_id(docs)
+    target = ids.get(args.id)
+    if not target:
+        die(f"{args.id}: not found", 1)
+
+    def line(d):
+        return f"  {d.id}  {d.status:<10} {d.title}  ({d.rel})"
+
+    print(f"{target.id} — {target.title} [{target.type}, {target.status}]  {target.rel}")
+    if target.type == "feature":
+        print("\nBelongs to this feature:")
+        for d in docs:
+            if d.feature == target.id and d is not target:
+                print(line(d))
+        print("\nSignals:")
+        for d in docs:
+            for row in (d.signals() if d.type == "intake" else []):
+                if row["feature"] == target.id:
+                    print(f"  {d.id} #{row['n']}  {row['status']:<9} {row['signal'][:80]}  → {row['lands'] or '-'}")
+        return
+    if target.type == "intake":
+        print("\nSignals:")
+        for row in target.signals():
+            print(f"  #{row['n']}  {row['status']:<9} {row['feature'] or '?':<20} → {row['lands'] or '-'}")
+    uses = [ids[r] for r in sorted(target.refs()) if r in ids]
+    print("\nUses (mentions):")
+    for d in uses:
+        print(line(d))
+    print("\nUsed by (mentioned in):")
+    for d in docs:
+        if target.id in d.refs():
+            print(line(d))
+
+
+def main():
+    p = argparse.ArgumentParser(prog="bigin", description=__doc__.split("\n")[0])
+    p.add_argument("--vault", help="vault folder (default: found from the current folder)")
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    s = sub.add_parser("init", help="create the vault folders and config")
+    s.add_argument("dir", nargs="?")
+    s.set_defaults(fn=cmd_init)
+
+    s = sub.add_parser("new", help="create a file from its template, with the next id")
+    s.add_argument("kind", choices=[*KINDS, *NAMED])
+    s.add_argument("title")
+    s.add_argument("--feature", help="feature slug")
+    s.add_argument("--epic", help="EP-### (stories only)")
+    s.add_argument("--file", action="append", help="intake only: a source file to copy in, word for word")
+    s.set_defaults(fn=cmd_new)
+
+    s = sub.add_parser("attach", help="add source files to an existing intake note as new blocks")
+    s.add_argument("id")
+    s.add_argument("files", nargs="+")
+    s.set_defaults(fn=cmd_attach)
+
+    s = sub.add_parser("status", help="what is waiting, in workflow order")
+    s.add_argument("feature", nargs="?")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(fn=cmd_status)
+
+    s = sub.add_parser("questions", help="list open questions")
+    s.add_argument("--owner", choices=sorted(OWNERS))
+    s.add_argument("--feature", help="feature slug or artifact id")
+    s.add_argument("--kind", choices=["ask", "confirm"], help="ask: open questions; confirm: our proposals")
+    s.set_defaults(fn=cmd_questions)
+
+    s = sub.add_parser("assumptions", help="list assumptions a person has not confirmed yet")
+    s.add_argument("--owner", choices=["client", "team"])
+    s.add_argument("--feature", help="feature slug or artifact id")
+    s.set_defaults(fn=cmd_assumptions)
+
+    s = sub.add_parser("check", help="check ids, links and statuses; refresh INDEX.md")
+    s.add_argument("file", nargs="?")
+    s.set_defaults(fn=cmd_check)
+
+    s = sub.add_parser("approve", help="record a person's approval (refuses open questions)")
+    s.add_argument("id")
+    s.add_argument("--by", required=True, help="the person who approved")
+    s.set_defaults(fn=cmd_approve)
+
+    s = sub.add_parser("card", help="the review card of a file or a feature: only what a person must read")
+    s.add_argument("id", help="an id, or a feature slug")
+    s.set_defaults(fn=cmd_card)
+
+    s = sub.add_parser("pack", help="write the build pack of a feature for a coding agent")
+    s.add_argument("feature", help="feature slug")
+    s.add_argument("--to", help="also copy the pack to <dir>/<feature>/, e.g. docs/specs in the code repository")
+    s.set_defaults(fn=cmd_pack)
+
+    s = sub.add_parser("trace", help="what an id or feature uses, and what uses it")
+    s.add_argument("id")
+    s.set_defaults(fn=cmd_trace)
+
+    s = sub.add_parser("hook", help="PostToolUse hook entry (reads JSON on stdin)")
+    s.set_defaults(fn=cmd_hook)
+
+    args = p.parse_args()
+    args.fn(args)
+
+
+if __name__ == "__main__":
+    main()

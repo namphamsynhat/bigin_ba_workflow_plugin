@@ -1,19 +1,12 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "bigin-ba-workflow",
-  "description": "Local marketplace for the Bigin BA workflow plugin.",
-  "owner": {
-    "name": "Nam Pham"
-  },
+  "name": "bigin",
+  "description": "Bigin team plugins for Claude Code.",
+  "owner": { "name": "Nam Pham" },
   "plugins": [
     {
-      "name": "bigin-ba-workflow-plugin",
+      "name": "bigin-ba",
       "source": "./",
-      "description": "Guides a BA through turning raw communication into structured requirement documentation: project initiation, intake, signal extraction, use-case and business-rule drafting behind a written review gate, a per-feature check that the resulting use cases actually add up, approval, entity sync, a verified UX design spec plus an on-request prototype render and assembly, and business-only epics and user stories sliced from approved use cases plus a frozen prototype snapshot.",
-      "version": "1.14.0",
-      "author": {
-        "name": "Nam Pham"
-      }
+      "description": "The development team's second brain: intake to reviewed requirements, design and stories."
     }
   ]
 }
